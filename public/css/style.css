@@ -771,7 +771,24 @@ body.theme-light .client-btn:hover { border: none !important; }
 .fixed-menu .menu-left,
 .fixed-menu .menu-right { display: flex; align-items: center; gap: 0.5rem; }
 .fixed-menu .site-brand { position: static; }
-.fixed-menu .site-logo { width: 50px; height: 50px; }
+.fixed-menu .site-logo-mark {
+  width: 50px;
+  height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: ui-rounded, "Arial Rounded MT Bold", "Trebuchet MS", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-weight: 900;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  box-shadow: none;
+  user-select: none;
+}
+.fixed-menu .site-logo { width: 50px; height: 50px; object-fit: contain; display: block; }
 .fixed-menu .site-brand-text { font-weight: 700; font-size: 1.2rem; letter-spacing: 0.01em; color: var(--text-primary); white-space: nowrap; }
 .fixed-menu .theme-toggle { position: static; top: auto; right: auto; }
 .fixed-menu .client-btn { position: static; }
@@ -807,6 +824,14 @@ body:not(.theme-light) .fixed-menu .whatsapp-btn { border: 1px solid rgba(255, 2
     flex-shrink: 0;
     width: 40px;
     height: 40px;
+    margin-right: 6px;
+  }
+  .fixed-menu .site-logo-mark {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    font-size: 22px;
     margin-right: 6px;
   }
   .fixed-menu .site-brand-text {

@@ -27,12 +27,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const applyTheme = (theme) => {
         console.log('Applying theme:', theme);
         const isLight = theme === 'light';
+        const isEn = (function () {
+            try { return String(document.documentElement?.lang || window.__PAGE_LANG__ || '').toLowerCase().startsWith('en'); } catch (_) { return false; }
+        })();
         document.body.classList.toggle('theme-light', isLight);
         console.log('Body classes:', document.body.className);
         if (btn) {
             btn.setAttribute('aria-pressed', String(isLight));
             const label = btn.querySelector('.theme-label');
-            if (label) label.textContent = isLight ? 'Tema: Escuro' : 'Tema: Claro';
+            if (label) label.textContent = isEn ? (isLight ? 'Theme: Dark' : 'Theme: Light') : (isLight ? 'Tema: Escuro' : 'Tema: Claro');
         }
     };
     

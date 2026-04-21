@@ -36,10 +36,8 @@
     })();
   </script>
   <!-- End TRACK COMBO -->
-  <% if (typeof CARD_PROVIDER !== 'undefined' && CARD_PROVIDER === 'stripe') { %>
-    <link rel="preconnect" href="https://js.stripe.com" crossorigin />
-    <link rel="preconnect" href="https://api.stripe.com" crossorigin />
-  <% } %>
+  <link rel="preconnect" href="https://js.stripe.com" crossorigin />
+  <link rel="preconnect" href="https://api.stripe.com" crossorigin />
  
 </head>
 <body class="theme-light has-fixed-menu">
@@ -59,26 +57,27 @@
   <script>
     window.PAGARME_PUBLIC_KEY = "<%= PAGARME_PUBLIC_KEY %>";
     window.STRIPE_PUBLISHABLE_KEY = "<%= typeof STRIPE_PUBLISHABLE_KEY !== 'undefined' ? STRIPE_PUBLISHABLE_KEY : '' %>";
-    window.CARD_PROVIDER = "<%= typeof CARD_PROVIDER !== 'undefined' ? CARD_PROVIDER : 'pagarme' %>";
+    window.CARD_PROVIDER = "stripe";
     window.STRIPE_USE_CHECKOUT = "<%= typeof STRIPE_USE_CHECKOUT !== 'undefined' ? STRIPE_USE_CHECKOUT : '' %>" === "true";
     window.PAGARME_INSTALLMENTS_MAX = Number("<%= typeof PAGARME_INSTALLMENTS_MAX !== 'undefined' ? PAGARME_INSTALLMENTS_MAX : 12 %>") || 12;
     window.PAGARME_INSTALLMENTS_FREE = Number("<%= typeof PAGARME_INSTALLMENTS_FREE !== 'undefined' ? PAGARME_INSTALLMENTS_FREE : (typeof PAGARME_INSTALLMENTS_MAX !== 'undefined' ? PAGARME_INSTALLMENTS_MAX : 12) %>") || 0;
     window.PAGARME_INSTALLMENT_INTEREST_RATE = Number(String("<%= typeof PAGARME_INSTALLMENT_INTEREST_RATE !== 'undefined' ? PAGARME_INSTALLMENT_INTEREST_RATE : 0 %>").replace(',', '.')) || 0;
     window.__EXPAY_DEFAULT_CPF_ENABLED = "<%= (typeof EXPAY_DEFAULT_CPF_ENABLED !== 'undefined' && EXPAY_DEFAULT_CPF_ENABLED) ? 'true' : 'false' %>" === "true";
+    window.__DISABLE_PIX__ = true;
   </script>
-  <% if (typeof CARD_PROVIDER !== 'undefined' && CARD_PROVIDER === 'stripe' && typeof STRIPE_PUBLISHABLE_KEY !== 'undefined' && STRIPE_PUBLISHABLE_KEY) { %>
+  <% if (typeof STRIPE_PUBLISHABLE_KEY !== 'undefined' && STRIPE_PUBLISHABLE_KEY) { %>
     <script src="https://js.stripe.com/v3/" defer></script>
   <% } %>
   <div class="container checkout-page">
     <header class="header">
       <div id="headerTicker" class="header-ticker" aria-live="polite">
-        <span class="ticker-item enter">Empresa regularizada</span>
+        <span class="ticker-item enter">Registered company</span>
       </div>
       <h1 class="title">
-        Cresça o seu perfil Instagram com<br>
-        <span class="title-highlight-gradient">seguidores brasileiros e reais</span>
+        CresÃ§a o seu perfil Instagram com<br>
+        <span class="title-highlight-gradient">real followers</span>
       </h1>
-      <p class="subtitle" style="margin-top:0.25rem;">Transforme seu perfil com seguidores brasileiros e reais que geram autoridade de verdade.<br>Veja resultados em até 5 minutos.</p>
+      <p class="subtitle" style="margin-top:0.25rem;">Transforme seu perfil com seguidores reais que geram autoridade de verdade.<br>Veja resultados em atÃ© 5 minutos.</p>
       <div id="clientTools" class="client-tools" style="display:none;"></div>
     </header>
 
@@ -89,16 +88,16 @@
         <div class="cards-grid checkout-grid">
           <div class="service-card" id="audioCard">
             <div class="card-content">
-              <h3 class="card-title">Guia de áudio</h3>
+              <h3 class="card-title">Guia de Ã¡udio</h3>
               <div class="card-desc">
                   <div class="audio-player">
                   <audio id="guideAudio" class="audio-element" preload="none" src="/images/audio%20site.MP3"></audio>
                   <div class="audio-controls">
                     <div id="tutorialAudio" class="tutorial-pop tutorial-pop-input" data-tip-mode="manual" data-tip-top="50" data-tip-left="" data-tip-arrow-left="">
                       <div class="tutorial-pop-step">1/5</div>
-                      <div class="tutorial-pop-text">Ouça o áudio primeiro</div>
+                      <div class="tutorial-pop-text">OuÃ§a o Ã¡udio primeiro</div>
                     </div>
-                    <button type="button" id="audioPlayBtn" class="audio-speed-btn">Ouvir Áudio</button>
+                    <button type="button" id="audioPlayBtn" class="audio-speed-btn">Ouvir Ãudio</button>
                     <input type="range" id="audioProgress" class="audio-progress" min="0" max="100" value="0" />
                   <span class="audio-time" style="white-space:nowrap;"><span id="audioCurrent">00:00</span>/<span id="audioDuration">00:00</span></span>
                   </div>
@@ -132,10 +131,10 @@
                 </div>
                 <div class="value-prop-item">
                   <div class="value-prop-row">
-                    <img class="value-prop-icon" src="/images/moeda.png" alt="Melhores preços" loading="lazy" width="119" height="119" />
-                    <div class="value-prop-metric">R$<span class="value-prop-arrow">↓</span></div>
+                    <img class="value-prop-icon" src="/images/moeda.png" alt="Fair prices" loading="lazy" width="119" height="119" />
+                    <div class="value-prop-metric">$<span class="value-prop-arrow">&darr;</span></div>
                   </div>
-                  <div class="value-prop-caption"><span class="caption-desktop">melhores preços do mercado</span><span class="caption-mobile">melhores<br>preços do<br>mercado</span></div>
+                  <div class="value-prop-caption"><span class="caption-desktop">fair prices</span><span class="caption-mobile">fair<br>prices</span></div>
                 </div>
               </div>
             </div>
@@ -158,7 +157,7 @@
           </div>
 
           <div class="why-choose-us-section">
-            <div class="why-us-pill">Por que escolher a Agência Oppus?</div>
+            <div class="why-us-pill">Por que escolher a You Agency?</div>
             <h2 class="why-us-title">Sabemos o que está <span class="why-us-gradient-text">funcionando</span></h2>
             <p class="why-us-subtitle">Nossa metodologia comprovada entrega crescimento sustentável para sua presença digital</p>
             <div class="why-us-slider-container">
@@ -182,7 +181,7 @@
                     </svg>
                   </div>
                   <h3>Seguidores Reais</h3>
-                  <p>Trabalhamos com pacote de seguidores brasileiros reais</p>
+                  <p>Trabalhamos com pacotes de seguidores de alta qualidade</p>
                 </div>
                 <div class="why-us-card">
                   <div class="why-us-icon-box">
@@ -191,8 +190,8 @@
                       <path d="M12 12.5V19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                   </div>
-                  <h3>Entrega Rápida</h3>
-                  <p>Pacotes com resultados visiveis em até 5 minutos com crescimento de autoridade rápido</p>
+                  <h3>Entrega RÃ¡pida</h3>
+                  <p>Pacotes com resultados visiveis em atÃ© 5 minutos com crescimento de autoridade rÃ¡pido</p>
                 </div>
                 <div class="why-us-card">
                   <div class="why-us-icon-box">
@@ -201,7 +200,7 @@
                     </svg>
                   </div>
                   <h3>Ferramenta Exclusiva</h3>
-                  <p>Ferramenta de reposição de seguidores perdido, exclusiva da Agência Oppus</p>
+                  <p>Ferramenta de reposiÃ§Ã£o de seguidores perdido, exclusiva da You Agency</p>
                 </div>
                 <div class="why-us-card">
                   <div class="why-us-icon-box">
@@ -211,8 +210,8 @@
                       <line x1="12" y1="22.08" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                   </div>
-                  <h3>Integrações únicas</h3>
-                  <p>Sistema de integrações únicas que permite escolhas de estratégias mais dinâmicas como seleção de post e mais</p>
+                  <h3>IntegraÃ§Ãµes Ãºnicas</h3>
+                  <p>Sistema de integraÃ§Ãµes Ãºnicas que permite escolhas de estratÃ©gias mais dinÃ¢micas como seleÃ§Ã£o de post e mais</p>
                 </div>
               </div>
               <div class="why-us-dots">
@@ -230,7 +229,7 @@
             <div class="card-content">
               <h3 class="card-title">Plataforma</h3>
               <div class="card-desc">
-                  <div class="platform-help" style="margin-bottom:0.5rem; margin-top:20px; color: #cbd5e1; font-size: 1.125rem; text-align: center;">Escolha a plataforma em que deseja os serviços</div>
+                  <div class="platform-help" style="margin-bottom:0.5rem; margin-top:20px; color: #cbd5e1; font-size: 1.125rem; text-align: center;">Escolha a plataforma em que deseja os serviÃ§os</div>
                   <div class="platform-toggle" aria-label="Selecionar plataforma" style="position:relative;">
                   <button type="button" class="platform-btn instagram" aria-pressed="true" aria-label="Instagram">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -254,9 +253,9 @@
           </div>
 
 
-          <!-- Desktop: seleção por cards de tipo -->
+          <!-- Desktop: seleÃ§Ã£o por cards de tipo -->
           <div id="tipoCards" class="option-cards" style="display:none;"></div>
-          <!-- Descrição do serviço (após escolher tipo, antes dos preços) -->
+          <!-- DescriÃ§Ã£o do serviÃ§o (apÃ³s escolher tipo, antes dos preÃ§os) -->
           <div class="service-card" id="tipoDescCard" style="display:none;">
             <div class="card-content">
               <h3 class="card-title" id="tipoDescTitle"></h3>
@@ -269,16 +268,16 @@
           
           <div class="service-card" id="tipoSelectCard">
             <div class="card-content">
-              <h3 class="card-title">Tipo de serviço</h3>
+              <h3 class="card-title">Tipo de serviÃ§o</h3>
               <div class="input-group" id="grupoTipo" style="position:relative;">
                 <select id="tipoSelect" class="select-input" style="flex:1;">
                   <option value="" selected>Selecione...</option>
                   <option value="mistos">Seguidores Mistos</option>
-                  <option value="brasileiros">Seguidores Brasileiros</option>
-                  <option value="organicos">Seguidores brasileiros e reais</option>
-                  <option value="curtidas_brasileiras">Curtidas Brasileiras</option>
-                  <option value="curtidas_organicos">Curtidas Brasileiras Reais</option>
-                  <option value="visualizacoes_reels">Visualizações Reels</option>
+                  <option value="brasileiros">Seguidores PadrÃ£o</option>
+                  <option value="organicos">Seguidores Premium</option>
+                  <option value="curtidas_brasileiras">Curtidas</option>
+                  <option value="curtidas_organicos">Curtidas Premium</option>
+                  <option value="visualizacoes_reels">VisualizaÃ§Ãµes Reels</option>
                 </select>
                 <!-- Tutorial: 2/4 (selecionar rede social) -->
                 <div id="tutorial1Tipo" class="tutorial-pop tutorial-pop-input" style="display:none;">
@@ -315,7 +314,7 @@
             <h3 class="card-title">Perfil do Instagram</h3>
             <div class="card-desc">
               <div class="input-group" id="grupoUsername" style="position:relative;">
-                <input type="text" id="usernameCheckoutInput" placeholder="Digite o nome de usuário ou URL do Instagram..." class="select-input" maxlength="100" />
+                <input type="text" id="usernameCheckoutInput" placeholder="Digite o nome de usuÃ¡rio ou URL do Instagram..." class="select-input" maxlength="100" />
                 <button id="checkCheckoutButton" class="continue-button" type="button" style="margin-left:0.5rem; padding:0.35rem 0.6rem; font-size:13px;">
                   <span class="button-text">Validar</span>
                   <svg class="button-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -328,7 +327,7 @@
                 </div>
               </div>
               <div id="perfilHints" style="margin-top:0.8rem; color: var(--text-secondary);">
-                <div class="perfil-hint strong">• Não precisamos da sua senha</div>
+                <div class="perfil-hint strong">â€¢ NÃ£o precisamos da sua senha</div>
               </div>
               <div id="statusCheckoutMessage" class="status-message" style="display:none; margin-top:0.5rem;"></div>
               <div id="loadingCheckoutSpinner" class="loading-spinner" style="display:none; margin-top:0.5rem;">
@@ -352,26 +351,26 @@
       </section>
       <section class="section-block">
         <div class="cards-grid checkout-grid">
-        <!-- Promoções -->
+        <!-- PromoÃ§Ãµes -->
         <div class="service-card" id="orderBumpInline" style="display:none;">
           <div class="card-content">
-            <h3 class="card-title" style="background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; display: block; text-align: center; width: 100%;">Oferta exclusivas para você</h3>
+            <h3 class="card-title" style="background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; display: block; text-align: center; width: 100%;">Oferta exclusivas para vocÃª</h3>
             <div class="card-desc promo-list">
-                <!-- Upgrade dinâmico -->
+                <!-- Upgrade dinÃ¢mico -->
                 <label class="promo-item upgrade">
                   <input type="checkbox" id="orderBumpCheckboxInline" />
                   <div class="promo-content">
                     <div class="promo-highlight" id="orderBumpHighlight">Upgrade de seguidores</div>
                     <div class="promo-title">Upgrade de pacote</div>
-                    <div id="orderBumpText" class="promo-desc">Selecione um pacote para ver o upgrade disponível.</div>
+                    <div id="orderBumpText" class="promo-desc">Selecione um pacote para ver o upgrade disponÃ­vel.</div>
                     <div class="promo-prices" data-promo="upgrade">
-                      <span class="old-price">—</span>
+                      <span class="old-price">â€”</span>
                       <span class="discount-badge">OFERTA</span>
-                      <span class="new-price">—</span>
+                      <span class="new-price">â€”</span>
                     </div>
                   </div>
                 </label>
-                <!-- Demais promoções -->
+                <!-- Demais promoÃ§Ãµes -->
                 <label class="promo-item likes">
                   <input type="checkbox" id="promoLikes" data-promo="likes" />
                   <div class="promo-content">
@@ -384,9 +383,9 @@
                       <span class="new-price">R$ 9,90</span>
                     </div>
                     <div class="likes-control" id="likesControl" aria-label="Quantidade de curtidas">
-                      <button type="button" id="likesDec" class="likes-arrow" aria-label="Diminuir">‹</button>
+                      <button type="button" id="likesDec" class="likes-arrow" aria-label="Diminuir">â€¹</button>
                       <span id="likesQty" class="likes-qty">150</span>
-                      <button type="button" id="likesInc" class="likes-arrow" aria-label="Aumentar">›</button>
+                      <button type="button" id="likesInc" class="likes-arrow" aria-label="Aumentar">â€º</button>
                       <div id="likesPromoTip" class="tutorial-pop tutorial-pop-check" style="display:none;"><div class="tutorial-pop-text">Pode aumentar a quantidade clicando na seta</div></div>
                     </div>
                     
@@ -395,18 +394,18 @@
                 <label class="promo-item views">
                   <input type="checkbox" id="promoViews" data-promo="views" />
                   <div class="promo-content">
-                    <div class="promo-highlight">+ visualizações</div>
-                    <div class="promo-title">Visualizações promocionais</div>
-                    <div class="promo-desc">Adicionar visualizações em Reels.</div>
+                    <div class="promo-highlight">+ visualizaÃ§Ãµes</div>
+                    <div class="promo-title">VisualizaÃ§Ãµes promocionais</div>
+                    <div class="promo-desc">Adicionar visualizaÃ§Ãµes em Reels.</div>
                     <div class="promo-prices" data-promo="views">
                       <span class="old-price">R$ 89,90</span>
                       <span class="discount-badge">78% OFF</span>
                       <span class="new-price">R$ 19,90</span>
                     </div>
-                    <div class="likes-control" aria-label="Quantidade de visualizações">
-                      <button type="button" id="viewsDec" class="likes-arrow" aria-label="Diminuir">‹</button>
+                    <div class="likes-control" aria-label="Quantidade de visualizaÃ§Ãµes">
+                      <button type="button" id="viewsDec" class="likes-arrow" aria-label="Diminuir">â€¹</button>
                       <span id="viewsQty" class="likes-qty">1000</span>
-                      <button type="button" id="viewsInc" class="likes-arrow" aria-label="Aumentar">›</button>
+                      <button type="button" id="viewsInc" class="likes-arrow" aria-label="Aumentar">â€º</button>
                       
                     </div>
                     
@@ -415,21 +414,21 @@
                 <label class="promo-item comments">
                   <input type="checkbox" id="promoComments" data-promo="comments" />
                   <div class="promo-content">
-                    <div class="promo-highlight">+ COMENTÁRIOS</div>
+                    <div class="promo-highlight">+ COMENTÃRIOS</div>
                     <div class="promo-title" style="display:flex; align-items:center; gap:0.5rem;">
-                      <span>Comentário promocional</span>
-                      <button id="commentsExampleBtn" class="continue-button" type="button" style="padding:0.15rem 0.5rem; font-size:12px; line-height:1;">Exemplo comentários</button>
+                      <span>ComentÃ¡rio promocional</span>
+                      <button id="commentsExampleBtn" class="continue-button" type="button" style="padding:0.15rem 0.5rem; font-size:12px; line-height:1;">Exemplo comentÃ¡rios</button>
                     </div>
-                    <div class="promo-desc">1 comentário = R$ 1,50 cada.</div>
+                    <div class="promo-desc">1 comentÃ¡rio = R$ 1,50 cada.</div>
                     <div class="promo-prices" data-promo="comments">
                       <span class="old-price">R$ 29,90</span>
                       <span class="discount-badge">67% OFF</span>
                       <span class="new-price">R$ 9,90</span>
                     </div>
-                    <div class="likes-control" aria-label="Quantidade de comentários">
-                      <button type="button" id="commentsDec" class="likes-arrow" aria-label="Diminuir">‹</button>
+                    <div class="likes-control" aria-label="Quantidade de comentÃ¡rios">
+                      <button type="button" id="commentsDec" class="likes-arrow" aria-label="Diminuir">â€¹</button>
                       <span id="commentsQty" class="likes-qty">1</span>
-                      <button type="button" id="commentsInc" class="likes-arrow" aria-label="Aumentar">›</button>
+                      <button type="button" id="commentsInc" class="likes-arrow" aria-label="Aumentar">â€º</button>
                     </div>
                     
                   </div>
@@ -438,12 +437,12 @@
                 <label class="promo-item warranty60">
                   <input type="checkbox" id="promoWarranty60" data-promo="warranty60" />
                   <div class="promo-content">
-                    <div id="warrantyHighlight" class="promo-highlight">REPOSIÇÃO POR 6 MESES</div>
+                    <div id="warrantyHighlight" class="promo-highlight">REPOSIÃ‡ÃƒO POR 6 MESES</div>
                     <div class="promo-title" style="display:flex; align-items:center; gap:0.5rem;">
-                      <span>Reposição por 6 meses</span>
+                      <span>ReposiÃ§Ã£o por 6 meses</span>
                       <button id="warranty60InfoBtn" class="continue-button" type="button" style="padding:0.15rem 0.5rem; font-size:12px; line-height:1;">Entenda mais</button>
                     </div>
-                    <div id="warrantyDesc" class="promo-desc">Reposição garantida por 6 meses</div>
+                    <div id="warrantyDesc" class="promo-desc">ReposiÃ§Ã£o garantida por 6 meses</div>
                     <div class="promo-prices" data-promo="warranty60">
                       <span id="warrantyOldPrice" class="old-price">R$ 129,90</span>
                       <span id="warrantyDiscount" class="discount-badge">85% OFF</span>
@@ -458,15 +457,15 @@
             </div>
           </div>
 
-          <!-- Resumo do pedido (após promoções e antes do finalizar) -->
+          <!-- Resumo do pedido (apÃ³s promoÃ§Ãµes e antes do finalizar) -->
           <div class="service-card" id="resumo" hidden>
             <div class="card-content">
               <h3 class="card-title">Resumo</h3>
               <div class="card-desc">
                 <div><strong>Tipo:</strong> <span id="resTipo"></span></div>
                 <div><strong>Quantidade:</strong> <span id="resQtd"></span></div>
-                <div><strong>Preço:</strong> <span id="resPreco"></span></div>
-                <div><strong>Promoções:</strong> <span id="resPromos"></span></div>
+                <div><strong>PreÃ§o:</strong> <span id="resPreco"></span></div>
+                <div><strong>PromoÃ§Ãµes:</strong> <span id="resPromos"></span></div>
               </div>
             </div>
           </div>
@@ -476,46 +475,22 @@
             <div class="action-container" id="grupoPedido" style="position:relative;">
                 <div class="phone-field" style="position:relative; margin-bottom:0.75rem;">
                 <label for="checkoutPhoneInput" class="phone-label" style="display:block; font-weight:700; margin-bottom:0.25rem; font-size: calc(1rem + 10px);">Telefone de contato</label>
-                <p class="phone-hint" style="margin-top:0.15rem; margin-bottom:0.5rem; color:#9ca3af; font-size: calc(1rem + 3px);">Usaremos este contato caso precisarmos falar com você. Pelo telefone você pode consultar seus pedidos.</p>
+                <p class="phone-hint" style="margin-top:0.15rem; margin-bottom:0.5rem; color:#9ca3af; font-size: calc(1rem + 3px);">Usaremos este contato caso precisarmos falar com vocÃª. Pelo telefone vocÃª pode consultar seus pedidos.</p>
                 <input id="checkoutPhoneInput" type="tel" class="select-input" placeholder="(DDD) 9XXXX-XXXX" />
                 <div id="tutorial4Validar" class="tutorial-pop tutorial-pop-input" style="display:none;">
                   <div class="tutorial-pop-step">4/5</div>
                   <div class="tutorial-pop-text">Digite seu telefone</div>
                 </div>
               </div>
-              <div class="phone-field" id="pixCpfWrap" style="position:relative; margin-bottom:0.75rem;<%= (typeof EXPAY_DEFAULT_CPF_ENABLED !== 'undefined' && EXPAY_DEFAULT_CPF_ENABLED) ? 'display:none;' : '' %>">
-                <label for="pixCpfInput" class="phone-label" style="display:block; font-weight:700; margin-bottom:0.25rem; font-size: calc(1rem + 8px);">CPF (para Pix ExPay)</label>
-                <p class="phone-hint" style="margin-top:0.15rem; margin-bottom:0.5rem; color:#9ca3af; font-size: calc(1rem + 2px);">Se você escolher ExPay no Pix, a plataforma exige CPF do pagador.</p>
-                <input id="pixCpfInput" type="text" class="select-input" placeholder="000.000.000-00" maxlength="14" />
+              <div class="phone-field" id="contactEmailWrap" style="position:relative; margin-bottom:0.75rem;">
+                <label for="contactEmailInput" class="phone-label" style="display:block; font-weight:700; margin-bottom:0.25rem; font-size: calc(1rem + 8px);">E-mail</label>
+                <p class="phone-hint" style="margin-top:0.15rem; margin-bottom:0.5rem; color:#9ca3af; font-size: calc(1rem + 2px);">Usaremos para enviar recibo e atualizacoes do pedido.</p>
+                <input id="contactEmailInput" type="email" class="select-input" placeholder="seuemail@gmail.com" inputmode="email" autocomplete="email" />
               </div>
 
               <!-- Payment Method Selector -->
-              <div id="paymentMethodSelector" style="display:none; gap:0.6rem; margin-bottom:1.25rem; align-items:stretch; justify-content:center; width:100%;">
-                  <label class="payment-option" id="optionPix" style="flex:1; max-width:220px; cursor:pointer; border:2px solid #10b981; background:#ecfdf5; border-radius:12px; padding:0.55rem 0.6rem; text-align:center; transition:all 0.2s; position:relative; box-shadow:0 4px 14px rgba(0,0,0,0.06);">
-                    <input type="radio" name="paymentMethod" value="pix" checked style="display:none;">
-                    <div class="pm-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px; min-height:64px;">
-                      <div class="pm-icon" style="display:flex;align-items:center;justify-content:center;">
-                        <img src="/images/icone%20pix.png" alt="Pix" style="width:28px;height:28px;object-fit:contain;display:block;" />
-                      </div>
-                      <div class="pm-title" style="font-weight:600; color:#065f46; font-size:0.95rem; letter-spacing:0.5px; line-height:1;">PIX</div>
-                      <div class="pm-subtitle" style="font-size:0.85rem; color:#065f46; font-weight:600; line-height:1;">5% de desconto</div>
-                      <div style="width:100%; margin-top:6px;">
-                        <select id="pixGatewaySelect" class="select-input" style="width:100%; height:34px; padding:0 10px; border-radius:10px; border:1px solid #bbf7d0; background:#ffffff; color:#065f46; font-weight:700; font-size:0.78rem; outline:none;">
-                          <option value="woovi" selected>Woovi</option>
-                          <option value="expay">ExPay</option>
-                        </select>
-                      </div>
-                    </div>
-                  </label>
-                  <label class="payment-option" id="optionCard" style="flex:1; max-width:220px; cursor:pointer; border:2px solid #e5e7eb; background:#ffffff; border-radius:12px; padding:0.55rem 0.6rem; text-align:center; transition:all 0.2s; position:relative; box-shadow:0 4px 14px rgba(0,0,0,0.06);">
-                    <input type="radio" name="paymentMethod" value="credit_card" style="display:none;">
-                    <div class="pm-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px; min-height:64px;">
-                      <div class="pm-icon" style="display:flex;align-items:center;justify-content:center;">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-                      </div>
-                      <div class="pm-title" style="font-weight:600; color:#111827; font-size:0.92rem; line-height:1;">Cartão de Crédito</div>
-                    </div>
-                  </label>
+              <div id="paymentMethodSelector" style="display:none;">
+                <input type="radio" name="paymentMethod" value="credit_card" checked style="display:none;">
               </div>
               <style>
                 @media (max-width: 640px) {
@@ -535,7 +510,7 @@
                   <form id="cardPaymentForm" onsubmit="event.preventDefault();">
                       <div id="stripeCardFields" style="display:none;">
                           <div class="form-group" style="margin-bottom:1rem;">
-                              <label for="stripeCardNumber" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Número do Cartão</label>
+                              <label for="stripeCardNumber" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">NÃºmero do CartÃ£o</label>
                               <div id="stripeCardNumber" class="select-input" style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:12px 14px; font-size:1rem; outline:none;"></div>
                           </div>
                           <div style="display:flex; gap:1rem; margin-bottom:1rem;">
@@ -552,7 +527,7 @@
 
                       <div id="pagarmeCardFields">
                           <div class="form-group" style="margin-bottom:1rem;">
-                              <label for="cardNumber" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Número do Cartão</label>
+                              <label for="cardNumber" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">NÃºmero do CartÃ£o</label>
                               <div style="position:relative;">
                                   <input type="text" id="cardNumber" class="select-input" placeholder="0000 0000 0000 0000" maxlength="19" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 44px 0 14px; font-size:1rem; outline:none;">
                                   <div style="position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none;">
@@ -578,20 +553,20 @@
                         <div class="form-group" style="margin-bottom:1rem;">
                             <label for="cardInstallments" style="display:block; font-weight:600; margin-bottom:0.25rem;">Parcelas</label>
                             <select id="cardInstallments" class="select-input" style="width:100%;">
-                                <option value="1">1x à vista no crédito</option>
+                                <option value="1">1x Ã  vista no crÃ©dito</option>
                             </select>
                         </div>
 
                         <!-- Holder Info -->
                         <div class="form-group" style="margin-bottom:1rem;">
-                            <label for="cardHolderName" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Nome no Cartão</label>
-                            <input type="text" id="cardHolderName" class="select-input" placeholder="Nome impresso no cartão" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 14px; font-size:1rem; outline:none;">
+                            <label for="cardHolderName" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Nome no CartÃ£o</label>
+                            <input type="text" id="cardHolderName" class="select-input" placeholder="Nome impresso no cartÃ£o" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 14px; font-size:1rem; outline:none;">
                         </div>
 
                         <div class="form-group" style="margin-bottom:1rem;">
                             <label for="cardHolderCpf" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">CPF do Titular</label>
                             <input type="text" id="cardHolderCpf" class="select-input" placeholder="000.000.000-00" maxlength="14" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 14px; font-size:1rem; outline:none;">
-                            <div style="margin-top:6px; font-size:0.85rem; color:#6b7280;">Obrigatório para transações nacionais (antifraude dos emissores).</div>
+                            <div style="margin-top:6px; font-size:0.85rem; color:#6b7280;">ObrigatÃ³rio para transaÃ§Ãµes nacionais (antifraude dos emissores).</div>
                         </div>
                       </div>
 
@@ -608,21 +583,7 @@
                       </button>
                   </form>
               </div>
-
-              <div class="button-container" id="pixPaymentBtnContainer" style="display:flex; flex-direction:column; align-items:center;">
-                <button id="realizarPedidoBtn" class="continue-button" style="width:100%; max-width:420px; display:flex; align-items:center; justify-content:center; position:relative; padding-right:52px;">
-                  <span class="button-text">Realizar pedido</span>
-                  <svg class="button-icon" style="position:absolute; right:16px;" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
-                <div id="tutorial5Pedido" class="tutorial-pop tutorial-pop-confirm" style="display:none;">
-                  <div class="tutorial-pop-step">5/5</div>
-                  <div class="tutorial-pop-text">Crie seu pedido</div>
-                </div>
-              </div>
             </div>
-            <div id="pixResultado" class="card-desc" style="display:none; margin-top: 0.75rem;"></div>
           </div>
         </div>
       </section>
@@ -631,9 +592,9 @@
           <div class="why-choose-us-section" style="margin-top: 10rem;">
             <div class="why-us-pill">Exclusividade</div>
             <h2 class="why-us-title">Ferramenta <span class="why-us-gradient-text">Exclusiva</span></h2>
-            <p class="why-us-subtitle">Conheça nossa tecnologia exclusiva de reposição automática de seguidores.</p>
+            <p class="why-us-subtitle">ConheÃ§a nossa tecnologia exclusiva de reposiÃ§Ã£o automÃ¡tica de seguidores.</p>
             <div class="why-us-image-container">
-              <img src="/images/refil%20(1).png" alt="Ferramenta de Reposição" style="width: 100%; max-width: 500px !important; display: block; margin: 0 auto;" />
+              <img src="/images/refil%20(1).png" alt="Ferramenta de ReposiÃ§Ã£o" style="width: 100%; max-width: 500px !important; display: block; margin: 0 auto;" />
             </div>
             <!-- <button id="toolExplanationBtn" class="continue-button" type="button" style="margin-top: 1rem; padding: 0.5rem 1.5rem;">Entenda mais</button> -->
           </div>
@@ -644,28 +605,28 @@
               <div class="service-card faq-card">
                 <div class="card-content">
                   <button type="button" class="faq-question" aria-expanded="false">
-                    <span class="faq-label">Qual prazo de entrega do serviço?</span>
+                    <span class="faq-label">Qual prazo de entrega do serviÃ§o?</span>
                     <svg class="faq-toggle" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
                   </button>
-                  <div class="faq-answer" hidden>Após a confirmação do pagamento, a entrega inicia automaticamente e os seguidores começam a chegar rapidamente.</div>
+                  <div class="faq-answer" hidden>ApÃ³s a confirmaÃ§Ã£o do pagamento, a entrega inicia automaticamente e os seguidores comeÃ§am a chegar rapidamente.</div>
                 </div>
               </div>
               <div class="service-card faq-card">
                 <div class="card-content">
                   <button type="button" class="faq-question" aria-expanded="false">
-                    <span class="faq-label">Os seguidores são reais?</span>
+                    <span class="faq-label">Os seguidores sÃ£o reais?</span>
                     <svg class="faq-toggle" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
                   </button>
-                  <div class="faq-answer" hidden>Sim. Trabalhamos com pacotes de seguidores brasileiros e reais.</div>
+                  <div class="faq-answer" hidden>Sim. Trabalhamos com pacotes de seguidores de alta qualidade.</div>
                 </div>
               </div>
               <div class="service-card faq-card">
                 <div class="card-content">
                   <button type="button" class="faq-question" aria-expanded="false">
-                    <span class="faq-label">Vocês trabalham somente com seguidores brasileiros e reais?</span>
+                    <span class="faq-label">VocÃªs trabalham com diferentes nÃ­veis de qualidade?</span>
                     <svg class="faq-toggle" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
                   </button>
-                  <div class="faq-answer" hidden>Trabalhamos com 3 tipos de seguidores: mistos (perfis internacionais com alguns brasileiros), brasileiros (foto e nome brasileiros) e brasileiros reais (perfis brasileiros reais, com foto postada, stories e etc).</div>
+                  <div class="faq-answer" hidden>Trabalhamos com 3 tipos: mistos (mix de perfis), padrÃ£o (perfis mais consistentes) e premium (perfis de maior qualidade e mais atividade).</div>
                 </div>
               </div>
               <div class="service-card faq-card">
@@ -674,16 +635,16 @@
                     <span class="faq-label">Existe garantia?</span>
                     <svg class="faq-toggle" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
                   </button>
-                  <div class="faq-answer" hidden>Sim. Temos sistema exclusivo onde você informa seu pedido e recuperar os seguidores que caíram.</div>
+                  <div class="faq-answer" hidden>Sim. Temos sistema exclusivo onde vocÃª informa seu pedido e recuperar os seguidores que caÃ­ram.</div>
                 </div>
               </div>
               <div class="service-card faq-card">
                 <div class="card-content">
                   <button type="button" class="faq-question" aria-expanded="false">
-                    <span class="faq-label">Se o perfil é privado posso receber os serviços?</span>
+                    <span class="faq-label">Se o perfil Ã© privado posso receber os serviÃ§os?</span>
                     <svg class="faq-toggle" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
                   </button>
-                  <div class="faq-answer" hidden>Não. É necessário ter o perfil publico na plataforma para recebimento do serviço.</div>
+                  <div class="faq-answer" hidden>NÃ£o. Ã‰ necessÃ¡rio ter o perfil publico na plataforma para recebimento do serviÃ§o.</div>
                 </div>
               </div>
             </div>
@@ -691,34 +652,34 @@
         </div>
       </section>
 
-      <!-- Modal: Garantia 60 dias (conteúdo simples) -->
+      <!-- Modal: Garantia 60 dias (conteÃºdo simples) -->
       <div id="warranty60Modal" class="modal-overlay" style="display:none;">
         <div class="modal-dialog">
           <div class="modal-header">
             <h3 class="modal-title">Garantia estendida</h3>
-            <button id="warranty60CloseBtn" class="modal-close" type="button" aria-label="Fechar">✕</button>
+            <button id="warranty60CloseBtn" class="modal-close" type="button" aria-label="Fechar">âœ•</button>
           </div>
           <div class="modal-body">
-            <p style="margin-top:0.75rem; color: var(--text-secondary);">Apenas com 4 cliques e menos de 30 segundos basta a pessoa colocar o id do pedido de serviço dela no nosso sistema, e clicar no botão solicitar refil e ela recupera a quantidade de seguidores que teve queda.</p>
-            <img src="/images/reposicao.jpeg" alt="Reposição de seguidores" loading="lazy" style="width:100%; height: clamp(420px, 70vh, 720px); aspect-ratio: 9 / 16; object-fit: cover; border-radius:12px; margin-top:0.75rem;">
+            <p style="margin-top:0.75rem; color: var(--text-secondary);">Apenas com 4 cliques e menos de 30 segundos basta a pessoa colocar o id do pedido de serviÃ§o dela no nosso sistema, e clicar no botÃ£o solicitar refil e ela recupera a quantidade de seguidores que teve queda.</p>
+            <img src="/images/reposicao.jpeg" alt="ReposiÃ§Ã£o de seguidores" loading="lazy" style="width:100%; height: clamp(420px, 70vh, 720px); aspect-ratio: 9 / 16; object-fit: cover; border-radius:12px; margin-top:0.75rem;">
           </div>
           <div class="modal-footer">
             <button id="warranty60CloseBtn2" class="continue-button" type="button">Fechar</button>
           </div>
         </div>
       </div>
-      <!-- Modal: Exemplo de comentários -->
+      <!-- Modal: Exemplo de comentÃ¡rios -->
       <div id="commentsExampleModal" class="modal-overlay" style="display:none; align-items:center; justify-content:center; z-index:9999;">
         <div class="modal-dialog" style="max-width:400px; width:90%; background: #1e1e1e; border-radius: 16px; padding: 1.5rem; position:relative; display:flex; flex-direction:column;">
           <div class="modal-header" style="border:none; padding-bottom:0;">
-            <h3 class="modal-title" style="margin:0 auto;">Exemplo de Comentários</h3>
-            <button id="commentsExampleCloseBtn" class="modal-close" type="button" aria-label="Fechar" style="position:absolute; right:1rem; top:1rem;">✕</button>
+            <h3 class="modal-title" style="margin:0 auto;">Exemplo de ComentÃ¡rios</h3>
+            <button id="commentsExampleCloseBtn" class="modal-close" type="button" aria-label="Fechar" style="position:absolute; right:1rem; top:1rem;">âœ•</button>
           </div>
           <div class="modal-body" style="text-align:center;">
             <div style="position:relative; aspect-ratio: 9 / 16; height: clamp(320px, 60vh, 560px); max-width: 100%; margin: 0.75rem auto 0; border-radius:12px; overflow:hidden; box-shadow: var(--shadow); background: #000;">
               <video id="commentsVideoPlayer" src="/images/comentarios.mp4" controls muted playsinline style="position:absolute; inset:0; width:100%; height:100%; object-fit: cover;"></video>
             </div>
-            <p style="margin-top:0.75rem; color: var(--text-secondary);">Comentários de perfis brasileiros, alta qualidade, comentários positivos e sem queda.</p>
+            <p style="margin-top:0.75rem; color: var(--text-secondary);">Perfis de alta qualidade, comentÃ¡rios positivos e mÃ­nima queda.</p>
           </div>
           <div class="modal-footer">
             <button id="commentsExampleCloseBtn2" class="continue-button" type="button">Fechar</button>
@@ -726,31 +687,31 @@
         </div>
       </div>
 
-      <!-- Modal: Explicação da Ferramenta (Novo) -->
+      <!-- Modal: ExplicaÃ§Ã£o da Ferramenta (Novo) -->
       <div id="toolExplanationModal" class="modal-overlay" style="display:none; align-items:center; justify-content:center; z-index:9999;">
         <div class="modal-dialog" style="max-width:400px; width:90%; background: #1e1e1e; border-radius: 16px; padding: 1.5rem; position:relative; display:flex; flex-direction:column;">
           <div class="modal-header" style="border:none; padding-bottom:0;">
             <h3 class="modal-title" style="margin:0 auto;">Como funciona?</h3>
-            <button id="toolExplanationCloseBtn" class="modal-close" type="button" aria-label="Fechar" style="position:absolute; right:1rem; top:1rem;">✕</button>
+            <button id="toolExplanationCloseBtn" class="modal-close" type="button" aria-label="Fechar" style="position:absolute; right:1rem; top:1rem;">âœ•</button>
           </div>
           <div class="modal-body" style="text-align:center;">
             <div style="position:relative; aspect-ratio: 9 / 16; height: clamp(320px, 60vh, 560px); max-width: 100%; margin: 0.75rem auto 0; border-radius:12px; overflow:hidden; box-shadow: var(--shadow); background: #000;">
               <!-- TODO: Substituir src pelo video correto da ferramenta -->
               <video id="toolVideoPlayer" src="/images/comentarios.mp4" controls muted playsinline style="position:absolute; inset:0; width:100%; height:100%; object-fit: cover;"></video>
             </div>
-            <p style="margin-top:0.75rem; color: var(--text-secondary);">Entenda como nossa tecnologia exclusiva garante a reposição automática.</p>
+            <p style="margin-top:0.75rem; color: var(--text-secondary);">Entenda como nossa tecnologia exclusiva garante a reposiÃ§Ã£o automÃ¡tica.</p>
           </div>
           <div class="modal-footer">
             <button id="toolExplanationCloseBtn2" class="continue-button" type="button">Fechar</button>
           </div>
         </div>
       </div>
-      <!-- Modal: Seleção de post (curtidas/visualizações/comentários) -->
+      <!-- Modal: SeleÃ§Ã£o de post (curtidas/visualizaÃ§Ãµes/comentÃ¡rios) -->
       <div id="postSelectModal" class="modal-overlay" style="display:none;">
         <div class="modal-dialog">
           <div class="modal-header">
             <h3 id="postModalTitle" class="modal-title">Selecionar post</h3>
-            <button id="postModalClose" class="modal-close" type="button" aria-label="Fechar">✕</button>
+            <button id="postModalClose" class="modal-close" type="button" aria-label="Fechar">âœ•</button>
           </div>
           <div class="modal-body">
             <div id="postModalGrid" class="post-grid"></div>
@@ -768,44 +729,7 @@
       <div class="payment-main-card" style="background: #fff; border-radius: 12px; padding: 2.5rem; flex: 1; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); width: 100%;">
           <!-- Payment Method Selector & Card Form moved to main flow -->
 
-        <!-- Pix Content (Default) -->
-        <div id="pixPaymentContent">
-            <div style="text-align: center; margin-bottom: 2.5rem;">
-                <div style="width: 72px; height: 72px; background: #d1fae5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-                <h2 style="font-size: 1.75rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">Realize o Pagamento</h2>
-                <p style="color: #6b7280; font-size: 1.1rem;">Realize o pagamento do <strong>Pix</strong> para garantir a sua compra.</p>
-                <div style="display: inline-block; background: #f3f4f6; padding: 0.6rem 1.2rem; border-radius: 99px; margin-top: 1.25rem; font-weight: 500; font-size: 1.05rem;">
-                    O Pix será expirado em <span id="pixTimer" style="color: #db2777;">29:59</span>
-                </div>
-            </div>
-
-            <div style="text-align: center; margin-bottom: 2.5rem;">
-                <p style="margin-bottom: 1.25rem; font-size: 1.1rem;">Acesse o aplicativo que você utiliza o <strong>Pix</strong><br>e escolha a opção <strong>Ler QR code</strong>.</p>
-                <div id="paymentQrImage" style="background: #f9fafb; padding: 1.5rem; border-radius: 12px; display: inline-block; border: 1px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <!-- QR Code Img injected here -->
-                </div>
-                <p style="font-size: 0.85rem; color: #6b7280; margin-top: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">ESCANEIE O QR CODE PARA PAGAR</p>
-            </div>
-
-            <div style="text-align: center; margin-bottom: 1rem;">
-                <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;">
-                    Valor do Pix: <span id="paymentValue" style="color: #db2777;">R$ 0,00</span>
-                </div>
-                
-                <p style="color: #6b7280; font-size: 18px; margin-bottom: 1.25rem; max-width: 600px; margin-left: auto; margin-right: auto;">
-                    Também é possível realizar o pagamento através do código abaixo. Basta copiar e realizar o pagamento no seu aplicativo ou Internet Banking escolhendo a opção <strong>Pix Copia e Cola</strong>.
-                </p>
-
-                <div style="position: relative; max-width: 600px; margin: 0 auto;">
-                    <textarea id="paymentCopyCode" readonly style="width: 100%; height: 90px; padding: 1rem; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; font-family: inherit; resize: none; font-size: 0.95rem; color: #374151;"></textarea>
-                    <button id="paymentCopyBtn" class="continue-button" style="margin-top: 1.25rem; width: 100%; display: flex; justify-content: center; align-items: center; padding: 1rem;">
-                        <span class="button-text" style="text-align: center; width: 100%;">Copiar Código</span>
-                    </button>
-                </div>
-            </div>
-        </div>
+        <div id="pixPaymentContent" style="display:none;"></div>
       </div>
 
       <!-- Right Column: Summary -->
@@ -818,24 +742,24 @@
          <div style="background: #fff; padding: 1.5rem; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; border: 1px solid #e5e7eb; border-top: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
             <!-- Item -->
             <div style="display: flex; gap: 1rem; padding-bottom: 1.5rem; border-bottom: 1px solid #f3f4f6; margin-bottom: 1.5rem;">
-                <div id="summaryItemImage" style="width: 72px; height: 72px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; overflow: hidden; flex-shrink: 0;">📦</div>
+                <div id="summaryItemImage" style="width: 72px; height: 72px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; overflow: hidden; flex-shrink: 0;">ðŸ“¦</div>
                 <div style="flex: 1;">
                     <div id="summaryItemName" style="font-weight: 600; color: #111827; font-size: 1.05rem; line-height: 1.3;">Produto</div>
-                    <div id="summaryItemPrice" style="font-size: 0.95rem; color: #374151; margin-top: 0.25rem;">R$ 0,00</div>
+                    <div id="summaryItemPrice" style="font-size: 0.95rem; color: #374151; margin-top: 0.25rem;">$ 0.00</div>
                     <div id="summaryItemQty" style="font-size: 0.9rem; color: #6b7280;">Quantidade: 1</div>
                 </div>
-                <div id="summaryItemTotal" style="font-weight: 700; font-size: 1.05rem;">R$ 0,00</div>
+                <div id="summaryItemTotal" style="font-weight: 700; font-size: 1.05rem;">$ 0.00</div>
             </div>
 
             <!-- Totals -->
             <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #f3f4f6;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
                     <span style="color: #374151; font-size: 1rem;">Subtotal</span>
-                    <span id="summarySubtotal" style="font-weight: 500;">R$ 0,00</span>
+                    <span id="summarySubtotal" style="font-weight: 500;">$ 0.00</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.25rem; color: #db2777;">
                     <span>Total</span>
-                    <span id="summaryTotal">R$ 0,00</span>
+                    <span id="summaryTotal">$ 0.00</span>
                 </div>
             </div>
 
@@ -844,11 +768,11 @@
                 <h4 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">Forma de pagamento</h4>
                 <div style="display: flex; gap: 0.75rem; align-items: center; background: #f9fafb; padding: 0.75rem; border-radius: 8px;">
                     <div style="width: 36px; height: 36px; background: #fff; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: 1px solid #e5e7eb;">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
                     </div>
                     <div>
-                        <div style="font-weight: 700; font-size: 0.95rem;">PIX</div>
-                        <div id="summaryPaymentValue" style="font-size: 0.85rem; color: #6b7280;">Valor: R$ 0,00</div>
+                        <div style="font-weight: 700; font-size: 0.95rem;">Credit Card (Stripe)</div>
+                        <div id="summaryPaymentValue" style="font-size: 0.85rem; color: #6b7280;">Amount: $ 0.00</div>
                     </div>
                 </div>
             </div>
@@ -857,7 +781,7 @@
             <div>
                 <h4 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem; color: #db2777; display: flex; align-items: center; gap: 0.5rem;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    Informações do cliente
+                    InformaÃ§Ãµes do cliente
                 </h4>
                 <div style="border: 1px solid #e5e7eb; padding: 1.25rem; border-radius: 8px; background: #f9fafb;">
                     <div id="summaryCustomerName" style="font-size: 0.9rem; color: #374151; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-weight: 500;">
@@ -896,10 +820,10 @@
     </style>
     <footer class="footer">
       <div class="footer-bar">
-        <a href="https://instagram.com/agencia.oppus" target="_blank" rel="noopener" class="footer-link instagram-link" aria-label="Instagram Agência OPPUS">
+        <a href="https://instagram.com/agencia.You Agency" target="_blank" rel="noopener" class="footer-link instagram-link" aria-label="Instagram You Agency">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm0 2a3 3 0 00-3 3v10a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H7zm5 3a5 5 0 110 10 5 5 0 010-10zm0 2a3 3 0 100 6 3 3 0 000-6zm5.5-3a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/></svg>
         </a>
-        <span class="footer-center">&copy; 2025 Agência OPPUS. Todos os direitos reservados.</span>
+        <span class="footer-center">&copy; 2025 You Agency. Todos os direitos reservados.</span>
         <a href="/termos" id="termsLink" class="footer-link">Termos de Uso</a>
       </div>
     </footer>
@@ -911,12 +835,12 @@
   <div id="termsPage" class="client-page" aria-label="Termos de Uso" style="display:none;">
     <div class="client-page-inner">
       <h2 class="client-title" style="color:#111827;">Termos de Uso</h2>
-      <p class="client-desc" style="color:#374151;">Exemplo de termos. Substitua por seu conteúdo oficial.</p>
+      <p class="client-desc" style="color:#374151;">Exemplo de termos. Substitua por seu conteÃºdo oficial.</p>
       <div style="color:#111827; line-height: 1.6; max-width: 720px; margin: 0 auto;">
-        <p>Bem-vindo à Agência OPPUS. Ao utilizar nossos serviços, você concorda com estes termos. Este texto é um exemplo e deverá ser substituído pelos seus termos oficiais.</p>
-        <p>1. Uso do serviço: você se compromete a utilizar de forma lícita e ética.</p>
-        <p>2. Pagamentos e reembolsos: políticas aplicáveis conforme legislação vigente.</p>
-        <p>3. Privacidade: tratamos seus dados conforme nossa política de privacidade.</p>
+        <p>Bem-vindo Ã  You Agency. Ao utilizar nossos serviÃ§os, vocÃª concorda com estes termos. Este texto Ã© um exemplo e deverÃ¡ ser substituÃ­do pelos seus termos oficiais.</p>
+        <p>1. Uso do serviÃ§o: vocÃª se compromete a utilizar de forma lÃ­cita e Ã©tica.</p>
+        <p>2. Pagamentos e reembolsos: polÃ­ticas aplicÃ¡veis conforme legislaÃ§Ã£o vigente.</p>
+        <p>3. Privacidade: tratamos seus dados conforme nossa polÃ­tica de privacidade.</p>
       </div>
       <div class="client-actions" style="margin-top: 1rem;">
         <button id="termsCloseBtn" class="continue-button"><span class="button-text">Fechar</span></button>
@@ -925,8 +849,8 @@
   </div>
   <div id="warranty60Modal" class="client-page" aria-label="Garantia 60 dias" style="display:none;">
     <div class="client-page-inner">
-      <h2 class="client-title">+60 dias de reposição</h2>
-      <p class="client-desc">Garantia estendida: caso haja queda no período de 60 dias, nós repomos sem custo. A reposição segue as regras do serviço contratado.</p>
+      <h2 class="client-title">+60 dias de reposiÃ§Ã£o</h2>
+      <p class="client-desc">Garantia estendida: caso haja queda no perÃ­odo de 60 dias, nÃ³s repomos sem custo. A reposiÃ§Ã£o segue as regras do serviÃ§o contratado.</p>
       <div id="warrantyGifSlot" style="display:flex; align-items:center; justify-content:center; min-height:160px;">
         
       </div>
@@ -938,7 +862,7 @@
   <style>
     .checkout-page .main-content { max-width: 1440px; width: 100%; margin: 0 auto; }
 
-    /* Ampliar área de conteúdo e larguras dos cards no desktop */
+    /* Ampliar Ã¡rea de conteÃºdo e larguras dos cards no desktop */
     @media (min-width: 1024px) {
       .checkout-page.container { max-width: 100%; width: 100%; }
       .checkout-page .main-content { max-width: 1440px; width: 100%; margin: 0 auto; }
@@ -951,11 +875,11 @@
       }
       .checkout-page .service-card { width: 100%; padding: 0.55rem 0.7rem; }
       .checkout-page .card-content { gap: 0.2rem; }
-      /* Desktop: reduzir levemente os cards de planos (quantidade/preço) */
+      /* Desktop: reduzir levemente os cards de planos (quantidade/preÃ§o) */
       .checkout-page #planCards .service-card { min-height: 130px; }
       .checkout-page #planCards .card-title { font-size: 1.15rem; }
       .checkout-page #planCards .card-desc { font-size: 1.05rem; }
-      /* Desktop: aumentar título e botões da plataforma */
+      /* Desktop: aumentar tÃ­tulo e botÃµes da plataforma */
       .checkout-page #plataformaCard .card-title { font-size: calc(clamp(2.75rem, 5.2vw, 3.75rem) - 2px); }
       .checkout-page #plataformaCard .card-desc { font-size: calc(1.25rem - 2px); }
       .checkout-page .platform-btn { padding: 1.2rem 1.6rem; font-size: 1.15rem; }
@@ -963,8 +887,8 @@
         background: rgba(255, 255, 255, 0.95);
         color: #111827;
         width: 100%;
-        margin-top: 0.1rem; /* mais rente às bordas do card */
-        /* aumenta área útil horizontal no desktop */
+        margin-top: 0.1rem; /* mais rente Ã s bordas do card */
+        /* aumenta Ã¡rea Ãºtil horizontal no desktop */
         padding-left: 0.9rem;
         padding-right: 0.9rem;
       }
@@ -1022,13 +946,13 @@
         line-height: 1.5;
         margin-bottom: 0.4rem; 
       }
-    /* Notificação de venda (toast) um pouco maior na Home */
+    /* NotificaÃ§Ã£o de venda (toast) um pouco maior na Home */
     .toast-container .toast-item { font-size: 1.05rem; padding: 0.8rem 1.05rem; }
     .checkout-page .select-input option { color: #111827; }
-    /* Centralizar área de resultado PIX */
+    /* Centralizar Ã¡rea de resultado PIX */
     #pixResultado { text-align: center; }
 
-    /* Cards do checkout: usar cards em todas as visões e esconder selects originais */
+    /* Cards do checkout: usar cards em todas as visÃµes e esconder selects originais */
     #tipoSelectCard, #quantidadeSelectCard { display: none; }
     #grupoTipo, #grupoQuantidade { display: none !important; }
       #tipoCards, #planCards { display: grid !important; gap: 0.75rem; grid-template-columns: 1fr; }
@@ -1047,7 +971,7 @@
     @media (min-width: 1024px) {
       #tipoCards .service-card { min-height: 120px; }
     }
-    /* Card de descrição do tipo */
+    /* Card de descriÃ§Ã£o do tipo */
     #tipoDescCard .card-desc p { margin: 0.4rem 0; }
     #tipoDescCard .card-desc ul { margin: 0.5rem 0 0.25rem; padding-left: 1rem; }
     #tipoDescCard .card-desc li { margin: 0.2rem 0; }

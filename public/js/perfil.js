@@ -278,8 +278,42 @@ function showProfileSuccess(profile) {
     profileImage.onerror = function() {
         console.warn('Erro ao carregar imagem do perfil');
     };
-    
-    profileImage.src = profile.profilePicUrl || '';
+
+    const fallbackPic = '/images/default-avatar.svg';
+    const toProxyIfNeeded = (url) => {
+        const s = String(url || '').trim();
+        if (!s) return '';
+        if (s.indexOf('/image-proxy?') === 0) return s;
+        if (/^https?:\/\//i.test(s)) {
+            try {
+                const u = new URL(s);
+                const h = String(u.hostname || '').toLowerCase();
+                if (h.includes('instagram') || h.includes('cdninstagram') || h.includes('fbcdn') || h.includes('scontent')) {
+                    return '/image-proxy?url=' + encodeURIComponent(s);
+                }
+            } catch (e) {}
+        }
+        return s;
+    };
+    const candidate = toProxyIfNeeded(profile && profile.profilePicUrl ? profile.profilePicUrl : '');
+    profileImage.onerror = null;
+    profileImage.src = fallbackPic;
+    if (candidate) {
+        const pre = new Image();
+        pre.onload = function() {
+            profileImage.onerror = null;
+            profileImage.src = candidate;
+            profileImage.onerror = function() {
+                profileImage.onerror = null;
+                profileImage.src = fallbackPic;
+            };
+        };
+        pre.onerror = function() {
+            profileImage.onerror = null;
+            profileImage.src = fallbackPic;
+        };
+        pre.src = candidate;
+    }
     profileUsername.textContent = '@' + profile.username;
     profileStats.textContent = `Seguidores: ${profile.followersCount}`;
     verifiedBadge.style.display = profile.isVerified ? 'block' : 'none';

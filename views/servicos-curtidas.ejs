@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17892165907"></script>
@@ -10,7 +10,7 @@
     gtag('config', 'AW-17892165907');
   </script>
   <meta charset="utf-8" />
-  <title>Checkout - Curtidas</title>
+  <title>Checkout - Likes</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <script>
     try {
@@ -49,10 +49,11 @@
   <script>
     window.PAGARME_PUBLIC_KEY = "<%= PAGARME_PUBLIC_KEY %>";
     window.STRIPE_PUBLISHABLE_KEY = "<%= typeof STRIPE_PUBLISHABLE_KEY !== 'undefined' ? STRIPE_PUBLISHABLE_KEY : '' %>";
-    window.CARD_PROVIDER = "<%= typeof CARD_PROVIDER !== 'undefined' ? CARD_PROVIDER : 'pagarme' %>";
+    window.CARD_PROVIDER = "stripe";
     window.STRIPE_USE_CHECKOUT = "<%= typeof STRIPE_USE_CHECKOUT !== 'undefined' ? STRIPE_USE_CHECKOUT : '' %>" === "true";
+    window.__DISABLE_PIX__ = true;
   </script>
-  <% if (typeof CARD_PROVIDER !== 'undefined' && CARD_PROVIDER === 'stripe' && typeof STRIPE_PUBLISHABLE_KEY !== 'undefined' && STRIPE_PUBLISHABLE_KEY) { %>
+  <% if (typeof STRIPE_PUBLISHABLE_KEY !== 'undefined' && STRIPE_PUBLISHABLE_KEY) { %>
     <script src="https://js.stripe.com/v3/"></script>
   <% } %>
   <link href="/css/style.css?v=6" rel="stylesheet" />
@@ -147,17 +148,17 @@
       <div class="stepper-container">
         <div class="step active" id="step1" onclick="window.goToStep && window.goToStep(1)" style="cursor: pointer;">
           <div class="step-circle">1</div>
-          <div class="step-label">Serviço</div>
+          <div class="step-label">Service</div>
         </div>
         <div class="step-line" id="line1"></div>
         <div class="step" id="step2" onclick="window.goToStep && window.goToStep(2)" style="cursor: pointer;">
           <div class="step-circle">2</div>
-          <div class="step-label">Dados</div>
+          <div class="step-label">Details</div>
         </div>
         <div class="step-line" id="line2"></div>
         <div class="step" id="step3" onclick="window.goToStep && window.goToStep(3)" style="cursor: pointer;">
           <div class="step-circle">3</div>
-          <div class="step-label">Pagamento</div>
+          <div class="step-label">Payment</div>
         </div>
       </div>
 
@@ -167,7 +168,7 @@
             <div class="card-content">
               <h3 class="card-title">Plataforma</h3>
               <div class="card-desc">
-                  <div class="platform-toggle" aria-label="Selecionar plataforma">
+                  <div class="platform-toggle" aria-label="Select platform">
                   <button type="button" class="platform-btn instagram" aria-pressed="true" aria-label="Instagram">
                     <span>Instagram</span>
                   </button>
@@ -190,17 +191,17 @@
 
           <div class="service-card" id="tipoSelectCard">
             <div class="card-content">
-              <h3 class="card-title">Tipo de serviço</h3>
+              <h3 class="card-title">Service type</h3>
               <div class="input-group" id="grupoTipo" style="position:relative;">
                 <select id="tipoSelect" class="select-input" style="flex:1;">
-                  <option value="" selected>Selecione...</option>
-                  <option value="mistos">Curtidas Mistas</option>
-                  <option value="curtidas_brasileiras">Curtidas Brasileiras</option>
-                  <option value="organicos">Curtidas Brasileiras Reais</option>
+                  <option value="" selected>Select...</option>
+                  <option value="mistos">Mixed likes</option>
+                  <option value="curtidas_brasileiras">Standard likes</option>
+                  <option value="organicos">Premium likes</option>
                 </select>
                 <div id="tutorial1Tipo" class="tutorial-pop tutorial-pop-input" style="display:none;">
                   <div class="tutorial-pop-step">2/4</div>
-                  <div class="tutorial-pop-text">Selecionar rede social</div>
+                  <div class="tutorial-pop-text">Select the social network</div>
                 </div>
               </div>
             </div>
@@ -208,14 +209,14 @@
 
           <div class="service-card" id="quantidadeSelectCard">
             <div class="card-content">
-              <h3 class="card-title">Escolha o pacote</h3>
+              <h3 class="card-title">Choose a package</h3>
               <div class="input-group" id="grupoQuantidade" style="position:relative;">
                 <select id="quantidadeSelect" class="select-input" disabled style="flex:1;">
-                  <option value="">Selecione o tipo primeiro...</option>
+                  <option value="">Select a type first...</option>
                 </select>
                 <div id="tutorial2Pacote" class="tutorial-pop tutorial-pop-input" style="display:none;">
                   <div class="tutorial-pop-step">3/4</div>
-                  <div class="tutorial-pop-text">Selecionar o plano</div>
+                  <div class="tutorial-pop-text">Select the plan</div>
                 </div>
               </div>
             </div>
@@ -223,16 +224,16 @@
 
           <div class="service-card" id="ferramentaExclusivaSection" style="margin-top: 3rem; text-align: center; background: transparent; box-shadow: none; border: none;">
             <div style="display: inline-block; background: rgba(139, 92, 246, 0.1); color: #8B5CF6; padding: 0.35rem 1rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;">
-              Exclusividade
+              Exclusive
             </div>
             <h3 class="card-title" style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--text-primary);">
-              <span style="font-weight: 700;">Ferramenta</span> <span style="font-weight: 700; background: linear-gradient(90deg, #FF0080 0%, #7928CA 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Exclusiva</span>
+              <span style="font-weight: 700;">Exclusive</span> <span style="font-weight: 700; background: linear-gradient(90deg, #FF0080 0%, #7928CA 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Tool</span>
             </h3>
             <p class="card-desc" style="max-width: 600px; margin: 0 auto 2rem; font-size: 1.1rem; color: var(--text-secondary);">
-              Conheça nossa tecnologia exclusiva de reposição automática de curtidas.
+              Learn about our exclusive automatic like replacement technology.
             </p>
             <div style="max-width: 320px; margin: 0 auto;">
-              <img src="/images/refil%20(1).png" alt="Ferramenta Exclusiva" style="width: 100%; height: auto; display: block; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));">
+              <img src="/images/refil%20(1).png" alt="Exclusive tool" style="width: 100%; height: auto; display: block; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));">
             </div>
           </div>
         </div>
@@ -248,22 +249,22 @@
                     <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
-                <h3 class="card-title" style="margin-bottom: 0; font-size: 1.5rem;">Dados do Pedido</h3>
+                <h3 class="card-title" style="margin-bottom: 0; font-size: 1.5rem;">Order details</h3>
               </div>
               <div class="card-desc">
                 <div style="margin-bottom: 0.5rem;">
-                  <label class="input-label" style="display:block; margin-bottom:0.5rem; font-weight:600;">Usuário do Instagram <span style="color:#ef4444">*</span></label>
+                  <label class="input-label" style="display:block; margin-bottom:0.5rem; font-weight:600;">Instagram username <span style="color:#ef4444">*</span></label>
                   <div class="input-group username-group" id="grupoUsername" style="position:relative; display: flex; gap: 0.5rem;">
-                    <input type="text" id="usernameCheckoutInput" placeholder="Ex: @usuario" class="select-input" maxlength="100" style="flex: 1; border-radius: 8px;" />
+                    <input type="text" id="usernameCheckoutInput" placeholder="e.g. @username" class="select-input" maxlength="100" style="flex: 1; border-radius: 8px;" />
                     <button id="checkCheckoutButton" class="continue-button validate-btn" type="button" style="padding: 0 1.5rem; border-radius: 8px; font-weight: 600; background: var(--instagram-gradient);">
-                      <span class="button-text">Buscar</span>
+                      <span class="button-text">Search</span>
                       <svg class="button-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-left: 0.4rem;">
                         <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
                     </button>
                     <div id="tutorial3Usuario" class="tutorial-pop tutorial-pop-input" style="display:block;">
                       <div class="tutorial-pop-step">3/5</div>
-                      <div class="tutorial-pop-text">Cole o link do seu perfil Instagram</div>
+                      <div class="tutorial-pop-text">Enter your Instagram username</div>
                     </div>
                   </div>
                   <style>
@@ -274,22 +275,22 @@
                     }
                   </style>
                   <div id="perfilHints" style="margin-top:0.4rem; color: var(--text-secondary); font-size: 0.85rem;">
-                    Pode inserir com ou sem @ (Ex: @usuario ou usuario). Acentos serão removidos automaticamente.
+                    You can enter with or without @ (e.g., @username or username). Accents are removed automatically.
                   </div>
                   <div id="statusCheckoutMessage" class="status-message" style="display:none; margin-top:0.5rem;"></div>
                   <div id="loadingCheckoutSpinner" class="loading-spinner" style="display:none; margin-top:0.5rem;">
                     <div class="spinner"></div>
-                    <p>Verificando perfil...</p>
+                    <p>Checking profile...</p>
                   </div>
                   <div id="profilePreview" style="display:none; margin-top:1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color);">
                     <div style="display:flex; align-items:center; gap:1rem;">
-                      <img id="checkoutProfileImage" alt="Foto" style="width:64px; height:64px; border-radius:50%; object-fit:cover; background:#fff;" />
+                      <img id="checkoutProfileImage" alt="Photo" style="width:64px; height:64px; border-radius:50%; object-fit:cover; background:#fff;" />
                       <div>
                         <div style="font-weight:700; font-size:1.1rem; color: var(--text-primary);">@<span id="checkoutProfileUsername"></span></div>
                         <div id="checkoutProfileStats" style="display:flex; gap:0.8rem; font-size:0.9rem; color: var(--text-secondary); margin-top:0.2rem;">
                           <div><strong><span id="checkoutPostsCount"></span></strong> posts</div>
-                          <div><strong><span id="checkoutFollowersCount">-</span></strong> curtidas</div>
-                          <div><strong><span id="checkoutFollowingCount">-</span></strong> seguindo</div>
+                          <div><strong><span id="checkoutFollowersCount">-</span></strong> followers</div>
+                          <div><strong><span id="checkoutFollowingCount">-</span></strong> following</div>
                         </div>
                       </div>
                     </div>
@@ -298,26 +299,26 @@
 
                 <div id="contactFieldsArea" style="display:none; margin-top: 2rem; border-top: 1px solid #e2e8f0; padding-top: 1.5rem;">
                    <div id="selectedPostPreview" style="display:none; margin-bottom: 1.5rem;">
-                      <div style="font-weight:600; margin-bottom:0.5rem; color:var(--text-primary);">Post selecionado para receber as curtidas</div>
+                      <div style="font-weight:600; margin-bottom:0.5rem; color:var(--text-primary);">Selected post to receive likes</div>
                       <div id="selectedPostPreviewContent"></div>
                    </div>
                    <div style="margin-bottom: 1rem;">
-                      <div id="emailErrorMsg" style="color:#ef4444; font-size: 0.85rem; display:none; margin-bottom: 0.2rem;">Por favor, informe um e-mail válido</div>
+                      <div id="emailErrorMsg" style="color:#ef4444; font-size: 0.85rem; display:none; margin-bottom: 0.2rem;">Please enter a valid email</div>
                       <div style="background-color: #eff6ff; padding: 0.75rem; border-radius: 8px; border: 1px solid #dbeafe; margin-bottom: 0.8rem;">
-                          <span style="color: #1e40af; font-weight: 700; font-size: 0.95rem; display: block; margin-bottom: 0.3rem;">Por que pedimos esses dados?</span>
-                          <p style="font-size: 0.85rem; color: #1e3a8a; margin: 0; line-height: 1.4;">Para entrar em contato com você e para você consultar os dados do seu pedido.</p>
+                          <span style="color: #1e40af; font-weight: 700; font-size: 0.95rem; display: block; margin-bottom: 0.3rem;">Why do we ask for this information?</span>
+                          <p style="font-size: 0.85rem; color: #1e3a8a; margin: 0; line-height: 1.4;">So we can contact you and so you can view your order details.</p>
                       </div>
                       <label for="contactEmailInput" style="display:block; margin-bottom:0.5rem; color:var(--text-primary); font-weight:500;">Email <span style="color:#ef4444">*</span></label>
-                      <input type="email" id="contactEmailInput" class="select-input" placeholder="Seu melhor e-mail" style="width:100%; border-radius: 8px;" />
+                      <input type="email" id="contactEmailInput" class="select-input" placeholder="Your best email" style="width:100%; border-radius: 8px;" />
                    </div>
                    <div style="margin-bottom: 2rem;">
-                      <label for="contactPhoneInput" style="display:block; margin-bottom:0.5rem; color:var(--text-primary); font-weight:500;">Telefone <span style="color:#ef4444">*</span></label>
+                      <label for="contactPhoneInput" style="display:block; margin-bottom:0.5rem; color:var(--text-primary); font-weight:500;">Phone <span style="color:#ef4444">*</span></label>
                       <div class="phone-field" style="width:100%;">
                          <input type="tel" id="contactPhoneInput" class="select-input" placeholder="(00) 00000-0000" maxlength="15" style="width:100%; border-radius: 8px;" />
                       </div>
                    </div>
                    <a href="javascript:void(0)" id="btnActionProceed" class="continue-button contact-continue-btn" style="width: 100%; padding: 1rem; font-size: 1.1rem; border-radius: 8px; display: flex; justify-content: center; align-items: center; background: var(--instagram-gradient); text-decoration: none; color: white; cursor: pointer;">
-                      <span class="button-text">Continuar</span>
+                      <span class="button-text">Continue</span>
                    </a>
                 </div>
               </div>
@@ -337,7 +338,7 @@
                </button>
                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 1rem;">
                   <div style="position: relative; margin-bottom: 0.5rem;">
-                    <img id="reviewProfileImage" src="" alt="Perfil" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);" />
+                    <img id="reviewProfileImage" src="" alt="Profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);" />
                     <div style="position: absolute; bottom: 0; right: 0; background: #fff; border-radius: 50%; padding: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="#2563eb" xmlns="http://www.w3.org/2000/svg">
                         <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -347,17 +348,17 @@
                   <div style="font-weight: 700; font-size: 1.2rem; color: var(--text-primary);">@<span id="reviewProfileUsername"></span></div>
                </div>
                <div id="step3PostPreview" style="display:none; margin-top: 1.5rem;">
-                  <div style="font-weight:600; margin-bottom:0.5rem; color:var(--text-primary);">Post selecionado para receber as curtidas</div>
+                  <div style="font-weight:600; margin-bottom:0.5rem; color:var(--text-primary);">Selected post to receive likes</div>
                   <div id="step3PostPreviewContent"></div>
                </div>
 
                <!-- Coupon Section -->
                <div class="coupon-section" style="margin-top: 1rem;">
                    <div class="coupon-container">
-                       <input type="text" id="couponInput" class="select-input" placeholder="Cupom de desconto">
-                       <button type="button" id="applyCouponBtn" class="continue-button coupon-btn">
-                           Aplicar
-                       </button>
+                       <input type="text" id="couponInput" class="select-input" placeholder="Discount coupon">
+                      <button type="button" id="applyCouponBtn" class="continue-button coupon-btn">
+                          Apply
+                      </button>
                    </div>
                    <div id="couponMessage" class="coupon-message"></div>
                </div>
@@ -365,17 +366,17 @@
 
             <div class="service-card" id="orderBumpInline" style="display:none;">
               <div class="card-content">
-                <h3 class="card-title" style="background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; display: block; text-align: center; width: 100%;">Oferta exclusivas para você</h3>
+                <h3 class="card-title" style="background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; display: block; text-align: center; width: 100%;">Exclusive offers for you</h3>
                 <div class="card-desc promo-list">
                     <label class="promo-item upgrade">
                       <input type="checkbox" id="orderBumpCheckboxInline" />
                       <div class="promo-content">
-                        <div class="promo-highlight" id="orderBumpHighlight">Upgrade de curtidas</div>
-                        <div class="promo-title">Upgrade de pacote</div>
-                        <div id="orderBumpText" class="promo-desc">Selecione um pacote para ver o upgrade disponível.</div>
+                        <div class="promo-highlight" id="orderBumpHighlight">Likes upgrade</div>
+                        <div class="promo-title">Package upgrade</div>
+                        <div id="orderBumpText" class="promo-desc">Select a package to see the available upgrade.</div>
                         <div class="promo-prices" data-promo="upgrade">
                           <span class="old-price">—</span>
-                          <span class="discount-badge">OFERTA</span>
+                          <span class="discount-badge">OFFER</span>
                           <span class="new-price">—</span>
                         </div>
                       </div>
@@ -384,60 +385,60 @@
                     <label class="promo-item views">
                       <input type="checkbox" id="promoViews" data-promo="views" />
                       <div class="promo-content">
-                        <div class="promo-highlight">+ visualizações</div>
-                        <div class="promo-title">Visualizações promocionais</div>
-                        <div class="promo-desc">Adicionar visualizações em Reels.</div>
+                        <div class="promo-highlight">+ VIEWS</div>
+                        <div class="promo-title">Promotional views</div>
+                        <div class="promo-desc">Add views to your Reels.</div>
                         <div class="promo-prices" data-promo="views">
-                          <span class="old-price">R$ 89,90</span>
+                          <span class="old-price">$ 89.90</span>
                           <span class="discount-badge">78% OFF</span>
-                          <span class="new-price">R$ 19,90</span>
+                          <span class="new-price">$ 19.90</span>
                         </div>
-                        <div class="likes-control" aria-label="Quantidade de visualizações">
-                          <button type="button" id="viewsDec" class="likes-arrow" aria-label="Diminuir">‹</button>
+                        <div class="likes-control" aria-label="View quantity">
+                          <button type="button" id="viewsDec" class="likes-arrow" aria-label="Decrease">‹</button>
                           <span id="viewsQty" class="likes-qty">1000</span>
-                          <button type="button" id="viewsInc" class="likes-arrow" aria-label="Aumentar">›</button>
+                          <button type="button" id="viewsInc" class="likes-arrow" aria-label="Increase">›</button>
                         </div>
                       </div>
                     </label>
                     <label class="promo-item comments">
                       <input type="checkbox" id="promoComments" data-promo="comments" />
                       <div class="promo-content">
-                        <div class="promo-highlight">+ COMENTÁRIOS</div>
+                        <div class="promo-highlight">+ COMMENTS</div>
                         <div class="promo-title" style="display:flex; align-items:center; gap:0.5rem;">
-                          <span>Comentário promocional</span>
-                          <button id="commentsExampleBtn" class="continue-button" type="button" style="padding:0.15rem 0.5rem; font-size:12px; line-height:1;">Exemplo comentários</button>
+                          <span>Promotional comment</span>
+                          <button id="commentsExampleBtn" class="continue-button" type="button" style="padding:0.15rem 0.5rem; font-size:12px; line-height:1;">Comment examples</button>
                         </div>
-                        <div class="promo-desc">1 comentário = R$ 1,50 cada.</div>
+                        <div class="promo-desc">1 comment = $ 1.50 each.</div>
                         <div class="promo-prices" data-promo="comments">
-                          <span class="old-price">R$ 29,90</span>
+                          <span class="old-price">$ 29.90</span>
                           <span class="discount-badge">67% OFF</span>
-                          <span class="new-price">R$ 9,90</span>
+                          <span class="new-price">$ 9.90</span>
                         </div>
-                        <div class="likes-control" aria-label="Quantidade de comentários">
-                          <button type="button" id="commentsDec" class="likes-arrow" aria-label="Diminuir">‹</button>
+                        <div class="likes-control" aria-label="Comment quantity">
+                          <button type="button" id="commentsDec" class="likes-arrow" aria-label="Decrease">‹</button>
                           <span id="commentsQty" class="likes-qty">1</span>
-                          <button type="button" id="commentsInc" class="likes-arrow" aria-label="Aumentar">›</button>
+                          <button type="button" id="commentsInc" class="likes-arrow" aria-label="Increase">›</button>
                         </div>
                       </div>
                     </label>
                     <label class="promo-item warranty60">
                   <input type="checkbox" id="promoWarranty60" data-promo="warranty60" />
                   <div class="promo-content">
-                    <div id="warrantyHighlight" class="promo-highlight">REPOSIÇÃO POR 6 MESES</div>
+                    <div id="warrantyHighlight" class="promo-highlight">REPLACEMENT FOR 6 MONTHS</div>
                         <div class="promo-title" style="display:flex; align-items:center; gap:0.5rem;">
-                          <span>Reposição por 6 meses</span>
-                          <button id="warranty60InfoBtn" class="continue-button" type="button" style="padding:0.15rem 0.5rem; font-size:12px; line-height:1;">Entenda mais</button>
+                          <span>Replacement for 6 months</span>
+                          <button id="warranty60InfoBtn" class="continue-button" type="button" style="padding:0.15rem 0.5rem; font-size:12px; line-height:1;">Learn more</button>
                         </div>
-                        <div id="warrantyDesc" class="promo-desc">Reposição garantida por 6 meses</div>
+                        <div id="warrantyDesc" class="promo-desc">Guaranteed replacement for 6 months</div>
                         <div class="promo-prices" data-promo="warranty60">
-                          <span id="warrantyOldPrice" class="old-price">R$ 39,90</span>
+                          <span id="warrantyOldPrice" class="old-price">$ 39.90</span>
                           <span id="warrantyDiscount" class="discount-badge">75% OFF</span>
-                          <span id="warrantyNewPrice" class="new-price">R$ 9,90</span>
+                          <span id="warrantyNewPrice" class="new-price">$ 9.90</span>
                         </div>
-                        <div class="likes-control" style="display:none;" aria-label="Garantia estendida">
-                          <button type="button" id="warrantyModeDec" class="likes-arrow" aria-label="Anterior">‹</button>
-                          <span id="warrantyModeLabel" class="likes-qty">6 meses</span>
-                          <button type="button" id="warrantyModeInc" class="likes-arrow" aria-label="Próximo">›</button>
+                        <div class="likes-control" style="display:none;" aria-label="Extended warranty">
+                          <button type="button" id="warrantyModeDec" class="likes-arrow" aria-label="Previous">‹</button>
+                          <span id="warrantyModeLabel" class="likes-qty">6 months</span>
+                          <button type="button" id="warrantyModeInc" class="likes-arrow" aria-label="Next">›</button>
                         </div>
                       </div>
                     </label>
@@ -447,17 +448,17 @@
 
           <div class="service-card" id="resumo" style="display:none; margin-top: 1rem; max-width: 960px; margin-left: auto; margin-right: auto;">
             <div class="card-content">
-              <h3 class="card-title">Resumo do pedido</h3>
+              <h3 class="card-title">Order summary</h3>
               <div class="resumo-row">
-                <span>Serviço</span>
+                <span>Service</span>
                 <span id="resTipo">-</span>
               </div>
               <div class="resumo-row">
-                <span>Quantidade</span>
+                <span>Quantity</span>
                 <span id="resQtd">-</span>
               </div>
               <div class="resumo-row">
-                <span>Valor do pacote</span>
+                <span>Package price</span>
                 <span id="resPreco">-</span>
               </div>
               <div id="resPromosContainer" style="display:none;">
@@ -471,26 +472,8 @@
                 <span id="resTotalFinal" style="color: #22c55e;">-</span>
               </div>
               <div id="grupoPedido" style="margin-top: 1.5rem; display:none;">
-                <div id="paymentMethodSelector" style="display:none; gap:0.6rem; margin-bottom:1.25rem; align-items:stretch; justify-content:center; width:100%;">
-                    <label class="payment-option" id="optionPix" style="flex:1; max-width:220px; cursor:pointer; border:2px solid #10b981; background:#ecfdf5; border-radius:12px; padding:0.55rem 0.6rem; text-align:center; transition:all 0.2s; position:relative; box-shadow:0 4px 14px rgba(0,0,0,0.06);">
-                      <input type="radio" name="paymentMethod" value="pix" checked style="display:none;">
-                      <div class="pm-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px; min-height:64px;">
-                        <div class="pm-icon" style="display:flex;align-items:center;justify-content:center;">
-                          <img src="/images/icone%20pix.png" alt="Pix" style="width:28px;height:28px;object-fit:contain;display:block;" />
-                        </div>
-                        <div class="pm-title" style="font-weight:600; color:#065f46; font-size:0.95rem; letter-spacing:0.5px; line-height:1;">PIX</div>
-                        <div class="pm-subtitle" style="font-size:0.85rem; color:#065f46; font-weight:600; line-height:1;">5% de desconto</div>
-                      </div>
-                    </label>
-                    <label class="payment-option" id="optionCard" style="flex:1; max-width:220px; cursor:pointer; border:2px solid #e5e7eb; background:#ffffff; border-radius:12px; padding:0.55rem 0.6rem; text-align:center; transition:all 0.2s; position:relative; box-shadow:0 4px 14px rgba(0,0,0,0.06);">
-                      <input type="radio" name="paymentMethod" value="credit_card" style="display:none;">
-                      <div class="pm-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px; min-height:64px;">
-                        <div class="pm-icon" style="display:flex;align-items:center;justify-content:center;">
-                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-                        </div>
-                        <div class="pm-title" style="font-weight:600; color:#111827; font-size:0.92rem; line-height:1;">Cartão de Crédito</div>
-                      </div>
-                    </label>
+                <div id="paymentMethodSelector" style="display:none;">
+                  <input type="radio" name="paymentMethod" value="credit_card" checked style="display:none;">
                 </div>
                 <style>
                   @media (max-width: 640px) {
@@ -509,12 +492,12 @@
                     <form id="cardPaymentForm" onsubmit="event.preventDefault();">
                         <div id="stripeCardFields" style="display:none;">
                             <div class="form-group" style="margin-bottom:1rem;">
-                                <label for="stripeCardNumber" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Número do Cartão</label>
+                                <label for="stripeCardNumber" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Card number</label>
                                 <div id="stripeCardNumber" class="select-input" style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:12px 14px; font-size:1rem; outline:none;"></div>
                             </div>
                             <div style="display:flex; gap:1rem; margin-bottom:1rem;">
                                 <div style="flex:1;">
-                                    <label for="stripeCardExpiry" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Validade</label>
+                                    <label for="stripeCardExpiry" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Expiry</label>
                                     <div id="stripeCardExpiry" class="select-input" style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:12px 14px; font-size:1rem; outline:none;"></div>
                                 </div>
                                 <div style="flex:1;">
@@ -526,7 +509,7 @@
 
                         <div id="pagarmeCardFields">
                             <div class="form-group" style="margin-bottom:1rem;">
-                                <label for="cardNumber" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Número do Cartão</label>
+                                <label for="cardNumber" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Card number</label>
                                 <div style="position:relative;">
                                     <input type="text" id="cardNumber" class="select-input" placeholder="0000 0000 0000 0000" maxlength="19" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 44px 0 14px; font-size:1rem; outline:none;">
                                     <div style="position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none;">
@@ -537,8 +520,8 @@
 
                             <div style="display:flex; gap:1rem; margin-bottom:1rem;">
                                 <div style="flex:1;">
-                                    <label for="cardExpiry" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Validade</label>
-                                    <input type="text" id="cardExpiry" class="select-input" placeholder="MM/AA" maxlength="5" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 14px; font-size:1rem; outline:none;">
+                                    <label for="cardExpiry" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Expiry</label>
+                                    <input type="text" id="cardExpiry" class="select-input" placeholder="MM/YY" maxlength="5" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 14px; font-size:1rem; outline:none;">
                                 </div>
                                 <div style="flex:1;">
                                     <label for="cardCvv" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">CVV</label>
@@ -548,65 +531,36 @@
                         </div>
 
                         <div class="form-group" style="margin-bottom:1rem;">
-                            <label for="cardInstallments" style="display:block; font-weight:600; margin-bottom:0.25rem;">Parcelas</label>
+                            <label for="cardInstallments" style="display:block; font-weight:600; margin-bottom:0.25rem;">Installments</label>
                             <select id="cardInstallments" class="select-input" style="width:100%;">
                                 <option value="1">1x</option>
                             </select>
                         </div>
 
                         <div class="form-group" style="margin-bottom:1rem;">
-                            <label for="cardHolderName" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Nome no Cartão</label>
-                            <input type="text" id="cardHolderName" class="select-input" placeholder="Nome impresso no cartão" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 14px; font-size:1rem; outline:none;">
+                            <label for="cardHolderName" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Name on card</label>
+                            <input type="text" id="cardHolderName" class="select-input" placeholder="Name printed on the card" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 14px; font-size:1rem; outline:none;">
                         </div>
 
                         <div class="form-group" style="margin-bottom:1rem;">
-                            <label for="cardHolderCpf" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">CPF do Titular</label>
+                            <label for="cardHolderCpf" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Cardholder CPF</label>
                             <input type="text" id="cardHolderCpf" class="select-input" placeholder="000.000.000-00" maxlength="14" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 14px; font-size:1rem; outline:none;">
-                            <div style="margin-top:6px; font-size:0.85rem; color:#6b7280;">Obrigatório para transações nacionais (antifraude dos emissores).</div>
+                            <div style="margin-top:6px; font-size:0.85rem; color:#6b7280;">Required for domestic transactions (issuer anti-fraud).</div>
                         </div>
 
                         <div id="pagarmeBadgeCard" style="display:none; align-items:center; justify-content:center; gap:10px; margin-top:8px; margin-bottom:10px; color:#6b7280; font-size:0.85rem; text-align:center;">
                           <img src="/images/logo-pagarme.png" alt="Pagar.me" style="height:18px; width:auto; display:inline-block;"/>
-                          <span>Pagamento processado pela Pagar.me</span>
+                          <span>Payment processed by Pagar.me</span>
                         </div>
                         <div id="stripeBadgeCard" style="display:none; align-items:center; justify-content:center; gap:10px; margin-top:8px; margin-bottom:10px; color:#6b7280; font-size:0.85rem; text-align:center;">
-                          <span>Pagamento processado pela Stripe</span>
+                          <span>Payment processed by Stripe</span>
                         </div>
                         <button id="payWithCardBtn" type="submit" class="continue-button" style="margin-top:0.5rem; display:flex; align-items:center; justify-content:center; position:relative; padding-right:52px;">
-                             <span class="button-text">Realizar pedido</span>
+                             <span class="button-text">Place order</span>
                              <svg class="button-icon" style="position:absolute; right:16px;" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </button>
                     </form>
                 </div>
-
-                <div class="button-container" id="pixPaymentBtnContainer" style="display:flex; flex-direction:column; align-items:center;">
-                  <button id="realizarPedidoBtn" class="continue-button" style="width:100%; max-width:420px; display:flex; align-items:center; justify-content:center; position:relative; padding-right:52px;">
-                    <span class="button-text">Realizar pedido</span>
-                    <svg class="button-icon" style="position:absolute; right:16px;" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <div id="pixContainer" style="display:none; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                 <div style="text-align: center; margin-bottom: 1rem;">
-                    <h4 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Pagamento via PIX</h4>
-                    <p style="font-size: 0.9rem; color: var(--text-secondary);">Aprovação imediata e liberada automaticamente.</p>
-                 </div>
-                 <div style="background: #fff; padding: 1rem; border-radius: 12px; display: inline-block; margin: 0 auto 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    <img id="pixQrcode" src="" alt="QR Code PIX" style="width: 200px; height: 200px; display: none;" />
-                    <div id="pixLoader" style="width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; background: #f8fafc;">
-                       <div class="spinner" style="border-color: #cbd5e1; border-top-color: var(--primary-purple);"></div>
-                    </div>
-                 </div>
-                 <div class="input-group" style="margin-bottom: 1rem;">
-                    <input type="text" id="pixCopiaCola" class="select-input" readonly placeholder="Aguardando código PIX..." style="text-overflow: ellipsis;" />
-                    <button id="copyPixBtn" class="continue-button" style="padding: 0 1rem;">
-                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                    </button>
-                 </div>
-                 <div id="pixResultado" style="margin-top: 1rem; min-height: 24px;"></div>
               </div>
 
 
@@ -621,17 +575,17 @@
       <div id="warranty60Modal" class="modal-overlay" style="display:none;">
         <div class="modal-dialog">
           <div class="modal-header">
-            <h3 class="modal-title">Garantia estendida</h3>
-            <button id="warranty60CloseBtn" class="modal-close" type="button" aria-label="Fechar">✕</button>
+            <h3 class="modal-title">Extended warranty</h3>
+            <button id="warranty60CloseBtn" class="modal-close" type="button" aria-label="Close">×</button>
           </div>
           <div class="modal-body">
-            <p style="margin-top:0.75rem; color: var(--text-secondary);">Apenas com 4 cliques e menos de 30 segundos basta a pessoa colocar o id do pedido de serviço dela no nosso sistema, e clicar no botão solicitar refil e ela recupera a quantidade de curtidas que teve queda.</p>
+            <p style="margin-top:0.75rem; color: var(--text-secondary);">In just 4 clicks and under 30 seconds, the customer can enter their service order ID in our system and request a refill to recover any dropped likes.</p>
             <div id="warrantyGifSlot" style="display:flex; align-items:center; justify-content:center; min-height:160px; margin-top: 1rem;">
-               <img src="/images/reposicao.jpeg" alt="Garantia de Reposição" style="max-width:100%; border-radius:8px;">
+               <img src="/images/reposicao.jpeg" alt="Replacement warranty" style="max-width:100%; border-radius:8px;">
             </div>
           </div>
           <div class="modal-footer">
-            <button id="warranty60CloseBtn2" class="continue-button" type="button">Fechar</button>
+            <button id="warranty60CloseBtn2" class="continue-button" type="button">Close</button>
           </div>
         </div>
       </div>
@@ -639,17 +593,17 @@
       <div id="commentsExampleModal" class="modal-overlay" style="display:none; align-items:center; justify-content:center; z-index:9999;">
         <div class="modal-dialog" style="max-width:400px; width:90%; border-radius: 16px; padding: 1.5rem; position:relative; display:flex; flex-direction:column;">
           <div class="modal-header" style="border:none; padding-bottom:0;">
-            <h3 class="modal-title" style="margin:0 auto;">Exemplo de Comentários</h3>
-            <button id="commentsExampleCloseBtn" class="modal-close" type="button" aria-label="Fechar" style="position:absolute; right:1rem; top:1rem;">✕</button>
+            <h3 class="modal-title" style="margin:0 auto;">Comment examples</h3>
+            <button id="commentsExampleCloseBtn" class="modal-close" type="button" aria-label="Close" style="position:absolute; right:1rem; top:1rem;">×</button>
           </div>
           <div class="modal-body" style="text-align:center;">
             <div style="position:relative; aspect-ratio: 9 / 16; height: clamp(320px, 60vh, 560px); max-width: 100%; margin: 0.75rem auto 0; border-radius:12px; overflow:hidden; box-shadow: var(--shadow); background: #000;">
               <video id="commentsVideoPlayer" src="/images/comentarios.mp4" controls muted playsinline style="position:absolute; inset:0; width:100%; height:100%; object-fit: cover;"></video>
             </div>
-            <p style="margin-top:0.75rem; color: var(--text-secondary);">Comentários de perfis brasileiros, alta qualidade, comentários positivos e sem queda.</p>
+            <p style="margin-top:0.75rem; color: var(--text-secondary);">High-quality profiles, positive comments, and minimal drop.</p>
           </div>
           <div class="modal-footer">
-            <button id="commentsExampleCloseBtn2" class="continue-button" type="button">Fechar</button>
+            <button id="commentsExampleCloseBtn2" class="continue-button" type="button">Close</button>
           </div>
         </div>
       </div>
@@ -657,17 +611,17 @@
       <div id="toolExplanationModal" class="modal-overlay" style="display:none; align-items:center; justify-content:center; z-index:9999;">
         <div class="modal-dialog" style="max-width:400px; width:90%; background: #1e1e1e; border-radius: 16px; padding: 1.5rem; position:relative; display:flex; flex-direction:column;">
           <div class="modal-header" style="border:none; padding-bottom:0;">
-            <h3 class="modal-title" style="margin:0 auto;">Como funciona?</h3>
-            <button id="toolExplanationCloseBtn" class="modal-close" type="button" aria-label="Fechar" style="position:absolute; right:1rem; top:1rem;">✕</button>
+            <h3 class="modal-title" style="margin:0 auto;">How it works</h3>
+            <button id="toolExplanationCloseBtn" class="modal-close" type="button" aria-label="Close" style="position:absolute; right:1rem; top:1rem;">×</button>
           </div>
           <div class="modal-body" style="text-align:center;">
             <div style="position:relative; aspect-ratio: 9 / 16; height: clamp(320px, 60vh, 560px); max-width: 100%; margin: 0.75rem auto 0; border-radius:12px; overflow:hidden; box-shadow: var(--shadow); background: #000;">
               <video id="toolVideoPlayer" src="/images/comentarios.mp4" controls muted playsinline style="position:absolute; inset:0; width:100%; height:100%; object-fit: cover;"></video>
             </div>
-            <p style="margin-top:0.75rem; color: var(--text-secondary);">Entenda como nossa tecnologia exclusiva garante a reposição automática.</p>
+            <p style="margin-top:0.75rem; color: var(--text-secondary);">Learn how our exclusive technology guarantees automatic replacement.</p>
           </div>
           <div class="modal-footer">
-            <button id="toolExplanationCloseBtn2" class="continue-button" type="button">Fechar</button>
+            <button id="toolExplanationCloseBtn2" class="continue-button" type="button">Close</button>
           </div>
         </div>
       </div>
@@ -675,14 +629,14 @@
       <div id="postSelectModal" class="modal-overlay" style="display:none;">
         <div class="modal-dialog">
           <div class="modal-header">
-            <h3 id="postModalTitle" class="modal-title">Selecionar post</h3>
-            <button id="postModalClose" class="modal-close" type="button" aria-label="Fechar">✕</button>
+            <h3 id="postModalTitle" class="modal-title">Select post</h3>
+            <button id="postModalClose" class="modal-close" type="button" aria-label="Close">×</button>
           </div>
           <div class="modal-body">
             <div id="postModalGrid" class="post-grid"></div>
           </div>
           <div class="modal-footer">
-            <button id="postModalClose2" class="continue-button" type="button">Fechar</button>
+            <button id="postModalClose2" class="continue-button" type="button">Close</button>
           </div>
         </div>
       </div>
@@ -690,11 +644,11 @@
     </main>
     <footer class="footer">
       <div class="footer-bar">
-        <a href="https://instagram.com/agencia.oppus" target="_blank" rel="noopener" class="footer-link instagram-link" aria-label="Instagram Agência OPPUS">
+        <a href="https://instagram.com/agencia.You Agency" target="_blank" rel="noopener" class="footer-link instagram-link" aria-label="You Agency on Instagram">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm0 2a3 3 0 00-3 3v10a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H7zm5 3a5 5 0 110 10 5 5 0 010-10zm0 2a3 3 0 100 6 3 3 0 000-6zm5.5-3a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/></svg>
         </a>
-        <span class="footer-center">&copy; 2025 Agência OPPUS. Todos os direitos reservados.</span>
-        <a href="/termos" id="termsLink" class="footer-link">Termos de Uso</a>
+        <span class="footer-center">&copy; 2025 You Agency. All rights reserved.</span>
+        <a href="/termos" id="termsLink" class="footer-link">Terms of Use</a>
       </div>
     </footer>
   </div>
@@ -703,24 +657,24 @@
    <script src="/js/why-us.js"></script>
    <script src="/js/servicos-instagram.js?v=<%= Date.now() %>"></script>
    <div id="toastContainer" class="toast-container"></div>
-  <div id="termsPage" class="client-page" aria-label="Termos de Uso" style="display:none;">
+  <div id="termsPage" class="client-page" aria-label="Terms of Use" style="display:none;">
     <div class="client-page-inner">
-      <h2 class="client-title">Termos de Uso</h2>
-      <p class="client-desc">Exemplo de termos. Substitua por seu conteúdo oficial.</p>
+      <h2 class="client-title">Terms of Use</h2>
+      <p class="client-desc">Sample terms. Replace with your official content.</p>
       <div style="color: var(--text-primary); line-height: 1.6; max-width: 720px; margin: 0 auto;">
-        <p>Bem-vindo à Agência OPPUS. Ao utilizar nossos serviços, você concorda com estes termos. Este texto é um exemplo e deverá ser substituído pelos seus termos oficiais.</p>
-        <p>1. Uso do serviço: você se compromete a utilizar de forma lícita e ética.</p>
-        <p>2. Pagamentos e reembolsos: políticas aplicáveis conforme legislação vigente.</p>
-        <p>3. Privacidade: tratamos seus dados conforme nossa política de privacidade.</p>
+        <p>Welcome to You Agency. By using our services, you agree to these terms. This text is an example and must be replaced with your official terms.</p>
+        <p>1. Service usage: you agree to use the service in a lawful and ethical manner.</p>
+        <p>2. Payments and refunds: applicable policies according to current laws.</p>
+        <p>3. Privacy: we handle your data according to our privacy policy.</p>
       </div>
       <div class="client-actions" style="margin-top: 1rem;">
-        <button id="termsCloseBtn" class="continue-button"><span class="button-text">Fechar</span></button>
+        <button id="termsCloseBtn" class="continue-button"><span class="button-text">Close</span></button>
       </div>
     </div>
   </div>
 
   <style>
-    /* Estilos layout principais removidos (estão em style.css) */
+    /* Estilos layout principais removidos (estÃ£o em style.css) */
     #postSelectModal.modal-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); z-index: 1000; }
     #postSelectModal .modal-dialog { width: 98vw; max-width: 1600px; max-height: calc(100vh - 2rem); overflow: auto; aspect-ratio: 16 / 9; height: auto; }
     #postModalGrid.post-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); }
@@ -883,4 +837,5 @@
   </script>
 </body>
 </html>
+
 

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -64,7 +64,7 @@
           <select name="orderSent" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; min-width: 120px;">
             <option value="all" <%= typeof orderSent !== 'undefined' && orderSent === 'all' ? 'selected' : '' %>>Todos</option>
             <option value="yes" <%= typeof orderSent !== 'undefined' && orderSent === 'yes' ? 'selected' : '' %>>Sim (Enviados)</option>
-            <option value="no" <%= typeof orderSent !== 'undefined' && orderSent === 'no' ? 'selected' : '' %>>Não (Pendentes)</option>
+            <option value="no" <%= typeof orderSent !== 'undefined' && orderSent === 'no' ? 'selected' : '' %>>NÃ£o (Pendentes)</option>
           </select>
         </div>
         <div>
@@ -80,7 +80,7 @@
           <select name="contactStatus" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; min-width: 120px;">
             <option value="all" <%= typeof contactStatus !== 'undefined' && contactStatus === 'all' ? 'selected' : '' %>>Todos</option>
             <option value="yes" <%= typeof contactStatus !== 'undefined' && contactStatus === 'yes' ? 'selected' : '' %>>Sim (>= 1)</option>
-            <option value="no" <%= typeof contactStatus !== 'undefined' && contactStatus === 'no' ? 'selected' : '' %>>Não (0)</option>
+            <option value="no" <%= typeof contactStatus !== 'undefined' && contactStatus === 'no' ? 'selected' : '' %>>NÃ£o (0)</option>
           </select>
         </div>
         <div>
@@ -90,7 +90,7 @@
         <div>
           <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">Arquivado:</label>
           <select name="archived" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; min-width: 120px;">
-            <option value="no" <%= (typeof archived === 'undefined' || !archived || archived === 'no') ? 'selected' : '' %>>Não</option>
+            <option value="no" <%= (typeof archived === 'undefined' || !archived || archived === 'no') ? 'selected' : '' %>>NÃ£o</option>
             <option value="yes" <%= typeof archived !== 'undefined' && archived === 'yes' ? 'selected' : '' %>>Sim</option>
             <option value="all" <%= typeof archived !== 'undefined' && archived === 'all' ? 'selected' : '' %>>Todos</option>
           </select>
@@ -119,11 +119,11 @@
               <th>Data</th>
               <th>Cliente</th>
               <th>Instagram</th>
-              <th>Serviço</th>
+              <th>ServiÃ§o</th>
               <th style="text-align: center;">Pedido Enviado?</th>
               <th style="text-align: center;">Sem Contato?</th>
               <th>Contatos Feitos</th>
-              <th style="text-align: center;">Ações</th>
+              <th style="text-align: center;">AÃ§Ãµes</th>
             </tr>
           </thead>
           <tbody>
@@ -171,7 +171,7 @@
                  try {
                      const td = String(tipoDisplay || '').toLowerCase().trim();
                      const cat = c.includes('curtida') ? 'curtidas' : (c.includes('seguidor') ? 'seguidores' : '');
-                     if (td === 'organicos' || td === 'orgânicos') {
+                     if (td === 'organicos' || td === 'orgÃ¢nicos') {
                          if (cat) tipoDisplay = cat + ' organicos';
                      } else if (td === 'curtidas_organicos') {
                          tipoDisplay = 'curtidas organicos';
@@ -204,7 +204,7 @@
                  try {
                     const t0 = String(order.lastContactText || '').trim();
                     if (t0) {
-                        const snippet = t0.length > 80 ? (t0.slice(0, 80) + '…') : t0;
+                        const snippet = t0.length > 80 ? (t0.slice(0, 80) + 'â€¦') : t0;
                         lastContactTitle = snippet;
                     }
                  } catch (_) {}
@@ -266,7 +266,7 @@
                     <% if (iuClean) { %>
                       <span style="display:inline-flex; align-items:center; gap:6px;">
                         <a href="<%= iuHref %>" target="_blank" rel="noopener noreferrer">@<%= iuClean %></a>
-                        <button type="button" class="copy-iu-btn" data-iu="<%= iuClean %>" style="border:0; background:transparent; padding:2px; cursor:pointer; line-height:0;" title="Copiar usuário">
+                        <button type="button" class="copy-iu-btn" data-iu="<%= iuClean %>" style="border:0; background:transparent; padding:2px; cursor:pointer; line-height:0;" title="Copiar usuÃ¡rio">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -314,7 +314,7 @@
                     <span class="status-msg" id="msg-contactCount-<%= order._id %>">Salvo!</span>
                     <% if (lastContactStr) { %>
                       <div style="font-size: 0.75em; color: #666; margin-top: 4px;" <%= lastContactTitle ? ('title=\"' + lastContactTitle.replace(/\"/g, '&quot;') + '\"') : '' %>>
-                        Última msg: <%= lastContactStr %>
+                        Ãšltima msg: <%= lastContactStr %>
                       </div>
                     <% } %>
                 </td>
@@ -328,9 +328,9 @@
                     <span class="status-msg" id="msg-whatsapp-<%= order._id %>">Enviado!</span>
                     <span class="status-msg" id="msg-archived-<%= order._id %>">Salvo!</span>
                     <% if (lastContactStr) { %>
-                      <div class="actions-meta" <%= lastContactTitle ? ('title=\"' + lastContactTitle.replace(/\"/g, '&quot;') + '\"') : '' %>>Última msg: <%= lastContactStr %></div>
+                      <div class="actions-meta" <%= lastContactTitle ? ('title=\"' + lastContactTitle.replace(/\"/g, '&quot;') + '\"') : '' %>>Ãšltima msg: <%= lastContactStr %></div>
                     <% } else { %>
-                      <div class="actions-meta">Última msg: -</div>
+                      <div class="actions-meta">Ãšltima msg: -</div>
                     <% } %>
                 </td>
               </tr>
@@ -570,7 +570,7 @@
                 if (currentCheckbox) currentCheckbox.checked = false;
             }
         } catch (e) {
-            alert('Erro de conexão: ' + e.message);
+            alert('Erro de conexÃ£o: ' + e.message);
             if (currentCheckbox) currentCheckbox.checked = false;
         }
 
@@ -598,7 +598,7 @@
                 alert('Erro ao salvar: ' + (data.error || 'Erro desconhecido'));
             }
         } catch (e) {
-            alert('Erro de conexão: ' + e.message);
+            alert('Erro de conexÃ£o: ' + e.message);
         }
     }
 
@@ -639,10 +639,10 @@
                 data = await res.json();
             } else {
                 const t = await res.text();
-                data = { ok: false, error: t ? 'Resposta inválida' : 'Resposta vazia' };
+                data = { ok: false, error: t ? 'Resposta invÃ¡lida' : 'Resposta vazia' };
             }
             if (!res.ok || !data || !data.ok) {
-                const msg = (data && (data.error || data.message)) ? String(data.error || data.message) : 'Não encontrado';
+                const msg = (data && (data.error || data.message)) ? String(data.error || data.message) : 'NÃ£o encontrado';
                 if (val) val.textContent = msg;
                 return;
             }
@@ -690,7 +690,7 @@
                 alert('Erro ao salvar: ' + (data.error || 'Erro desconhecido'));
             }
         } catch (e) {
-            alert('Erro de conexão: ' + e.message);
+            alert('Erro de conexÃ£o: ' + e.message);
         }
     }
 
@@ -699,19 +699,19 @@
             const initialPhone = String(phone || '').trim();
             const digits = initialPhone.replace(/[^\d]/g, '');
             const phonePromptDefault = digits ? digits : '';
-            const phoneFinal = digits ? initialPhone : window.prompt('Número do WhatsApp (com DDD). Ex: 11999990000', phonePromptDefault);
+            const phoneFinal = digits ? initialPhone : window.prompt('NÃºmero do WhatsApp (com DDD). Ex: 11999990000', phonePromptDefault);
             if (!phoneFinal) return;
 
             const u = String(insta || '').trim();
             const hasUser = !!(u && u !== '-');
-            const prefix = hasUser ? `Olá! Tudo bem?\n\nSou da equipe OPPUS e estou falando sobre o seu pedido para o Instagram @${u}.` : 'Olá! Tudo bem?\n\nSou da equipe OPPUS e estou falando sobre o seu pedido.';
+            const prefix = hasUser ? `OlÃ¡! Tudo bem?\n\nSou da equipe You Agency e estou falando sobre o seu pedido para o Instagram @${u}.` : 'OlÃ¡! Tudo bem?\n\nSou da equipe You Agency e estou falando sobre o seu pedido.';
             const n = Number(contactCount) || 0;
             const attempt = n <= 0 ? 1 : (n === 1 ? 2 : (n === 2 ? 3 : 4));
             const messages = {
-                1: `${prefix}\n\nIdentificamos que o perfil está privado. Para conseguirmos entregar corretamente, deixe o perfil público por alguns minutos e avise por aqui assim que liberar.`,
-                2: `${prefix}\n\nEstou entrando em contato pela 2ª vez. O perfil ainda consta como privado. Para conseguirmos concluir a entrega, deixe o perfil público por alguns minutos e nos avise por aqui.`,
-                3: `${prefix}\n\n3ª tentativa de contato: o perfil ainda aparece como privado. Para a entrega acontecer, é só deixar público por alguns minutos e responder aqui quando estiver liberado.`,
-                4: `${prefix}\n\nÚltima tentativa de contato: para não perder seguidores e para conseguirmos finalizar a entrega, deixe o perfil público por alguns minutos e avise por aqui. Caso não haja retorno, vamos encerrar as tentativas de contato.`
+                1: `${prefix}\n\nIdentificamos que o perfil estÃ¡ privado. Para conseguirmos entregar corretamente, deixe o perfil pÃºblico por alguns minutos e avise por aqui assim que liberar.`,
+                2: `${prefix}\n\nEstou entrando em contato pela 2Âª vez. O perfil ainda consta como privado. Para conseguirmos concluir a entrega, deixe o perfil pÃºblico por alguns minutos e nos avise por aqui.`,
+                3: `${prefix}\n\n3Âª tentativa de contato: o perfil ainda aparece como privado. Para a entrega acontecer, Ã© sÃ³ deixar pÃºblico por alguns minutos e responder aqui quando estiver liberado.`,
+                4: `${prefix}\n\nÃšltima tentativa de contato: para nÃ£o perder seguidores e para conseguirmos finalizar a entrega, deixe o perfil pÃºblico por alguns minutos e avise por aqui. Caso nÃ£o haja retorno, vamos encerrar as tentativas de contato.`
             };
             const initialText = messages[attempt] || messages[1];
             const text = window.prompt('Mensagem para enviar no WhatsApp:', initialText);
@@ -803,7 +803,7 @@
                             applyHiddenOrdersToPrivadosTable();
                             initNoContactEmailUI();
                         })
-                        .catch(err => console.error('Erro na busca instantânea:', err));
+                        .catch(err => console.error('Erro na busca instantÃ¢nea:', err));
                 }, 300); // 300ms debounce
             });
             
@@ -838,3 +838,4 @@
   </script>
 </body>
 </html>
+

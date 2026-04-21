@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Admin - Agência OPPUS</title>
+    <title>Login Admin - AgÃªncia You Agency</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -113,7 +113,7 @@
         
         <form id="loginForm">
             <div class="form-group">
-                <label for="username">Usuário</label>
+                <label for="username">UsuÃ¡rio</label>
                 <input type="text" id="username" name="username" class="form-input" required autofocus>
             </div>
             
@@ -150,7 +150,7 @@
                 if (data.success) {
                     window.location.href = '/painel';
                 } else {
-                    errorDiv.textContent = data.error || 'Credenciais inválidas';
+                    errorDiv.textContent = data.error || 'Credenciais invÃ¡lidas';
                     errorDiv.style.display = 'block';
                     btn.disabled = false;
                     btn.textContent = 'Entrar';
@@ -166,3 +166,4 @@
     </script>
 </body>
 </html>
+

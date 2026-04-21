@@ -1,9 +1,10 @@
 <!doctype html>
-<html lang="pt-BR">
+<% const isEn = String(typeof language !== 'undefined' ? language : '').toLowerCase() === 'en'; %>
+<html lang="<%= isEn ? 'en' : 'pt-BR' %>">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Consulta de Pedido</title>
+  <title><%= isEn ? 'Order Lookup' : 'Consulta de Pedido' %></title>
   <link href="/css/style.css" rel="stylesheet" />
   <link href="/css/perfil.css" rel="stylesheet" />
 </head>
@@ -14,15 +15,15 @@
       <div class="client-page-inner">
         <div class="client-actions" style="justify-content: center; margin-bottom: 0.75rem;">
           <button id="clientPageBackBtn" class="continue-button btn-back" style="margin: 0 auto;">
-            <span class="button-text">Voltar</span>
+            <span class="button-text"><%= isEn ? 'Back' : 'Voltar' %></span>
           </button>
         </div>
-        <h2 class="client-title">Consulta de Pedido</h2>
-        <p class="client-desc">Digite seu número de telefone para localizar seu pedido.</p>
+        <h2 class="client-title"><%= isEn ? 'Order Lookup' : 'Consulta de Pedido' %></h2>
+        <p class="client-desc"><%= isEn ? 'Enter your phone number to find your order.' : 'Digite seu número de telefone para localizar seu pedido.' %></p>
         <div class="client-form">
-          <input id="clientPhoneInputPage" type="tel" class="select-input" placeholder="(DDD) 9XXXX-XXXX" />
+          <input id="clientPhoneInputPage" type="tel" class="select-input" placeholder="<%= isEn ? 'Phone (DDD + number)' : '(DDD) 9XXXX-XXXX' %>" />
           <div class="client-actions" style="justify-content: center;">
-            <button id="clientPageConsultBtn" class="continue-button"><span class="button-text">Consultar</span></button>
+            <button id="clientPageConsultBtn" class="continue-button"><span class="button-text"><%= isEn ? 'Search' : 'Consultar' %></span></button>
           </div>
         </div>
         <div id="clientPageOrders" class="client-orders"></div>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acesso Restrito - Agência OPPUS</title>
+    <title>Acesso Restrito - You Agency</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/perfil.css">
     <link rel="stylesheet" href="/css/used.css">
@@ -18,7 +18,7 @@
             <div class="profile-section" style="max-width:480px;margin:0 auto;padding:48px 24px;background:#fff;border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,0.07);text-align:center;">
                 <svg width="80" height="80" viewBox="0 0 24 24" fill="none" style="margin-bottom:24px;"><circle cx="12" cy="12" r="10" stroke="#E53E3E" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="#E53E3E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 <h1 class="error-title" style="color:#2D3748;font-size:2rem;font-weight:700;margin-bottom:12px;">Acesso Restrito</h1>
-                <p class="error-message" style="color:#4A5568;font-size:1.1rem;margin-bottom:32px;">Esta página só pode ser acessada através de um link temporário válido.</p>
+                <p class="error-message" style="color:#4A5568;font-size:1.1rem;margin-bottom:32px;">Esta pÃ¡gina sÃ³ pode ser acessada atravÃ©s de um link temporÃ¡rio vÃ¡lido.</p>
                 <div class="search-container" style="margin-bottom:24px;"></div>
                 <a href="https://w.app/agoppus" target="_blank" class="whatsapp-btn" style="display:inline-block;background:#25d366;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:1.1em;transition:background 0.2s;">Fale conosco no WhatsApp para adquirir um dos planos</a>
                 <div id="paymentCard" style="display:none;margin-top:16px;">
@@ -27,7 +27,7 @@
             </div>
         </main>
         <footer class="footer">
-            <p>&copy; 2025 Agência OPPUS. Todos os direitos reservados.</p>
+            <p>&copy; 2025 You Agency. All rights reserved.</p>
         </footer>
     </div>
     <script>
@@ -40,24 +40,24 @@
           var origin = String(from || referrer || '').toLowerCase();
           if (msgEl) {
             if (origin.includes('/refil')) {
-              msgEl.textContent = 'Acesso ao refil só é permitido com um link temporário válido.';
+              msgEl.textContent = 'Acesso ao refil sÃ³ Ã© permitido com um link temporÃ¡rio vÃ¡lido.';
             } else if (origin.includes('/perfil')) {
-              msgEl.textContent = 'A página de perfil exige um link temporário válido.';
+              msgEl.textContent = 'A pÃ¡gina de perfil exige um link temporÃ¡rio vÃ¡lido.';
             } else {
-              msgEl.textContent = 'Esta página só pode ser acessada através de um link temporário válido.';
+              msgEl.textContent = 'Esta pÃ¡gina sÃ³ pode ser acessada atravÃ©s de um link temporÃ¡rio vÃ¡lido.';
             }
           }
           var btnEl = document.querySelector('.whatsapp-btn');
           if (btnEl && origin.includes('/refil')) {
             btnEl.outerHTML = '<div class="service-card" id="orderBumpInline" style="display:block;">\
               <div class="card-content">\
-                <h3 class="card-title" style="background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; display: block; text-align: center; width: 100%;">Oferta exclusivas para você</h3>\
+                <h3 class="card-title" style="background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; display: block; text-align: center; width: 100%;">Oferta exclusivas para vocÃª</h3>\
                 <div class="card-desc promo-list">\
                   <label class="promo-item upgrade">\
                     <div class="promo-content">\
-                      <div class="promo-highlight" id="orderBumpHighlight">Extensão de Refil</div>\
+                      <div class="promo-highlight" id="orderBumpHighlight">ExtensÃ£o de Refil</div>\
                       <div class="promo-title">por 6 meses</div>\
-                      <div id="orderBumpText" class="promo-desc">Adicione extensão de refil ao seu pedido.</div>\
+                      <div id="orderBumpText" class="promo-desc">Adicione extensÃ£o de refil ao seu pedido.</div>\
                       <div class="promo-prices" data-promo="upgrade">\
                         <span class="new-price">R$ 9,90</span>\
                       </div>\
@@ -65,7 +65,7 @@
                   </label>\
                 </div>\
                 <div class="button-container" style="margin-top: 12px;">\
-                  <button id="generateRefilPaymentBtn" class="continue-button"><span class="button-text">Gerar pagamento de extensão</span></button>\
+                  <button id="generateRefilPaymentBtn" class="continue-button"><span class="button-text">Gerar pagamento de extensÃ£o</span></button>\
                 </div>\
               </div>\
             </div>';
@@ -85,9 +85,9 @@
               var imgHtml = qrImage ? ('<img src="'+qrImage+'" alt="QR Code Pix" style="width: 180px; height: 180px; border-radius: 8px; display: block; margin: 0 auto 0.75rem; background: #fff;" />') : '';
               var codeFieldHtml = brCode ? ('<div style="margin-bottom: 0.5rem; text-align: center;">\
                 <input id="'+inputId+'" type="text" readonly value="'+brCode+'" style="width: 100%; padding: 0.5rem; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(0,0,0,0.15); background: rgba(255,255,255,0.85); color: #111827; text-align: center;" />\
-              </div>') : '<div style="color:#111827;">Não foi possível exibir o código Pix.</div>';
+              </div>') : '<div style="color:#111827;">NÃ£o foi possÃ­vel exibir o cÃ³digo Pix.</div>';
               var copyBtnHtml = brCode ? ('<div class="button-container" style="margin-bottom: 0.5rem;">\
-                <button id="'+copyButtonId+'" class="continue-button"><span class="button-text">Copiar código Pix</span></button>\
+                <button id="'+copyButtonId+'" class="continue-button"><span class="button-text">Copiar cÃ³digo Pix</span></button>\
               </div>') : '';
               var textColor = (document.body.classList.contains('theme-light') ? '#000' : '#fff');
               var waitingHtml = '<div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; color:'+textColor+';">\
@@ -129,7 +129,7 @@
                       copyBtn.disabled = true;
                       setTimeout(function(){
                         copyBtn.disabled = false;
-                        if (span) span.textContent = prev || 'Copiar código Pix';
+                        if (span) span.textContent = prev || 'Copiar cÃ³digo Pix';
                       }, 1200);
                     } catch(_) {}
                   } catch(_) {}
@@ -152,7 +152,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       value: cents,
-                      comment: 'Extensão de refil',
+                      comment: 'ExtensÃ£o de refil',
                       customer: { name: name, phone: phone },
                       additionalInfo: [ { key: 'tipo_servico', value: 'refil_extensao' }, { key: 'refil_link_id', value: token }, { key: 'refil_mode', value: 'life' } ]
                     })
@@ -174,3 +174,4 @@
     </script>
 </body>
 </html>
+

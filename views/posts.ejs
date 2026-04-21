@@ -21,14 +21,13 @@
   <div class="container checkout-page">
     <div class="site-brand" aria-label="Marca do site">
       <a href="/checkout" style="display:flex;align-items:center;gap:0.5rem;text-decoration:none;">
-        <img src="/images/logo.png" alt="Agência Oppus" class="site-logo logo-dark" />
-        <img src="/images/logo escura.png" alt="Agência Oppus" class="site-logo logo-light" />
-        <span class="site-brand-text">Agência Oppus</span>
+        <span class="site-logo-mark" aria-hidden="true">Y</span>
+        <span class="site-brand-text">You Agency</span>
       </a>
     </div>
     <header class="header">
       <h1 class="title">Posts do Instagram</h1>
-      <p class="subtitle">Últimos 8 posts de <span id="postsUser"><%= String(username || '-') %></span></p>
+      <p class="subtitle">Ãšltimos 8 posts de <span id="postsUser"><%= String(username || '-') %></span></p>
       <div style="display:flex;gap:0.5rem;align-items:center;">
         <input id="postsUsernameInput" type="text" placeholder="@usuario" value="<%= String(username || '') %>" style="padding:0.4rem;border-radius:6px;border:1px solid var(--border-color);" />
         <button id="loadPostsBtn" class="continue-button"><span class="button-text">Carregar</span></button>

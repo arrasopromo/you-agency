@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <title>Informações do pedido</title>
+  <title>InformaÃ§Ãµes do pedido</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <link href="/css/style.css?v=2" rel="stylesheet" />
   <link href="/css/perfil.css?v=2" rel="stylesheet" />
@@ -175,15 +175,15 @@
   </style>
 </head>
 <body class="theme-light has-fixed-menu">
-  <!-- Script de remoção de parâmetros removido para permitir F5 (refresh) -->
+  <!-- Script de remoÃ§Ã£o de parÃ¢metros removido para permitir F5 (refresh) -->
   <%- include('partials/menu') %>
   <div class="container checkout-page">
-    <!-- clientPage removido para forçar redirecionamento para /cliente -->
+    <!-- clientPage removido para forÃ§ar redirecionamento para /cliente -->
 
     <main class="main-content">
       <section class="section-block">
 
-      <% if ((function(){ var s=String(order.status || (order.expay && order.expay.status) || (order.woovi && order.woovi.status) || '').toLowerCase(); return (s==='pago'||s==='paid'||s==='completed'); })()) { %>
+      <% if ((function(){ var s=String(order.status || (order.paghiper && order.paghiper.status) || (order.expay && order.expay.status) || (order.woovi && order.woovi.status) || '').toLowerCase(); return (s==='pago'||s==='paid'||s==='completed'); })()) { %>
         <div class="approved-payment-section" style="text-align: center; margin: 0 0 2rem 0; animation: fadeInUp 0.6s ease-out;">
             <div style="display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 80px; border-radius: 50%; background-color: #22c55e; margin-bottom: 1rem; box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.3);">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -251,7 +251,7 @@
                   }
                 %>
                 <% if (showRefilTool) { %>
-                <p style="color: var(--text-secondary); font-size: 1rem; margin: 0; text-align:center;">Acesse a ferramenta de reposição do seu pedido</p>
+                <p style="color: var(--text-secondary); font-size: 1rem; margin: 0; text-align:center;">Acesse a ferramenta de reposiÃ§Ã£o do seu pedido</p>
                 <a href="<%= refilHref %>" style="display: inline-block; background: var(--instagram-gradient); color: white; padding: 0.75rem 2rem; border-radius: 999px; text-decoration: none; font-weight: 600; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(220, 39, 67, 0.4);">
                     Acessar ferramenta
                 </a>
@@ -283,8 +283,8 @@
             </div>
             <div>
                <strong style="display: block; color: #92400e; margin-bottom: 0.25rem;">Perfil Privado Detectado</strong>
-               <span style="color: #b45309; font-size: 0.95rem;">Seu perfil do Instagram está privado. Por favor, <strong>altere para público</strong> imediatamente para receber o serviço corretamente e evitar atrasos.</span>
-               <button id="retryPrivacyBtn" style="display: inline-block; margin-top: 0.75rem; background: #d97706; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: background 0.2s;">Já deixei público</button>
+               <span style="color: #b45309; font-size: 0.95rem;">Seu perfil do Instagram estÃ¡ privado. Por favor, <strong>altere para pÃºblico</strong> imediatamente para receber o serviÃ§o corretamente e evitar atrasos.</span>
+               <button id="retryPrivacyBtn" style="display: inline-block; margin-top: 0.75rem; background: #d97706; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: background 0.2s;">JÃ¡ deixei pÃºblico</button>
             </div>
           </div>
         </div>
@@ -305,7 +305,7 @@
           var isOrganicFollowersCheck = catServCheck !== 'curtidas' && catServCheck !== 'visualizacoes' && tServCheck.includes('organico');
           
           // Check payment status (must be paid)
-          var paymentStatus = String(order.status || (order.expay && order.expay.status) || (order.woovi && order.woovi.status) || '').toLowerCase();
+          var paymentStatus = String(order.status || (order.paghiper && order.paghiper.status) || (order.expay && order.expay.status) || (order.woovi && order.woovi.status) || '').toLowerCase();
           var isPaid = (paymentStatus === 'pago' || paymentStatus === 'paid' || paymentStatus === 'completed');
 
           var statusRawCheck = '';
@@ -331,7 +331,7 @@
                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 9V11M12 15H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div style="color: #1e3a8a; line-height: 1.3;">
-               <strong>Serviço de qualidade superior, por esse motivo:</strong> O prazo para finalização é de até 48h.
+               <strong>ServiÃ§o de qualidade superior, por esse motivo:</strong> O prazo para finalizaÃ§Ã£o Ã© de atÃ© 48h.
             </div>
         </div>
         <% } %>
@@ -348,8 +348,8 @@
             <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
                 
                 <div class="info-item">
-                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Serviço Contratado</div>
-                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary); text-transform: capitalize;" id="orderTipo"><%= (function(){ var map=order.additionalInfoMapPaid||{}; var t=String(map['tipo_servico']||order.tipo||order.tipoServico||'-').toLowerCase(); var c=String(map['categoria_servico']||'').toLowerCase(); var lbl=t; if(c==='curtidas'){ if(t==='mistos') lbl='Curtidas Mistas'; else if(t==='brasileiros'||t==='curtidas_brasileiras') lbl='Curtidas Brasileiras'; else if(t==='organicos'||t==='curtidas_reais') lbl='Curtidas Brasileiras Reais'; } else if(c==='visualizacoes'){ if(t==='visualizacoes_reels'||t==='views'||t==='reels') lbl='Visualizações Reels'; else lbl='Visualizações'; } else { if(t==='mistos') lbl='Seguidores Mistos'; else if(t==='brasileiros') lbl='Seguidores Brasileiros'; else if(t==='organicos') lbl='Seguidores brasileiros e reais'; } return lbl; })() %></div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">ServiÃ§o Contratado</div>
+                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary); text-transform: capitalize;" id="orderTipo"><%= (function(){ var map=order.additionalInfoMapPaid||{}; var t=String(map['tipo_servico']||order.tipo||order.tipoServico||'-').toLowerCase(); var c=String(map['categoria_servico']||'').toLowerCase(); var lbl=t; if(c==='curtidas'){ if(t==='mistos') lbl='Curtidas Mistas'; else if(t==='brasileiros'||t==='curtidas_brasileiras') lbl='Curtidas Padrao'; else if(t==='organicos'||t==='curtidas_reais') lbl='Curtidas Premium'; } else if(c==='visualizacoes'){ if(t==='visualizacoes_reels'||t==='views'||t==='reels') lbl='VisualizaÃ§Ãµes Reels'; else lbl='VisualizaÃ§Ãµes'; } else { if(t==='mistos') lbl='Seguidores Mistos'; else if(t==='brasileiros') lbl='Seguidores Padrao'; else if(t==='organicos') lbl='Seguidores Premium'; } return lbl; })() %></div>
                 </div>
 
                 <div class="info-item">
@@ -373,7 +373,7 @@
                       <% if (iuCleanPedido) { %>
                         <span style="display:inline-flex; align-items:center; gap:6px;">
                           <a href="<%= iuHrefPedido %>" target="_blank" rel="noopener noreferrer" style="color: var(--primary-purple); text-decoration: none;">@<%= iuCleanPedido %></a>
-                          <button type="button" class="copy-iu-btn" data-copy="<%= iuCleanPedido %>" title="Copiar usuário" aria-label="Copiar usuário" style="border:0; background:transparent; padding:2px; cursor:pointer; line-height:0;">
+                          <button type="button" class="copy-iu-btn" data-copy="<%= iuCleanPedido %>" title="Copiar usuÃ¡rio" aria-label="Copiar usuÃ¡rio" style="border:0; background:transparent; padding:2px; cursor:pointer; line-height:0;">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -388,12 +388,12 @@
 
                 <div class="info-item">
                     <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Data Pagamento</div>
-                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);" id="paidAtLocal"><%= (function(){ var raw=(order.expay&&order.expay.paidAt)||(order.woovi&&order.woovi.paidAt)||order.paidAt||null; var st=String(order.status||(order.expay&&order.expay.status)||(order.woovi&&order.woovi.status)||'').toLowerCase(); if(!raw && (st==='pago'||st==='paid'||st==='completed')) raw=order.createdAt||null; if(!raw) return '-'; try{ var d=new Date(raw); if(!d || isNaN(d.getTime())) return '-'; try{ var parts=new Intl.DateTimeFormat('pt-BR',{ timeZone:'America/Sao_Paulo', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false }).formatToParts(d); var mp={}; parts.forEach(function(p){ mp[p.type]=p.value; }); if(mp.day&&mp.month&&mp.year&&mp.hour&&mp.minute){ return mp.day+'/'+mp.month+'/'+mp.year+' às '+mp.hour+':'+mp.minute; } }catch(_){ } var sp=new Date(d.getTime() - 3*60*60*1000); var dd=String(sp.getUTCDate()).padStart(2,'0'); var mm=String(sp.getUTCMonth()+1).padStart(2,'0'); var yyyy=sp.getUTCFullYear(); var hh=String(sp.getUTCHours()).padStart(2,'0'); var mn=String(sp.getUTCMinutes()).padStart(2,'0'); return dd+'/'+mm+'/'+yyyy+' às '+hh+':'+mn; }catch(_){ return '-'; } })() %></div>
+                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);" id="paidAtLocal"><%= (function(){ var raw=(order.paghiper&&order.paghiper.paidAt)||(order.expay&&order.expay.paidAt)||(order.woovi&&order.woovi.paidAt)||order.paidAt||null; var st=String(order.status||(order.paghiper&&order.paghiper.status)||(order.expay&&order.expay.status)||(order.woovi&&order.woovi.status)||'').toLowerCase(); if(!raw && (st==='pago'||st==='paid'||st==='completed')) raw=order.createdAt||null; if(!raw) return '-'; try{ var d=new Date(raw); if(!d || isNaN(d.getTime())) return '-'; try{ var parts=new Intl.DateTimeFormat('pt-BR',{ timeZone:'America/Sao_Paulo', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false }).formatToParts(d); var mp={}; parts.forEach(function(p){ mp[p.type]=p.value; }); if(mp.day&&mp.month&&mp.year&&mp.hour&&mp.minute){ return mp.day+'/'+mp.month+'/'+mp.year+' Ã s '+mp.hour+':'+mp.minute; } }catch(_){ } var sp=new Date(d.getTime() - 3*60*60*1000); var dd=String(sp.getUTCDate()).padStart(2,'0'); var mm=String(sp.getUTCMonth()+1).padStart(2,'0'); var yyyy=sp.getUTCFullYear(); var hh=String(sp.getUTCHours()).padStart(2,'0'); var mn=String(sp.getUTCMinutes()).padStart(2,'0'); return dd+'/'+mm+'/'+yyyy+' Ã s '+hh+':'+mn; }catch(_){ return '-'; } })() %></div>
                 </div>
 
                 <div class="info-item" style="grid-column: 1 / -1; border-top: 1px dashed var(--border-color); padding-top: 1rem;">
                     <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Adicionais</div>
-                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);" id="orderBumpsBox"><%= (function(){ var arrPaid=Array.isArray(order.additionalInfoPaid)?order.additionalInfoPaid:[]; var arr=Array.isArray(order.additionalInfo)?order.additionalInfo:[]; var map=order.additionalInfoMapPaid||{}; var bs=(function(){ var fp=arrPaid.find(function(it){return it&&it.key==='order_bumps'}); if(fp&&typeof fp.value==='string'&&fp.value) return fp.value; var f=arr.find(function(it){return it&&it.key==='order_bumps'}); if(f&&typeof f.value==='string'&&f.value) return f.value; if(map&&typeof map['order_bumps']==='string'&&map['order_bumps']) return map['order_bumps']; return ''; })(); if(!bs) return 'Nenhum adicional selecionado'; var parts=bs.split(';').map(function(p){return p.trim();}).filter(Boolean); var labels=parts.map(function(p){ var kv=p.split(':'); var k=kv[0]; var v=kv[1]; if(k==='views') return 'Visualizações ('+v+')'; if(k==='likes') return 'Curtidas ('+v+')'; if(k==='comments') return 'Comentários ('+v+')'; return k+' ('+v+')'; }); return labels.join(', '); })() %></div>
+                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);" id="orderBumpsBox"><%= (function(){ var arrPaid=Array.isArray(order.additionalInfoPaid)?order.additionalInfoPaid:[]; var arr=Array.isArray(order.additionalInfo)?order.additionalInfo:[]; var map=order.additionalInfoMapPaid||{}; var bs=(function(){ var fp=arrPaid.find(function(it){return it&&it.key==='order_bumps'}); if(fp&&typeof fp.value==='string'&&fp.value) return fp.value; var f=arr.find(function(it){return it&&it.key==='order_bumps'}); if(f&&typeof f.value==='string'&&f.value) return f.value; if(map&&typeof map['order_bumps']==='string'&&map['order_bumps']) return map['order_bumps']; return ''; })(); if(!bs) return 'Nenhum adicional selecionado'; var parts=bs.split(';').map(function(p){return p.trim();}).filter(Boolean); var labels=parts.map(function(p){ var kv=p.split(':'); var k=kv[0]; var v=kv[1]; if(k==='views') return 'VisualizaÃ§Ãµes ('+v+')'; if(k==='likes') return 'Curtidas ('+v+')'; if(k==='comments') return 'ComentÃ¡rios ('+v+')'; return k+' ('+v+')'; }); return labels.join(', '); })() %></div>
                 </div>
 
                 <div class="info-item">
@@ -441,7 +441,7 @@
                    <div style="display: flex; align-items: center; gap: 0.25rem;">
                        <span style="font-family: monospace; font-size: 1.1rem; font-weight: 700; color: var(--text-primary);" id="orderNumberId"><%= providerOidsInfo.text %></span>
                        <div style="position: relative; display: flex; align-items: center;">
-                           <button id="copyOrderBtn" class="copy-icon-btn" aria-label="Copiar número do pedido" style="background: transparent; border: none; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; cursor: pointer;">
+                           <button id="copyOrderBtn" class="copy-icon-btn" aria-label="Copiar nÃºmero do pedido" style="background: transparent; border: none; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; cursor: pointer;">
                               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/><rect x="3" y="3" width="10" height="10" rx="2" fill="currentColor" opacity="0.4"/></svg>
                            </button>
                            <span id="copyFeedback" style="opacity: 0; pointer-events: none; transition: opacity 0.3s; position: absolute; left: 100%; margin-left: 8px; background: #333; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; white-space: nowrap; z-index: 10;">Copiado!</span>
@@ -463,15 +463,15 @@
                     if (/error|fail|invalid/.test(t)) return 'Parcial';
                     if (/pend/.test(t)) return 'Pendente';
                     if (/process|progress|start|running|created/.test(t)) return 'Em andamento';
-                    if (/complete|success|finished|done|conclu/.test(t)) return 'Concluído';
+                    if (/complete|success|finished|done|conclu/.test(t)) return 'ConcluÃ­do';
                     return s;
                   };
                   var stMap = (function(){
                     if (isMultiSplit) {
                       var normalized = multiOrdersView.map(function(it){ return mapStatusBadge(it && it.status ? it.status : ''); }).filter(Boolean);
                       if (!normalized.length) return '-';
-                      var allDone = normalized.every(function(x){ return x === 'Concluído'; });
-                      if (allDone) return 'Concluído';
+                      var allDone = normalized.every(function(x){ return x === 'ConcluÃ­do'; });
+                      if (allDone) return 'ConcluÃ­do';
                       var anyProgress = normalized.some(function(x){ return x === 'Em andamento'; });
                       if (anyProgress) return 'Em andamento';
                       var anyPending = normalized.some(function(x){ return x === 'Pendente'; });
@@ -490,13 +490,13 @@
                 %>
                 <% if (!isMultiSplit) { %>
                   <div class="info-item status-box-custom" style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; background: rgba(107, 70, 193, 0.1); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(107, 70, 193, 0.2);">
-                      <span style="font-size: 1rem; font-weight: 500; color: var(--primary-purple); font-family: inherit;">Status do Serviço</span>
-                      <span id="famaServicoStatus" class="status-badge <%= (stMap==='Concluído'?'status-green':(stMap==='Cancelado'?'status-red':(stMap==='Em andamento'?'status-yellow':(stMap==='Pendente'?'status-blue':'')))) %>" style="font-size: 1rem; font-weight: 500; letter-spacing: 0.05em; font-family: inherit;"><%= stMap %></span>
+                      <span style="font-size: 1rem; font-weight: 500; color: var(--primary-purple); font-family: inherit;">Status do ServiÃ§o</span>
+                      <span id="famaServicoStatus" class="status-badge <%= (stMap==='ConcluÃ­do'?'status-green':(stMap==='Cancelado'?'status-red':(stMap==='Em andamento'?'status-yellow':(stMap==='Pendente'?'status-blue':'')))) %>" style="font-size: 1rem; font-weight: 500; letter-spacing: 0.05em; font-family: inherit;"><%= stMap %></span>
                   </div>
                 <% } %>
                 <% if (multiOrdersView && multiOrdersView.length > 0) { %>
                 <div class="info-item" style="grid-column: 1 / -1; margin-top: 0.75rem;">
-                  <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Divisão por Post</div>
+                  <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">DivisÃ£o por Post</div>
                   <div style="overflow:auto;">
                     <table class="multi-orders-table" style="width:100%; border-collapse: collapse; font-size: 0.95rem;">
                       <thead>
@@ -512,7 +512,7 @@
                           var mapStatus = mapStatusBadge;
                           multiOrdersView.forEach(function(it, idx){
                             var link = it && it.link ? String(it.link) : '';
-                            link = link.replace(/^[`"'“”‘’]+/, '').replace(/[`"'“”‘’]+$/, '').trim();
+                            link = link.replace(/^[`"'â€œâ€â€˜â€™]+/, '').replace(/[`"'â€œâ€â€˜â€™]+$/, '').trim();
                             if (link && /^www\./i.test(link)) link = 'https://' + link;
                             var qty = it && it.quantity ? Number(it.quantity) : 0;
                             var oid = (it && it.orderId != null) ? String(it.orderId) : ((it && it.id != null) ? String(it.id) : '');
@@ -566,11 +566,11 @@
     <div class="modal-dialog" style="max-width:480px; width:95%; border-radius:16px;">
       <div class="modal-header">
         <h3 class="modal-title" style="flex:1; text-align:center;">Mais seguidores com 25% OFF</h3>
-        <button id="upsellFollowersClose" class="modal-close" type="button" aria-label="Fechar">✕</button>
+        <button id="upsellFollowersClose" class="modal-close" type="button" aria-label="Fechar">âœ•</button>
       </div>
       <div class="modal-body">
         <div id="upsellExclusiveBanner" aria-live="polite" style="background:#22C55E; border-radius:14px; padding:0.9rem 1.25rem; margin-bottom:0.85rem; border:1px solid #15803D; color:#f9fafb; box-shadow:0 8px 16px rgba(22, 163, 74, 0.25);">
-          <div class="exclusive-title">Desconto exclusivo disponível por tempo limitado</div>
+          <div class="exclusive-title">Desconto exclusivo disponÃ­vel por tempo limitado</div>
           <div class="exclusive-countdown">Expira em <span id="upsellTimer">10:00</span></div>
         </div>
         <p style="margin-top:0; margin-bottom:0.75rem; color:var(--text-secondary);">
@@ -578,8 +578,8 @@
         </p>
         <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap;">
           <button type="button" class="continue-button" data-upsell-tipo="mistos" style="flex:1 1 100px; padding:0.4rem 0.75rem; font-size:0.85rem;">Seguidores mundiais</button>
-          <button type="button" class="continue-button" data-upsell-tipo="brasileiros" style="flex:1 1 100px; padding:0.4rem 0.75rem; font-size:0.85rem; background:transparent; color:var(--text-primary); border:1px solid var(--border-color);">Seguidores BR</button>
-          <button type="button" class="continue-button" data-upsell-tipo="organicos" style="flex:1 1 120px; padding:0.4rem 0.75rem; font-size:0.85rem; background:transparent; color:var(--text-primary); border:1px solid var(--border-color);">Brasileiros reais</button>
+          <button type="button" class="continue-button" data-upsell-tipo="brasileiros" style="flex:1 1 100px; padding:0.4rem 0.75rem; font-size:0.85rem; background:transparent; color:var(--text-primary); border:1px solid var(--border-color);">Seguidores Padrao</button>
+          <button type="button" class="continue-button" data-upsell-tipo="organicos" style="flex:1 1 120px; padding:0.4rem 0.75rem; font-size:0.85rem; background:transparent; color:var(--text-primary); border:1px solid var(--border-color);">Seguidores Premium</button>
         </div>
         <div id="upsellFollowersList" class="plan-cards" style="margin-bottom:0.75rem;"></div>
         <div id="upsellPixContainer" style="margin-top:0.25rem; display:none;"></div>
@@ -667,7 +667,7 @@
           var parts = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(d);
           var mp = {};
           parts.forEach(function(p){ mp[p.type] = p.value; });
-          if (mp.day && mp.month && mp.year && mp.hour && mp.minute) return mp.day + '/' + mp.month + '/' + mp.year + ' às ' + mp.hour + ':' + mp.minute;
+          if (mp.day && mp.month && mp.year && mp.hour && mp.minute) return mp.day + '/' + mp.month + '/' + mp.year + ' Ã s ' + mp.hour + ':' + mp.minute;
         } catch(_) {}
         try {
           var sp = new Date(d.getTime() - 3 * 60 * 60 * 1000);
@@ -676,7 +676,7 @@
           var yyyy = sp.getUTCFullYear();
           var hh = String(sp.getUTCHours()).padStart(2,'0');
           var min = String(sp.getUTCMinutes()).padStart(2,'0');
-          return dd + '/' + mm + '/' + yyyy + ' às ' + hh + ':' + min;
+          return dd + '/' + mm + '/' + yyyy + ' Ã s ' + hh + ':' + min;
         } catch(_) {}
         return null;
       }
@@ -702,7 +702,7 @@
           if (/partial/.test(t)) return 'Parcial';
           if (/pend/.test(t)) return 'Pendente';
           if (/process|progress|start|running|created/.test(t)) return 'Em andamento';
-          if (/complete|success|finished|done|conclu/.test(t)) return 'Concluído';
+          if (/complete|success|finished|done|conclu/.test(t)) return 'ConcluÃ­do';
           return s;
         };
         if (initialNorm && elFamaInit) {
@@ -737,7 +737,7 @@
         }
       } catch(_) {}
       try {
-        var paidRaw = (orderData && orderData.expay && orderData.expay.paidAt) || (orderData && orderData.woovi && orderData.woovi.paidAt) || orderData.paidAt || null;
+        var paidRaw = (orderData && orderData.paghiper && orderData.paghiper.paidAt) || (orderData && orderData.expay && orderData.expay.paidAt) || (orderData && orderData.woovi && orderData.woovi.paidAt) || orderData.paidAt || null;
         var txt = formatDateTimeSP(paidRaw);
         var el = document.getElementById('paidAtLocal');
         if (el && txt) el.textContent = txt;
@@ -819,7 +819,7 @@
           if (!upsellPixContainer) return;
           if (!valueCents || !qtdLocal) return;
           upsellPixContainer.style.display = 'block';
-          upsellPixContainer.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; color:#166534;"><div class="oppus-spinner" style="width:24px;height:24px;border:3px solid rgba(22,101,52,0.15);border-top-color:#16a34a;border-radius:50%;animation:oppusSpin 1s linear infinite;"></div><span>Gerando Pix do seu upsell...</span></div>';
+          upsellPixContainer.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; color:#166534;"><div class="You Agency-spinner" style="width:24px;height:24px;border:3px solid rgba(22,101,52,0.15);border-top-color:#16a34a;border-radius:50%;animation:oppusSpin 1s linear infinite;"></div><span>Gerando Pix do seu upsell...</span></div>';
           var orderDataLocal = orderData || {};
           var nameValue = '';
           var phoneValue = '';
@@ -866,7 +866,7 @@
               oid = String(qs.get('orderID') || '').trim();
             } catch(_) {}
             if (!ident && orderDataLocal) {
-              ident = String(orderDataLocal.identifier || (orderDataLocal.woovi && orderDataLocal.woovi.identifier) || '').trim();
+              ident = String(orderDataLocal.identifier || (orderDataLocal.paghiper && orderDataLocal.paghiper.transactionId) || (orderDataLocal.expay && orderDataLocal.expay.transactionId) || (orderDataLocal.woovi && orderDataLocal.woovi.identifier) || '').trim();
             }
             if (!oid && orderDataLocal && orderDataLocal._id) {
               oid = String(orderDataLocal._id);
@@ -895,7 +895,7 @@
           ensureOrderFromServer(function(){
             if (!nameValue) nameValue = 'Cliente Instagram';
             if (!instaUser) {
-              var errorMsg = 'Não foi possível identificar o usuário do Instagram para o upsell.';
+              var errorMsg = 'NÃ£o foi possÃ­vel identificar o usuÃ¡rio do Instagram para o upsell.';
               upsellPixContainer.innerHTML = '<div style="color:#b91c1c; text-align:center;">' + errorMsg + '</div>';
               return;
             }
@@ -916,7 +916,7 @@
             var payload = {
               correlationID: correlationID,
               value: Number(valueCents),
-              comment: 'Upsell Seguidores OPPUS',
+              comment: 'Upsell Seguidores You Agency',
               customer: {
                 name: nameValue,
                 phone: phoneValue,
@@ -933,7 +933,7 @@
           .then(function(resp){ return resp.json().then(function(data){ return { ok: resp.ok, data: data }; }); })
           .then(function(result){
             if (!result.ok) {
-              var msg = (result.data && result.data.details && result.data.details.message) ? result.data.details.message : 'Falha ao criar cobrança';
+              var msg = (result.data && result.data.details && result.data.details.message) ? result.data.details.message : 'Falha ao criar cobranÃ§a';
               upsellPixContainer.innerHTML = '<div style="color:#b91c1c; text-align:center;">Erro ao criar Pix: ' + msg + '</div>';
               return;
             }
@@ -949,8 +949,8 @@
             }
             html += '<div style="font-size:1rem; font-weight:700; text-align:center; margin-bottom:0.75rem; color:#166534;">Valor do Pix: <span>' + totalFormatted + '</span></div>';
             html += '<div style="position:relative; margin-bottom:0.75rem;"><textarea id="upsellPixCodeArea" readonly style="width:100%; min-height:80px; padding:0.75rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; font-family:inherit; font-size:0.9rem; color:#022c22; resize:none;">' + brCode + '</textarea></div>';
-            html += '<button id="upsellPixCopyBtn" type="button" class="continue-button" style="width:100%; display:flex; align-items:center; justify-content:center; padding:0.9rem 1rem; margin-bottom:0.5rem;"><span class="button-text">Copiar código Pix</span></button>';
-            html += '<div style="font-size:0.85rem; color:#6b7280; text-align:center;">Após o pagamento, seu novo pedido será criado automaticamente.</div>';
+            html += '<button id="upsellPixCopyBtn" type="button" class="continue-button" style="width:100%; display:flex; align-items:center; justify-content:center; padding:0.9rem 1rem; margin-bottom:0.5rem;"><span class="button-text">Copiar cÃ³digo Pix</span></button>';
+            html += '<div style="font-size:0.85rem; color:#6b7280; text-align:center;">ApÃ³s o pagamento, seu novo pedido serÃ¡ criado automaticamente.</div>';
             upsellPixContainer.innerHTML = html;
             upsellPixContainer.style.display = 'block';
             try {
@@ -993,10 +993,10 @@
                   copyBtn.classList.add('success');
                   setTimeout(function(){
                     copyBtn.classList.remove('success');
-                    if (span) span.textContent = prev || 'Copiar código Pix';
+                    if (span) span.textContent = prev || 'Copiar cÃ³digo Pix';
                   }, 1600);
                 } catch(e) {
-                  alert('Não foi possível copiar o código Pix.');
+                  alert('NÃ£o foi possÃ­vel copiar o cÃ³digo Pix.');
                 }
               });
             }
@@ -1058,9 +1058,9 @@
             var it = items[i];
             var qNum = Number(it.q);
             var badgeText = '';
-            var quantityBadges = { 50: 'PACOTE TESTE', 150:'PACOTE INICIAL', 500:'PACOTE BÁSICO', 1000:'MAIS PEDIDO', 3000:'EXCLUSIVO', 5000:'VIP', 10000:'ELITE' };
+            var quantityBadges = { 50: 'PACOTE TESTE', 150:'PACOTE INICIAL', 500:'PACOTE BÃSICO', 1000:'MAIS PEDIDO', 3000:'EXCLUSIVO', 5000:'VIP', 10000:'ELITE' };
             if (tipo === 'mistos') {
-              if (qNum === 1000) badgeText = 'MELHOR PREÇO';
+              if (qNum === 1000) badgeText = 'MELHOR PREÃ‡O';
               else if (qNum === 3000) { badgeText = 'MAIS PEDIDO'; }
             } else if (tipo === 'brasileiros') {
               if (qNum === 1000) { badgeText = 'MAIS PEDIDO'; }
@@ -1152,7 +1152,7 @@
           }
         } catch(_) {}
         
-        var statusStr = String((orderData && (orderData.status || (orderData.expay && orderData.expay.status) || (orderData.woovi && orderData.woovi.status))) || '').toLowerCase();
+        var statusStr = String((orderData && (orderData.status || (orderData.paghiper && orderData.paghiper.status) || (orderData.expay && orderData.expay.status) || (orderData.woovi && orderData.woovi.status))) || '').toLowerCase();
         var isPaidNow = (statusStr === 'pago' || statusStr === 'paid' || !!paidRaw);
         var catServ = '';
         try {
@@ -1182,7 +1182,7 @@
             btn.textContent = 'Verificando...';
             var idToUse = (orderData && (orderData.identifier || orderData._id)) || null;
             if (!idToUse) {
-                alert('Erro: ID do pedido não encontrado.');
+                alert('Erro: ID do pedido nÃ£o encontrado.');
                 btn.disabled = false;
                 btn.textContent = originalText;
                 return;
@@ -1200,14 +1200,14 @@
                     else newUrl += '&t=' + new Date().getTime();
                     location.href = newUrl;
                 } else {
-                    alert(data.error || 'Ainda não identificamos o perfil como público. Aguarde uns instantes e tente novamente.');
+                    alert(data.error || 'Ainda nÃ£o identificamos o perfil como pÃºblico. Aguarde uns instantes e tente novamente.');
                     btn.disabled = false;
                     btn.textContent = originalText;
                 }
             })
             .catch(function(err){
                 console.error(err);
-                alert('Erro de conexão. Tente novamente.');
+                alert('Erro de conexÃ£o. Tente novamente.');
                 btn.disabled = false;
                 btn.textContent = originalText;
             });
@@ -1217,8 +1217,8 @@
       try {
         var tipoServ = String((orderData && (orderData.tipo || orderData.tipoServico)) || '').toLowerCase();
         var alreadyFS = !!(orderData && orderData.fornecedor_social && orderData.fornecedor_social.orderId);
-        var isPaid = (function(){ var s=String((orderData && (orderData.status || (orderData.expay && orderData.expay.status) || (orderData.woovi && orderData.woovi.status))) || '').toLowerCase(); return (s==='pago'||s==='paid'||s==='completed'); })();
-        var ident = String((orderData && (orderData.identifier || (orderData.expay && orderData.expay.transactionId) || (orderData.woovi && orderData.woovi.identifier))) || '').trim();
+        var isPaid = (function(){ var s=String((orderData && (orderData.status || (orderData.paghiper && orderData.paghiper.status) || (orderData.expay && orderData.expay.status) || (orderData.woovi && orderData.woovi.status))) || '').toLowerCase(); return (s==='pago'||s==='paid'||s==='completed'); })();
+        var ident = String((orderData && (orderData.identifier || (orderData.paghiper && orderData.paghiper.transactionId) || (orderData.expay && orderData.expay.transactionId) || (orderData.woovi && orderData.woovi.identifier))) || '').trim();
         try {
           var qs = new URLSearchParams((location && location.search) || '');
           var identQ = String(qs.get('identifier') || qs.get('t') || '').trim();
@@ -1308,7 +1308,7 @@
                 var mapPaid = o && o.additionalInfoMapPaid || {};
                 var cat0 = String(mapPaid['categoria_servico'] || '').toLowerCase();
                 var t0 = String(mapPaid['tipo_servico'] || o.tipo || o.tipoServico || '-').toLowerCase();
-                var tipo = (function(){ if(cat0==='curtidas'){ if(t0==='mistos') return 'Curtidas Mistas'; if(t0==='brasileiros'||t0==='curtidas_brasileiras') return 'Curtidas Brasileiras'; if(t0==='organicos'||t0==='curtidas_reais') return 'Curtidas Brasileiras Reais'; } else if(cat0==='visualizacoes'){ if(t0==='visualizacoes_reels'||t0==='views'||t0==='reels') return 'Visualizações Reels'; return 'Visualizações'; } else { if(t0==='mistos') return 'Seguidores Mistos'; if(t0==='brasileiros') return 'Seguidores Brasileiros'; if(t0==='organicos') return 'Seguidores brasileiros e reais'; } return t0; })();
+                var tipo = (function(){ if(cat0==='curtidas'){ if(t0==='mistos') return 'Curtidas Mistas'; if(t0==='brasileiros'||t0==='curtidas_brasileiras') return 'Curtidas Padrao'; if(t0==='organicos'||t0==='curtidas_reais') return 'Curtidas Premium'; } else if(cat0==='visualizacoes'){ if(t0==='visualizacoes_reels'||t0==='views'||t0==='reels') return 'VisualizaÃ§Ãµes Reels'; return 'VisualizaÃ§Ãµes'; } else { if(t0==='mistos') return 'Seguidores Mistos'; if(t0==='brasileiros') return 'Seguidores Padrao'; if(t0==='organicos') return 'Seguidores Premium'; } return t0; })();
               var qtd = String(o.qtd || o.quantidade || '0');
               var insta = String(o.instagramUsername || o.instauser || '-');
               var paidStr = formatDateTimeSP(paidRaw);
@@ -1381,9 +1381,9 @@
                       var kv = p.split(':');
                       var k = kv[0];
                       var v = kv[1];
-                      if (k === 'views') return 'Visualizações Reels (' + v + ')';
+                      if (k === 'views') return 'VisualizaÃ§Ãµes Reels (' + v + ')';
                       if (k === 'likes') return 'Curtidas (' + v + ')';
-                      if (k === 'comments') return 'Comentários (' + v + ')';
+                      if (k === 'comments') return 'ComentÃ¡rios (' + v + ')';
                       return k + ' (' + v + ')';
                     });
                     elB.textContent = labels.join(', ');
@@ -1418,7 +1418,7 @@
                     if (/duplicate/.test(t)) return 'Duplicado';
                     if (/pend/.test(t)) return 'Pendente';
                     if (/process|progress|start|running|created/.test(t)) return 'Em andamento';
-                    if (/complete|success|finished|done|conclu/.test(t)) return 'Concluído';
+                    if (/complete|success|finished|done|conclu/.test(t)) return 'ConcluÃ­do';
                     return s;
                   };
                   var getStatusCls = function(label){
@@ -1508,7 +1508,7 @@
                           for (var mi0=0; mi0<multiOrders.length; mi0++){
                             var it0 = multiOrders[mi0] || {};
                             var link0 = it0.link ? String(it0.link) : '';
-                            link0 = link0.replace(/^[`"'“”‘’]+/, '').replace(/[`"'“”‘’]+$/, '').trim();
+                            link0 = link0.replace(/^[`"'â€œâ€â€˜â€™]+/, '').replace(/[`"'â€œâ€â€˜â€™]+$/, '').trim();
                             if (link0 && /^www\./i.test(link0)) link0 = 'https://' + link0;
                             var qty0 = it0.quantity ? Number(it0.quantity) : 0;
                             var v0 = (it0.orderId !== undefined && it0.orderId !== null) ? it0.orderId : ((it0.id !== undefined && it0.id !== null) ? it0.id : null);
@@ -1574,8 +1574,8 @@
                         var decideOverall = function(labels){
                           var arr = (labels || []).filter(function(x){ return !!x && String(x).trim() && String(x).trim() !== '-'; }).map(function(x){ return String(x).trim(); });
                           if (!arr.length) return '-';
-                          var allDone = arr.every(function(x){ return x === 'Concluído'; });
-                          if (allDone) return 'Concluído';
+                          var allDone = arr.every(function(x){ return x === 'ConcluÃ­do'; });
+                          if (allDone) return 'ConcluÃ­do';
                           var anyProgress = arr.some(function(x){ return x === 'Em andamento'; });
                           if (anyProgress) return 'Em andamento';
                           var anyPending = arr.some(function(x){ return x === 'Pendente'; });
@@ -1754,7 +1754,7 @@
           if (/partial/.test(t)) return 'Parcial';
           if (/pend/.test(t)) return 'Pendente';
           if (/process|progress|start|running|created/.test(t)) return 'Em andamento';
-          if (/complete|success|finished|done|conclu/.test(t)) return 'Concluído';
+          if (/complete|success|finished|done|conclu/.test(t)) return 'ConcluÃ­do';
           return '';
         };
         var getRawStatus = function(x){
@@ -1828,8 +1828,8 @@
         var decideOverall = function(labels){
           var arr = (labels || []).filter(function(x){ return !!x && String(x).trim() && String(x).trim() !== '-'; }).map(function(x){ return String(x).trim(); });
           if (!arr.length) return '';
-          var allDone = arr.every(function(x){ return x === 'Concluído'; });
-          if (allDone) return 'Concluído';
+          var allDone = arr.every(function(x){ return x === 'ConcluÃ­do'; });
+          if (allDone) return 'ConcluÃ­do';
           var anyProgress = arr.some(function(x){ return x === 'Em andamento'; });
           if (anyProgress) return 'Em andamento';
           var anyPending = arr.some(function(x){ return x === 'Pendente'; });
@@ -1917,7 +1917,7 @@
       </div>
       <h3 style="margin:0 0 0.75rem 0; color:var(--text-primary); font-size: 1.25rem; font-weight: 700;">Perfil Privado Detectado</h3>
       <div style="font-size: 1.2rem; color: var(--text-primary); margin-bottom: 1rem; font-weight: 600;">@<%= (function(){ var map=order.additionalInfoMapPaid||{}; var v=String(map['instagram_username']||'').trim(); if(v){ return v; } return String(order.instagramUsername || order.instauser || '-'); })() %></div>
-      <p style="color:var(--text-secondary); margin-bottom:2rem; line-height: 1.5;">Deixe o seu perfil no modo publico para receber o serviços. Apos ficar no modo publico retorne nessa tela e clique em confirmar para confirmamos que esta publico.</p>
+      <p style="color:var(--text-secondary); margin-bottom:2rem; line-height: 1.5;">Deixe o seu perfil no modo publico para receber o serviÃ§os. Apos ficar no modo publico retorne nessa tela e clique em confirmar para confirmamos que esta publico.</p>
       <button id="btnConfirmPrivacy" onclick="checkPrivacyStatus()" class="continue-button" style="width:100%; justify-content:center; margin-top:1rem;">
         <span class="button-text">Confirmar</span>
       </button>
@@ -1935,9 +1935,9 @@
       <div style="width:64px; height:64px; background:#FEE2E2; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:1.5rem;">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </div>
-      <h3 style="margin:0 0 0.75rem 0; color:var(--text-primary); font-size: 1.25rem; font-weight: 700;">O PERFIL ainda está privado</h3>
+      <h3 style="margin:0 0 0.75rem 0; color:var(--text-primary); font-size: 1.25rem; font-weight: 700;">O PERFIL ainda estÃ¡ privado</h3>
       <div style="font-size: 1.2rem; color: var(--text-primary); margin-bottom: 1rem; font-weight: 600;">@<%= (function(){ var map=order.additionalInfoMapPaid||{}; var v=String(map['instagram_username']||'').trim(); if(v){ return v; } return String(order.instagramUsername || order.instauser || '-'); })() %></div>
-      <p style="color:var(--text-secondary); margin-bottom:2rem; line-height: 1.5;">Você não deixou seu perfil no modo público, deixe-o no modo público e retorne nessa tela para confirmar e finalizar o recebimento do serviço</p>
+      <p style="color:var(--text-secondary); margin-bottom:2rem; line-height: 1.5;">VocÃª nÃ£o deixou seu perfil no modo pÃºblico, deixe-o no modo pÃºblico e retorne nessa tela para confirmar e finalizar o recebimento do serviÃ§o</p>
       
       <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1.5rem; font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums;">
         0:<span id="privacyTimer">59</span>
@@ -2057,7 +2057,7 @@ function checkPrivacyStatus() {
   var orderData = {};
   try { orderData = JSON.parse(document.getElementById('orderDataJson').textContent || '{}'); } catch(_) {}
   
-  // Obter username (lógica robusta)
+  // Obter username (lÃ³gica robusta)
   var username = '';
   
   // 1. Tentar mapa direto
@@ -2092,12 +2092,12 @@ function checkPrivacyStatus() {
   if (username) {
       username = String(username).replace(/\/$/, ''); // remove trailing slash
       var parts = username.split('/');
-      username = parts[parts.length - 1]; // pega última parte se for url
+      username = parts[parts.length - 1]; // pega Ãºltima parte se for url
       username = username.replace('@', '').trim();
   }
 
   if (!username) {
-      alert('Não foi possível identificar o usuário do Instagram.');
+      alert('NÃ£o foi possÃ­vel identificar o usuÃ¡rio do Instagram.');
       return;
   }
 
@@ -2128,16 +2128,16 @@ function checkPrivacyStatus() {
           if (!successDiv) {
               successDiv = document.createElement('div');
               successDiv.id = 'privacyStepSuccess';
-              successDiv.innerHTML = '<div style="width:64px; height:64px; background:#D1FAE5; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:1.5rem;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div><h3 style="margin:0 0 0.75rem 0; color:var(--text-primary); font-size: 1.25rem; font-weight: 700;">Perfil Confirmado!</h3><p style="color:var(--text-secondary); margin-bottom:1rem; line-height: 1.5;">Por favor, aguarde que você será redirecionado para tela com detalhes do seu pedido.</p>';
+              successDiv.innerHTML = '<div style="width:64px; height:64px; background:#D1FAE5; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:1.5rem;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div><h3 style="margin:0 0 0.75rem 0; color:var(--text-primary); font-size: 1.25rem; font-weight: 700;">Perfil Confirmado!</h3><p style="color:var(--text-secondary); margin-bottom:1rem; line-height: 1.5;">Por favor, aguarde que vocÃª serÃ¡ redirecionado para tela com detalhes do seu pedido.</p>';
               var modalContent = document.querySelector('#privacyModal > div');
               if (modalContent) modalContent.appendChild(successDiv);
           }
           successDiv.style.display = 'block';
           
           // Dispatch fulfillment retry (Trigger services)
-          var id = orderData.identifier || (orderData.expay && orderData.expay.transactionId) || (orderData.woovi && orderData.woovi.identifier) || orderData._id;
+          var id = orderData.identifier || (orderData.paghiper && orderData.paghiper.transactionId) || (orderData.expay && orderData.expay.transactionId) || (orderData.woovi && orderData.woovi.identifier) || orderData._id;
           if (id) {
-             console.log('🔄 Initiating fulfillment retry for ID:', id);
+             console.log('ðŸ”„ Initiating fulfillment retry for ID:', id);
              fetch('/api/order/retry-fulfillment', {
                  method: 'POST',
                  headers: { 'Content-Type': 'application/json' },
@@ -2145,15 +2145,15 @@ function checkPrivacyStatus() {
              })
              .then(function(r){ return r.json(); })
              .then(function(d){ 
-                 console.log('✅ Fulfillment retry initiated:', d); 
-                 if (d.error) console.error('❌ Retry error:', d.error);
+                 console.log('âœ… Fulfillment retry initiated:', d); 
+                 if (d.error) console.error('âŒ Retry error:', d.error);
              })
-             .catch(function(e){ console.error('❌ Retry fulfillment fetch error', e); })
+             .catch(function(e){ console.error('âŒ Retry fulfillment fetch error', e); })
              .finally(function(){
                  setTimeout(function(){ location.reload(); }, 3000);
              });
           } else {
-             console.error('❌ No identifier found for retry fulfillment', orderData);
+             console.error('âŒ No identifier found for retry fulfillment', orderData);
              setTimeout(function(){ location.reload(); }, 3000);
           }
           
@@ -2208,3 +2208,4 @@ function startPrivacyTimer(seconds) {
   <script src="/js/main.js"></script>
 </body>
 </html>
+

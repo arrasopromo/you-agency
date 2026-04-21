@@ -1,8 +1,8 @@
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const express = require("express");
 const session = require("express-session");
-const path = require("path");
 const crypto = require("crypto");
 const { HttpsProxyAgent } = require("https-proxy-agent");
 const PQueue = require("p-queue").default;
@@ -62,6 +62,134 @@ app.use(express.json({
   }
 }));
 app.use(express.urlencoded({ extended: true }));
+
+function isInvalidInstagramSessionTokenText(text) {
+  try {
+    const s = String(text || '');
+    return /invalid\s+session\s+token/i.test(s) || /\big_session_invalid\b/i.test(s) || /\b(session\s+invalid|session\s+expired)\b/i.test(s);
+  } catch (_) {
+    return false;
+  }
+}
+
+function sanitizeInvalidInstagramSessionTokenPayload(payload) {
+  const friendly = 'Erro na sessão do Instagram. Tente novamente em alguns instantes.';
+  const maxDepth = 6;
+  const maxKeys = 5000;
+  let seen = 0;
+  const visited = new WeakSet();
+
+  const walk = (v, depth) => {
+    if (seen >= maxKeys) return v;
+    if (depth > maxDepth) return v;
+    if (v == null) return v;
+    if (typeof v === 'string') {
+      if (isInvalidInstagramSessionTokenText(v)) return friendly;
+      return v;
+    }
+    if (typeof v !== 'object') return v;
+    if (visited.has(v)) return v;
+    visited.add(v);
+
+    if (Array.isArray(v)) {
+      const out = new Array(v.length);
+      for (let i = 0; i < v.length; i++) {
+        seen++;
+        out[i] = walk(v[i], depth + 1);
+      }
+      return out;
+    }
+
+    const out = {};
+    for (const k of Object.keys(v)) {
+      seen++;
+      const cur = v[k];
+      if ((k === 'error' || k === 'message') && typeof cur === 'string' && isInvalidInstagramSessionTokenText(cur)) {
+        out[k] = friendly;
+        if (!('code' in v) && !('errorCode' in v) && !('reason' in v)) out.code = 'IG_SESSION_INVALID';
+        continue;
+      }
+      out[k] = walk(cur, depth + 1);
+    }
+    return out;
+  };
+
+  return walk(payload, 0);
+}
+
+app.use((req, res, next) => {
+  try {
+    res.setHeader('X-App-Name', 'you-agency');
+  } catch (_) {}
+
+  const originalJson = res.json.bind(res);
+  const originalSend = res.send.bind(res);
+
+  res.json = (body) => {
+    try {
+      return originalJson(sanitizeInvalidInstagramSessionTokenPayload(body));
+    } catch (_) {
+      return originalJson(body);
+    }
+  };
+
+  res.send = (body) => {
+    try {
+      try {
+        if (typeof Buffer !== 'undefined' && Buffer.isBuffer(body)) {
+          return originalSend(body);
+        }
+        if (typeof ArrayBuffer !== 'undefined') {
+          if (body instanceof ArrayBuffer) {
+            return originalSend(Buffer.from(body));
+          }
+          if (ArrayBuffer.isView && ArrayBuffer.isView(body)) {
+            return originalSend(body);
+          }
+        }
+      } catch (_) {}
+
+      if (typeof body === 'string') {
+        if (isInvalidInstagramSessionTokenText(body)) {
+          const trimmed = body.trim();
+          if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+            try {
+              const parsed = JSON.parse(trimmed);
+              const sanitized = sanitizeInvalidInstagramSessionTokenPayload(parsed);
+              return originalSend(JSON.stringify(sanitized));
+            } catch (_) {
+              const friendly = 'Erro na sessão do Instagram. Tente novamente em alguns instantes.';
+              return originalSend(body.replace(/invalid\s+session\s+token/gi, friendly));
+            }
+          }
+          return originalSend(body);
+        }
+        return originalSend(body);
+      }
+
+      if (body && typeof body === 'object') {
+        return originalSend(sanitizeInvalidInstagramSessionTokenPayload(body));
+      }
+    } catch (_) {}
+    return originalSend(body);
+  };
+
+  next();
+});
+
+app.get('/__health', (req, res) => {
+  try {
+    return res.json({
+      ok: true,
+      app: 'you-agency',
+      pid: process.pid,
+      port: process.env.PORT ? Number(process.env.PORT) : 3000,
+      now: new Date().toISOString()
+    });
+  } catch (e) {
+    return res.json({ ok: false, error: e?.message || String(e) });
+  }
+});
 
 app.use((req, res, next) => {
   const isSandbox = process.env.EFI_SANDBOX === 'true';
@@ -215,14 +343,14 @@ const getSmtpTransporter = () => {
 };
 
 const getOppusFromHeader = () => {
-    const raw = String(process.env.SMTP_FROM || process.env.SMTP_USER || 'meu-pedido@agenciaoppus.site').trim();
+    const raw = String(process.env.SMTP_FROM || process.env.SMTP_USER || 'support@youagency.site').trim();
     if (!raw) return '';
     let email = raw;
     const m = raw.match(/<([^>]+)>/);
     if (m && m[1]) email = m[1];
     email = String(email || '').trim();
     if (!email) return '';
-    return `Agência Oppus <${email}>`;
+    return `You Agency <${email}>`;
 };
 
 let smtpRecoveryTransporter = null;
@@ -245,14 +373,20 @@ const getRecoverySmtpTransporter = () => {
 };
 
 const getRecoveryFromHeader = () => {
-    const raw = String(process.env.SMTP_RECOVERY_FROM || 'recuperacao@agenciaoppus.site').trim();
+    const raw = String(
+      process.env.SMTP_RECOVERY_FROM ||
+      process.env.SMTP_FROM ||
+      process.env.SMTP_RECOVERY_USER ||
+      process.env.SMTP_USER ||
+      'support@youagency.site'
+    ).trim();
     if (!raw) return '';
     let email = raw;
     const m = raw.match(/<([^>]+)>/);
     if (m && m[1]) email = m[1];
     email = String(email || '').trim();
     if (!email) return '';
-    return `Agência Oppus <${email}>`;
+    return `You Agency <${email}>`;
 };
 
 const getAdminEmailBcc = (primaryTo) => {
@@ -307,21 +441,21 @@ const sendOrderCreatedEmail = async ({ record, insertedId }) => {
     const corr = safe(record && record.correlationID);
     const utms = (record && record.utms && typeof record.utms === 'object') ? record.utms : {};
 
-    const subject = `Novo pedido gerado${insta ? ` - @${insta.replace(/^@+/, '')}` : ''}${tipo ? ` - ${tipo}` : ''}${qtd ? ` (${qtd})` : ''}`;
+    const subject = `New order created${insta ? ` - @${insta.replace(/^@+/, '')}` : ''}${tipo ? ` - ${tipo}` : ''}${qtd ? ` (${qtd})` : ''}`;
     const lines = [
-        'Um novo pedido foi gerado no checkout.',
+        'A new order was created in the checkout.',
         '',
         `ID: ${insertedId ? String(insertedId) : '-'}`,
         `Status: ${status || '-'}`,
-        `Data: ${createdAt || '-'}`,
+        `Date: ${createdAt || '-'}`,
         `Identifier: ${identifier || '-'}`,
         `CorrelationID: ${corr || '-'}`,
-        `Tipo: ${tipo || '-'}`,
-        `Quantidade: ${qtd || 0}`,
+        `Type: ${tipo || '-'}`,
+        `Quantity: ${qtd || 0}`,
         `Instagram: ${insta ? `@${insta.replace(/^@+/, '')}` : '-'}`,
-        `Telefone: ${telefone || '-'}`,
-        `Email cliente: ${emailCliente || '-'}`,
-        `Valor: ${centsToBRL(record && record.valueCents)} (Esperado: ${centsToBRL(record && record.expectedValueCents)})`,
+        `Phone: ${telefone || '-'}`,
+        `Customer email: ${emailCliente || '-'}`,
+        `Amount: ${centsToBRL(record && record.valueCents)} (Expected: ${centsToBRL(record && record.expectedValueCents)})`,
         '',
         `UTM source: ${safe(utms.source) || '-'}`,
         `UTM medium: ${safe(utms.medium) || '-'}`,
@@ -387,7 +521,7 @@ const sendPixOrderEmailToCustomer = async ({ record }) => {
         (record && (record.instagramUsername || record.instauser || ''))
     );
     const instagramUser = instagramRaw.replace(/^@+/, '').trim();
-    const saudacaoNome = instagramUser ? `@${instagramUser}` : (safe(customer.name) || 'Cliente');
+    const saudacaoNome = instagramUser ? `@${instagramUser}` : (safe(customer.name) || 'Customer');
     const qtd = Number(record && (record.qtd || record.quantidade || 0)) || 0;
     const valueLabel = centsToBRL(record && record.valueCents);
 
@@ -406,39 +540,39 @@ const sendPixOrderEmailToCustomer = async ({ record }) => {
         })();
 
         if (categoria === 'curtidas' || categoria === 'likes') {
-            if (tipo === 'mistos') return 'Curtidas mistas';
-            if (tipo === 'brasileiros' || tipo === 'curtidas_brasileiras') return 'Curtidas brasileiras';
-            if (tipo === 'organicos' || tipo === 'curtidas_reais') return 'Curtidas brasileiras reais';
-            return 'Curtidas';
+            if (tipo === 'mistos') return 'Mixed likes';
+            if (tipo === 'brasileiros' || tipo === 'curtidas_brasileiras') return 'Brazilian likes';
+            if (tipo === 'organicos' || tipo === 'curtidas_reais') return 'Brazilian likes (real)';
+            return 'Likes';
         }
         if (categoria === 'visualizacoes' || categoria === 'views') {
-            if (tipo === 'visualizacoes_reels' || tipo === 'reels') return 'Visualizações Reels';
-            return 'Visualizações';
+            if (tipo === 'visualizacoes_reels' || tipo === 'reels') return 'Reels views';
+            return 'Views';
         }
         if (categoria === 'comentarios' || categoria === 'comments') {
-            return 'Comentários';
+            return 'Comments';
         }
         if (categoria === 'seguidores' || categoria === 'followers' || !categoria) {
-            if (tipo === 'mistos') return 'Seguidores mistos';
-            if (tipo === 'brasileiros') return 'Seguidores brasileiros';
-            if (tipo === 'organicos') return 'Seguidores brasileiros reais';
-            return 'Seguidores';
+            if (tipo === 'mistos') return 'Mixed followers';
+            if (tipo === 'brasileiros') return 'Brazilian followers';
+            if (tipo === 'organicos') return 'Brazilian followers (real)';
+            return 'Followers';
         }
 
         const fallback = getAdd('pacote') || getAdd('produto') || getAdd('descricao') || '';
         if (fallback) {
             let t = safe(fallback);
-            if (!t) return 'Produto';
+            if (!t) return 'Product';
             if (qtd && new RegExp(`^\\s*${qtd}\\s+`, 'i').test(t)) t = t.replace(new RegExp(`^\\s*${qtd}\\s+`, 'i'), '').trim();
             t = t.replace(/\s*-\s*R\$\s*[\d.,]+$/i, '').trim();
-            return capitalizeFirst(t) || 'Produto';
+            return capitalizeFirst(t) || 'Product';
         }
 
-        return 'Produto';
+        return 'Product';
     })();
     const serviceLabelLower = (function () {
         let t = safe(serviceLabel);
-        if (!t) return 'produto';
+        if (!t) return 'product';
         t = t.replace(/^\d+\s+/, '').trim();
         return t.charAt(0).toLowerCase() + t.slice(1);
     })();
@@ -453,7 +587,7 @@ const sendPixOrderEmailToCustomer = async ({ record }) => {
             process.env.BASE_URL
         ];
         const picked = candidates.map(s => String(s || '').trim()).find(Boolean);
-        const u = picked || 'https://agenciaoppus.site';
+        const u = picked || 'https://youagency.site';
         return u.replace(/\/+$/, '');
     })();
     const pixPageUrl = (function () {
@@ -466,7 +600,8 @@ const sendPixOrderEmailToCustomer = async ({ record }) => {
     const brCodeMasked = (function () {
         const expay = (record && record.expay && typeof record.expay === 'object') ? record.expay : {};
         const woovi = (record && record.woovi && typeof record.woovi === 'object') ? record.woovi : {};
-        const c = safe(expay.brCode || woovi.brCode || '');
+        const paghiper = (record && record.paghiper && typeof record.paghiper === 'object') ? record.paghiper : {};
+        const c = safe(paghiper.brCode || expay.brCode || woovi.brCode || '');
         if (!c) return '';
         if (c.length <= 36) return c;
         return `${c.slice(0, 16)}…${c.slice(-16)}`;
@@ -474,44 +609,36 @@ const sendPixOrderEmailToCustomer = async ({ record }) => {
 
     const woovi = (record && record.woovi && typeof record.woovi === 'object') ? record.woovi : {};
     const expay = (record && record.expay && typeof record.expay === 'object') ? record.expay : {};
-    const qrCodeImage = safe(expay.qrCodeImage || woovi.qrCodeImage);
-    const brCode = safe(expay.brCode || woovi.brCode);
+    const paghiper = (record && record.paghiper && typeof record.paghiper === 'object') ? record.paghiper : {};
+    const qrCodeImage = safe(paghiper.qrCodeImage || expay.qrCodeImage || woovi.qrCodeImage);
+    const brCode = safe(paghiper.brCode || expay.brCode || woovi.brCode);
 
-    const subject = 'Agência Oppus - Pedido recebido';
+    const subject = 'You Agency - Order received';
 
     const text = [
-        'Pedido recebido',
+        'Order received',
         '',
-        `Olá, ${saudacaoNome}`,
+        `Hello, ${saudacaoNome}`,
         '',
-        `O seu pedido de ${productTitle} foi recebido com sucesso.`,
-        'Para concluir, efetue o pagamento via Pix (QR Code ou Pix Copia e Cola).',
+        `Your order for ${productTitle} has been received successfully.`,
+        'To complete it, please pay via Pix (QR Code or Copy & Paste code).',
         '',
-        `Produto: ${productTitle}`,
-        `QTD: ${qtd || 0}`,
-        `Valor: ${valueLabel}`,
+        `Product: ${productTitle}`,
+        `Quantity: ${qtd || 0}`,
+        `Amount: ${valueLabel}`,
         '',
-        'Pagamento via Pix:',
-        brCode ? `Código Pix (copia e cola): ${brCode}` : '',
-        pixPageUrl ? `Link para copiar o código Pix: ${pixPageUrl}` : '',
+        'Pix payment:',
+        brCode ? `Pix code (copy & paste): ${brCode}` : '',
+        pixPageUrl ? `Link to copy your Pix code: ${pixPageUrl}` : '',
         '',
-        '1. Abra o aplicativo do seu banco e entre na opção Pix.',
-        '2. Escolha a opção Pagar / Pix copia e cola.',
-        '3. Escaneie o Qr code. Se preferir, copie e cole o código.',
-        '4. Confirme o pagamento.',
+        '1. Open your bank app and go to Pix.',
+        '2. Select the option to pay using Pix Copy & Paste (or scan the QR code).',
+        '3. Paste the code or scan the QR code.',
+        '4. Confirm the payment.',
         '',
-        'Se você já pagou, aguarde alguns minutos para a confirmação automática.',
-        'Dúvidas: suporte@agenciaoppus.site'
+        'If you have already paid, please wait a few minutes for automatic confirmation.',
+        'Support: support@youagency.site'
     ].filter(Boolean).join('\n');
-
-    let logoAttachment = null;
-    try {
-        const logoPath = path.join(__dirname, 'public', 'images', 'logo.png');
-        const buf = fs.readFileSync(logoPath);
-        if (buf && buf.length) {
-            logoAttachment = { filename: 'logo.png', content: buf, cid: 'oppus-logo' };
-        }
-    } catch (_) {}
 
     const html = `
 <div style="margin:0;padding:0;background:#f5f7fb;">
@@ -521,24 +648,24 @@ const sendPixOrderEmailToCustomer = async ({ record }) => {
         <table width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
           <tr>
             <td bgcolor="#111827" style="padding:14px 20px;font-family:Arial,Helvetica,sans-serif;background:#111827;background-color:#111827;color:#ffffff;text-align:center;">
-              ${logoAttachment ? `<img src="cid:oppus-logo" alt="Agência Oppus" style="height:42px;width:auto;display:inline-block;" />` : ''}
-              <div style="margin-top:${logoAttachment ? '8px' : '0'};font-size:14px;font-weight:800;letter-spacing:0.06em;color:#ffffff;">Agência Oppus</div>
+              <div style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:#ffffff;color:#111827;font-weight:900;font-size:20px;letter-spacing:0.04em;">Y</div>
+              <div style="margin-top:8px;font-size:14px;font-weight:800;letter-spacing:0.06em;color:#ffffff;">You Agency</div>
             </td>
           </tr>
           <tr>
             <td style="padding:14px 20px;font-family:Arial,Helvetica,sans-serif;color:#111827;">
-              <div style="font-size:16px;font-weight:700;margin:0 0 10px 0;">Olá, ${escapeHtml(saudacaoNome)}</div>
+              <div style="font-size:16px;font-weight:700;margin:0 0 10px 0;">Hello, ${escapeHtml(saudacaoNome)}</div>
               <div style="font-size:14px;line-height:1.5;margin:0 0 16px 0;">
-                O seu pedido de <strong>${escapeHtml(productTitle)}</strong> foi recebido com sucesso.
-                Para concluir, efetue o pagamento via Pix.
+                Your order for <strong>${escapeHtml(productTitle)}</strong> has been received successfully.
+                To complete it, please pay via Pix.
               </div>
 
-              <div style="margin:14px 0 10px 0;font-size:14px;font-weight:700;">Resumo do pedido</div>
+              <div style="margin:14px 0 10px 0;font-size:14px;font-weight:700;">Order summary</div>
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:13px;">
                 <tr>
-                  <th align="left" style="padding:10px;border:1px solid #e5e7eb;background:#f9fafb;">Produto</th>
-                  <th align="center" style="padding:10px;border:1px solid #e5e7eb;background:#f9fafb;">QTD</th>
-                  <th align="right" style="padding:10px;border:1px solid #e5e7eb;background:#f9fafb;">Valor</th>
+                  <th align="left" style="padding:10px;border:1px solid #e5e7eb;background:#f9fafb;">Product</th>
+                  <th align="center" style="padding:10px;border:1px solid #e5e7eb;background:#f9fafb;">Qty</th>
+                  <th align="right" style="padding:10px;border:1px solid #e5e7eb;background:#f9fafb;">Amount</th>
                 </tr>
                 <tr>
                   <td style="padding:10px;border:1px solid #e5e7eb;">${escapeHtml(productTitle)}</td>
@@ -547,31 +674,31 @@ const sendPixOrderEmailToCustomer = async ({ record }) => {
                 </tr>
               </table>
 
-              <div style="margin:18px 0 8px 0;font-size:14px;font-weight:700;color:#166534;">Pagamento via Pix</div>
-              <div style="margin:0 0 10px 0;font-size:13px;color:#111827;">Valor do Pix: <strong>${escapeHtml(valueLabel)}</strong></div>
+              <div style="margin:18px 0 8px 0;font-size:14px;font-weight:700;color:#166534;">Pay with Pix</div>
+              <div style="margin:0 0 10px 0;font-size:13px;color:#111827;">Pix amount: <strong>${escapeHtml(valueLabel)}</strong></div>
               ${qrCodeImage ? `<div style="margin:8px 0 10px 0;text-align:center;">
-                <img src="${escapeHtml(qrCodeImage)}" alt="QR Code Pix" width="180" height="180" style="width:180px;height:180px;border-radius:10px;border:1px solid #e5e7eb;background:#ffffff;" />
+                <img src="${escapeHtml(qrCodeImage)}" alt="Pix QR code" width="180" height="180" style="width:180px;height:180px;border-radius:10px;border:1px solid #e5e7eb;background:#ffffff;" />
               </div>` : ''}
 
-              ${brCode ? `<div style="margin:0 0 8px 0;font-size:12px;color:#374151;">Código Pix (copia e cola)</div>
+              ${brCode ? `<div style="margin:0 0 8px 0;font-size:12px;color:#374151;">Pix code (copy & paste)</div>
               <div style="padding:10px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11px;line-height:1.35;color:#052e16;word-break:break-all;">
                 ${escapeHtml(brCode)}
               </div>
               <div style="margin:8px 0 0 0;text-align:center;">
-                <a href="${escapeHtml(pixPageUrl)}" style="display:inline-block;padding:9px 12px;background:#2563eb;color:#ffffff;border-radius:10px;font-size:13px;font-weight:800;text-decoration:none;">Copiar código Pix</a>
+                <a href="${escapeHtml(pixPageUrl)}" style="display:inline-block;padding:9px 12px;background:#2563eb;color:#ffffff;border-radius:10px;font-size:13px;font-weight:800;text-decoration:none;">Copy Pix code</a>
               </div>
-              <div style="margin:8px 0 0 0;font-size:12px;color:#6b7280;">Se preferir, abra o link para copiar o código completo.</div>` : ''}
+              <div style="margin:8px 0 0 0;font-size:12px;color:#6b7280;">If you prefer, open the link to copy the full code.</div>` : ''}
 
-              <div style="margin:16px 0 6px 0;font-size:13px;font-weight:700;">Como pagar</div>
+              <div style="margin:16px 0 6px 0;font-size:13px;font-weight:700;">How to pay</div>
               <ol style="margin:0 0 0 18px;padding:0;font-size:13px;line-height:1.6;color:#111827;">
-                <li>Abra o aplicativo do seu banco e entre na opção Pix.</li>
-                <li>Escolha a opção Pagar / Pix copia e cola.</li>
-                <li>Escaneie o Qr code. Se preferir, copie e cole o código.</li>
-                <li>Confirme o pagamento.</li>
+                <li>Open your bank app and go to Pix.</li>
+                <li>Select the option to pay using Pix Copy & Paste (or scan the QR code).</li>
+                <li>Paste the code or scan the QR code.</li>
+                <li>Confirm the payment.</li>
               </ol>
 
               <div style="margin:14px 0 0 0;padding-top:12px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280;">
-                Para retirar dúvidas ou ajuda entre em contato com <a href="mailto:suporte@agenciaoppus.site" style="color:#2563eb;text-decoration:none;">suporte@agenciaoppus.site</a>
+                Need help? Contact <a href="mailto:support@youagency.site" style="color:#2563eb;text-decoration:none;">support@youagency.site</a>
               </div>
             </td>
           </tr>
@@ -587,19 +714,18 @@ const sendPixOrderEmailToCustomer = async ({ record }) => {
         ...(bcc ? { bcc } : {}),
         subject,
         text,
-        html,
-        attachments: logoAttachment ? [logoAttachment] : undefined
+        html
     });
 };
 
 const sendPixRecoveryEmailToCustomer = async ({ record }) => {
-    const transporter = getRecoverySmtpTransporter();
+    const transporter = getRecoverySmtpTransporter() || getSmtpTransporter();
     if (!transporter) {
         try { console.warn(`📨 [recovery-email] smtp transporter ausente (verifique SMTP_RECOVERY_* ou SMTP_*)`); } catch (_) {}
         return false;
     }
 
-    const from = getRecoveryFromHeader();
+    const from = getRecoveryFromHeader() || getOppusFromHeader();
     if (!from) {
         try { console.warn(`📨 [recovery-email] from ausente (verifique SMTP_RECOVERY_FROM)`); } catch (_) {}
         return false;
@@ -644,7 +770,7 @@ const sendPixRecoveryEmailToCustomer = async ({ record }) => {
         (record && (record.instagramUsername || record.instauser || ''))
     );
     const instagramUser = instagramRaw.replace(/^@+/, '').trim();
-    const saudacaoNome = instagramUser ? `@${instagramUser}` : (safe(customer.name) || 'Cliente');
+    const saudacaoNome = instagramUser ? `@${instagramUser}` : (safe(customer.name) || 'Customer');
     const qtd = Number(record && (record.qtd || record.quantidade || 0)) || 0;
     const valueLabel = centsToBRL(record && record.valueCents);
 
@@ -663,44 +789,44 @@ const sendPixRecoveryEmailToCustomer = async ({ record }) => {
         })();
 
         if (categoria === 'curtidas' || categoria === 'likes') {
-            if (tipo === 'mistos') return 'Curtidas mistas';
-            if (tipo === 'brasileiros' || tipo === 'curtidas_brasileiras') return 'Curtidas brasileiras';
-            if (tipo === 'organicos' || tipo === 'curtidas_reais') return 'Curtidas brasileiras reais';
-            return 'Curtidas';
+            if (tipo === 'mistos') return 'Mixed likes';
+            if (tipo === 'brasileiros' || tipo === 'curtidas_brasileiras') return 'Brazilian likes';
+            if (tipo === 'organicos' || tipo === 'curtidas_reais') return 'Brazilian likes (real)';
+            return 'Likes';
         }
         if (categoria === 'visualizacoes' || categoria === 'views') {
-            if (tipo === 'visualizacoes_reels' || tipo === 'reels') return 'Visualizações Reels';
-            return 'Visualizações';
+            if (tipo === 'visualizacoes_reels' || tipo === 'reels') return 'Reels views';
+            return 'Views';
         }
         if (categoria === 'comentarios' || categoria === 'comments') {
-            return 'Comentários';
+            return 'Comments';
         }
         if (categoria === 'seguidores' || categoria === 'followers' || !categoria) {
-            if (tipo === 'mistos') return 'Seguidores mistos';
-            if (tipo === 'brasileiros') return 'Seguidores brasileiros';
-            if (tipo === 'organicos') return 'Seguidores brasileiros reais';
-            return 'Seguidores';
+            if (tipo === 'mistos') return 'Mixed followers';
+            if (tipo === 'brasileiros') return 'Brazilian followers';
+            if (tipo === 'organicos') return 'Brazilian followers (real)';
+            return 'Followers';
         }
 
         const fallback = getAdd('pacote') || getAdd('produto') || getAdd('descricao') || '';
         if (fallback) {
             let t = safe(fallback);
-            if (!t) return 'Produto';
+            if (!t) return 'Product';
             if (qtd && new RegExp(`^\\s*${qtd}\\s+`, 'i').test(t)) t = t.replace(new RegExp(`^\\s*${qtd}\\s+`, 'i'), '').trim();
             t = t.replace(/\s*-\s*R\$\s*[\d.,]+$/i, '').trim();
-            return capitalizeFirst(t) || 'Produto';
+            return capitalizeFirst(t) || 'Product';
         }
 
-        return 'Produto';
+        return 'Product';
     })();
     const serviceLabelLower = (function () {
         let t = safe(serviceLabel);
-        if (!t) return 'produto';
+        if (!t) return 'product';
         t = t.replace(/^\d+\s+/, '').trim();
         return t.charAt(0).toLowerCase() + t.slice(1);
     })();
     const productTitle = `${qtd || 0} ${serviceLabelLower} - ${valueLabel}`;
-    const identifier = safe(record && (record.identifier || (record.expay && (record.expay.transactionId || record.expay.identifier)) || (record.woovi && record.woovi.identifier) || ''));
+    const identifier = safe(record && (record.identifier || (record.paghiper && (record.paghiper.transactionId || record.paghiper.identifier)) || (record.expay && (record.expay.transactionId || record.expay.identifier)) || (record.woovi && record.woovi.identifier) || ''));
     const correlationID = safe(record && record.correlationID);
     const baseUrl = (function () {
         const candidates = [
@@ -710,7 +836,7 @@ const sendPixRecoveryEmailToCustomer = async ({ record }) => {
             process.env.BASE_URL
         ];
         const picked = candidates.map(s => String(s || '').trim()).find(Boolean);
-        const u = picked || 'https://agenciaoppus.site';
+        const u = picked || 'https://youagency.site';
         return u.replace(/\/+$/, '');
     })();
     const pixPageUrl = (function () {
@@ -723,46 +849,38 @@ const sendPixRecoveryEmailToCustomer = async ({ record }) => {
 
     const woovi = (record && record.woovi && typeof record.woovi === 'object') ? record.woovi : {};
     const expay = (record && record.expay && typeof record.expay === 'object') ? record.expay : {};
-    const qrCodeImage = safe(expay.qrCodeImage || woovi.qrCodeImage);
-    const brCode = safe(expay.brCode || woovi.brCode);
+    const paghiper = (record && record.paghiper && typeof record.paghiper === 'object') ? record.paghiper : {};
+    const qrCodeImage = safe(paghiper.qrCodeImage || expay.qrCodeImage || woovi.qrCodeImage);
+    const brCode = safe(paghiper.brCode || expay.brCode || woovi.brCode);
 
     if (!qrCodeImage && !brCode) return false;
 
-    const subject = `Agência Oppus - Seu pedido está aguardando pagamento`;
+    const subject = `You Agency - Payment pending`;
 
     const text = [
-        'Pagamento pendente',
+        'Payment pending',
         '',
-        `Olá, ${saudacaoNome}`,
+        `Hello, ${saudacaoNome}`,
         '',
-        `Identificamos que o seu pedido de ${productTitle} ainda está aguardando pagamento.`,
-        'Para concluir, efetue o pagamento via Pix (QR Code ou Pix Copia e Cola).',
+        `We noticed that your order for ${productTitle} is still awaiting payment.`,
+        'To complete it, please pay via Pix (QR Code or Copy & Paste code).',
         '',
-        `Produto: ${productTitle}`,
-        `QTD: ${qtd || 0}`,
-        `Valor: ${valueLabel}`,
+        `Product: ${productTitle}`,
+        `Quantity: ${qtd || 0}`,
+        `Amount: ${valueLabel}`,
         '',
-        'Pagamento via Pix:',
-        brCode ? `Código Pix (copia e cola): ${brCode}` : '',
-        pixPageUrl ? `Link para copiar o código Pix: ${pixPageUrl}` : '',
+        'Pix payment:',
+        brCode ? `Pix code (copy & paste): ${brCode}` : '',
+        pixPageUrl ? `Link to copy your Pix code: ${pixPageUrl}` : '',
         '',
-        '1. Abra o aplicativo do seu banco e entre na opção Pix.',
-        '2. Escolha a opção Pagar / Pix copia e cola.',
-        '3. Escaneie o Qr code. Se preferir, copie e cole o código.',
-        '4. Confirme o pagamento.',
+        '1. Open your bank app and go to Pix.',
+        '2. Select the option to pay using Pix Copy & Paste (or scan the QR code).',
+        '3. Paste the code or scan the QR code.',
+        '4. Confirm the payment.',
         '',
-        'Se você já pagou, aguarde alguns minutos para a confirmação automática.',
-        'Dúvidas: suporte@agenciaoppus.site'
+        'If you have already paid, please wait a few minutes for automatic confirmation.',
+        'Support: support@youagency.site'
     ].filter(Boolean).join('\n');
-
-    let logoAttachment = null;
-    try {
-        const logoPath = path.join(__dirname, 'public', 'images', 'logo.png');
-        const buf = fs.readFileSync(logoPath);
-        if (buf && buf.length) {
-            logoAttachment = { filename: 'logo.png', content: buf, cid: 'oppus-logo' };
-        }
-    } catch (_) {}
 
     const html = `
 <div style="margin:0;padding:0;background:#f5f7fb;">
@@ -772,24 +890,24 @@ const sendPixRecoveryEmailToCustomer = async ({ record }) => {
         <table width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
           <tr>
             <td bgcolor="#111827" style="padding:14px 20px;font-family:Arial,Helvetica,sans-serif;background:#111827;background-color:#111827;color:#ffffff;text-align:center;">
-              ${logoAttachment ? `<img src="cid:oppus-logo" alt="Agência Oppus" style="height:42px;width:auto;display:inline-block;" />` : ''}
-              <div style="margin-top:${logoAttachment ? '8px' : '0'};font-size:14px;font-weight:800;letter-spacing:0.06em;color:#ffffff;">Agência Oppus</div>
+              <div style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:#ffffff;color:#111827;font-weight:900;font-size:20px;letter-spacing:0.04em;">Y</div>
+              <div style="margin-top:8px;font-size:14px;font-weight:800;letter-spacing:0.06em;color:#ffffff;">You Agency</div>
             </td>
           </tr>
           <tr>
             <td style="padding:14px 20px;font-family:Arial,Helvetica,sans-serif;color:#111827;">
-              <div style="font-size:16px;font-weight:700;margin:0 0 10px 0;">Olá, ${escapeHtml(saudacaoNome)}</div>
+              <div style="font-size:16px;font-weight:700;margin:0 0 10px 0;">Hello, ${escapeHtml(saudacaoNome)}</div>
               <div style="font-size:14px;line-height:1.5;margin:0 0 16px 0;">
-                Identificamos que o seu pedido de <strong>${escapeHtml(productTitle)}</strong> ainda está aguardando pagamento.
-                Para concluir, efetue o pagamento via Pix.
+                We noticed that your order for <strong>${escapeHtml(productTitle)}</strong> is still awaiting payment.
+                To complete it, please pay via Pix.
               </div>
 
-              <div style="margin:14px 0 10px 0;font-size:14px;font-weight:700;">Resumo do pedido</div>
+              <div style="margin:14px 0 10px 0;font-size:14px;font-weight:700;">Order summary</div>
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:13px;">
                 <tr>
-                  <th align="left" style="padding:10px;border:1px solid #e5e7eb;background:#f9fafb;">Produto</th>
-                  <th align="center" style="padding:10px;border:1px solid #e5e7eb;background:#f9fafb;">QTD</th>
-                  <th align="right" style="padding:10px;border:1px solid #e5e7eb;background:#f9fafb;">Valor</th>
+                  <th align="left" style="padding:10px;border:1px solid #e5e7eb;background:#f9fafb;">Product</th>
+                  <th align="center" style="padding:10px;border:1px solid #e5e7eb;background:#f9fafb;">Qty</th>
+                  <th align="right" style="padding:10px;border:1px solid #e5e7eb;background:#f9fafb;">Amount</th>
                 </tr>
                 <tr>
                   <td style="padding:10px;border:1px solid #e5e7eb;">${escapeHtml(productTitle)}</td>
@@ -798,31 +916,31 @@ const sendPixRecoveryEmailToCustomer = async ({ record }) => {
                 </tr>
               </table>
 
-              <div style="margin:18px 0 8px 0;font-size:14px;font-weight:700;color:#166534;">Pagamento via Pix</div>
-              <div style="margin:0 0 10px 0;font-size:13px;color:#111827;">Valor do Pix: <strong>${escapeHtml(valueLabel)}</strong></div>
+              <div style="margin:18px 0 8px 0;font-size:14px;font-weight:700;color:#166534;">Pay with Pix</div>
+              <div style="margin:0 0 10px 0;font-size:13px;color:#111827;">Pix amount: <strong>${escapeHtml(valueLabel)}</strong></div>
               ${qrCodeImage ? `<div style="margin:8px 0 10px 0;text-align:center;">
-                <img src="${escapeHtml(qrCodeImage)}" alt="QR Code Pix" width="180" height="180" style="width:180px;height:180px;border-radius:10px;border:1px solid #e5e7eb;background:#ffffff;" />
+                <img src="${escapeHtml(qrCodeImage)}" alt="Pix QR code" width="180" height="180" style="width:180px;height:180px;border-radius:10px;border:1px solid #e5e7eb;background:#ffffff;" />
               </div>` : ''}
 
-              ${brCode ? `<div style="margin:0 0 8px 0;font-size:12px;color:#374151;">Código Pix (copia e cola)</div>
+              ${brCode ? `<div style="margin:0 0 8px 0;font-size:12px;color:#374151;">Pix code (copy & paste)</div>
               <div style="padding:10px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11px;line-height:1.35;color:#052e16;word-break:break-all;">
                 ${escapeHtml(brCode)}
               </div>
               <div style="margin:8px 0 0 0;text-align:center;">
-                <a href="${escapeHtml(pixPageUrl)}" style="display:inline-block;padding:9px 12px;background:#2563eb;color:#ffffff;border-radius:10px;font-size:13px;font-weight:800;text-decoration:none;">Copiar código Pix</a>
+                <a href="${escapeHtml(pixPageUrl)}" style="display:inline-block;padding:9px 12px;background:#2563eb;color:#ffffff;border-radius:10px;font-size:13px;font-weight:800;text-decoration:none;">Copy Pix code</a>
               </div>
-              <div style="margin:8px 0 0 0;font-size:12px;color:#6b7280;">Se preferir, abra o link para copiar o código completo.</div>` : ''}
+              <div style="margin:8px 0 0 0;font-size:12px;color:#6b7280;">If you prefer, open the link to copy the full code.</div>` : ''}
 
-              <div style="margin:16px 0 6px 0;font-size:13px;font-weight:700;">Como pagar</div>
+              <div style="margin:16px 0 6px 0;font-size:13px;font-weight:700;">How to pay</div>
               <ol style="margin:0 0 0 18px;padding:0;font-size:13px;line-height:1.6;color:#111827;">
-                <li>Abra o aplicativo do seu banco e entre na opção Pix.</li>
-                <li>Escolha a opção Pagar / Pix copia e cola.</li>
-                <li>Escaneie o Qr code. Se preferir, copie e cole o código.</li>
-                <li>Confirme o pagamento.</li>
+                <li>Open your bank app and go to Pix.</li>
+                <li>Select the option to pay using Pix Copy & Paste (or scan the QR code).</li>
+                <li>Paste the code or scan the QR code.</li>
+                <li>Confirm the payment.</li>
               </ol>
 
               <div style="margin:14px 0 0 0;padding-top:12px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280;">
-                Para retirar dúvidas ou ajuda entre em contato com <a href="mailto:suporte@agenciaoppus.site" style="color:#2563eb;text-decoration:none;">suporte@agenciaoppus.site</a>
+                Need help? Contact <a href="mailto:support@youagency.site" style="color:#2563eb;text-decoration:none;">support@youagency.site</a>
               </div>
             </td>
           </tr>
@@ -838,8 +956,7 @@ const sendPixRecoveryEmailToCustomer = async ({ record }) => {
         ...(bcc ? { bcc } : {}),
         subject,
         text,
-        html,
-        attachments: logoAttachment ? [logoAttachment] : undefined
+        html
     });
     return true;
 };
@@ -864,14 +981,14 @@ const sendPaymentApprovedEmailToCustomer = async ({ record, toOverride, serviceL
         const val = (n / 100);
         return `R$ ${val.toFixed(2).replace('.', ',')}`;
     };
-    const formatDateBR = (isoLike) => {
+    const formatDateEN = (isoLike) => {
         const d = new Date(isoLike || 0);
         if (!Number.isFinite(d.getTime())) return '';
-        try { return d.toLocaleDateString('pt-BR'); } catch (_) {}
+        try { return d.toLocaleDateString('en-US'); } catch (_) {}
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, '0');
         const day = String(d.getDate()).padStart(2, '0');
-        return `${day}/${m}/${y}`;
+        return `${m}/${day}/${y}`;
     };
 
     const customer = (record && record.customer && typeof record.customer === 'object') ? record.customer : {};
@@ -887,20 +1004,20 @@ const sendPaymentApprovedEmailToCustomer = async ({ record, toOverride, serviceL
         record?.nomeUsuario ||
         customer?.name ||
         ''
-    ) || 'Cliente';
+    ) || 'Customer';
 
     const paymentMethod = String((record && (record.paymentMethod || record.payment_method || record.method)) || '').toLowerCase();
     const hasCardInfo = !!safe(record?.efi?.card_mask || record?.pagarme?.card_mask || '');
     const hasPixInfo = !!(record?.woovi?.paymentMethods?.pix || record?.woovi?.brCode || record?.woovi?.qrCodeImage);
     const methodLabel = (function () {
-        if (paymentMethod === 'credit_card' || paymentMethod.includes('credit') || paymentMethod.includes('card') || paymentMethod.includes('cart')) return 'Cartão de crédito';
-        if (hasCardInfo) return 'Cartão de crédito';
+        if (paymentMethod === 'credit_card' || paymentMethod.includes('credit') || paymentMethod.includes('card') || paymentMethod.includes('cart')) return 'Credit card';
+        if (hasCardInfo) return 'Credit card';
         if (hasPixInfo) return 'PIX';
         return 'PIX';
     })();
 
     const paidAt = safe((record && (record.woovi && record.woovi.paidAt)) || (record && record.paidAt) || (record && record.createdAt) || (record && record.criado) || '');
-    const dateLabel = formatDateBR(paidAt) || '';
+    const dateLabel = formatDateEN(paidAt) || '';
     const valueCents = (function () {
         const v0 = record && typeof record.valueCents !== 'undefined' ? Number(record.valueCents) : NaN;
         if (Number.isFinite(v0) && v0 > 0) return v0;
@@ -930,8 +1047,8 @@ const sendPaymentApprovedEmailToCustomer = async ({ record, toOverride, serviceL
         const mask = safe(record?.efi?.card_mask || record?.pagarme?.card_mask || '');
         const inst = safe(record?.efi?.installments || record?.pagarme?.installments || '');
         const parts = [];
-        if (mask) parts.push(`Cartão: ${mask}`);
-        if (inst) parts.push(`Parcelas: ${inst}x`);
+        if (mask) parts.push(`Card: ${mask}`);
+        if (inst) parts.push(`Installments: ${inst}x`);
         return parts.join(' • ');
     })();
 
@@ -963,15 +1080,15 @@ const sendPaymentApprovedEmailToCustomer = async ({ record, toOverride, serviceL
             const categoriaKey = safe(rawCategoria).toLowerCase().trim();
             const tipoLabel = (function () {
                 if (categoriaKey === 'curtidas') {
-                    if (tipoKey === 'mistos') return 'curtidas mistas';
-                    if (tipoKey === 'organicos') return 'curtidas brasileiras reais';
+                    if (tipoKey === 'mistos') return 'mixed likes';
+                    if (tipoKey === 'organicos') return 'Brazilian likes (real)';
                 }
-                if (tipoKey === 'mistos') return 'seguidores mistos';
-                if (tipoKey === 'brasileiros') return 'seguidores brasileiros';
-                if (tipoKey === 'organicos') return 'seguidores brasileiros e reais';
-                if (tipoKey === 'curtidas_brasileiras') return 'curtidas brasileiras';
-                if (tipoKey === 'curtidas_organicos') return 'curtidas brasileiras reais';
-                if (tipoKey === 'visualizacoes_reels') return 'visualizações reels';
+                if (tipoKey === 'mistos') return 'mixed followers';
+                if (tipoKey === 'brasileiros') return 'Brazilian followers';
+                if (tipoKey === 'organicos') return 'Brazilian followers (real)';
+                if (tipoKey === 'curtidas_brasileiras') return 'Brazilian likes';
+                if (tipoKey === 'curtidas_organicos') return 'Brazilian likes (real)';
+                if (tipoKey === 'visualizacoes_reels') return 'Reels views';
                 return safe(rawTipo).replace(/_/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
             })();
             const qtyRaw = getAdd('quantidade') || getAdd('qtd') || (record && (record.quantidade || record.qtd)) || '';
@@ -1006,9 +1123,9 @@ const sendPaymentApprovedEmailToCustomer = async ({ record, toOverride, serviceL
             else if (qtyNum) lines.push(String(qtyNum));
             else if (tipoLabel) lines.push(tipoLabel);
 
-            if (bumps.likes > 0) lines.push(`${bumps.likes} curtidas brasileiras`);
-            if (bumps.views > 0) lines.push(`${bumps.views} visualizações`);
-            if (bumps.comments > 0) lines.push(`${bumps.comments} comentários`);
+            if (bumps.likes > 0) lines.push(`${bumps.likes} Brazilian likes`);
+            if (bumps.views > 0) lines.push(`${bumps.views} views`);
+            if (bumps.comments > 0) lines.push(`${bumps.comments} comments`);
 
             return lines.filter(Boolean);
         } catch (_) {
@@ -1022,15 +1139,6 @@ const sendPaymentApprovedEmailToCustomer = async ({ record, toOverride, serviceL
     const bumpText = bumpLines.join('\n');
     const bumpHtml = bumpLines.map(escapeHtml).join('<br/>');
 
-    let logoAttachment = null;
-    try {
-        const logoPath = path.join(__dirname, 'public', 'images', 'logo.png');
-        const buf = fs.readFileSync(logoPath);
-        if (buf && buf.length) {
-            logoAttachment = { filename: 'logo.png', content: buf, cid: 'oppus-logo' };
-        }
-    } catch (_) {}
-
     const baseUrl = (function () {
         const candidates = [
             process.env.SITE_URL,
@@ -1039,48 +1147,48 @@ const sendPaymentApprovedEmailToCustomer = async ({ record, toOverride, serviceL
             process.env.BASE_URL
         ];
         const picked = candidates.map(s => String(s || '').trim()).find(Boolean);
-        const u = picked || 'https://agenciaoppus.site';
+        const u = picked || 'https://youagency.site';
         return u.replace(/\/+$/, '');
     })();
-    const clientUrl = `${baseUrl}/cliente`;
-    const whatsappPrefillText = 'Olá, vim pelo e-mail de compra e preciso de ajuda';
+    const clientUrl = `${baseUrl}/customer`;
+    const whatsappPrefillText = 'Hello! I came from the purchase email and I need help.';
     const whatsappHref = `https://wa.me/553173425727?text=${encodeURIComponent(whatsappPrefillText)}`;
 
-    const subject = `Agência Oppus - Pagamento aprovado${serviceOrderId ? ` - Pedido #${serviceOrderId}` : ''}`;
+    const subject = `You Agency - Payment approved${serviceOrderId ? ` - Order #${serviceOrderId}` : ''}`;
     const text = [
-        `Olá ${payerName}, tudo bem?`,
+        `Hello ${payerName},`,
         '',
-        'Seu pagamento foi aprovado com sucesso!',
-        'Estamos muito felizes em ter você conosco.',
+        'Your payment has been approved successfully!',
+        'We are happy to have you with us.',
         '',
-        'Detalhes do pedido',
-        serviceOrderId ? `Pedido: #${serviceOrderId}` : '',
-        dateLabel ? `Data: ${dateLabel}` : '',
-        baseServiceLine ? `Serviço: ${baseServiceLine}` : '',
-        bumpLines.length ? ['Extras:', ...bumpLines].join('\n') : '',
-        `Valor: ${valueLabel}`,
-        `Forma de pagamento: ${methodLabel}`,
-        cardDetails ? `Detalhes do pagamento: ${cardDetails}` : '',
+        'Order details',
+        serviceOrderId ? `Order: #${serviceOrderId}` : '',
+        dateLabel ? `Date: ${dateLabel}` : '',
+        baseServiceLine ? `Service: ${baseServiceLine}` : '',
+        bumpLines.length ? ['Add-ons:', ...bumpLines].join('\n') : '',
+        `Amount: ${valueLabel}`,
+        `Payment method: ${methodLabel}`,
+        cardDetails ? `Payment details: ${cardDetails}` : '',
         '',
-        'Acompanhe seu pedido por dentro do nosso site',
-        '1. Clique no botão Clientes no menu superior do site.',
-        '2. Informe o número de telefone que você registrou para compra.',
-        '3. Abra o detalhamento do pedido e veja o status.',
+        'Track your order on our website',
+        '1. Click on the "Clientes" button in the top menu.',
+        '2. Enter the phone number you used for your purchase.',
+        '3. Open your order details to see the status.',
         `Link: ${clientUrl}`,
         '',
-        'Precisa de ajuda?',
-        'Email: suporte@agenciaoppus.site',
-        `Chat de suporte: ${whatsappHref}`,
+        'Need help?',
+        'Email: support@youagency.site',
+        `Support chat: ${whatsappHref}`,
     ].filter(Boolean).join('\n');
 
     const detailsRows = [
-        serviceOrderId ? `<tr><td style="padding:8px 10px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:700;">Pedido</td><td style="padding:8px 10px;border:1px solid #e5e7eb;">#${escapeHtml(serviceOrderId)}</td></tr>` : '',
-        dateLabel ? `<tr><td style="padding:8px 10px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:700;">Data</td><td style="padding:8px 10px;border:1px solid #e5e7eb;">${escapeHtml(dateLabel)}</td></tr>` : '',
-        baseServiceLine ? `<tr><td style="padding:8px 10px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:700;">Serviço</td><td style="padding:8px 10px;border:1px solid #e5e7eb;">${escapeHtml(baseServiceLine)}</td></tr>` : '',
-        bumpLines.length ? `<tr><td style="padding:8px 10px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:700;">Extras</td><td style="padding:8px 10px;border:1px solid #e5e7eb;">${bumpHtml}</td></tr>` : '',
-        `<tr><td style="padding:8px 10px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:700;">Valor</td><td style="padding:8px 10px;border:1px solid #e5e7eb;">${escapeHtml(valueLabel)}</td></tr>`,
-        `<tr><td style="padding:8px 10px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:700;">Forma de pagamento</td><td style="padding:8px 10px;border:1px solid #e5e7eb;">${escapeHtml(methodLabel)}</td></tr>`,
-        cardDetails ? `<tr><td style="padding:8px 10px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:700;">Detalhes</td><td style="padding:8px 10px;border:1px solid #e5e7eb;">${escapeHtml(cardDetails)}</td></tr>` : ''
+        serviceOrderId ? `<tr><td style="padding:8px 10px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:700;">Order</td><td style="padding:8px 10px;border:1px solid #e5e7eb;">#${escapeHtml(serviceOrderId)}</td></tr>` : '',
+        dateLabel ? `<tr><td style="padding:8px 10px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:700;">Date</td><td style="padding:8px 10px;border:1px solid #e5e7eb;">${escapeHtml(dateLabel)}</td></tr>` : '',
+        baseServiceLine ? `<tr><td style="padding:8px 10px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:700;">Service</td><td style="padding:8px 10px;border:1px solid #e5e7eb;">${escapeHtml(baseServiceLine)}</td></tr>` : '',
+        bumpLines.length ? `<tr><td style="padding:8px 10px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:700;">Add-ons</td><td style="padding:8px 10px;border:1px solid #e5e7eb;">${bumpHtml}</td></tr>` : '',
+        `<tr><td style="padding:8px 10px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:700;">Amount</td><td style="padding:8px 10px;border:1px solid #e5e7eb;">${escapeHtml(valueLabel)}</td></tr>`,
+        `<tr><td style="padding:8px 10px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:700;">Payment method</td><td style="padding:8px 10px;border:1px solid #e5e7eb;">${escapeHtml(methodLabel)}</td></tr>`,
+        cardDetails ? `<tr><td style="padding:8px 10px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:700;">Details</td><td style="padding:8px 10px;border:1px solid #e5e7eb;">${escapeHtml(cardDetails)}</td></tr>` : ''
     ].filter(Boolean).join('');
 
     const uniqueEmailMarker = (function () {
@@ -1099,41 +1207,41 @@ const sendPaymentApprovedEmailToCustomer = async ({ record, toOverride, serviceL
         <table width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
           <tr>
             <td bgcolor="#111827" style="padding:14px 20px;font-family:Arial,Helvetica,sans-serif;background:#111827;background-color:#111827;color:#ffffff;text-align:center;">
-              ${logoAttachment ? `<img src="cid:oppus-logo" alt="Agência Oppus" style="height:42px;width:auto;display:inline-block;" />` : ''}
-              <div style="margin-top:${logoAttachment ? '8px' : '0'};font-size:14px;font-weight:800;letter-spacing:0.06em;color:#ffffff;">Agência Oppus</div>
+              <div style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:#ffffff;color:#111827;font-weight:900;font-size:20px;letter-spacing:0.04em;">Y</div>
+              <div style="margin-top:8px;font-size:14px;font-weight:800;letter-spacing:0.06em;color:#ffffff;">You Agency</div>
             </td>
           </tr>
           <tr>
             <td style="padding:14px 20px;font-family:Arial,Helvetica,sans-serif;color:#111827;">
-              <div style="font-size:16px;font-weight:700;margin:0 0 8px 0;">Olá, ${escapeHtml(payerName)}, tudo bem?</div>
+              <div style="font-size:16px;font-weight:700;margin:0 0 8px 0;">Hello, ${escapeHtml(payerName)},</div>
               <div style="font-size:14px;line-height:1.5;margin:0 0 12px 0;">
-                Seu pagamento foi aprovado com sucesso!
+                Your payment has been approved successfully!
                 <br/>
-                Estamos muito felizes em ter você conosco.
+                We are happy to have you with us.
               </div>
 
-              <div style="margin:14px 0 10px 0;font-size:14px;font-weight:700;">Detalhes do pedido</div>
+              <div style="margin:14px 0 10px 0;font-size:14px;font-weight:700;">Order details</div>
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;font-size:13px;">
                 ${detailsRows}
               </table>
 
               <div style="margin:14px 0 0 0;padding:12px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb;">
-                <div style="font-size:13px;font-weight:800;margin:0 0 8px 0;color:#111827;">Acompanhe seu pedido por dentro do nosso site</div>
+                <div style="font-size:13px;font-weight:800;margin:0 0 8px 0;color:#111827;">Track your order on our website</div>
                 <ol style="margin:0 0 0 18px;padding:0;font-size:12px;line-height:1.6;color:#111827;">
-                  <li>Clique no botão <strong>Clientes</strong> no menu superior do site.</li>
-                  <li>Informe o número de telefone que você registrou para compra.</li>
-                  <li>Abra o detalhamento do pedido e veja o status.</li>
+                  <li>Click on the <strong>Clientes</strong> button in the top menu.</li>
+                  <li>Enter the phone number you used for your purchase.</li>
+                  <li>Open your order details to see the status.</li>
                 </ol>
                 <div style="margin-top:10px;">
-                  <a href="${escapeHtml(clientUrl)}" style="display:inline-block;padding:9px 12px;background:#111827;color:#ffffff;border-radius:10px;font-size:13px;font-weight:800;text-decoration:none;">Abrir Clientes</a>
+                  <a href="${escapeHtml(clientUrl)}" style="display:inline-block;padding:9px 12px;background:#111827;color:#ffffff;border-radius:10px;font-size:13px;font-weight:800;text-decoration:none;">Open Client Area</a>
                 </div>
               </div>
 
               <div style="margin:14px 0 0 0;padding:12px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#ffffff;">
-                <div style="font-size:13px;font-weight:800;margin:0 0 6px 0;color:#111827;">Precisa de ajuda?</div>
+                <div style="font-size:13px;font-weight:800;margin:0 0 6px 0;color:#111827;">Need help?</div>
                 <div style="font-size:13px;color:#111827;line-height:1.6;">
-                  <div>Email: <a href="mailto:suporte@agenciaoppus.site" style="color:#2563eb;text-decoration:none;">suporte@agenciaoppus.site</a></div>
-                  <div>Chat de suporte: <a href="${escapeHtml(whatsappHref)}" style="color:#2563eb;text-decoration:none;">Clique aqui para acessar</a></div>
+                  <div>Email: <a href="mailto:support@youagency.site" style="color:#2563eb;text-decoration:none;">support@youagency.site</a></div>
+                  <div>Support chat: <a href="${escapeHtml(whatsappHref)}" style="color:#2563eb;text-decoration:none;">Click here to open</a></div>
                 </div>
               </div>
             </td>
@@ -1153,8 +1261,7 @@ const sendPaymentApprovedEmailToCustomer = async ({ record, toOverride, serviceL
         ...(bcc ? { bcc } : {}),
         subject,
         text,
-        html,
-        attachments: logoAttachment ? [logoAttachment] : undefined
+        html
     });
     return true;
 };
@@ -1625,7 +1732,12 @@ async function fetchInstagramPosts(username) {
         return result;
     } catch (error) {
         console.error('Erro em fetchInstagramPosts:', error);
-        return { success: false, error: error.message };
+        const raw = String(error?.message || error || '');
+        const isIgSession =
+          /invalid\s+session\s+token/i.test(raw) ||
+          /\big_session_invalid\b/i.test(raw) ||
+          /\b(session\s+invalid|session\s+expired)\b/i.test(raw);
+        return { success: false, error: isIgSession ? 'Erro na sessão do Instagram. Tente novamente em alguns instantes.' : raw };
     }
 }
 
@@ -1634,7 +1746,7 @@ app.get('/api/instagram/info', async (req, res) => {
     try {
         const username = req.query.username;
         if (!username) {
-            return res.status(400).json({ success: false, error: 'Username é obrigatório' });
+            return res.status(400).json({ success: false, error: 'Username is required' });
         }
 
         const userAgent = req.get('User-Agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -1656,12 +1768,12 @@ app.get('/api/instagram/info', async (req, res) => {
         } else {
             return res.status(404).json({ 
                 success: false, 
-                error: result.error || 'Perfil não encontrado.' 
+                error: result.error || 'Profile not found.' 
             });
         }
     } catch (error) {
         console.error('Erro na rota /api/instagram/info:', error);
-        res.status(500).json({ success: false, error: 'Erro interno ao buscar perfil' });
+        res.status(500).json({ success: false, error: 'Internal error while fetching profile' });
     }
 });
 
@@ -1861,7 +1973,7 @@ async function verifyInstagramProfile(username, userAgent, ip, req, res, bypassC
             
             if (!Array.isArray(items) || items.length === 0 || (items[0] && items[0].error)) {
                  console.warn(`⚠️ Apify não encontrou @${username} ou retornou erro.`);
-                 const result404 = { success: false, status: 404, error: "Perfil não localizado." };
+                 const result404 = { success: false, status: 404, error: "Profile not found." };
                  setCache(username, result404, NEGATIVE_CACHE_TTL_MS);
                  return result404;
             }
@@ -1965,7 +2077,7 @@ async function verifyInstagramProfile(username, userAgent, ip, req, res, bypassC
             if (error.response) {
                 console.error('❌ Detalhes Erro Apify:', error.response.status, error.response.data);
             }
-            const errorResult = { success: false, status: 500, error: "Erro de usuário. configra o nome digitado e tente novamente." };
+            const errorResult = { success: false, status: 500, error: "Profile verification error. Check the username and try again." };
             setCache(username, errorResult, NEGATIVE_CACHE_TTL_MS);
             return errorResult;
         }
@@ -2024,7 +2136,7 @@ app.get('/api/test-embed-data', async (req, res) => {
     } else {
       return res.json({ 
           ok: false, 
-          error: result.error || 'Erro desconhecido ao verificar perfil',
+          error: result.error || 'Unknown error while verifying profile',
           details: result
       });
     }
@@ -3080,6 +3192,15 @@ app.get('/__debug/views-list', (req, res) => {
 // Rotas diretas antes de estáticos (mantidas apenas para depuração, se necessário)
 
 // Servir arquivos estáticos
+app.use((req, res, next) => {
+  try {
+    const p = String(req.path || '');
+    if (p === '/js/checkout.js') {
+      res.set('Cache-Control', 'no-store');
+    }
+  } catch (_) {}
+  next();
+});
 app.use(express.static("public"));
 app.use('/temp-images', express.static(path.join(__dirname, 'temp_images')));
 
@@ -3114,16 +3235,28 @@ app.get('/image-proxy', async (req, res) => {
     return res.status(400).send('Invalid image URL');
   }
   try {
+    const isIg = (function () {
+      try {
+        const u = new URL(String(targetUrl));
+        const h = String(u.hostname || '').toLowerCase();
+        return h.includes('instagram') || h.includes('cdninstagram') || h.includes('fbcdn') || h.includes('scontent');
+      } catch (_) {
+        return false;
+      }
+    })();
     const response = await axios.get(targetUrl, {
       responseType: 'arraybuffer',
       timeout: 25000,
       headers: {
         'User-Agent': req.get('User-Agent') || 'Mozilla/5.0',
-        'Accept': 'image/*,video/*,*/*;q=0.8'
+        'Accept': 'image/*,video/*,*/*;q=0.8',
+        ...(isIg ? { 'Referer': 'https://www.instagram.com/', 'Accept-Language': 'en-US,en;q=0.9' } : {})
       }
     });
     const contentType = response.headers['content-type'] || 'image/jpeg';
     res.setHeader('Content-Type', contentType);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutos
     return res.send(response.data);
   } catch (err) {
@@ -3254,7 +3387,7 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// Home: redirecionar para /engajamento (nova página principal)
+// Home: redirect to /engagement (english slug)
 app.get('/', (req, res) => {
     console.log('🏠 Acessando rota / (home -> engajamento)');
     try {
@@ -3273,12 +3406,38 @@ app.get('/', (req, res) => {
             return '';
         }
     })();
-    return res.redirect(q ? (`/engajamento?${q}`) : '/engajamento');
+    return res.redirect(q ? (`/engagement?${q}`) : '/engagement');
 });
 
 // Página de Termos de Uso
+app.get('/terms', (req, res) => {
+  const hasLang = !!String(req.query?.lang || req.query?.language || '').trim();
+  const language = hasLang ? (String(req.query?.lang || req.query?.language || '').trim().toLowerCase() === 'en' ? 'en' : '') : 'en';
+  res.render('termos', { language }, (err, html) => {
+    if (err) {
+      console.error('Erro ao renderizar termos:', err.message);
+      return res.status(500).send('Erro ao abrir Termos de Uso');
+    }
+    res.type('text/html');
+    res.send(html);
+  });
+});
+
 app.get('/termos', (req, res) => {
-  res.render('termos', {}, (err, html) => {
+  const qs = (function () {
+    try {
+      const q = new URLSearchParams(req.query || {});
+      return q.toString();
+    } catch (_) { return ''; }
+  })();
+  return res.redirect(qs ? (`/terms?${qs}`) : '/terms');
+});
+
+// Página de Termos de Uso (render)
+app.get('/terms-of-use', (req, res) => {
+  const hasLang = !!String(req.query?.lang || req.query?.language || '').trim();
+  const language = hasLang ? (String(req.query?.lang || req.query?.language || '').trim().toLowerCase() === 'en' ? 'en' : '') : 'en';
+  res.render('termos', { language }, (err, html) => {
     if (err) {
       console.error('Erro ao renderizar termos:', err.message);
       return res.status(500).send('Erro ao abrir Termos de Uso');
@@ -3299,16 +3458,16 @@ app.get('/oppus', (req, res) => {
   });
 });
 
-// Página dedicada de Cliente (consulta de pedidos)
-app.get('/cliente', (req, res) => {
-    console.log('👤 Acessando rota /cliente');
+app.get('/customer', (req, res) => {
+    console.log('👤 Acessando rota /customer');
+    const language = String(req.query?.lang || req.query?.language || '').trim().toLowerCase() === 'en' ? 'en' : '';
     try {
         if (req.session) {
             req.session.lastPaidIdentifier = '';
             req.session.lastPaidCorrelationID = '';
         }
     } catch (_) {}
-    res.render('cliente', {}, (err, html) => {
+    res.render('cliente', { language }, (err, html) => {
         if (err) {
             console.error('❌ Erro ao renderizar cliente:', err.message);
             return res.status(500).send('Erro ao abrir página do cliente');
@@ -3316,6 +3475,16 @@ app.get('/cliente', (req, res) => {
         res.type('text/html');
         res.send(html);
     });
+});
+
+app.get('/cliente', (req, res) => {
+    const qs = (function () {
+        try {
+            const q = new URLSearchParams(req.query || {});
+            return q.toString();
+        } catch (_) { return ''; }
+    })();
+    return res.redirect(qs ? (`/customer?${qs}`) : '/customer');
 });
 
 // Debug: listar rotas registradas
@@ -3369,7 +3538,7 @@ app.get('/pix', async (req, res) => {
     const { getCollection } = require('./mongodbClient');
     const col = await getCollection('checkout_orders');
     const conds = [];
-    if (identifier) { conds.push({ identifier }); conds.push({ 'woovi.identifier': identifier }); conds.push({ 'expay.transactionId': identifier }); }
+    if (identifier) { conds.push({ identifier }); conds.push({ 'woovi.identifier': identifier }); conds.push({ 'expay.transactionId': identifier }); conds.push({ 'paghiper.transactionId': identifier }); }
     if (correlationID) conds.push({ correlationID });
     const order = await col.findOne(conds.length ? { $or: conds } : {});
     if (!order) {
@@ -3394,9 +3563,10 @@ app.get('/pix', async (req, res) => {
 
     const woovi = (order && order.woovi && typeof order.woovi === 'object') ? order.woovi : {};
     const expay = (order && order.expay && typeof order.expay === 'object') ? order.expay : {};
+    const paghiper = (order && order.paghiper && typeof order.paghiper === 'object') ? order.paghiper : {};
     const pix = (woovi && woovi.paymentMethods && woovi.paymentMethods.pix && typeof woovi.paymentMethods.pix === 'object') ? woovi.paymentMethods.pix : {};
-    const brCode = safe(expay.brCode || pix.brCode || woovi.brCode || '');
-    const qrCodeImage = safe(expay.qrCodeImage || pix.qrCodeImage || woovi.qrCodeImage || '');
+    const brCode = safe(paghiper.brCode || expay.brCode || pix.brCode || woovi.brCode || '');
+    const qrCodeImage = safe(paghiper.qrCodeImage || expay.qrCodeImage || pix.qrCodeImage || woovi.qrCodeImage || '');
     const valueLabel = centsToBRL(order && order.valueCents);
     const masked = (function () {
       if (!brCode) return '';
@@ -3481,9 +3651,9 @@ app.get('/pix', async (req, res) => {
   }
 });
 
-// Página Engajamento (duplicada da checkout até plataforma)
-app.get('/engajamento', (req, res) => {
-  console.log('📈 Acessando rota /engajamento');
+// Engagement page (english slug)
+app.get('/engagement', (req, res) => {
+  console.log('📈 Acessando rota /engagement');
   res.render('engajamento', { 
     PIXEL_ID: process.env.PIXEL_ID || '', 
     queryParams: req.query 
@@ -3497,9 +3667,19 @@ app.get('/engajamento', (req, res) => {
   });
 });
 
-// Página Engajamento Novo (com seletor de contexto e cards unificados)
-app.get('/engajamento-novo', (req, res) => {
-  console.log('✨ Acessando rota /engajamento-novo');
+app.get('/engajamento', (req, res) => {
+  const qs = (function () {
+    try {
+      const q = new URLSearchParams(req.query || {});
+      return q.toString();
+    } catch (_) { return ''; }
+  })();
+  return res.redirect(qs ? (`/engagement?${qs}`) : '/engagement');
+});
+
+// Engagement (new) page
+app.get('/engagement-new', (req, res) => {
+  console.log('✨ Acessando rota /engagement-new');
   res.render('engajamento-novo', { 
     PIXEL_ID: process.env.PIXEL_ID || '', 
     queryParams: req.query
@@ -3513,6 +3693,16 @@ app.get('/engajamento-novo', (req, res) => {
   });
 });
 
+app.get('/engajamento-novo', (req, res) => {
+  const qs = (function () {
+    try {
+      const q = new URLSearchParams(req.query || {});
+      return q.toString();
+    } catch (_) { return ''; }
+  })();
+  return res.redirect(qs ? (`/engagement-new?${qs}`) : '/engagement-new');
+});
+
 const trackPageView = (req, path) => {
   try {
     const p = String(path || '').trim();
@@ -3522,9 +3712,8 @@ const trackPageView = (req, path) => {
   } catch (_) {}
 };
 
-// Página Serviços (três serviços iguais ao principal)
-app.get('/servicos', (req, res) => {
-  console.log('🧩 Acessando rota /servicos');
+app.get('/services', (req, res) => {
+  console.log('🧩 Acessando rota /services');
   res.render('servicos', { queryParams: req.query }, (err, html) => {
     if (err) {
       console.error('❌ Erro ao renderizar servicos:', err.message);
@@ -3535,9 +3724,18 @@ app.get('/servicos', (req, res) => {
   });
 });
 
-// Página Serviços Instagram (cópia do checkout)
-app.get('/servicos-instagram', (req, res) => {
-  console.log('📸 Acessando rota /servicos-instagram');
+app.get('/servicos', (req, res) => {
+  const qs = (function () {
+    try {
+      const q = new URLSearchParams(req.query || {});
+      return q.toString();
+    } catch (_) { return ''; }
+  })();
+  return res.redirect(qs ? (`/services?${qs}`) : '/services');
+});
+
+app.get('/instagram-services', (req, res) => {
+  console.log('📸 Acessando rota /instagram-services');
   const rawServico = String((req && req.query && (req.query.servico || req.query.service || req.query.tipo)) || '').trim().toLowerCase();
   const pvPath = '/servicos-instagram';
   if (rawServico === 'curtidas' || rawServico === 'visualizacoes') {
@@ -3558,10 +3756,9 @@ app.get('/servicos-instagram', (req, res) => {
   });
 });
 
-// Página Serviços Visualizações (baseada em servicos-curtidas)
-app.get('/servicos-visualizacoes', (req, res) => {
-  console.log('▶️ Acessando rota /servicos-visualizacoes');
-  trackPageView(req, '/servicos-visualizacoes');
+app.get('/views-services', (req, res) => {
+  console.log('▶️ Acessando rota /views-services');
+  trackPageView(req, '/views-services');
   res.render('servicos-visualizacoes', { 
     PIXEL_ID: process.env.PIXEL_ID || '', 
     queryParams: req.query 
@@ -3575,10 +3772,9 @@ app.get('/servicos-visualizacoes', (req, res) => {
   });
 });
 
-// Página Serviços Curtidas (estrutura similar à de serviços Instagram)
-app.get('/servicos-curtidas', (req, res) => {
-  console.log('❤️ Acessando rota /servicos-curtidas');
-  trackPageView(req, '/servicos-curtidas');
+app.get('/likes-services', (req, res) => {
+  console.log('❤️ Acessando rota /likes-services');
+  trackPageView(req, '/likes-services');
   res.render('servicos-curtidas', { 
     PIXEL_ID: process.env.PIXEL_ID || '', 
     queryParams: req.query 
@@ -3590,6 +3786,36 @@ app.get('/servicos-curtidas', (req, res) => {
     res.type('text/html');
     res.send(html);
   });
+});
+
+app.get('/servicos-instagram', (req, res) => {
+  const qs = (function () {
+    try {
+      const q = new URLSearchParams(req.query || {});
+      return q.toString();
+    } catch (_) { return ''; }
+  })();
+  return res.redirect(qs ? (`/instagram-services?${qs}`) : '/instagram-services');
+});
+
+app.get('/servicos-visualizacoes', (req, res) => {
+  const qs = (function () {
+    try {
+      const q = new URLSearchParams(req.query || {});
+      return q.toString();
+    } catch (_) { return ''; }
+  })();
+  return res.redirect(qs ? (`/views-services?${qs}`) : '/views-services');
+});
+
+app.get('/servicos-curtidas', (req, res) => {
+  const qs = (function () {
+    try {
+      const q = new URLSearchParams(req.query || {});
+      return q.toString();
+    } catch (_) { return ''; }
+  })();
+  return res.redirect(qs ? (`/likes-services?${qs}`) : '/likes-services');
 });
 
 // API: agregação de geolocalização para painel
@@ -4228,7 +4454,16 @@ const refilPageHandler = (fromPath) => async (req, res) => {
     res.send(html);
   });
 };
-app.get('/refil', refilPageHandler('/refil'));
+app.get('/refill', refilPageHandler('/refill'));
+app.get('/refil', (req, res) => {
+  const qs = (function () {
+    try {
+      const q = new URLSearchParams(req.query || {});
+      return q.toString();
+    } catch (_) { return ''; }
+  })();
+  return res.redirect(qs ? (`/refill?${qs}`) : '/refill');
+});
 app.get(['/refil2', '/refil2/'], refilPageHandler('/refil2'));
 
 // Rota antiga de refil removida em favor da nova implementação (ver final do arquivo)
@@ -5851,7 +6086,7 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
     const cancelUrl = (function () {
       const ref = String(req.get('Referer') || req.headers['referer'] || '').trim();
       if (ref) return ref;
-      return (baseUrl ? `${baseUrl}` : '') + '/cliente';
+      return (baseUrl ? `${baseUrl}` : '') + '/customer';
     })();
 
     const description = String(addInfoMap['pacote'] || `${qtd || 1} ${tipo || 'serviço'}`).trim().slice(0, 500);
@@ -5876,7 +6111,7 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
     if (emailSafe) sp.append('customer_email', emailSafe);
     sp.append('client_reference_id', correlationIDSafe);
     sp.append('line_items[0][quantity]', '1');
-    sp.append('line_items[0][price_data][currency]', 'brl');
+    sp.append('line_items[0][price_data][currency]', 'usd');
     sp.append('line_items[0][price_data][unit_amount]', String(validatedValueCents));
     sp.append('line_items[0][price_data][product_data][name]', productName);
     const metaKeys = Object.keys(stripeMetadata || {});
@@ -7073,6 +7308,763 @@ app.post('/api/expay/charge', async (req, res) => {
     }
 });
 
+app.post('/api/paghiper/charge', async (req, res) => {
+    try {
+        const apiKey = String(process.env.PAGHIPER_API_KEY || '').trim();
+        if (!apiKey) {
+            return res.status(500).json({ error: 'missing_paghiper_api_key', message: 'Configuração da PagHiper ausente (PAGHIPER_API_KEY).' });
+        }
+        const token = String(process.env.PAGHIPER_TOKEN || '').trim();
+        if (!token) {
+            return res.status(500).json({ error: 'missing_paghiper_token', message: 'Configuração da PagHiper ausente (PAGHIPER_TOKEN).' });
+        }
+
+        const {
+            correlationID,
+            value,
+            comment,
+            customer,
+            additionalInfo,
+            profile_is_private
+        } = req.body || {};
+
+        if (!value || typeof value !== 'number') {
+            return res.status(400).json({ error: 'invalid_value', message: 'Campo value (centavos) é obrigatório.' });
+        }
+        if (value < 300) {
+            return res.status(400).json({ error: 'invalid_value_min', message: 'Para emitir Pix via PagHiper o valor mínimo é R$ 3,00.' });
+        }
+
+        const sanitizeText = (s) => {
+            if (typeof s !== 'string') return s;
+            return s.replace(/[\u2012-\u2015]/g, '-').replace(/[\uD800-\uDFFF]/g, '').trim();
+        };
+
+        const sanitizedAdditional = Array.isArray(additionalInfo)
+            ? additionalInfo.map((item) => ({
+                key: sanitizeText(String(item?.key ?? '')),
+                value: sanitizeText(String(item?.value ?? '')),
+            }))
+            : [];
+        const sanitizedAdditionalFiltered = sanitizedAdditional
+            .filter((it) => typeof it.key === 'string' && it.key.trim().length > 0 && typeof it.value === 'string' && it.value.trim().length > 0)
+            .map((it) => ({ key: it.key.trim(), value: it.value.trim() }));
+
+        try {
+            const cookieHeader = req.headers['cookie'] || '';
+            const m = cookieHeader && cookieHeader.match(/(?:^|;\s*)tc_code=([^;]+)/);
+            const tc = m && m[1] ? decodeURIComponent(m[1]) : '';
+            if (tc) {
+                for (let i = sanitizedAdditionalFiltered.length - 1; i >= 0; i--) {
+                    if (sanitizedAdditionalFiltered[i].key === 'tc_code') {
+                        sanitizedAdditionalFiltered.splice(i, 1);
+                    }
+                }
+                sanitizedAdditionalFiltered.push({ key: 'tc_code', value: tc });
+            }
+        } catch (_) {}
+
+        const addInfoMap = sanitizedAdditionalFiltered.reduce((acc, item) => {
+            acc[item.key] = item.value;
+            return acc;
+        }, {});
+
+        const tipoVal = addInfoMap['tipo_servico'] || '';
+        const qtdVal = (function () {
+            const raw = String(addInfoMap['quantidade'] ?? '').trim();
+            const n = parseInt(raw.replace(/[^\d]/g, ''), 10);
+            return Number.isFinite(n) && n > 0 ? n : 0;
+        })();
+
+        let validatedPriceCents = null;
+        const vNum = Number(value);
+        const _host = String(req.headers?.host || '').toLowerCase();
+        const _origin = String(req.headers?.origin || '').toLowerCase();
+        const _referer = String(req.headers?.referer || '').toLowerCase();
+        const isLocalHeader = _host.includes('localhost') || _host.startsWith('127.0.0.1') || _origin.includes('localhost') || _origin.includes('127.0.0.1') || _referer.includes('localhost') || _referer.includes('127.0.0.1');
+        const allowLowValueBypass = (Number.isFinite(vNum) && vNum > 0 && vNum <= 100) && isLocalHeader;
+
+        if (allowLowValueBypass) {
+            validatedPriceCents = vNum;
+        } else {
+            const verification = await verifyPrice(tipoVal, qtdVal, sanitizedAdditionalFiltered, vNum);
+            if (verification.isValid) {
+                validatedPriceCents = verification.matchedPrice;
+            } else {
+                let acceptedByCoupon = false;
+                try {
+                    const couponCodeRaw = addInfoMap['cupom'] || addInfoMap['coupon'] || '';
+                    const couponCode = normalizeCouponCode(couponCodeRaw);
+                    if (couponCode) {
+                        const profileKey = normalizeProfileKey(addInfoMap['instagram_username'] || addInfoMap['perfil'] || '');
+                        const eligibility = await getCouponEligibility(couponCode, profileKey);
+                        if (eligibility && eligibility.ok && eligibility.coupon) {
+                            const pct = Number(eligibility.coupon.discountPercentage || 0) || 0;
+                            const rate = pct > 0 ? (pct / 100) : 0;
+                            if (rate > 0 && Number.isFinite(Number(verification.expectedPrice)) && Number(verification.expectedPrice) > 0) {
+                                const expected = Number(verification.expectedPrice);
+                                const discountVal = Math.round(expected * rate);
+                                const discountedExpected = Math.max(0, expected - discountVal);
+                                if (vNum === discountedExpected) {
+                                    validatedPriceCents = vNum;
+                                    acceptedByCoupon = true;
+                                }
+                            }
+                        }
+                    }
+                } catch (_) {}
+                if (!acceptedByCoupon) {
+                    return res.status(400).json({
+                        error: 'value_mismatch',
+                        message: `O valor do pedido (${value}) não corresponde ao preço oficial calculado pelo sistema (${verification.expectedPrice}).`
+                    });
+                }
+            }
+        }
+
+        const normalizePhone = (s) => {
+            const raw = typeof s === 'string' ? s : '';
+            const digits = raw.replace(/\D/g, '');
+            if (!digits) return '';
+            const noPlus = digits.startsWith('55') ? digits.slice(2) : digits;
+            return noPlus;
+        };
+
+        const normalizeEmail = (s) => {
+            const raw = typeof s === 'string' ? s.trim() : '';
+            if (!raw) return '';
+            const email = raw.toLowerCase();
+            const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+            return isValid ? email : '';
+        };
+
+        const isValidCPF = (cpfRaw) => {
+            const cpf = String(cpfRaw || '').replace(/\D/g, '');
+            if (cpf.length !== 11) return false;
+            if (/^(\d)\1+$/.test(cpf)) return false;
+            const calc = (base, factor) => {
+                let sum = 0;
+                for (let i = 0; i < base.length; i++) sum += Number(base[i]) * (factor - i);
+                const mod = (sum * 10) % 11;
+                return mod === 10 ? 0 : mod;
+            };
+            const d1 = calc(cpf.slice(0, 9), 10);
+            const d2 = calc(cpf.slice(0, 10), 11);
+            return d1 === Number(cpf[9]) && d2 === Number(cpf[10]);
+        };
+
+        let cpfDigits = String((customer && (customer.cpf || customer.cpfCnpj || customer.document)) || addInfoMap['cpf'] || addInfoMap['cpf_cnpj'] || '').replace(/\D/g, '');
+        const envCpf = String(process.env.PAGHIPER_DEFAULT_CPF || '').replace(/\D/g, '').trim();
+        const allowAutoCpf = (String(process.env.NODE_ENV || '').trim().toLowerCase() !== 'production') && isLocalHeader && String(process.env.PAGHIPER_AUTO_CPF || '').trim() === '1';
+        const generateValidCpfDigits = () => {
+            const randDigit = () => Math.floor(Math.random() * 10);
+            const calc = (digits, factor) => {
+                let sum = 0;
+                for (let i = 0; i < digits.length; i++) sum += digits[i] * (factor - i);
+                const mod = sum % 11;
+                return mod < 2 ? 0 : (11 - mod);
+            };
+            for (let tries = 0; tries < 20; tries++) {
+                const base = Array.from({ length: 9 }, randDigit);
+                if (base.every(d => d === base[0])) continue;
+                const d1 = calc(base, 10);
+                const d2 = calc([...base, d1], 11);
+                const out = `${base.join('')}${d1}${d2}`;
+                if (isValidCPF(out)) return out;
+            }
+            return '52998224725';
+        };
+        if ((!cpfDigits || cpfDigits.length !== 11 || !isValidCPF(cpfDigits)) && envCpf && envCpf.length === 11 && isValidCPF(envCpf)) {
+            cpfDigits = envCpf;
+        } else if ((!cpfDigits || cpfDigits.length !== 11 || !isValidCPF(cpfDigits)) && allowAutoCpf) {
+            cpfDigits = generateValidCpfDigits();
+        }
+        if (!cpfDigits || cpfDigits.length !== 11) {
+            return res.status(400).json({ error: 'missing_cpf', message: 'Informe seu CPF para pagar via Pix (PagHiper).' });
+        }
+        if (!isValidCPF(cpfDigits)) {
+            return res.status(400).json({ error: 'invalid_cpf', message: 'Informe um CPF válido para pagar via Pix (PagHiper).' });
+        }
+        const email = normalizeEmail((customer && customer.email) ? customer.email : (addInfoMap['email'] || ''));
+        if (!email) {
+            return res.status(400).json({ error: 'missing_email', message: 'Informe seu e-mail para pagar via Pix (PagHiper).' });
+        }
+
+        const customerPayload = {
+            name: sanitizeText((customer && customer.name) ? customer.name : (addInfoMap['instagram_username'] ? `@${String(addInfoMap['instagram_username']).replace(/^@+/, '')}` : 'Cliente Checkout')),
+            phone: normalizePhone((customer && customer.phone) ? customer.phone : '')
+        };
+
+        const incomingCorrelationID = (typeof correlationID === 'string' ? correlationID : '').trim();
+        const phoneDigitsRaw = (customer && customer.phone) ? String(customer.phone).replace(/\D/g, '') : '';
+        const randChunk = () => Math.random().toString(36).slice(2, 5);
+        const chargeCorrelationID = incomingCorrelationID || `${randChunk()}-${randChunk()}-${phoneDigitsRaw || 'no-phone'}`;
+
+        try {
+            if (incomingCorrelationID) {
+                const col = await getCollection('checkout_orders');
+                const existing = await col.findOne(
+                    { correlationID: incomingCorrelationID },
+                    { projection: { _id: 1, correlationID: 1, identifier: 1, status: 1, paghiper: 1, valueCents: 1 } }
+                );
+                const p = existing && existing.paghiper ? existing.paghiper : null;
+                if (existing && p && (p.brCode || p.qrCodeImage || p.transactionId)) {
+                    return res.status(200).json({
+                        gateway: 'paghiper',
+                        charge: {
+                            id: p.transactionId || null,
+                            chargeId: p.transactionId || null,
+                            identifier: p.transactionId || existing.identifier || null,
+                            correlationID: existing.correlationID || incomingCorrelationID,
+                            status: p.status || existing.status || 'pendente',
+                            paymentMethods: { pix: { brCode: p.brCode || null, qrCodeImage: p.qrCodeImage || null } },
+                            brCode: p.brCode || null,
+                            qrCodeImage: p.qrCodeImage || null
+                        },
+                        reused: true
+                    });
+                }
+            }
+        } catch (_) {}
+
+        const baseUrl = (function () {
+            const candidates = [
+                process.env.SITE_URL,
+                process.env.PUBLIC_URL,
+                process.env.APP_URL,
+                process.env.BASE_URL
+            ];
+            const picked = candidates.map(s => String(s || '').trim()).find(Boolean);
+            const fallbackFromReq = (function () {
+                try {
+                    const host = String(req.get('host') || req.headers['host'] || '').trim();
+                    if (!host) return '';
+                    const proto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() || (req.secure ? 'https' : 'http');
+                    return `${proto}://${host}`;
+                } catch (_) { return ''; }
+            })();
+            const u = picked || fallbackFromReq || 'https://agenciaoppus.site';
+            return u.replace(/\/+$/, '');
+        })();
+        const notificationUrl = 'https://server.trackcombo.com/webhook_new_integration/etkm1Zs1YoGm1QFebNfL/';
+
+        const itemDescBase = sanitizeText(String(addInfoMap['pacote'] || addInfoMap['produto'] || comment || 'Checkout OPPUS')) || 'Checkout OPPUS';
+        const paghiperTextParts = (function () {
+            const norm = (v) => sanitizeText(String(v || '').trim());
+            const digits = (v) => String(v || '').replace(/\D/g, '').trim();
+            const igNorm = (v) => String(v || '').replace(/^@+/, '').trim();
+            const shortenUrl = (v) => {
+                const raw = norm(v);
+                if (!raw) return '';
+                try {
+                    const noProto = raw.replace(/^https?:\/\//i, '');
+                    return noProto.length > 60 ? (noProto.slice(0, 57) + '...') : noProto;
+                } catch (_) {
+                    return raw.length > 60 ? (raw.slice(0, 57) + '...') : raw;
+                }
+            };
+            const firstNonEmpty = (arr) => {
+                for (let i = 0; i < arr.length; i++) {
+                    const v = norm(arr[i]);
+                    if (v) return v;
+                }
+                return '';
+            };
+            const joinWithinLimit = (segments, maxLen) => {
+                try {
+                    const cleaned = Array.isArray(segments) ? segments.map(s => sanitizeText(String(s || '').trim())).filter(Boolean) : [];
+                    let out = '';
+                    for (let i = 0; i < cleaned.length; i++) {
+                        const seg = cleaned[i];
+                        if (!out) {
+                            if (seg.length > maxLen) return seg.slice(0, maxLen);
+                            out = seg;
+                            continue;
+                        }
+                        const next = `${out} | ${seg}`;
+                        if (next.length > maxLen) break;
+                        out = next;
+                    }
+                    if (out.length > maxLen) return out.slice(0, maxLen);
+                    return out;
+                } catch (_) {
+                    const s = sanitizeText(String(segments?.[0] || '').trim()) || '';
+                    return maxLen && s.length > maxLen ? s.slice(0, maxLen) : s;
+                }
+            };
+
+            try {
+                const tc = norm(addInfoMap['tc_code']);
+                const ig = igNorm(addInfoMap['instagram_username']);
+                const refCode = (function () {
+                    try {
+                        const h = toSha256(chargeCorrelationID);
+                        return h ? h.slice(0, 10) : '';
+                    } catch (_) {
+                        return '';
+                    }
+                })();
+
+                const sellerSegments = [];
+                if (tc) sellerSegments.push(`tc:${tc}`);
+                if (refCode) sellerSegments.push(`ref:${refCode}`);
+                const seller = joinWithinLimit(sellerSegments, 120);
+
+                const itemSegments = [itemDescBase];
+                if (ig) itemSegments.push(`@${ig}`);
+                if (tc) itemSegments.push(`tc:${tc}`);
+                if (refCode) itemSegments.push(`ref:${refCode}`);
+                const item = joinWithinLimit(itemSegments, 255);
+
+                return { seller, item, refCode };
+            } catch (_) {
+                return { seller: '', item: itemDescBase.slice(0, 255), refCode: '' };
+            }
+        })();
+        const itemDesc = paghiperTextParts?.item || itemDescBase.slice(0, 255);
+        const sellerDescription = paghiperTextParts?.seller || '';
+        const createPayload = {
+            apiKey,
+            order_id: chargeCorrelationID,
+            payer_email: email,
+            payer_name: sanitizeText(customerPayload.name || 'Cliente Checkout'),
+            payer_cpf_cnpj: cpfDigits,
+            payer_phone: customerPayload.phone || normalizePhone(addInfoMap['phone'] || ''),
+            notification_url: notificationUrl,
+            discount_cents: '0',
+            shipping_price_cents: '0',
+            fixed_description: false,
+            seller_description: sellerDescription || undefined,
+            days_due_date: String(process.env.PAGHIPER_DAYS_DUE_DATE || '1').trim() || '1',
+            items: [
+                {
+                    description: itemDesc,
+                    quantity: '1',
+                    item_id: '1',
+                    price_cents: String(validatedPriceCents != null ? validatedPriceCents : vNum)
+                }
+            ]
+        };
+
+        const response = await axios.post('https://pix.paghiper.com/invoice/create/', createPayload, {
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+            timeout: 45000
+        });
+
+        const data = response?.data || {};
+        const root = data?.pix_create_request || data?.create_request || data || {};
+        const pixCode = root?.pix_code || {};
+        const tx = String(root?.transaction_id || root?.transactionId || '').trim();
+        const statusRaw = String(root?.status || 'pending').trim();
+        const statusLower = statusRaw.toLowerCase();
+        const brCode = String(pixCode?.emv || pixCode?.pix_copia_e_cola || pixCode?.br_code || '').trim();
+        const qrCodeImageRaw = String(pixCode?.qrcode_image_url || pixCode?.qr_code_image_url || pixCode?.qrcode_image || pixCode?.qrcode_base64 || '').trim();
+        const pixUrl = String(pixCode?.pix_url || '').trim();
+        const qrCodeImage = (function () {
+            if (!qrCodeImageRaw) return '';
+            if (/^https?:\/\//i.test(qrCodeImageRaw)) return qrCodeImageRaw;
+            if (/^data:image\//i.test(qrCodeImageRaw)) return qrCodeImageRaw;
+            if (/^[A-Za-z0-9+/=]+$/.test(qrCodeImageRaw) && qrCodeImageRaw.length > 100) return `data:image/png;base64,${qrCodeImageRaw}`;
+            return '';
+        })();
+
+        if (!tx || (!brCode && !qrCodeImage)) {
+            return res.status(502).json({
+                error: 'paghiper_invalid_response',
+                message: String(root?.response_message || data?.message || data?.error || 'PagHiper retornou uma resposta inválida ao emitir o Pix.').trim(),
+                details: data || null
+            });
+        }
+
+        const addInfoArr = Array.isArray(sanitizedAdditionalFiltered) ? sanitizedAdditionalFiltered : [];
+        const tipo = addInfoMap['tipo_servico'] || '';
+        const qtd = Number(addInfoMap['quantidade'] || 0) || 0;
+        const instauserFromClient = addInfoMap['instagram_username'] || '';
+        const userAgent = req.get('User-Agent') || '';
+        const ip = req.realIP || req.ip || req.connection?.remoteAddress || 'unknown';
+        const slug = req.session?.linkSlug || '';
+        const isPrivate = profile_is_private === true || profile_is_private === 'true' || addInfoMap['profile_is_private'] === 'true';
+
+        let utms = {};
+        try {
+            if (req.body && req.body.utms && Object.keys(req.body.utms).length > 0) {
+                utms = req.body.utms;
+                if (!utms.ref) utms.ref = req.get('Referer') || req.headers['referer'] || '';
+            } else {
+                const refUrl = req.get('Referer') || req.headers['referer'] || '';
+                const u = new URL(refUrl);
+                const p = u.searchParams;
+                utms = {
+                    source: p.get('utm_source') || '',
+                    medium: p.get('utm_medium') || '',
+                    campaign: p.get('utm_campaign') || '',
+                    term: p.get('utm_term') || '',
+                    content: p.get('utm_content') || '',
+                    gclid: p.get('gclid') || '',
+                    fbclid: p.get('fbclid') || '',
+                    ref: refUrl
+                };
+            }
+        } catch (_) {
+            const refUrl = req.get('Referer') || req.headers['referer'] || '';
+            utms = { ref: refUrl };
+        }
+
+        let geolocation = null;
+        try {
+            geolocation = await Promise.race([
+                geoLookupIp(ip),
+                new Promise((resolve) => setTimeout(() => resolve(null), 250))
+            ]);
+        } catch (_) {}
+
+        const createdIso = new Date().toISOString();
+        const record = {
+            nomeUsuario: null,
+            telefone: customerPayload.phone || '',
+            correlationID: chargeCorrelationID,
+            instauser: instauserFromClient,
+            profilePrivacy: { isPrivate: isPrivate, checkedAt: createdIso },
+            isPrivate: isPrivate,
+            criado: createdIso,
+            identifier: tx,
+            status: 'pendente',
+            qtd,
+            tipo,
+            utms,
+            geolocation,
+            valueCents: validatedPriceCents != null ? validatedPriceCents : vNum,
+            expectedValueCents: validatedPriceCents,
+            customer: { name: customerPayload.name || 'Cliente Checkout', phone: customerPayload.phone || '', email },
+            additionalInfo: addInfoArr,
+            tipoServico: tipo,
+            quantidade: qtd,
+            instagramUsername: instauserFromClient,
+            slug,
+            userAgent,
+            ip,
+            createdAt: createdIso,
+            paghiper: {
+                transactionId: tx,
+                orderId: chargeCorrelationID,
+                refCode: paghiperTextParts?.refCode || null,
+                status: statusLower || 'pending',
+                brCode: brCode || null,
+                qrCodeImage: qrCodeImage || null,
+                pixUrl: pixUrl || null,
+                response: data || null
+            }
+        };
+
+        try {
+            const col = await getCollection('checkout_orders');
+            const insertResult = await col.insertOne(record);
+            try { record._id = insertResult?.insertedId; } catch (_) {}
+            Promise.resolve()
+                .then(() => queuePaymentRecoveryForNewOrder(col, insertResult && insertResult.insertedId, record))
+                .catch(() => {});
+            Promise.resolve()
+                .then(() => sendOrderCreatedEmail({ record, insertedId: insertResult && insertResult.insertedId }))
+                .catch(() => {});
+            Promise.resolve()
+                .then(() => sendPixOrderEmailToCustomer({ record }))
+                .catch(() => {});
+        } catch (_) {}
+
+        return res.status(200).json({
+            gateway: 'paghiper',
+            charge: {
+                id: tx,
+                chargeId: tx,
+                identifier: tx,
+                correlationID: chargeCorrelationID,
+                status: 'pendente',
+                paymentMethods: { pix: { brCode: brCode || null, qrCodeImage: qrCodeImage || null } },
+                brCode: brCode || null,
+                qrCodeImage: qrCodeImage || null
+            },
+            raw: data || null
+        });
+    } catch (err) {
+        const status = err?.response?.status || 500;
+        const details = err?.response?.data || { message: err?.message || String(err) };
+        const msg = String(details?.message || details?.error || details?.response_message || err?.message || '').trim() || 'Falha ao criar cobrança PagHiper';
+        return res.status(status).json({ error: 'paghiper_exception', message: msg, details });
+    }
+});
+
+app.get('/api/paghiper/charge-status', async (req, res) => {
+    try {
+        try { res.set('Cache-Control', 'no-store'); } catch (_) {}
+        const apiKey = String(process.env.PAGHIPER_API_KEY || '').trim();
+        const token = String(process.env.PAGHIPER_TOKEN || '').trim();
+        const id = String(req.query.id || '').trim();
+        const identifier = String(req.query.identifier || '').trim();
+        const correlationID = String(req.query.correlationID || '').trim();
+        if (!id && !identifier && !correlationID) {
+            return res.status(400).json({ error: 'invalid_id', message: 'Informe ?id=<transactionId> ou ?identifier ou ?correlationID' });
+        }
+        const col = await getCollection('checkout_orders');
+        const conds = [];
+        const txId = id || identifier;
+        if (txId) {
+            conds.push({ 'paghiper.transactionId': txId });
+            conds.push({ identifier: txId });
+        }
+        if (correlationID) conds.push({ correlationID });
+        const filter = conds.length ? { $or: conds } : {};
+        const record = await col.findOne(filter);
+        if (!record) {
+            if (apiKey && token && txId) {
+                try {
+                    const resp = await axios.post('https://pix.paghiper.com/invoice/status/', { token, apiKey, transaction_id: txId }, {
+                        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+                        timeout: 45000
+                    });
+                    const data = resp?.data || {};
+                    const stRoot = data?.status_request || data || {};
+                    const statusRaw = String(stRoot?.status || '').trim();
+                    const statusLower = statusRaw.toLowerCase();
+                    const paidFlag = /(paid|pago|completed|success|approved|aprovado)/i.test(statusLower);
+                    const orderIdFromRemote = String(stRoot?.order_id || stRoot?.orderId || '').trim();
+                    return res.json({
+                        ok: true,
+                        charge: { status: statusLower || statusRaw || 'pending', paid: !!paidFlag, valueCents: null },
+                        identifier: txId,
+                        correlationID: orderIdFromRemote || correlationID || null,
+                        raw: data || null,
+                        notFoundLocally: true
+                    });
+                } catch (err2) {
+                    const details = err2?.response?.data || { message: err2?.message || String(err2) };
+                    const msg = String(details?.message || details?.error || details?.response_message || err2?.message || '').trim() || 'Falha ao consultar status na PagHiper';
+                    return res.status(502).json({ ok: false, error: 'paghiper_status_lookup_failed', message: msg, details });
+                }
+            }
+            return res.status(404).json({ ok: false, error: 'not_found', message: 'Pedido não encontrado.' });
+        }
+
+        const existingStatus = String((record?.paghiper?.status || record?.status || 'pendente') || '').trim();
+        const existingPaid = /(pago|paid|completed|success|approved|aprovado)/i.test(existingStatus.toLowerCase());
+
+        if (!apiKey || !token) {
+            return res.json({
+                ok: true,
+                charge: { status: existingStatus, paid: !!existingPaid, valueCents: record?.valueCents ?? null },
+                identifier: record?.identifier || null,
+                correlationID: record?.correlationID || null,
+                raw: record?.paghiper?.statusPayload || null,
+                remoteCheckAvailable: false,
+                missing: { apiKey: !apiKey, token: !token }
+            });
+        }
+
+        const tx = String(record?.paghiper?.transactionId || txId || '').trim();
+        if (!tx) {
+            return res.json({
+                ok: true,
+                charge: { status: existingStatus, paid: !!existingPaid, valueCents: record?.valueCents ?? null },
+                identifier: record?.identifier || null,
+                correlationID: record?.correlationID || null,
+                raw: record?.paghiper?.statusPayload || null
+            });
+        }
+
+        const resp = await axios.post('https://pix.paghiper.com/invoice/status/', { token, apiKey, transaction_id: tx }, {
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+            timeout: 45000
+        });
+        const data = resp?.data || {};
+        const stRoot = data?.status_request || data || {};
+        const statusRaw = String(stRoot?.status || existingStatus || '').trim();
+        const statusLower = statusRaw.toLowerCase();
+        const paidFlag = /(paid|pago|completed|success|approved|aprovado)/i.test(statusLower);
+
+        let paidValueCents = null;
+        try {
+            const cents = stRoot?.value_cents_paid || stRoot?.value_cents || stRoot?.valueCents;
+            if (typeof cents === 'number') paidValueCents = cents;
+            if (paidValueCents == null && typeof cents === 'string' && cents.trim()) {
+                const n = parseInt(cents.trim(), 10);
+                if (Number.isFinite(n)) paidValueCents = n;
+            }
+        } catch (_) {}
+
+        const pixCode = stRoot?.pix_code || {};
+        const brCode = String(pixCode?.emv || record?.paghiper?.brCode || '').trim() || null;
+        const qrCodeImageRaw = String(pixCode?.qrcode_image_url || pixCode?.qr_code_image_url || pixCode?.qrcode_image || pixCode?.qrcode_base64 || record?.paghiper?.qrCodeImage || '').trim() || '';
+        const qrCodeImage = (function () {
+            if (!qrCodeImageRaw) return null;
+            if (/^https?:\/\//i.test(qrCodeImageRaw)) return qrCodeImageRaw;
+            if (/^data:image\//i.test(qrCodeImageRaw)) return qrCodeImageRaw;
+            if (/^[A-Za-z0-9+/=]+$/.test(qrCodeImageRaw) && qrCodeImageRaw.length > 100) return `data:image/png;base64,${qrCodeImageRaw}`;
+            return null;
+        })();
+
+        const setFields = {
+            'paghiper.statusPayload': data || null,
+            'paghiper.status': statusLower || 'pending'
+        };
+        if (brCode) setFields['paghiper.brCode'] = brCode;
+        if (qrCodeImage) setFields['paghiper.qrCodeImage'] = qrCodeImage;
+
+        let isDivergent = false;
+        if (paidFlag) {
+            setFields.status = 'pago';
+            setFields.paidAt = new Date().toISOString();
+            setFields['paghiper.paidAt'] = new Date().toISOString();
+            const expected = record?.expectedValueCents;
+            if (expected && typeof paidValueCents === 'number' && paidValueCents !== expected) {
+                setFields.status = 'divergent_value';
+                setFields['paghiper.status'] = 'divergent_value';
+                setFields.mismatchDetails = { expected, paid: paidValueCents, detectedAt: new Date().toISOString() };
+                isDivergent = true;
+            }
+        }
+
+        await col.updateOne({ _id: record._id }, { $set: setFields });
+
+        if (paidFlag && !isDivergent) {
+            try {
+                const fresh = await col.findOne({ _id: record._id });
+                await processOrderFulfillment(fresh, col, req);
+            } catch (_) {}
+            try { await broadcastPaymentPaid(record?.identifier, record?.correlationID); } catch (_) {}
+        }
+
+        return res.json({
+            ok: true,
+            charge: { status: String(setFields['paghiper.status'] || existingStatus), paid: !!paidFlag, valueCents: record?.valueCents ?? null },
+            identifier: record?.identifier || null,
+            correlationID: record?.correlationID || null,
+            raw: data || null
+        });
+    } catch (err) {
+        const msg = err?.message || String(err);
+        return res.status(500).json({ error: 'paghiper_status_exception', message: msg });
+    }
+});
+
+app.post('/api/paghiper/notification', async (req, res) => {
+    try {
+        try { res.set('Cache-Control', 'no-store'); } catch (_) {}
+        const apiKey = String(process.env.PAGHIPER_API_KEY || '').trim();
+        const token = String(process.env.PAGHIPER_TOKEN || '').trim();
+
+        const body = (function () {
+            const b = (req && req.body) ? req.body : {};
+            if (typeof b === 'string') {
+                try {
+                    const p = new URLSearchParams(b);
+                    const obj = {};
+                    for (const [k, v] of p.entries()) obj[k] = v;
+                    return obj;
+                } catch (_) {
+                    return {};
+                }
+            }
+            return b && typeof b === 'object' ? b : {};
+        })();
+        const apiKeyIn = String(body.apiKey || body.apikey || body.api_key || '').trim();
+        const transactionId = String(body.transaction_id || body.transactionId || '').trim();
+        const notificationId = String(body.notification_id || body.notificationId || '').trim();
+
+        if (!apiKey || !token) {
+            return res.status(503).json({ ok: false, error: 'missing_paghiper_credentials', message: 'PAGHIPER_API_KEY/PAGHIPER_TOKEN não configurados.' });
+        }
+        if (apiKeyIn && apiKeyIn !== apiKey) {
+            return res.status(403).json({ ok: false, error: 'invalid_apikey' });
+        }
+        if (!transactionId || !notificationId) {
+            return res.status(400).json({ ok: false, error: 'missing_notification_fields' });
+        }
+
+        const resp = await axios.post('https://pix.paghiper.com/invoice/notification/', { token, apiKey, transaction_id: transactionId, notification_id: notificationId }, {
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+            timeout: 45000
+        });
+        const data = resp?.data || {};
+        const stRoot = data?.status_request || data || {};
+        const statusRaw = String(stRoot?.status || '').trim();
+        const statusLower = statusRaw.toLowerCase();
+        const paidFlag = /(paid|pago|completed|success|approved|aprovado)/i.test(statusLower);
+
+        let paidValueCents = null;
+        try {
+            const cents = stRoot?.value_cents_paid || stRoot?.value_cents || stRoot?.valueCents;
+            if (typeof cents === 'number') paidValueCents = cents;
+            if (paidValueCents == null && typeof cents === 'string' && cents.trim()) {
+                const n = parseInt(cents.trim(), 10);
+                if (Number.isFinite(n)) paidValueCents = n;
+            }
+        } catch (_) {}
+
+        const pixCode = stRoot?.pix_code || {};
+        const brCode = String(pixCode?.emv || '').trim() || null;
+        const qrCodeImageRaw = String(pixCode?.qrcode_image_url || pixCode?.qr_code_image_url || pixCode?.qrcode_image || pixCode?.qrcode_base64 || '').trim() || '';
+        const qrCodeImage = (function () {
+            if (!qrCodeImageRaw) return null;
+            if (/^https?:\/\//i.test(qrCodeImageRaw)) return qrCodeImageRaw;
+            if (/^data:image\//i.test(qrCodeImageRaw)) return qrCodeImageRaw;
+            if (/^[A-Za-z0-9+/=]+$/.test(qrCodeImageRaw) && qrCodeImageRaw.length > 100) return `data:image/png;base64,${qrCodeImageRaw}`;
+            return null;
+        })();
+        const orderId = String(stRoot?.order_id || '').trim();
+
+        const col = await getCollection('checkout_orders');
+        const conds = [];
+        if (transactionId) { conds.push({ 'paghiper.transactionId': transactionId }); conds.push({ identifier: transactionId }); }
+        if (orderId) conds.push({ correlationID: orderId });
+        const filter = conds.length ? { $or: conds } : {};
+        const existingOrder = await col.findOne(filter);
+
+        const setFields = {
+            'paghiper.statusPayload': data || null,
+            'paghiper.status': paidFlag ? 'pago' : (statusLower || 'pending')
+        };
+        if (transactionId) setFields['paghiper.transactionId'] = transactionId;
+        if (orderId) setFields['paghiper.orderId'] = orderId;
+        if (brCode) setFields['paghiper.brCode'] = brCode;
+        if (qrCodeImage) setFields['paghiper.qrCodeImage'] = qrCodeImage;
+
+        let isDivergent = false;
+        if (paidFlag) {
+            setFields.status = 'pago';
+            setFields.paidAt = new Date().toISOString();
+            setFields['paghiper.paidAt'] = new Date().toISOString();
+            if (existingOrder) {
+                const expected = existingOrder.expectedValueCents;
+                if (expected && typeof paidValueCents === 'number' && paidValueCents !== expected) {
+                    setFields.status = 'divergent_value';
+                    setFields['paghiper.status'] = 'divergent_value';
+                    setFields.mismatchDetails = { expected, paid: paidValueCents, detectedAt: new Date().toISOString() };
+                    isDivergent = true;
+                }
+            }
+        }
+
+        if (existingOrder) {
+            await col.updateOne({ _id: existingOrder._id }, { $set: setFields });
+        } else if (conds.length) {
+            await col.updateOne(filter, { $set: setFields });
+        }
+
+        if (paidFlag && existingOrder && !isDivergent) {
+            try {
+                const record = await col.findOne({ _id: existingOrder._id });
+                await processOrderFulfillment(record, col, req);
+            } catch (_) {}
+            try { await broadcastPaymentPaid(existingOrder?.identifier, existingOrder?.correlationID); } catch (_) {}
+        }
+
+        return res.status(200).json({ ok: true });
+    } catch (err) {
+        try { console.error('❌ PagHiper notification error:', err?.message || String(err)); } catch (_) {}
+        // Não retornar 200 em falha: a PagHiper tenta novamente automaticamente.
+        return res.status(500).json({ ok: false, error: 'notification_processing_failed' });
+    }
+});
+
 app.get('/api/expay/charge-status', async (req, res) => {
     try {
         const id = String(req.query.id || '').trim();
@@ -7097,7 +8089,7 @@ app.get('/api/expay/charge-status', async (req, res) => {
 
         const status = String((record?.expay?.status || record?.status || 'pendente') || '').trim();
         const statusLower = status.toLowerCase();
-        const paidFlag = /^(pago|paid|completed|success|approved)$/i.test(statusLower);
+        const paidFlag = /^(pago|paid|completed|success|approved|aprovado)$/i.test(statusLower);
         return res.json({
             ok: true,
             charge: { status, paid: !!paidFlag, valueCents: record?.valueCents ?? null },
@@ -7207,6 +8199,8 @@ const maybeSendPaymentApprovedEmail = async (record, col) => {
             if (efiSt === 'paid' || efiSt === 'settled') return true;
             const pgSt = String(record?.pagarme?.status || '').toLowerCase();
             if (/(paid|settled|captured|authorized|succeeded|aprovado|confirmado)/i.test(pgSt)) return true;
+            const phSt = String(record?.paghiper?.status || '').toLowerCase();
+            if (phSt === 'pago' || phSt === 'paid' || phSt === 'completed') return true;
             return false;
         })();
         if (!isPaid) return;
@@ -7244,10 +8238,10 @@ const orderRecoveryTimers = new Map();
 function getOrderRecoveryConfig() {
     const enabledRaw = String(process.env.ORDER_RECOVERY_ENABLED || '1').trim().toLowerCase();
     const enabled = !(enabledRaw === '0' || enabledRaw === 'false' || enabledRaw === 'no');
-    const modeRaw = String(process.env.ORDER_RECOVERY_MODE || 'count').trim().toLowerCase();
+    const modeRaw = String(process.env.ORDER_RECOVERY_MODE || 'send').trim().toLowerCase();
     const mode = (modeRaw === 'send' || modeRaw === 'email' || modeRaw === 'emails') ? 'send' : 'count';
     const startIso = (function () {
-        const raw = String(process.env.ORDER_RECOVERY_START_ISO || '09/04/26').trim();
+        const raw = String(process.env.ORDER_RECOVERY_START_ISO || '11/04/26').trim();
         if (!raw) return '';
         const s = raw;
         const m = /^(\d{2})\/(\d{2})\/(\d{2}|\d{4})$/.exec(raw);
@@ -7268,7 +8262,7 @@ function getOrderRecoveryConfig() {
     return { enabled, mode, startIso, startMs: Number.isFinite(startMs) ? startMs : 0, afterMinutes };
 }
 
-function queuePaymentRecoveryForNewOrder(col, insertedId, record) {
+async function queuePaymentRecoveryForNewOrder(col, insertedId, record) {
     try {
         if (!col || !insertedId || !record) return;
         if (global.orderRecoveryDisabled === true) return;
@@ -7280,15 +8274,13 @@ function queuePaymentRecoveryForNewOrder(col, insertedId, record) {
         const customer = (record && record.customer && typeof record.customer === 'object') ? record.customer : {};
         const to = String(customer.email || '').trim();
         if (!to) return;
-        const hasPix = !!(record?.woovi?.qrCodeImage || record?.woovi?.brCode || record?.expay?.qrCodeImage || record?.expay?.brCode);
+        const hasPix = !!(record?.woovi?.qrCodeImage || record?.woovi?.brCode || record?.expay?.qrCodeImage || record?.expay?.brCode || record?.paghiper?.qrCodeImage || record?.paghiper?.brCode);
         if (!hasPix) return;
 
         const dueAtIso = new Date(createdAtMs + cfg.afterMinutes * 60 * 1000).toISOString();
-        Promise.resolve()
-            .then(() => col.updateOne({ _id: insertedId }, { $set: { 'emails.paymentRecoveryDueAt': dueAtIso } }))
-            .catch(() => {});
-
-        if (cfg.mode !== 'send') return;
+        try {
+            await col.updateOne({ _id: insertedId }, { $set: { 'emails.paymentRecoveryDueAt': dueAtIso } });
+        } catch (_) {}
 
         const key = String(insertedId || '').trim();
         if (!key) return;
@@ -7316,15 +8308,23 @@ const maybeSendPaymentRecoveryEmail = async (record, col) => {
         const enabledRaw = String(process.env.ORDER_RECOVERY_ENABLED || '1').trim().toLowerCase();
         const enabled = !(enabledRaw === '0' || enabledRaw === 'false' || enabledRaw === 'no');
         if (!enabled) return;
-
-        const getOrderRecoveryMode = () => {
-            const raw = String(process.env.ORDER_RECOVERY_MODE || 'count').trim().toLowerCase();
-            if (!raw) return 'count';
-            if (raw === 'send' || raw === 'email' || raw === 'emails') return 'send';
-            return 'count';
+        const markSkip = async (reason) => {
+            try {
+                const nowIso = new Date().toISOString();
+                await col.updateOne(
+                    {
+                        _id: record._id,
+                        $and: [
+                            { $or: [{ 'emails.paymentRecoverySentAt': { $exists: false } }, { 'emails.paymentRecoverySentAt': null }, { 'emails.paymentRecoverySentAt': '' }] },
+                            { $or: [{ 'emails.paymentRecoverySkippedAt': { $exists: false } }, { 'emails.paymentRecoverySkippedAt': null }, { 'emails.paymentRecoverySkippedAt': '' }] }
+                        ]
+                    },
+                    { $set: { 'emails.paymentRecoverySkippedAt': nowIso, 'emails.paymentRecoverySkipReason': String(reason || 'skipped') } }
+                );
+            } catch (_) {}
         };
         const getOrderRecoveryStartIso = () => {
-            const raw = String(process.env.ORDER_RECOVERY_START_ISO || '09/04/26').trim();
+            const raw = String(process.env.ORDER_RECOVERY_START_ISO || '11/04/26').trim();
             if (!raw) return '';
             const s = raw;
             const m = /^(\d{2})\/(\d{2})\/(\d{2}|\d{4})$/.exec(raw);
@@ -7357,23 +8357,30 @@ const maybeSendPaymentRecoveryEmail = async (record, col) => {
             const xStatusRaw = String((r && r.expay && r.expay.status) || '').trim();
             const xst = xStatusRaw.toLowerCase();
             if (paidStatusTokens.includes(xStatusRaw) || paidStatusTokens.includes(xst)) return true;
+            const phStatusRaw = String((r && r.paghiper && r.paghiper.status) || '').trim();
+            const phst = phStatusRaw.toLowerCase();
+            if (paidStatusTokens.includes(phStatusRaw) || paidStatusTokens.includes(phst)) return true;
             const efiStatusRaw = String((r && r.efi && r.efi.status) || '').trim();
             const efiSt = efiStatusRaw.toLowerCase();
             if (paidStatusTokens.includes(efiStatusRaw) || paidStatusTokens.includes(efiSt)) return true;
             const pgStatusRaw = String((r && r.pagarme && r.pagarme.status) || '').trim();
             const pgSt = pgStatusRaw.toLowerCase();
             if (paidStatusTokens.includes(pgStatusRaw) || paidStatusTokens.includes(pgSt)) return true;
-            if (r && (r.paidAt || (r.woovi && r.woovi.paidAt) || (r.payment && r.payment.paidAt))) return true;
+            if (r && (r.paidAt || (r.woovi && r.woovi.paidAt) || (r.paghiper && r.paghiper.paidAt) || (r.payment && r.payment.paidAt))) return true;
             return false;
         };
 
-        const recoveryMode = getOrderRecoveryMode();
-        if (recoveryMode !== 'send') return;
-        if (record.status === 'divergent_value' || record['woovi.status'] === 'divergent_value') return;
+        if (record.status === 'divergent_value' || record['woovi.status'] === 'divergent_value') {
+            await markSkip('divergent_value');
+            return;
+        }
 
         const customer = (record && record.customer && typeof record.customer === 'object') ? record.customer : {};
         const to = String(customer.email || '').trim();
-        if (!to) return;
+        if (!to) {
+            await markSkip('missing_customer_email');
+            return;
+        }
 
         const orderIdShort = (function () {
             try {
@@ -7384,25 +8391,38 @@ const maybeSendPaymentRecoveryEmail = async (record, col) => {
         })();
 
         const createdAtMs = new Date(record.createdAt || record.criado || 0).getTime();
-        if (!Number.isFinite(createdAtMs) || createdAtMs <= 0) return;
+        if (!Number.isFinite(createdAtMs) || createdAtMs <= 0) {
+            await markSkip('missing_createdAt');
+            return;
+        }
         const startIso = getOrderRecoveryStartIso();
         if (startIso) {
             const startMs = new Date(startIso).getTime();
-            if (Number.isFinite(startMs) && startMs > 0 && createdAtMs < startMs) return;
+            if (Number.isFinite(startMs) && startMs > 0 && createdAtMs < startMs) {
+                await markSkip('before_start');
+                return;
+            }
         }
         const afterMinutes = getOrderRecoveryAfterMinutes();
         const requiredMs = afterMinutes * 60 * 1000;
         if ((Date.now() - createdAtMs) < requiredMs) return;
 
-        if (isPaidRecord(record)) return;
+        if (isPaidRecord(record)) {
+            await markSkip('already_paid');
+            return;
+        }
 
         if (record?.emails?.paymentRecoverySentAt) return;
         if (record?.emails?.paymentRecoverySkippedAt) return;
 
         const woovi = (record && record.woovi && typeof record.woovi === 'object') ? record.woovi : {};
         const expay = (record && record.expay && typeof record.expay === 'object') ? record.expay : {};
-        const hasPix = !!(woovi.qrCodeImage || woovi.brCode || expay.qrCodeImage || expay.brCode);
-        if (!hasPix) return;
+        const paghiper = (record && record.paghiper && typeof record.paghiper === 'object') ? record.paghiper : {};
+        const hasPix = !!(woovi.qrCodeImage || woovi.brCode || expay.qrCodeImage || expay.brCode || paghiper.qrCodeImage || paghiper.brCode);
+        if (!hasPix) {
+            await markSkip('missing_pix');
+            return;
+        }
 
         const nowIso = new Date().toISOString();
         const lockFilter = {
@@ -7413,6 +8433,7 @@ const maybeSendPaymentRecoveryEmail = async (record, col) => {
                 { $or: [{ 'emails.paymentRecoveryLockAt': { $exists: false } }, { 'emails.paymentRecoveryLockAt': null }, { 'emails.paymentRecoveryLockAt': '' }] },
                 { $or: [{ paidAt: { $exists: false } }, { paidAt: null }, { paidAt: '' }] },
                 { $or: [{ 'woovi.paidAt': { $exists: false } }, { 'woovi.paidAt': null }, { 'woovi.paidAt': '' }] },
+                { $or: [{ 'paghiper.paidAt': { $exists: false } }, { 'paghiper.paidAt': null }, { 'paghiper.paidAt': '' }] },
                 { $or: [{ 'payment.paidAt': { $exists: false } }, { 'payment.paidAt': null }, { 'payment.paidAt': '' }] }
             ]
         };
@@ -8852,15 +9873,49 @@ app.get('/:slug', async (req, res, next) => {
         });
     }
     if (slug === 'engajamento') {
-        return res.render('engajamento', { PIXEL_ID: process.env.PIXEL_ID || '', ENG_MODE: true });
+        return res.redirect('/engagement');
+    }
+    if (slug === 'engagement') {
+        return res.redirect('/engagement');
     }
     if (slug === 'servicos-instagram') {
-        return res.render('servicos-instagram', { PIXEL_ID: process.env.PIXEL_ID || '' });
+        return res.redirect('/instagram-services');
+    }
+    if (slug === 'instagram-services') {
+        return res.redirect('/instagram-services');
     }
     if (slug === 'servicos') {
-        return res.render('servicos');
+        return res.redirect('/services');
+    }
+    if (slug === 'services') {
+        return res.redirect('/services');
     }
     if (slug === 'termos') {
+        return res.redirect('/terms');
+    }
+    if (slug === 'terms' || slug === 'terms-of-use') {
+        return res.redirect('/terms');
+    }
+    if (slug === 'cliente') {
+        return res.redirect('/customer');
+    }
+    if (slug === 'customer') {
+        return res.redirect('/customer');
+    }
+    if (slug === 'pedido') {
+        return res.redirect('/order');
+    }
+    if (slug === 'order') {
+        return res.redirect('/order');
+    }
+    if (slug === 'refil') {
+        return res.redirect('/refill');
+    }
+    if (slug === 'refill') {
+        return res.redirect('/refill');
+    }
+
+    if (slug === 'termos_render') {
         return res.render('termos', {}, (err, html) => {
             if (err) {
                 try { console.error('❌ Erro ao renderizar termos via slug:', err.message); } catch(_) {}
@@ -9206,6 +10261,20 @@ app.post("/api/check-instagram-profile", async (req, res) => {
         // Se verifyInstagramProfile retornar erro (success: false), devemos repassar o status code apropriado
         
         if (!result.success) {
+            try {
+              const raw = String(result && result.error ? result.error : '');
+              const isIgSession =
+                /invalid\s+session\s+token/i.test(raw) ||
+                /\big_session_invalid\b/i.test(raw) ||
+                /\b(session\s+invalid|session\s+expired)\b/i.test(raw);
+              if (isIgSession) {
+                return res.status(502).json({
+                  success: false,
+                  status: 502,
+                  error: 'Erro na sessão do Instagram. Tente novamente em alguns instantes.'
+                });
+              }
+            } catch (_) {}
             return res.status(result.status || 500).json(result);
         }
 
@@ -11709,6 +12778,7 @@ app.get('/api/checkout-orders', async (req, res) => {
 });
 app.get('/api/checkout/payment-state', async (req, res) => {
   try {
+    try { res.set('Cache-Control', 'no-store'); } catch (_) {}
     const id = String(req.query.id || '').trim();
     const identifier = String(req.query.identifier || '').trim();
     const correlationID = String(req.query.correlationID || '').trim();
@@ -11720,6 +12790,7 @@ app.get('/api/checkout/payment-state', async (req, res) => {
         conds.push({ 'woovi.id': id });
         conds.push({ 'expay.transactionId': id });
         conds.push({ 'expay.id': id });
+        conds.push({ 'paghiper.transactionId': id });
         // Try as ObjectId if valid
         if (/^[0-9a-fA-F]{24}$/.test(id)) {
             const { ObjectId } = require('mongodb');
@@ -11730,28 +12801,82 @@ app.get('/api/checkout/payment-state', async (req, res) => {
         conds.push({ 'woovi.identifier': identifier }); 
         conds.push({ 'expay.transactionId': identifier });
         conds.push({ 'expay.identifier': identifier });
+        conds.push({ 'paghiper.transactionId': identifier });
         conds.push({ identifier: identifier }); 
     }
     if (correlationID) conds.push({ correlationID });
     
     const filter = conds.length ? { $or: conds } : {};
-    const doc = await col.findOne(filter, { projection: { status: 1, woovi: 1, expay: 1 } });
+    const doc = await col.findOne(filter, { projection: { status: 1, woovi: 1, expay: 1, paghiper: 1 } });
     
-    const paid = !!doc && (
-        String(doc.status).toLowerCase() === 'pago' || 
+    let paid = !!doc && (
+        /(pago|paid|completed|success|approved|aprovado)/i.test(String(doc.status || '').trim()) ||
         String(doc.woovi?.status || '').toLowerCase() === 'pago' ||
         String(doc.woovi?.status || '').toLowerCase() === 'completed' ||
         String(doc.expay?.status || '').toLowerCase() === 'pago' ||
         String(doc.expay?.status || '').toLowerCase() === 'paid' ||
-        String(doc.expay?.status || '').toLowerCase() === 'completed'
+        String(doc.expay?.status || '').toLowerCase() === 'completed' ||
+        /(pago|paid|completed|success|approved|aprovado)/i.test(String(doc.paghiper?.status || '').trim())
     );
+
+    const paghiperApiKey = String(process.env.PAGHIPER_API_KEY || '').trim();
+    const paghiperToken = String(process.env.PAGHIPER_TOKEN || '').trim();
+    const txId = String((doc && doc.paghiper && doc.paghiper.transactionId) || id || identifier || '').trim();
+    const txLooksLikePagHiper = !!txId && /^[A-Z0-9]{12,32}$/.test(txId);
+    const shouldTryPagHiperRemoteBase = !paid && txLooksLikePagHiper && !!paghiperApiKey && !!paghiperToken;
+    let remote = null;
+    if (!paid && txLooksLikePagHiper && (!paghiperApiKey || !paghiperToken)) {
+      remote = { ok: false, error: 'missing_paghiper_credentials' };
+    }
+    if (shouldTryPagHiperRemoteBase) {
+      const throttle = global.__oppus_paghiper_status_throttle || (global.__oppus_paghiper_status_throttle = new Map());
+      const now = Date.now();
+      const last = throttle.get(txId) || 0;
+      if (last && now - last < 6500) {
+        return res.json({ ok: true, paid, order: doc || null, remote: { ok: true, skipped: true } });
+      }
+      throttle.set(txId, now);
+      try {
+        const resp = await axios.post('https://pix.paghiper.com/invoice/status/', { token: paghiperToken, apiKey: paghiperApiKey, transaction_id: txId }, {
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+          timeout: 15000
+        });
+        const data = resp?.data || {};
+        const stRoot = data?.status_request || data || {};
+        const statusRaw = String(stRoot?.status || '').trim();
+        const statusLower = statusRaw.toLowerCase();
+        const paidFlag = /(paid|pago|completed|success|approved|aprovado)/i.test(statusLower);
+        remote = { ok: true, status: statusLower || statusRaw || '', paid: !!paidFlag };
+
+        if (paidFlag && doc && doc._id) {
+          try {
+            const setFields = {
+              status: 'pago',
+              paidAt: new Date().toISOString(),
+              'paghiper.statusPayload': data || null,
+              'paghiper.status': statusLower || 'paid',
+              'paghiper.paidAt': new Date().toISOString()
+            };
+            await col.updateOne({ _id: doc._id }, { $set: setFields });
+            paid = true;
+          } catch (_) {
+            paid = true;
+          }
+        } else if (paidFlag) {
+          paid = true;
+        }
+      } catch (err2) {
+        const details = err2?.response?.data || { message: err2?.message || String(err2) };
+        remote = { ok: false, error: String(details?.message || details?.error || err2?.message || '').trim() || 'remote_check_failed' };
+      }
+    }
     
-    return res.json({ ok: true, paid, order: doc || null });
+    return res.json({ ok: true, paid, order: doc || null, remote });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e?.message || String(e) });
   }
 });
-app.get('/pedido', async (req, res) => {
+const orderPageHandler = async (req, res) => {
   try {
     const identifier = String(req.query.identifier || req.query.t || '').trim();
      const correlationID = String(req.query.correlationID || req.query.ref || '').trim();
@@ -11761,14 +12886,14 @@ app.get('/pedido', async (req, res) => {
     const hasQuery = !!(identifier || correlationID || sessionId || orderIDRaw || phoneRaw);
     const hasSessionCtx = !!(req.session && (req.session.selectedOrderID || req.session.lastPaidIdentifier || req.session.lastPaidCorrelationID));
     if (!hasQuery && !hasSessionCtx) {
-      return res.redirect('/cliente');
+      return res.redirect('/customer');
     }
     const col = await getCollection('checkout_orders');
     let doc = null;
     // 1) Se houver parâmetros na URL, priorizar sempre a busca por eles
     if (hasQuery) {
       const conds = [];
-      if (identifier) { conds.push({ 'woovi.identifier': identifier }); conds.push({ 'expay.transactionId': identifier }); conds.push({ identifier }); }
+      if (identifier) { conds.push({ 'woovi.identifier': identifier }); conds.push({ 'expay.transactionId': identifier }); conds.push({ 'paghiper.transactionId': identifier }); conds.push({ identifier }); }
       if (correlationID) conds.push({ correlationID });
       if (sessionId) { conds.push({ 'stripe.checkout_session_id': sessionId }); conds.push({ identifier: sessionId }); }
       if (orderIDRaw) {
@@ -11785,6 +12910,7 @@ app.get('/pedido', async (req, res) => {
         conds.push({ 'woovi.chargeId': orderIDRaw });
         conds.push({ 'woovi.id': orderIDRaw });
         conds.push({ 'expay.transactionId': orderIDRaw });
+        conds.push({ 'paghiper.transactionId': orderIDRaw });
         
         const { ObjectId } = require('mongodb');
         if (/^[0-9a-fA-F]{24}$/.test(orderIDRaw)) {
@@ -11973,10 +13099,21 @@ app.get('/pedido', async (req, res) => {
         }
       }
     } catch (_) {}
-    return res.render('pedido', { order, refilDaysLeft, PIXEL_ID: process.env.PIXEL_ID || '', logoLink: '/engajamento' });
+    return res.render('pedido', { order, refilDaysLeft, PIXEL_ID: process.env.PIXEL_ID || '', logoLink: '/engagement' });
   } catch (e) {
     return res.status(500).type('text/plain').send('Erro ao carregar pedido');
   }
+};
+
+app.get('/order', orderPageHandler);
+app.get('/pedido', (req, res) => {
+  const qs = (function () {
+    try {
+      const q = new URLSearchParams(req.query || {});
+      return q.toString();
+    } catch (_) { return ''; }
+  })();
+  return res.redirect(qs ? (`/order?${qs}`) : '/order');
 });
 
 app.get('/posts', async (req, res) => {
@@ -14399,13 +15536,32 @@ app.post('/api/refil/preview', async (req, res) => {
           if (followerCount != null) break;
         }
         if (followerCount == null) {
-          logRefil2Request({
-            execStatus: 'error',
-            errorMessage: 'Falha ao consultar seguidores no instagram_proxy',
-            meta: { step: 'instagram_proxy', httpStatus: profileResp && profileResp.status ? profileResp.status : null, tookMs: Date.now() - startedAt, tried: profileTried },
-            pedido: { id: orderId, service_id: serviceId, start_count: startCount, quantity: qty, created_at: orderCreatedAt || null, link: orderLink || null }
-          });
-          return res.status(502).json({ ok: false, error: 'profile_lookup_failed', message: 'Falha ao consultar perfil no Instagram.' });
+          dbg('instagram_proxy failed, trying rocket_api', { username });
+          let rocket = null;
+          try {
+            rocket = await fetchInstagramFollowersInfoRocketApi(username);
+          } catch (e) {
+            rocket = { success: false, error: e?.message || String(e) };
+          }
+          const rocketFollowers = safeInt(rocket && rocket.profile ? rocket.profile.followersCount : null);
+          if (rocketFollowers != null) {
+            followerCount = rocketFollowers;
+            dbg('rocket_api ok', { followers: followerCount, private: rocket?.profile?.isPrivate === true ? 1 : 0 });
+          } else {
+            logRefil2Request({
+              execStatus: 'error',
+              errorMessage: 'Falha ao consultar seguidores no instagram_proxy',
+              meta: {
+                step: 'instagram_proxy',
+                httpStatus: profileResp && profileResp.status ? profileResp.status : null,
+                tookMs: Date.now() - startedAt,
+                tried: profileTried,
+                rocket: { ok: !!(rocket && rocket.success), error: rocket && !rocket.success ? (rocket.error || 'unknown') : null }
+              },
+              pedido: { id: orderId, service_id: serviceId, start_count: startCount, quantity: qty, created_at: orderCreatedAt || null, link: orderLink || null }
+            });
+            return res.status(502).json({ ok: false, error: 'profile_lookup_failed', message: 'Falha ao consultar perfil no Instagram.' });
+          }
         }
 
         const initial = startCount + qty;
@@ -15759,7 +16915,19 @@ app.get('/painel/gerenciamento-seguidores', requireAdmin, async (req, res) => {
       .filter(s => s !== 'all');
     const tipoFilters = Array.from(new Set(tipoParts));
 
-    const usernames = Array.from(new Set(orders.map(resolveUsername).filter(Boolean)));
+    const latestOrderByUser = new Map();
+    for (const o of orders) {
+      const username = resolveUsername(o);
+      if (!username) continue;
+      const paidMs = resolveDateMs(o);
+      const createdMs = parseOrderDateUTCms(o?.createdAt);
+      const ms = Number(paidMs || createdMs || 0) || 0;
+      const prev = latestOrderByUser.get(username) || null;
+      if (!prev || ms > Number(prev.ms || 0)) latestOrderByUser.set(username, { ms, order: o });
+    }
+    const displayOrders = Array.from(latestOrderByUser.values()).sort((a, b) => Number(b.ms || 0) - Number(a.ms || 0)).map(x => x.order);
+
+    const usernames = Array.from(new Set(displayOrders.map(resolveUsername).filter(Boolean)));
     const monitorDocs = usernames.length ? await monitorCol.find({ username: { $in: usernames } }, { projection: { _id: 0 } }).toArray() : [];
     const monitorMap = new Map(monitorDocs.map(d => [String(d.username || '').toLowerCase(), d]));
     const validatedDocs = usernames.length ? await validatedCol.find({ username: { $in: usernames } }, { projection: { _id: 0, username: 1, followersCount: 1, checkedAt: 1 } }).toArray() : [];
@@ -15917,7 +17085,7 @@ app.get('/painel/gerenciamento-seguidores', requireAdmin, async (req, res) => {
       orderInfoById.set(idStr, { baseMs: Number(baseMs || 0), eligible, warranty: w });
     }
 
-    const allRows = orders.map((o) => {
+    const allRows = displayOrders.map((o) => {
       const username = resolveUsername(o);
       const contracted = resolveQtyWithUpgrade(o);
       const dateMs = resolveDateMs(o);
@@ -16543,7 +17711,7 @@ const followersMgmtGetCurrent = async (req, username, force) => {
     const cached = await monitorCol.findOne({ username }, { projection: { _id: 0 } });
     if (!force && cached && cached.checkedAt) {
       const ageMs = Date.now() - new Date(String(cached.checkedAt)).getTime();
-      if (Number.isFinite(ageMs) && ageMs >= 0 && ageMs < (5 * 60 * 1000)) {
+      if (Number.isFinite(ageMs) && ageMs >= 0 && ageMs < (2 * 24 * 60 * 60 * 1000)) {
         try { console.log(`🧾 [followers-mgmt:${traceId}] cache-hit @${username} source=${String(cached.source || '')} ms=${Date.now() - startedAtMs}`); } catch (_) {}
         return { code: 200, body: { ok: true, cached: true, username, followersCount: cached.followersCount, isPrivate: cached.isPrivate, checkedAt: cached.checkedAt, source: cached.source || null } };
       }
@@ -18060,6 +19228,7 @@ async function igFetchWebProfileInfo(username) {
         lockCookie(profile.ds_user_id);
         try {
             const proxyAgent = igBuildProxyAgent(profile);
+            const csrf = await igEnsureCsrfToken(profile, proxyAgent, profile.userAgent);
             const headers = {
                 "User-Agent": profile.userAgent,
                 "X-IG-App-ID": "936619743392459",
@@ -18069,7 +19238,8 @@ async function igFetchWebProfileInfo(username) {
                 "Cache-Control": "no-cache",
                 "Pragma": "no-cache",
                 "X-Requested-With": "XMLHttpRequest",
-                "Referer": `https://www.instagram.com/${encodeURIComponent(u)}/`
+                "Referer": `https://www.instagram.com/${encodeURIComponent(u)}/`,
+                ...(csrf ? { "X-CSRFToken": csrf } : {})
             };
 
             const resp = await axios.get(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(u)}`, {
@@ -18078,6 +19248,23 @@ async function igFetchWebProfileInfo(username) {
                 timeout: REQUEST_TIMEOUT,
                 validateStatus: () => true
             });
+
+            const respText = (function () {
+                try {
+                    const d = resp && resp.data;
+                    if (!d) return '';
+                    if (typeof d === 'string') return d;
+                    const msg = (d && (d.message || d.error || d.status_message || d.statusMessage)) ? String(d.message || d.error || d.status_message || d.statusMessage) : '';
+                    if (msg) return msg;
+                    try { return JSON.stringify(d); } catch (_) { return String(d); }
+                } catch (_) { return ''; }
+            })();
+            const hasInvalidSession = /invalid\s+session\s+token/i.test(respText);
+            if (hasInvalidSession) {
+                profile.errorCount = Number(profile.errorCount || 0) + 5;
+                profile.disabledUntil = Date.now() + (12 * 60 * 60 * 1000);
+                throw new Error('ig_session_invalid');
+            }
 
             if (resp.status !== 200) throw new Error(`HTTP ${resp.status}`);
             const user = resp?.data?.data?.user;
@@ -21985,23 +23172,26 @@ const maybeSendPaymentApprovedPreviewEmail = async (server) => {
   }
 };
 
-const server = app.listen(port, () => {
+const hostRaw = String(process.env.HOST || '').trim();
+const host = hostRaw || '127.0.0.1';
+const onServerListen = () => {
   console.log("🗄️ Baserow configurado com sucesso");
-  console.log(`Servidor rodando na porta ${port}`);
+  console.log(`Servidor rodando na porta ${port} (host ${host})`);
   console.log(`Preview disponível: http://localhost:${port}/checkout`);
+  console.log(`Preview alternativo: http://127.0.0.1:${port}/checkout`);
   maybeSendPaymentApprovedPreviewEmail(server);
   (function startPaymentRecoveryLoop() {
     const enabledRaw = String(process.env.ORDER_RECOVERY_ENABLED || '1').trim().toLowerCase();
     const enabled = !(enabledRaw === '0' || enabledRaw === 'false' || enabledRaw === 'no');
     if (!enabled) return;
     const recoveryMode = (function () {
-      const raw = String(process.env.ORDER_RECOVERY_MODE || 'count').trim().toLowerCase();
-      if (!raw) return 'count';
+      const raw = String(process.env.ORDER_RECOVERY_MODE || 'send').trim().toLowerCase();
+      if (!raw) return 'send';
       if (raw === 'send' || raw === 'email' || raw === 'emails') return 'send';
       return 'count';
     })();
     const recoveryStartIso = (function () {
-      const raw = String(process.env.ORDER_RECOVERY_START_ISO || '09/04/26').trim();
+      const raw = String(process.env.ORDER_RECOVERY_START_ISO || '11/04/26').trim();
       if (!raw) return '';
       const s = raw;
       const m = /^(\d{2})\/(\d{2})\/(\d{2}|\d{4})$/.exec(raw);
@@ -22101,10 +23291,8 @@ const server = app.listen(port, () => {
             candidates: docs ? docs.length : 0
           };
         } catch (_) {}
-        if (recoveryMode === 'send') {
-          for (const d of (docs || [])) {
-            try { await maybeSendPaymentRecoveryEmail(d, col); } catch (_) {}
-          }
+        for (const d of (docs || [])) {
+          try { await maybeSendPaymentRecoveryEmail(d, col); } catch (_) {}
         }
       } catch (_) {
       } finally {
@@ -22115,7 +23303,9 @@ const server = app.listen(port, () => {
     setTimeout(() => { tick().catch(() => {}); }, 3000);
     setInterval(() => { tick().catch(() => {}); }, intervalMs);
   })();
-});
+};
+
+const server = app.listen(port, host, onServerListen);
 
 (async () => {
   async function consolidateByUsername(colName) {
@@ -22742,15 +23932,18 @@ async function fetchInstagramRecentPosts(username) {
       console.log(`[IG] Tentando (Paralelo) API autenticada com cookie ${profile.ds_user_id}`);
       const proxyAgent = igBuildProxyAgent(profile);
       
+      const csrf = await igEnsureCsrfToken(profile, proxyAgent, profile.userAgent);
       const headers = {
         "User-Agent": profile.userAgent,
         "X-IG-App-ID": "936619743392459",
-        "Cookie": `sessionid=${profile.sessionid}; ds_user_id=${profile.ds_user_id}`,
+        "Cookie": igCookieHeader(profile),
         "Accept": "application/json",
         "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
         "Cache-Control": "no-cache",
         "Pragma": "no-cache",
-        "X-Requested-With": "XMLHttpRequest"
+        "X-Requested-With": "XMLHttpRequest",
+        "Referer": `https://www.instagram.com/${encodeURIComponent(username)}/`,
+        ...(csrf ? { "X-CSRFToken": csrf } : {})
       };
 
       const resp = await axios.get(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`, { 
@@ -22760,15 +23953,37 @@ async function fetchInstagramRecentPosts(username) {
         validateStatus: () => true
       });
 
+      const respText = (function () {
+        try {
+          const d = resp && resp.data;
+          if (!d) return '';
+          if (typeof d === 'string') return d;
+          const msg = (d && (d.message || d.error || d.status_message || d.statusMessage)) ? String(d.message || d.error || d.status_message || d.statusMessage) : '';
+          if (msg) return msg;
+          try { return JSON.stringify(d); } catch (_) { return String(d); }
+        } catch (_) { return ''; }
+      })();
+      const hasInvalidSession = /invalid\s+session\s+token/i.test(respText);
+
       if (resp.status === 429 || resp.status === 403) {
         igMarkLastProxyFail(profile, 10 * 60 * 1000);
         profile.errorCount = Number(profile.errorCount || 0) + 2;
         profile.disabledUntil = Date.now() + (10 * 60 * 1000);
+        if (hasInvalidSession) {
+          profile.errorCount = Number(profile.errorCount || 0) + 5;
+          profile.disabledUntil = Date.now() + (12 * 60 * 60 * 1000);
+          throw new Error('ig_session_invalid');
+        }
         throw new Error(`HTTP ${resp.status}`);
       }
       if (resp.status !== 200) throw new Error(`HTTP ${resp.status}`);
       
       const user = resp.data && resp.data.data && resp.data.data.user;
+      if (!user && hasInvalidSession) {
+        profile.errorCount = Number(profile.errorCount || 0) + 5;
+        profile.disabledUntil = Date.now() + (12 * 60 * 60 * 1000);
+        throw new Error('ig_session_invalid');
+      }
       if (!user || user.is_private) {
         // Sucesso técnico, mas falha de negócio (privado) - não conta como erro de conexão
         profile.lastUsed = Date.now();
@@ -22875,16 +24090,18 @@ async function fetchInstagramFollowersInfo(username) {
 
     try {
       const proxyAgent = igBuildProxyAgent(profile);
+      const csrf = await igEnsureCsrfToken(profile, proxyAgent, profile.userAgent);
       const headers = {
         "User-Agent": profile.userAgent,
         "X-IG-App-ID": "936619743392459",
-        "Cookie": `sessionid=${profile.sessionid}; ds_user_id=${profile.ds_user_id}`,
+        "Cookie": igCookieHeader(profile),
         "Accept": "application/json",
         "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
         "Cache-Control": "no-cache",
         "Pragma": "no-cache",
         "X-Requested-With": "XMLHttpRequest",
-        "Referer": `https://www.instagram.com/${encodeURIComponent(username)}/`
+        "Referer": `https://www.instagram.com/${encodeURIComponent(username)}/`,
+        ...(csrf ? { "X-CSRFToken": csrf } : {})
       };
 
       const resp = await axios.get(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`, {
@@ -22894,14 +24111,36 @@ async function fetchInstagramFollowersInfo(username) {
         validateStatus: () => true
       });
 
+      const respText = (function () {
+        try {
+          const d = resp && resp.data;
+          if (!d) return '';
+          if (typeof d === 'string') return d;
+          const msg = (d && (d.message || d.error || d.status_message || d.statusMessage)) ? String(d.message || d.error || d.status_message || d.statusMessage) : '';
+          if (msg) return msg;
+          try { return JSON.stringify(d); } catch (_) { return String(d); }
+        } catch (_) { return ''; }
+      })();
+      const hasInvalidSession = /invalid\s+session\s+token/i.test(respText);
+
       if (resp.status === 429 || resp.status === 403) {
         igMarkLastProxyFail(profile, 10 * 60 * 1000);
         profile.errorCount = Number(profile.errorCount || 0) + 2;
         profile.disabledUntil = Date.now() + (10 * 60 * 1000);
+        if (hasInvalidSession) {
+          profile.errorCount = Number(profile.errorCount || 0) + 5;
+          profile.disabledUntil = Date.now() + (12 * 60 * 60 * 1000);
+          throw new Error('ig_session_invalid');
+        }
         throw new Error(`HTTP ${resp.status}`);
       }
       if (resp.status !== 200) throw new Error(`HTTP ${resp.status}`);
       const user = resp.data && resp.data.data && resp.data.data.user;
+      if (!user && hasInvalidSession) {
+        profile.errorCount = Number(profile.errorCount || 0) + 5;
+        profile.disabledUntil = Date.now() + (12 * 60 * 60 * 1000);
+        throw new Error('ig_session_invalid');
+      }
       if (!user || !user.username) {
         profile.lastUsed = Date.now();
         profile.errorCount = 0;

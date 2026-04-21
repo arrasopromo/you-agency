@@ -144,7 +144,7 @@
             <option value="all">Todos</option>
             <option value="curtidas_mistos">Curtidas mistos</option>
             <option value="seguidores_mistos">Seguidores mistos</option>
-            <option value="seguidores_brasileiros">Seguidores brasileiros</option>
+            <option value="seguidores_brasileiros">Seguidores padrao</option>
             <option value="curtidas_organicos">Curtidas orgânicos</option>
             <option value="seguidores_organicos">Seguidores orgânicos</option>
             <option value="visualizacoes_reels">Visualizações reels</option>
@@ -237,7 +237,7 @@
           <input id="wppSaleUser" type="text" placeholder="@perfil" style="width:170px; padding:6px; border:1px solid #ccc; border-radius:4px;" />
           <select id="wppSaleTipo" style="padding:6px; border:1px solid #ccc; border-radius:4px;">
             <option value="seguidores_mistos">Seguidores Mistos</option>
-            <option value="seguidores_brasileiros">Seguidores Brasileiros</option>
+            <option value="seguidores_brasileiros">Seguidores Padrao</option>
             <option value="seguidores_organicos">Seguidores Orgânicos</option>
           </select>
           <input id="wppSaleQty" type="number" min="1" placeholder="Qtd" style="width:110px; padding:6px; border:1px solid #ccc; border-radius:4px;" />
@@ -497,7 +497,7 @@
                 </label>
                 <label style="display:flex; align-items:center; gap:6px; margin:0;">
                   <input type="checkbox" class="followersTipoChk" value="brasileiros" <%= tipoSet.has('brasileiros') ? 'checked' : '' %> />
-                  <span>Brasileiros</span>
+                  <span>Padrao</span>
                 </label>
                 <label style="display:flex; align-items:center; gap:6px; margin:0;">
                   <input type="checkbox" class="followersTipoChk" value="organicos" <%= tipoSet.has('organicos') ? 'checked' : '' %> />
@@ -505,7 +505,7 @@
                 </label>
                 <label style="display:flex; align-items:center; gap:6px; margin:0;">
                   <input type="checkbox" class="followersTipoChk" value="brasileiros_reais" <%= tipoSet.has('brasileiros_reais') ? 'checked' : '' %> />
-                  <span>Brasileiros reais</span>
+                  <span>Premium</span>
                 </label>
               </div>
             </div>

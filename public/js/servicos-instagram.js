@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
             window.couponDiscount = data.discount || 0;
             if (msg) {
               const percent = Math.round((Number(data.discount||0)) * 100);
-              msg.textContent = 'Cupom aplicado! (' + percent + '% OFF)';
+              msg.textContent = 'Coupon applied! (' + percent + '% OFF)';
               msg.style.color = '#22c55e';
               msg.style.display = 'block';
             }
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
             window.couponCode = '';
             window.couponDiscount = 0;
             if (msg) {
-              msg.textContent = (data && data.error) ? data.error : 'Cupom inválido.';
+              msg.textContent = (data && data.error) ? data.error : 'Invalid coupon.';
               msg.style.color = '#ef4444';
               msg.style.display = 'block';
             }
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
           
           const code = input.value.trim().toUpperCase();
           if (!code) {
-              msg.textContent = 'Digite um cupom.';
+              msg.textContent = 'Enter a coupon.';
               msg.style.color = '#ef4444';
               msg.style.display = 'block';
               return;
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
           
           // Validation Logic via API
           this.disabled = true;
-          this.textContent = 'Verificando...';
+          this.textContent = 'Checking...';
           
           const usernameEl = document.getElementById('usernameCheckoutInput');
           const instagram_username = usernameEl ? usernameEl.value.trim().replace(/^@+/, '') : '';
@@ -119,33 +119,33 @@ document.addEventListener('DOMContentLoaded', function() {
                   window.couponDiscount = data.discount; // decimal, e.g. 0.10
                   
                   const percent = Math.round(data.discount * 100);
-                  msg.textContent = `Cupom aplicado! (${percent}% OFF)`;
+                  msg.textContent = `Coupon applied! (${percent}% OFF)`;
                   msg.style.color = '#22c55e';
                   msg.style.display = 'block';
                   
                   input.disabled = true;
                   this.disabled = true;
-                  this.textContent = 'Aplicado';
+                  this.textContent = 'Applied';
               } else {
-                  msg.textContent = data.error || 'Cupom inválido.';
+                  msg.textContent = data.error || 'Invalid coupon.';
                   msg.style.color = '#ef4444';
                   msg.style.display = 'block';
                   window.couponCode = '';
                   window.couponDiscount = 0;
                   
                   this.disabled = false;
-                  this.textContent = 'Aplicar';
+                  this.textContent = 'Apply';
               }
               if (typeof updatePromosSummary === 'function') updatePromosSummary();
           })
           .catch(err => {
-              console.error('Erro ao validar cupom:', err);
-              msg.textContent = 'Erro ao validar cupom.';
+              console.error('Error validating coupon:', err);
+              msg.textContent = 'Error validating coupon.';
               msg.style.color = '#ef4444';
               msg.style.display = 'block';
               
               this.disabled = false;
-              this.textContent = 'Aplicar';
+              this.textContent = 'Apply';
           });
       });
   }
@@ -288,11 +288,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const tabela = isViewsContext ? tabelaVisualizacoes : (isCurtidasContext ? tabelaCurtidas : tabelaSeguidores);
 
   const promoPricing = {
-    likes: { old: 'R$ 49,90', price: 'R$ 9,90', discount: 80 },
-    views: { old: 'R$ 89,90', price: 'R$ 19,90', discount: 78 },
-    comments: { old: 'R$ 29,90', price: 'R$ 9,90', discount: 67 },
-    warranty: { old: 'R$ 39,90', price: 'R$ 14,90', discount: 63 },
-    warranty60: { old: 'R$ 39,90', price: 'R$ 9,90', discount: 75 },
+    likes: { old: '$ 49.90', price: '$ 9.90', discount: 80 },
+    views: { old: '$ 89.90', price: '$ 19.90', discount: 78 },
+    comments: { old: '$ 29.90', price: '$ 9.90', discount: 67 },
+    warranty: { old: '$ 39.90', price: '$ 14.90', discount: 63 },
+    warranty60: { old: '$ 39.90', price: '$ 9.90', discount: 75 },
   };
   try { window.promoPricing = promoPricing; } catch(_) {}
 
@@ -312,7 +312,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   let paymentPollInterval = null;
   let paymentEventSource = null;
-  let currentPaymentMethod = 'pix';
+  const disablePix = !!(window && window.__DISABLE_PIX__);
+  let currentPaymentMethod = disablePix ? 'credit_card' : 'pix';
   window.currentPaymentMethod = currentPaymentMethod;
 
   // --- UTM Tracking Persistence ---
@@ -363,16 +364,25 @@ document.addEventListener('DOMContentLoaded', function() {
   // --- Helpers ---
   function parsePrecoToCents(precoStr) {
     if (!precoStr) return 0;
-    const cleaned = precoStr.replace(/[^\d,]/g, '').replace(',', '.');
-    const value = Math.round(parseFloat(cleaned) * 100);
+    const raw = String(precoStr);
+    const cleaned = raw.replace(/[^\d.,-]/g, '');
+    if (!cleaned) return 0;
+    const lastComma = cleaned.lastIndexOf(',');
+    const lastDot = cleaned.lastIndexOf('.');
+    let normalized = cleaned;
+    if (lastComma > lastDot) {
+      normalized = cleaned.replace(/\./g, '').replace(/,/g, '.');
+    } else {
+      normalized = cleaned.replace(/,/g, '');
+    }
+    const value = Math.round(parseFloat(normalized) * 100);
     return isNaN(value) ? 0 : value;
   }
 
   function formatCentsToBRL(cents) {
     const valor = Math.max(0, Number(cents) || 0);
-    const reais = Math.floor(valor / 100);
-    const centavos = valor % 100;
-    return `R$ ${reais.toLocaleString('pt-BR')},${String(centavos).padStart(2, '0')}`;
+    const v = valor / 100;
+    return `$ ${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
   function onlyDigits(v) { return String(v || '').replace(/\D+/g, ''); }
@@ -468,6 +478,8 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       const method = String(window.currentPaymentMethod || '').trim();
       if (method === 'credit_card') {
+        const provider = String(window.CARD_PROVIDER || 'pagarme').trim().toLowerCase();
+        if (provider === 'stripe') return Math.max(0, Number(total) || 0);
         const cap = capInstallmentsBySubtotal(total);
         const inst = Math.max(1, Math.min(cap, getSelectedInstallments()));
         const rate = cardSurchargeRate(inst);
@@ -485,26 +497,28 @@ document.addEventListener('DOMContentLoaded', function() {
     select.innerHTML = '';
 
     const minInstallment = 500;
-    const maxInstallments = Math.min(12, capInstallmentsBySubtotal(subtotalCents));
+    const provider = String(window.CARD_PROVIDER || 'pagarme').trim().toLowerCase();
+    const isStripe = provider === 'stripe';
+    const maxInstallments = isStripe ? 1 : Math.min(12, capInstallmentsBySubtotal(subtotalCents));
 
     const defaultOption = document.createElement('option');
     defaultOption.value = "";
     defaultOption.disabled = true;
     defaultOption.selected = true;
-    defaultOption.textContent = "Selecione as parcelas...";
+    defaultOption.textContent = "Select installments...";
     select.appendChild(defaultOption);
 
     if (!subtotalCents || subtotalCents <= 0) return;
 
     for (let i = 1; i <= maxInstallments; i++) {
-      const rate = cardSurchargeRate(i);
+      const rate = isStripe ? 0 : cardSurchargeRate(i);
       const totalForI = Math.round(Number(subtotalCents) * (1 + Math.max(0, rate) / 100));
       const installmentValue = Math.floor(totalForI / i);
       if (installmentValue < minInstallment && i > 1) break;
 
       const option = document.createElement('option');
       option.value = i;
-      option.textContent = `${i}x de ${formatCentsToBRL(installmentValue)}`;
+      option.textContent = `${i}x of ${formatCentsToBRL(installmentValue)}`;
       select.appendChild(option);
     }
   }
@@ -589,7 +603,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (stripeMounted && stripeInstance && stripeElements && stripeCardNumberEl) return true;
 
     const publishableKey = String(window.STRIPE_PUBLISHABLE_KEY || '').trim();
-    if (!publishableKey) throw new Error('Configuração de pagamento inválida (STRIPE_PUBLISHABLE_KEY ausente).');
+    if (!publishableKey) throw new Error('Invalid payment configuration (missing STRIPE_PUBLISHABLE_KEY).');
 
     const loadStripe = async () => {
       try { if (window.Stripe) return true; } catch (_) {}
@@ -615,10 +629,10 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     const ok = await loadStripe();
-    if (!ok) throw new Error('Não foi possível carregar a Stripe. Recarregue a página e tente novamente.');
+    if (!ok) throw new Error('Unable to load Stripe. Reload the page and try again.');
 
     stripeInstance = window.Stripe(publishableKey);
-    stripeElements = stripeInstance.elements({ locale: 'pt-BR' });
+    stripeElements = stripeInstance.elements({ locale: 'en' });
     const style = {
       base: {
         color: '#111827',
@@ -631,7 +645,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const numberMount = document.getElementById('stripeCardNumber');
     const expMount = document.getElementById('stripeCardExpiry');
     const cvcMount = document.getElementById('stripeCardCvc');
-    if (!numberMount || !expMount || !cvcMount) throw new Error('Formulário de cartão da Stripe não encontrado na página.');
+    if (!numberMount || !expMount || !cvcMount) throw new Error('Stripe card form not found on the page.');
 
     stripeCardNumberEl = stripeElements.create('cardNumber', { style });
     stripeCardExpiryEl = stripeElements.create('cardExpiry', { style });
@@ -648,7 +662,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const provider = String(window.CARD_PROVIDER || 'pagarme').trim().toLowerCase();
     if (provider !== 'stripe') return false;
     const publishableKey = String(window.STRIPE_PUBLISHABLE_KEY || '').trim();
-    if (!publishableKey) throw new Error('Configuração de pagamento inválida (STRIPE_PUBLISHABLE_KEY ausente).');
+    if (!publishableKey) throw new Error('Invalid payment configuration (missing STRIPE_PUBLISHABLE_KEY).');
     try { if (window.Stripe) return true; } catch (_) {}
     const existing = document.querySelector('script[src="https://js.stripe.com/v3/"]');
     if (!existing) {
@@ -674,15 +688,15 @@ document.addEventListener('DOMContentLoaded', function() {
   async function mountStripeEmbeddedCheckout(clientSecret) {
     const wrapper = document.getElementById('stripeEmbeddedWrapper');
     const mount = document.getElementById('stripeEmbeddedCheckout');
-    if (!wrapper || !mount) throw new Error('Área do checkout incorporado não encontrada.');
+    if (!wrapper || !mount) throw new Error('Embedded checkout area not found.');
     wrapper.style.display = 'block';
-    mount.innerHTML = '<div style="padding:14px; text-align:center; color:#6b7280; font-size:0.95rem;">Carregando checkout da Stripe...</div>';
+    mount.innerHTML = '<div style="padding:14px; text-align:center; color:#6b7280; font-size:0.95rem;">Loading Stripe checkout...</div>';
     const ok = await ensureStripeJsReady();
-    if (!ok) throw new Error('Não foi possível carregar a Stripe. Recarregue a página e tente novamente.');
+    if (!ok) throw new Error('Unable to load Stripe. Reload the page and try again.');
     const publishableKey = String(window.STRIPE_PUBLISHABLE_KEY || '').trim();
     const stripe = window.Stripe(publishableKey);
     if (!stripe || typeof stripe.initEmbeddedCheckout !== 'function') {
-      throw new Error('Sua integração da Stripe não suporta checkout incorporado.');
+      throw new Error('Your Stripe integration does not support embedded checkout.');
     }
     if (stripeEmbeddedMounted && stripeEmbeddedCheckout) {
       try { stripeEmbeddedCheckout.destroy(); } catch (_) {}
@@ -700,6 +714,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function selectPaymentMethod(method, opts) {
     const o = opts || {};
+    if (disablePix && method === 'pix') method = 'credit_card';
     if (method === currentPaymentMethod && !o.force) return;
     currentPaymentMethod = method;
     window.currentPaymentMethod = method;
@@ -888,6 +903,12 @@ document.addEventListener('DOMContentLoaded', function() {
       : String(window.PAGARME_PUBLIC_KEY || '').trim();
     const isPublicKeyValid = publicKey && publicKey !== 'pk_change_me' && publicKey.length > 8 && /^pk_/i.test(publicKey);
 
+    if (disablePix) {
+      if (selector) selector.style.display = 'none';
+      selectPaymentMethod('credit_card', { skipSummary: true, force: true });
+      return;
+    }
+
     if (selector) {
       if (total >= 100 && isPublicKeyValid) {
         if (selector.style.display !== 'flex') selector.style.display = 'flex';
@@ -945,10 +966,6 @@ document.addEventListener('DOMContentLoaded', function() {
       if (isStripeCheckout && stripeEmbeddedMounted) {
         const currentKey = getStripeEmbeddedCheckoutKey();
         if (currentKey && stripeEmbeddedMountedKey && stripeEmbeddedMountedKey === currentKey) {
-          try {
-            const w = document.getElementById('stripeEmbeddedWrapper');
-            if (w && w.scrollIntoView) w.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          } catch (_) {}
           return;
         }
         try { if (stripeEmbeddedCheckout) stripeEmbeddedCheckout.destroy(); } catch (_) {}
@@ -996,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (firstError) {
         firstError.focus();
         try { firstError.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(_) {}
-        throw new Error('Por favor, preencha todos os campos obrigatórios destacados.');
+        throw new Error('Please fill in all highlighted required fields.');
       }
 
       const cardHolder = values.cardHolderName;
@@ -1014,7 +1031,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cardCvv = String(values.cardCvv || '').trim();
         pagarmePublicKey = String(window.PAGARME_PUBLIC_KEY || '').trim();
         if (!pagarmePublicKey) {
-          throw new Error('Configuração de pagamento inválida (PAGARME_PUBLIC_KEY ausente).');
+          throw new Error('Invalid payment configuration (missing PAGARME_PUBLIC_KEY).');
         }
 
         if (cardExpiry.includes('/')) {
@@ -1025,14 +1042,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (expYear && expYear.length === 2) expYear = '20' + expYear;
-        if (!expMonth || !expYear || Number(expMonth) > 12 || Number(expMonth) < 1) throw new Error('Data de validade inválida');
+        if (!expMonth || !expYear || Number(expMonth) > 12 || Number(expMonth) < 1) throw new Error('Invalid expiration date.');
       } else {
         if (!isStripeCheckout) await ensureStripeMounted();
       }
 
       const normalizeDigits = (v) => String(v || '').replace(/\D/g, '');
       const cpfDigits = normalizeDigits(cardHolderCpf);
-    if (!isStripeCheckout && cpfDigits.length !== 11) throw new Error('CPF inválido');
+    if (!isStripeCheckout && cpfDigits.length !== 11) throw new Error('Invalid CPF.');
 
       const installmentsEl = document.getElementById('cardInstallments');
       let installments = String(installmentsEl?.value || '').trim();
@@ -1064,7 +1081,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const usernameInputNorm = normalizeInstagramUsername(usernameInputRaw);
       const instagramUsernameFinal = usernamePreview || usernameInputNorm || '';
       if (!instagramUsernameFinal) {
-        throw new Error('Nome de usuário do Instagram não identificado.');
+        throw new Error('Instagram username not identified.');
       }
 
       const serviceCategory = isViewsContext ? 'visualizacoes' : (isCurtidasContext ? 'curtidas' : 'seguidores');
@@ -1072,11 +1089,11 @@ document.addEventListener('DOMContentLoaded', function() {
       const tipo = tipoSelect ? tipoSelect.value : '';
       const qtdSelectVal = qtdSelect ? qtdSelect.value : '0';
       const qtd = parseInt(qtdSelectVal, 10);
-      if (!tipo || !qtd || qtd <= 0) throw new Error('Selecione um pacote antes de pagar.');
+      if (!tipo || !qtd || qtd <= 0) throw new Error('Select a package before paying.');
 
       selectPaymentMethod('credit_card');
       const totalCents = calculateTotalCents();
-      if (!totalCents || totalCents < 100) throw new Error('O valor mínimo para cartão é R$ 1,00.');
+      if (!totalCents || totalCents < 100) throw new Error('The minimum card payment is $ 1.00.');
       const totalLabel = formatCentsToBRL(totalCents);
 
       let cardToken = '';
@@ -1104,18 +1121,18 @@ document.addEventListener('DOMContentLoaded', function() {
               signal: ctrl ? ctrl.signal : undefined
             });
           } catch (_) {
-            throw new Error('Falha ao conectar no Pagar.me. Verifique sua internet e tente novamente.');
+            throw new Error('Failed to connect to Pagar.me. Check your internet connection and try again.');
           } finally {
             if (timeoutId) clearTimeout(timeoutId);
           }
           let tokenData = null;
           try { tokenData = await tokenResp.json(); } catch(_) {}
           if (!tokenResp.ok) {
-            const msg = (tokenData && (tokenData.message || tokenData.error)) ? String(tokenData.message || tokenData.error) : 'Falha ao tokenizar cartão';
+            const msg = (tokenData && (tokenData.message || tokenData.error)) ? String(tokenData.message || tokenData.error) : 'Failed to tokenize card.';
             throw new Error(msg);
           }
           const t = tokenData && tokenData.id ? String(tokenData.id).trim() : '';
-          if (!t) throw new Error('Token do cartão não retornou no Pagar.me.');
+          if (!t) throw new Error('Card token was not returned by Pagar.me.');
           return t;
         })();
       }
@@ -1172,7 +1189,8 @@ document.addEventListener('DOMContentLoaded', function() {
           { key: 'order_bumps_total', value: formatCentsToBRL(promosTotalCents) },
           { key: 'order_bumps', value: promos.map(p => `${p.key}:${p.qty ?? 1}`).join(';') },
           { key: 'cupom', value: window.couponCode || '' },
-          { key: 'payment_method', value: 'credit_card' }
+          { key: 'payment_method', value: 'credit_card' },
+          ...(isStripe ? [{ key: 'card_provider', value: 'stripe' }] : [])
         ],
         profile_is_private: !!isInstagramPrivate,
         comment: 'Checkout OPPUS Card',
@@ -1219,6 +1237,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const useCheckout = window.STRIPE_USE_CHECKOUT === true || String(window.STRIPE_USE_CHECKOUT || '').toLowerCase() === 'true';
 
         if (useCheckout) {
+          if (isAuto) {
+            const emailOk = !!(emailValue && emailValue.includes('@'));
+            const phoneOk = !!(phoneValue && phoneValue.length >= 10);
+            if (!emailOk || !phoneOk) {
+              try {
+                const wrapper = document.getElementById('stripeEmbeddedWrapper');
+                const mount = document.getElementById('stripeEmbeddedCheckout');
+                if (wrapper) wrapper.style.display = 'block';
+                if (mount) {
+                  mount.innerHTML = '';
+                  const div = document.createElement('div');
+                  div.style.padding = '14px';
+                  div.style.textAlign = 'center';
+                  div.style.color = '#b45309';
+                  div.style.fontSize = '0.95rem';
+                  div.textContent = 'Fill in your phone and email to load the card checkout.';
+                  mount.appendChild(div);
+                }
+              } catch (_) {}
+              return;
+            }
+          }
+
           stripePayload.checkoutUiMode = 'embedded';
           const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
           const timeoutId = ctrl ? setTimeout(() => { try { ctrl.abort(); } catch (_) {} }, 45000) : null;
@@ -1231,7 +1272,7 @@ document.addEventListener('DOMContentLoaded', function() {
               signal: ctrl ? ctrl.signal : undefined
             });
           } catch (_) {
-            throw new Error('Falha ao conectar no servidor. Recarregue a página e tente novamente.');
+            throw new Error('Failed to connect to the server. Reload the page and try again.');
           } finally {
             if (timeoutId) clearTimeout(timeoutId);
           }
@@ -1261,18 +1302,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
               } catch (_) {}
             }
-            const baseMsg = checkoutData?.message || checkoutData?.error || 'Falha ao iniciar checkout';
-            throw new Error(String(baseMsg).trim() || 'Falha ao iniciar checkout.');
+            const baseMsg = checkoutData?.message || checkoutData?.error || 'Failed to start checkout.';
+            throw new Error(String(baseMsg).trim() || 'Failed to start checkout.');
           }
 
           const clientSecret = String(checkoutData?.clientSecret || checkoutData?.client_secret || '').trim();
-          if (!clientSecret) throw new Error('Checkout incorporado não retornou os dados necessários.');
+          if (!clientSecret) throw new Error('Embedded checkout did not return the required data.');
           await mountStripeEmbeddedCheckout(clientSecret);
           try { window.__oppus_stripe_auto_done = true; } catch (_) {}
-          try {
-            const w = document.getElementById('stripeEmbeddedWrapper');
-            if (w && w.scrollIntoView) w.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          } catch (_) {}
           return;
         }
 
@@ -1287,7 +1324,7 @@ document.addEventListener('DOMContentLoaded', function() {
             signal: ctrl ? ctrl.signal : undefined
           });
         } catch (_) {
-          throw new Error('Falha ao conectar no servidor. Recarregue a página e tente novamente.');
+          throw new Error('Failed to connect to the server. Reload the page and try again.');
         } finally {
           if (timeoutId) clearTimeout(timeoutId);
         }
@@ -1317,14 +1354,14 @@ document.addEventListener('DOMContentLoaded', function() {
               }
             } catch (_) {}
           }
-          const baseMsg = createData?.message || createData?.error || 'Falha ao iniciar pagamento';
-          throw new Error(String(baseMsg).trim() || 'Falha ao iniciar pagamento.');
+          const baseMsg = createData?.message || createData?.error || 'Failed to start payment.';
+          throw new Error(String(baseMsg).trim() || 'Failed to start payment.');
         }
 
         const clientSecret = String(createData?.clientSecret || '').trim();
         const identifierServer = String(createData?.identifier || createData?.paymentIntentId || '').trim();
         const correlationIDServer = String(createData?.correlationID || correlationID || '').trim();
-        if (!clientSecret) throw new Error('Pagamento não iniciou corretamente (clientSecret ausente).');
+        if (!clientSecret) throw new Error('Payment did not start correctly (missing clientSecret).');
 
         await ensureStripeMounted();
         const confirmResult = await stripeInstance.confirmCardPayment(clientSecret, {
@@ -1336,12 +1373,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (confirmResult && confirmResult.error) {
           const m = String(confirmResult.error.message || '').trim();
-          throw new Error(m || 'Pagamento não aprovado.');
+          throw new Error(m || 'Payment not approved.');
         }
         const pi = confirmResult && confirmResult.paymentIntent ? confirmResult.paymentIntent : null;
         const piId = String(pi?.id || identifierServer || '').trim();
         const piStatus = String(pi?.status || '').trim().toLowerCase();
-        if (!piId) throw new Error('Pagamento não retornou identificador.');
+        if (!piId) throw new Error('Payment did not return an identifier.');
 
         let finalizeResp = null;
         try {
@@ -1358,9 +1395,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const paid = finalizeData?.paid === true || piStatus === 'succeeded';
         if (!paid && piStatus && piStatus !== 'succeeded') {
-          alert('Pagamento em processamento. Vamos te levar para o seu pedido.');
+          alert('Payment is processing. We’ll take you to your order.');
         } else {
-          alert('Pagamento realizado com sucesso!');
+          alert('Payment successful!');
         }
 
         if (typeof navigateToPedidoOrFallback === 'function') {
@@ -1393,7 +1430,7 @@ document.addEventListener('DOMContentLoaded', function() {
           if (timeoutId) clearTimeout(timeoutId);
         }
       }
-      if (!resp) throw (lastNetErr || new Error('Falha ao conectar no servidor. Recarregue a página e tente novamente.'));
+      if (!resp) throw (lastNetErr || new Error('Failed to connect to the server. Reload the page and try again.'));
 
       const data = await resp.json();
       if (!resp.ok) {
@@ -1419,13 +1456,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           } catch (_) {}
         }
-        const baseMsg = data?.message || data?.error || 'Falha ao processar pagamento';
+        const baseMsg = data?.message || data?.error || 'Failed to process payment.';
         const pf = data && data.pagarme_failure ? data.pagarme_failure : null;
         const extra = (pf && (pf.acquirer_message || pf.gateway_message || pf.acquirer_return_code || pf.refusal_reason))
-          ? ` Motivo: ${String(pf.acquirer_message || pf.gateway_message || pf.refusal_reason || '').trim()}${(pf.acquirer_return_code || pf.gateway_response_code) ? ` (código: ${String(pf.acquirer_return_code || pf.gateway_response_code).trim()})` : ''}`
+          ? ` Reason: ${String(pf.acquirer_message || pf.gateway_message || pf.refusal_reason || '').trim()}${(pf.acquirer_return_code || pf.gateway_response_code) ? ` (code: ${String(pf.acquirer_return_code || pf.gateway_response_code).trim()})` : ''}`
           : '';
         const identifierErr = String(data?.identifier || data?.pagarme?.order_id || data?.order?.id || '').trim();
-        const idPart = identifierErr ? ` Pedido: ${identifierErr}.` : '';
+        const idPart = identifierErr ? ` Order: ${identifierErr}.` : '';
         throw new Error(`${String(baseMsg)}${extra}${idPart}`);
       }
 
@@ -1435,11 +1472,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (!paid) {
         const txStatus = String(data?.pagarme?.transaction_status || data?.pagarme?.charge_status || data?.pagarme?.order_status || '').trim();
-        const idLabel = identifierServer ? ` Pedido: ${identifierServer}.` : '';
-        throw new Error((data?.message && String(data.message).trim()) || (`Pagamento não confirmado no Pagar.me${txStatus ? ` (${txStatus})` : ''}.${idLabel}`));
+        const idLabel = identifierServer ? ` Order: ${identifierServer}.` : '';
+        throw new Error((data?.message && String(data.message).trim()) || (`Payment not confirmed in Pagar.me${txStatus ? ` (${txStatus})` : ''}.${idLabel}`));
       }
 
-      alert('Pagamento realizado com sucesso!');
+      alert('Payment successful!');
       if (typeof navigateToPedidoOrFallback === 'function') {
         await navigateToPedidoOrFallback(identifierServer || '', correlationIDServer);
       } else {
@@ -1458,13 +1495,13 @@ document.addEventListener('DOMContentLoaded', function() {
             div.style.textAlign = 'center';
             div.style.color = '#b91c1c';
             div.style.fontSize = '0.95rem';
-            div.textContent = 'Não foi possível iniciar o checkout. Revise os dados da etapa 2 e tente novamente.';
+            div.textContent = String(err?.message || 'Unable to start checkout. Please review your details and try again.');
             mount.appendChild(div);
           }
         } catch (_) {}
         return;
       }
-      alert('Erro ao processar pagamento: ' + (err?.message || err));
+      alert('Error processing payment: ' + (err?.message || err));
     } finally {
       if (!isAuto && payWithCardBtn) {
         payWithCardBtn.disabled = false;
@@ -1496,29 +1533,29 @@ document.addEventListener('DOMContentLoaded', function() {
   function getLabelForTipo(tipo) {
     if (isViewsContext) {
       const mapViews = {
-        visualizacoes_reels: 'Visualizações Reels'
+        visualizacoes_reels: 'Reels Views'
       };
       return mapViews[tipo] || tipo;
     }
     if (isCurtidasContext) {
         const map = {
-          'mistos': 'Curtidas Mistas',
-          'curtidas_brasileiras': 'Curtidas Brasileiras',
-          'organicos': 'Curtidas Brasileiras Reais'
+          'mistos': 'Mixed Likes',
+          'curtidas_brasileiras': 'Local Likes',
+          'organicos': 'Real Local Likes'
         };
         return map[tipo] || tipo;
     }
     const map = {
-      'mistos': 'Seguidores Mistos',
-      'brasileiros': 'Seguidores Brasileiros',
-      'organicos': 'Seguidores Brasileiros Reais'
+      'mistos': 'Mixed Followers',
+      'brasileiros': 'Local Followers',
+      'organicos': 'Real Followers'
     };
     return map[tipo] || tipo;
   }
 
   function getUnitForTipo(tipo) {
-    if (isViewsContext || tipo === 'visualizacoes_reels') return 'visualizações';
-    return isCurtidasContext ? 'curtidas' : 'seguidores';
+    if (isViewsContext || tipo === 'visualizacoes_reels') return 'views';
+    return isCurtidasContext ? 'likes' : 'followers';
   }
 
   function isFollowersTipo(tipo) {
@@ -1537,14 +1574,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (step === 2) {
       const activePlan = planCards ? planCards.querySelector('.service-card[data-role="plano"].active') : null;
       if (!activePlan) {
-        alert('Por favor, selecione um pacote antes de prosseguir.');
+        alert('Please select a package before continuing.');
         return;
       }
     }
     
     if (step === 3) {
       if (!isInstagramVerified) {
-        alert('Por favor, verifique o perfil na etapa 2 antes de prosseguir.');
+        alert('Please verify the profile in step 2 before continuing.');
         if (window.goToStep) window.goToStep(2);
         return;
       }
@@ -1555,7 +1592,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (!email || !email.includes('@')) {
         if (emailErrorMsg) emailErrorMsg.style.display = 'block';
-        else showStatusMessageCheckout('Por favor, informe um email válido.', 'error');
+        else showStatusMessageCheckout('Please enter a valid email.', 'error');
         if (window.goToStep) window.goToStep(2);
 
         setTimeout(() => {
@@ -1570,7 +1607,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       if (!phone || phone.length < 10) {
-        showStatusMessageCheckout('Por favor, informe um telefone válido.', 'error');
+        showStatusMessageCheckout('Please enter a valid phone number.', 'error');
         if (window.goToStep) window.goToStep(2);
 
         setTimeout(() => {
@@ -1691,6 +1728,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const tipos = Object.keys(tabela).filter(t => {
       if (t === 'seguidores_tiktok') return false;
       if (isCurtidasContext && t === 'curtidas_brasileiras') return false;
+      if (!isCurtidasContext && !isViewsContext && t === 'brasileiros') return false;
       return true;
     });
 
@@ -1712,6 +1750,7 @@ document.addEventListener('DOMContentLoaded', function() {
       card.addEventListener('click', () => {
         // Atualizar select oculto
         if (tipoSelect) {
+          window.__oppusTipoChangeUserInitiated = true;
           tipoSelect.value = tipo;
           tipoSelect.dispatchEvent(new Event('change'));
         }
@@ -1739,12 +1778,12 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   const quantityBadges = {
-    50: 'PACOTE TESTE',
-    20: 'PACOTE TESTE',
-    150: 'PACOTE INICIAL',
-    500: 'PACOTE BÁSICO',
-    1000: 'MAIS PEDIDO',
-    3000: 'EXCLUSIVO',
+    50: 'TEST PACKAGE',
+    20: 'TEST PACKAGE',
+    150: 'STARTER',
+    500: 'BASIC',
+    1000: 'MOST POPULAR',
+    3000: 'EXCLUSIVE',
     5000: 'VIP',
     10000: 'ELITE'
   };
@@ -1792,15 +1831,12 @@ document.addEventListener('DOMContentLoaded', function() {
       card.setAttribute('data-qtd', item.q);
       card.setAttribute('data-preco', item.p);
       
-      // Cálculo de preço "antigo" (estética checkout)
-      const baseText = String(item.p);
-      const baseStr = baseText.replace(/[^0-9,\.]/g, '');
-      let base = 0;
-      try { base = parseFloat(baseStr.replace('.', '').replace(',', '.')); } catch(_) {}
-      const inc = base * 1.15;
-      const ceilInt = Math.ceil(inc);
+      const baseCents = parsePrecoToCents(item.p);
+      const baseText = formatCentsToBRL(baseCents);
+      const incCents = Math.round(baseCents * 1.15);
+      const ceilInt = Math.ceil((incCents / 100));
       const increasedRounded = (ceilInt - 0.10);
-      const increasedText = `R$ ${increasedRounded.toFixed(2).replace('.', ',')}`;
+      const increasedText = formatCentsToBRL(Math.round(increasedRounded * 100));
 
       const qNum = Number(item.q);
       let badgeHtml = '';
@@ -1808,23 +1844,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (!isCurtidasContext) {
         if (tipo === 'mistos') {
-          if (qNum === 1000) badgeText = 'MELHOR PREÇO';
-          if (qNum === 3000) { badgeText = 'MAIS PEDIDO'; card.classList.add('gold-card'); }
-        } else if (tipo === 'brasileiros') {
-          if (qNum === 1000) { badgeText = 'MAIS PEDIDO'; card.classList.add('gold-card'); }
+          if (qNum === 1000) badgeText = 'BEST VALUE';
+          if (qNum === 3000) { badgeText = 'MOST POPULAR'; card.classList.add('gold-card'); }
         } else if (tipo === 'organicos') {
-          if (qNum === 1000) { badgeText = 'MAIS PEDIDO'; card.classList.add('gold-card'); }
+          if (qNum === 1000) { badgeText = 'MOST POPULAR'; card.classList.add('gold-card'); }
         } else if (tipo === 'visualizacoes_reels') {
-          if (qNum === 1000) badgeText = 'PACOTE INICIAL';
-          if (qNum === 5000) badgeText = 'PACOTE BÁSICO';
-          if (qNum === 25000) badgeText = 'MELHOR PREÇO';
-          if (qNum === 100000) { badgeText = 'MAIS PEDIDO'; card.classList.add('gold-card'); }
+          if (qNum === 1000) badgeText = 'STARTER';
+          if (qNum === 5000) badgeText = 'BASIC';
+          if (qNum === 25000) badgeText = 'BEST VALUE';
+          if (qNum === 100000) { badgeText = 'MOST POPULAR'; card.classList.add('gold-card'); }
           if (qNum === 200000) badgeText = 'VIP';
           if (qNum === 500000) badgeText = 'ELITE';
         }
       } else if (tipo === 'mistos' || tipo === 'curtidas_brasileiras' || tipo === 'organicos') {
         if (quantityBadges[qNum]) badgeText = quantityBadges[qNum];
-        if (badgeText === 'MAIS PEDIDO') card.classList.add('gold-card');
+        if (badgeText === 'MOST POPULAR') card.classList.add('gold-card');
       }
 
       if (!isCurtidasContext && !badgeText && isFollowersTipo(tipo) && quantityBadges[qNum]) {
@@ -1835,12 +1869,12 @@ document.addEventListener('DOMContentLoaded', function() {
         badgeHtml = `<div class="plan-badge">${badgeText}</div>`;
       }
 
-      const qtyFormatted = qNum.toLocaleString('pt-BR');
+      const qtyFormatted = qNum.toLocaleString('en-US');
       card.innerHTML = `${badgeHtml}<div class="card-content"><div class="card-title">${qtyFormatted} ${unit}</div><div class="card-desc"><span class="price-old">${increasedText}</span> <span class="price-new">${baseText}</span></div></div>`;
       
       card.addEventListener('click', () => {
         // Atualizar estado
-        const baseText = item.p;
+        const baseText = formatCentsToBRL(baseCents);
         
         // Atualizar select oculto
         const opt = Array.from(qtdSelect.options).find(o => o.value === String(item.q));
@@ -1850,7 +1884,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (resTipo) resTipo.textContent = getLabelForTipo(tipo);
         if (resQtd) resQtd.textContent = `${item.q} ${unit}`;
         if (resPreco) resPreco.textContent = baseText;
-        try { basePriceCents = parsePrecoToCents(baseText); } catch(_) { basePriceCents = 0; }
+        basePriceCents = baseCents;
         
         // Update Order Bump e Promos
         updateOrderBump(tipo, Number(item.q));
@@ -1880,63 +1914,63 @@ document.addEventListener('DOMContentLoaded', function() {
     switch (tipo) {
       case 'visualizacoes_reels':
         html = `
-          <p>Pacotes de visualizações reais para impulsionar o alcance dos seus vídeos e Reels. Ideal para quem quer ganhar mais entrega, engajamento e prova social em conteúdos estratégicos.</p>
+          <p>Real view packages to boost the reach of your videos and Reels. Ideal for increasing delivery, engagement, and social proof on strategic content.</p>
           <ul>
-            <li>🚀 <strong>Mais alcance:</strong> aumenta as visualizações dos seus Reels de forma rápida.</li>
-            <li>🎯 <strong>Foco em resultados:</strong> pensado para ajudar vídeos a performarem melhor no algoritmo.</li>
-            <li>✅ <strong>Entrega segura:</strong> serviço estável, com acompanhamento e suporte.</li>
+            <li>🚀 <strong>More reach:</strong> increases your Reels views quickly.</li>
+            <li>🎯 <strong>Results-focused:</strong> designed to help content perform better.</li>
+            <li>✅ <strong>Safe delivery:</strong> stable service with tracking and support.</li>
           </ul>
         `;
         break;
       case 'mistos':
         html = isCurtidasContext ? `
-          <p>Curtidas com entrega rápida e estável para impulsionar suas publicações.</p>
+          <p>Likes with fast, stable delivery to boost your posts.</p>
           <ul>
-            <li>✅ 100% seguro e confidencial, sem precisar da sua senha.</li>
-            <li>🌍 Curtidas de perfis internacionais para melhorar a prova social do post.</li>
-            <li>📈 Ideal para dar força inicial em conteúdos estratégicos.</li>
+            <li>✅ 100% safe and confidential, no password required.</li>
+            <li>🌍 Likes from international profiles to improve social proof.</li>
+            <li>📈 Great for giving strategic content an initial boost.</li>
           </ul>
         ` : `
-          <p>Perfis variados com entrega rápida e estável, com seguidores de outros países.</p>
+          <p>Mixed profiles with fast, stable delivery from multiple countries.</p>
           <ul>
-            <li>✅ 100% seguro e confidencial, sem precisar da sua senha.</li>
-            <li>🌍 Seguidores de vários países para crescer sua base.</li>
-            <li>🛠 Ferramenta de reposição de seguidores: não perca nenhum seguidor.</li>
+            <li>✅ 100% safe and confidential, no password required.</li>
+            <li>🌍 Followers from multiple countries to grow your base.</li>
+            <li>🛠 Refill tool: don’t lose followers.</li>
           </ul>
         `;
         break;
       case 'brasileiros':
       case 'curtidas_brasileiras':
         html = isCurtidasContext ? `
-          <p>Curtidas de perfis brasileiros para impulsionar suas publicações.</p>
+          <p>Local-profile likes to boost your posts.</p>
           <ul>
-            <li>✅ 100% seguro e confidencial, sem precisar da sua senha.</li>
-            <li>🇧🇷 Perfis brasileiros para reforçar prova social.</li>
-            <li>📈 Ideal para posts que você quer destacar.</li>
+            <li>✅ 100% safe and confidential, no password required.</li>
+            <li>📍 Local profiles to strengthen social proof.</li>
+            <li>📈 Great for posts you want to highlight.</li>
           </ul>
         ` : `
-          <p>Base nacional com nomes locais e seguidores brasileiros.</p>
+          <p>Local follower base with profile names aligned to your audience.</p>
           <ul>
-            <li>✅ 100% seguro e confidencial, sem precisar da sua senha.</li>
-            <li>🇧🇷 Foco total no público brasileiro e mais credibilidade.</li>
-            <li>🛠 Ferramenta de reposição de seguidores: não perca nenhum seguidor.</li>
+            <li>✅ 100% safe and confidential, no password required.</li>
+            <li>📍 Audience-aligned for stronger credibility.</li>
+            <li>🛠 Refill tool: don’t lose followers.</li>
           </ul>
         `;
         break;
       case 'organicos':
         html = isCurtidasContext ? `
-          <p>Curtidas de perfis brasileiros e reais para máxima qualidade e credibilidade nas suas publicações.</p>
+          <p>Real local-profile likes for maximum quality and credibility on your posts.</p>
           <ul>
-            <li>✅ 100% seguro e confidencial, sem precisar da sua senha.</li>
-            <li>🇧🇷 Perfis brasileiros e reais para reforçar autoridade.</li>
-            <li>📈 Ideal para posts que você quer destacar com mais autoridade.</li>
+            <li>✅ 100% safe and confidential, no password required.</li>
+            <li>✨ Higher-quality profiles to strengthen authority.</li>
+            <li>📈 Great for posts you want to highlight with more authority.</li>
           </ul>
         ` : `
-          <p>Brasileiros e reais: perfis selecionados, com maior credibilidade.</p>
+          <p>Real, higher-quality profiles selected for stronger credibility.</p>
           <ul>
-            <li>✅ 100% seguro e confidencial, sem precisar da sua senha.</li>
-            <li>✨ Perfis mais qualificados para reforçar autoridade do perfil.</li>
-            <li>📉 Serviço com baixa queda de seguidores.</li>
+            <li>✅ 100% safe and confidential, no password required.</li>
+            <li>✨ Higher-quality profiles to strengthen profile authority.</li>
+            <li>📉 Low drop rate.</li>
           </ul>
         `;
         break;
@@ -1944,7 +1978,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return '';
     }
 
-    if (isCurtidasContext) { return html.replace(/seguidores/g, 'curtidas').replace(/Seguidores/g, 'Curtidas'); }
     return html;
   }
 
@@ -1954,7 +1987,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const contentEl = document.getElementById('tipoDescContent');
     if (!descCard || !titleEl || !contentEl) return;
 
-    titleEl.textContent = 'Descrição do serviço';
+    titleEl.textContent = 'Service description';
     contentEl.innerHTML = getTipoDescription(tipo);
     descCard.style.display = 'block';
   }
@@ -1985,10 +2018,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const wNew = document.getElementById('warrantyNewPrice');
     const wDisc = document.getElementById('warrantyDiscount');
 
-    if (wLabel) wLabel.textContent = '6 meses';
-    if (wHighlight) wHighlight.textContent = 'REPOSIÇÃO POR 6 MESES';
-    if (wOld) wOld.textContent = 'R$ 39,90';
-    if (wNew) wNew.textContent = 'R$ 9,90';
+    if (wLabel) wLabel.textContent = '6 months';
+    if (wHighlight) wHighlight.textContent = '6-MONTH REPLACEMENT';
+    if (wOld) wOld.textContent = '$ 39.90';
+    if (wNew) wNew.textContent = '$ 9.90';
     if (wDisc) wDisc.textContent = '75% OFF';
     updatePromosSummary();
   }
@@ -2049,10 +2082,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const targetQtdViews = upsellViewsTargets[Number(baseQtd)];
       if (!targetQtdViews) {
-        if (labelSpan) labelSpan.textContent = 'Nenhum upgrade disponível para este pacote.';
+        if (labelSpan) labelSpan.textContent = 'No upgrade available for this package.';
         if (upOld) upOld.textContent = '—';
         if (upNew) upNew.textContent = '—';
-        if (upDisc) upDisc.textContent = 'OFERTA';
+        if (upDisc) upDisc.textContent = 'OFFER';
         return;
       }
 
@@ -2060,10 +2093,10 @@ document.addEventListener('DOMContentLoaded', function() {
       const targetPriceViews = findPrice(tipo, targetQtdViews);
 
       if (!basePriceViews || !targetPriceViews) {
-        if (labelSpan) labelSpan.textContent = 'Nenhum upgrade disponível para este pacote.';
+        if (labelSpan) labelSpan.textContent = 'No upgrade available for this package.';
         if (upOld) upOld.textContent = '—';
         if (upNew) upNew.textContent = '—';
-        if (upDisc) upDisc.textContent = 'OFERTA';
+        if (upDisc) upDisc.textContent = 'OFFER';
         return;
       }
 
@@ -2071,7 +2104,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const addQtdViews = targetQtdViews - baseQtd;
       const diffStrViews = formatCentsToBRL(diffCentsViews);
 
-      if (labelSpan) labelSpan.textContent = `Por mais ${diffStrViews}, adicione ${addQtdViews} ${unit} e atualize para ${targetQtdViews}.`;
+      if (labelSpan) labelSpan.textContent = `For ${diffStrViews} more, add ${addQtdViews} ${unit} and upgrade to ${targetQtdViews}.`;
       if (upHighlight) upHighlight.textContent = `+ ${addQtdViews} ${unit}`;
       if (upOld) upOld.textContent = targetPriceViews || '—';
       if (upNew) upNew.textContent = diffStrViews;
@@ -2095,7 +2128,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const targetPrice = findPrice(tipo, 2000);
       const diffCents = parsePrecoToCents(targetPrice) - parsePrecoToCents(basePrice);
       const diffStr = formatCentsToBRL(diffCents);
-      if (labelSpan) labelSpan.textContent = `Por mais ${diffStr}, atualize para ${targetQtd} ${unit}.`;
+    if (labelSpan) labelSpan.textContent = `For ${diffStr} more, upgrade to ${targetQtd} ${unit}.`;
       if (upHighlight) upHighlight.textContent = `+ ${targetQtd - 1000} ${unit}${curtidasSeal ? ` • ${curtidasSeal}` : ''}`;
       if (upOld) upOld.textContent = targetPrice || '—';
       if (upNew) upNew.textContent = diffStr;
@@ -2115,10 +2148,10 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     const targetQtd = upsellTargets[Number(baseQtd)];
     if (!targetQtd) {
-      if (labelSpan) labelSpan.textContent = 'Nenhum upgrade disponível para este pacote.';
+      if (labelSpan) labelSpan.textContent = 'No upgrade available for this package.';
       if (upOld) upOld.textContent = '—';
       if (upNew) upNew.textContent = '—';
-      if (upDisc) upDisc.textContent = 'OFERTA';
+      if (upDisc) upDisc.textContent = 'OFFER';
       return;
     }
     const basePrice = findPrice(tipo, baseQtd);
@@ -2126,7 +2159,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const diffCents = parsePrecoToCents(targetPrice) - parsePrecoToCents(basePrice);
     const addQtd = targetQtd - baseQtd;
     const diffStr = formatCentsToBRL(diffCents);
-    if (labelSpan) labelSpan.textContent = `Por mais ${diffStr}, adicione ${addQtd} ${unit} e atualize para ${targetQtd}.`;
+    if (labelSpan) labelSpan.textContent = `For ${diffStr} more, add ${addQtd} ${unit} and upgrade to ${targetQtd}.`;
     if (upHighlight) upHighlight.textContent = `+ ${addQtd} ${unit}${curtidasSeal ? ` • ${curtidasSeal}` : ''}`;
     if (upOld) upOld.textContent = targetPrice || '—';
     if (upNew) upNew.textContent = diffStr;
@@ -2186,10 +2219,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!titleEl && !descEl) return;
     const tipo = String((tipoSelect && tipoSelect.value) || '').toLowerCase();
     const variant = (function(t){
-      if (t === 'organicos') return { title: 'Curtidas orgânicas promocionais', desc: 'Adicionar curtidas orgânicas (brasileiras reais) ao post.' };
-      if (t === 'brasileiros' || t === 'curtidas_brasileiras') return { title: 'Curtidas brasileiras promocionais', desc: 'Adicionar curtidas brasileiras ao post.' };
-      if (t === 'mistos') return { title: 'Curtidas mistas promocionais', desc: 'Adicionar curtidas mistas ao post.' };
-      return { title: 'Curtidas promocionais', desc: 'Adicionar curtidas ao post.' };
+      if (t === 'organicos') return { title: 'Organic likes add-on', desc: 'Add real local organic likes to the post.' };
+      if (t === 'brasileiros' || t === 'curtidas_brasileiras') return { title: 'Local likes add-on', desc: 'Add local-profile likes to the post.' };
+      if (t === 'mistos') return { title: 'Mixed likes add-on', desc: 'Add mixed-profile likes to the post.' };
+      return { title: 'Likes add-on', desc: 'Add likes to the post.' };
     })(tipo);
     if (titleEl) titleEl.textContent = variant.title;
     if (descEl) descEl.textContent = variant.desc;
@@ -2198,15 +2231,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const entry = likesTable.find(e => e.q === q);
     const newEl = likesPrices ? likesPrices.querySelector('.new-price') : null;
     const oldEl = likesPrices ? likesPrices.querySelector('.old-price') : null;
-    if (newEl && entry) newEl.textContent = entry.price;
-    if (oldEl && entry) { const newVal = parseCurrencyBR(entry.price); const oldVal = newVal * 1.70; oldEl.textContent = formatCurrencyBR(oldVal); }
+    if (newEl && entry) {
+      const newCents = parsePrecoToCents(entry.price);
+      newEl.textContent = formatCentsToBRL(newCents);
+    }
+    if (oldEl && entry) {
+      const newCents = parsePrecoToCents(entry.price);
+      const oldCents = Math.round(newCents * 1.70);
+      oldEl.textContent = formatCentsToBRL(oldCents);
+    }
     const hl = document.querySelector('.promo-item.likes .promo-highlight');
     if (hl) {
       const tipo = String((tipoSelect && tipoSelect.value) || '').toLowerCase();
-      if (tipo === 'organicos') hl.textContent = `+ ${q} CURTIDAS ORGÂNICAS`;
-      else if (tipo === 'brasileiros' || tipo === 'curtidas_brasileiras') hl.textContent = `+ ${q} CURTIDAS BRASILEIRAS`;
-      else if (tipo === 'mistos') hl.textContent = `+ ${q} CURTIDAS MISTAS`;
-      else hl.textContent = `+ ${q} CURTIDAS`;
+      if (tipo === 'organicos') hl.textContent = `+ ${q} ORGANIC LIKES`;
+      else if (tipo === 'brasileiros' || tipo === 'curtidas_brasileiras') hl.textContent = `+ ${q} LOCAL LIKES`;
+      else if (tipo === 'mistos') hl.textContent = `+ ${q} MIXED LIKES`;
+      else hl.textContent = `+ ${q} LIKES`;
     }
     try { applyLikesPromoVariant(); } catch(_) {}
   }
@@ -2227,18 +2267,18 @@ document.addEventListener('DOMContentLoaded', function() {
   if (likesQtyEl) updateLikesPrice(Number(likesQtyEl.textContent || 150));
 
   const viewsTable = [
-    { q: 1000, price: 'R$ 4,90' },
-    { q: 2500, price: 'R$ 9,90' },
-    { q: 5000, price: 'R$ 14,90' },
-    { q: 10000, price: 'R$ 19,90' },
-    { q: 25000, price: 'R$ 24,90' },
-    { q: 50000, price: 'R$ 34,90' },
-    { q: 100000, price: 'R$ 49,90' },
-    { q: 150000, price: 'R$ 59,90' },
-    { q: 200000, price: 'R$ 69,90' },
-    { q: 250000, price: 'R$ 89,90' },
-    { q: 500000, price: 'R$ 109,90' },
-    { q: 1000000, price: 'R$ 159,90' }
+    { q: 1000, price: '$ 4.90' },
+    { q: 2500, price: '$ 9.90' },
+    { q: 5000, price: '$ 14.90' },
+    { q: 10000, price: '$ 19.90' },
+    { q: 25000, price: '$ 24.90' },
+    { q: 50000, price: '$ 34.90' },
+    { q: 100000, price: '$ 49.90' },
+    { q: 150000, price: '$ 59.90' },
+    { q: 200000, price: '$ 69.90' },
+    { q: 250000, price: '$ 89.90' },
+    { q: 500000, price: '$ 109.90' },
+    { q: 1000000, price: '$ 159.90' }
   ];
   const viewsQtyEl = document.getElementById('viewsQty');
   const viewsDec = document.getElementById('viewsDec');
@@ -2250,12 +2290,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const oldEl = viewsPrices ? viewsPrices.querySelector('.old-price') : null;
     if (newEl && entry) newEl.textContent = entry.price;
     if (oldEl && entry) {
-      const newVal = parseCurrencyBR(entry.price);
-      const oldVal = newVal / 0.7;
-      oldEl.textContent = formatCurrencyBR(oldVal);
+      const newCents = parsePrecoToCents(entry.price);
+      const oldCents = Math.round(newCents / 0.7);
+      oldEl.textContent = formatCentsToBRL(oldCents);
     }
     const hl = document.querySelector('.promo-item.views .promo-highlight');
-    if (hl) hl.textContent = `+ ${q} VISUALIZAÇÕES`;
+    if (hl) hl.textContent = `+ ${q} VIEWS`;
   }
   function stepViews(dir) {
     const current = Number(viewsQtyEl?.textContent || 1000);
@@ -2281,16 +2321,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const newEl = commentsPrices ? commentsPrices.querySelector('.new-price') : null;
     const oldEl = commentsPrices ? commentsPrices.querySelector('.old-price') : null;
     
-    // Formatação BRL direta com toFixed(2)
-    const format = (cents) => {
-        const val = cents / 100;
-        return `R$ ${val.toFixed(2).replace('.', ',')}`;
-    };
-
-    if (newEl) newEl.textContent = format(q * 150); // q * 1.50 * 100
-    if (oldEl) { const oldCents = (q * 150) * 1.7; oldEl.textContent = format(oldCents); }
+    if (newEl) newEl.textContent = formatCentsToBRL(q * 150);
+    if (oldEl) { const oldCents = (q * 150) * 1.7; oldEl.textContent = formatCentsToBRL(oldCents); }
     const hl = document.querySelector('.promo-item.comments .promo-highlight');
-    if (hl) hl.textContent = `+ ${q} COMENTÁRIOS`;
+    if (hl) hl.textContent = `+ ${q} COMMENTS`;
   }
 
   function stepComments(dir) {
@@ -2322,10 +2356,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!priceStr) priceStr = promoPricing.likes?.price || '';
         const tipo = String((tipoSelect && tipoSelect.value) || '').toLowerCase();
         const label = (function(t){
-          if (t === 'organicos') return `Curtidas orgânicas (${qty})`;
-          if (t === 'brasileiros' || t === 'curtidas_brasileiras') return `Curtidas brasileiras (${qty})`;
-          if (t === 'mistos') return `Curtidas mistas (${qty})`;
-          return `Curtidas (${qty})`;
+          if (t === 'organicos') return `Organic likes (${qty})`;
+          if (t === 'brasileiros' || t === 'curtidas_brasileiras') return `Local likes (${qty})`;
+          if (t === 'mistos') return `Mixed likes (${qty})`;
+          return `Likes (${qty})`;
         })(tipo);
         promos.push({ key: 'likes', qty, label, priceCents: parsePrecoToCents(priceStr) });
       }
@@ -2333,24 +2367,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const qty = Number(document.getElementById('viewsQty')?.textContent || 1000);
         let priceStr = document.querySelector('.promo-prices[data-promo="views"] .new-price')?.textContent || '';
         if (!priceStr) priceStr = promoPricing.views?.price || '';
-        promos.push({ key: 'views', qty, label: `Visualizações Reels (${qty})`, priceCents: parsePrecoToCents(priceStr) });
+        promos.push({ key: 'views', qty, label: `Reels views (${qty})`, priceCents: parsePrecoToCents(priceStr) });
       }
       if (commentsChecked) {
         const qty = Number(document.getElementById('commentsQty')?.textContent || 1);
         const priceCents = qty * 150; // R$ 1,50 (150 cents)
-        promos.push({ key: 'comments', qty, label: `Comentários (${qty})`, priceCents });
+        promos.push({ key: 'comments', qty, label: `Comments (${qty})`, priceCents });
       }
       if (warrantyChecked) {
         const mode = (typeof window.warrantyMode === 'string') ? window.warrantyMode : '30';
         let priceStr = (document.getElementById('warrantyNewPrice')?.textContent || '').trim();
-        if (!priceStr) priceStr = promoPricing.warranty60?.price || 'R$ 9,90';
-        const label = 'Reposição por 6 meses';
+        if (!priceStr) priceStr = promoPricing.warranty60?.price || '$ 9.90';
+        const label = '6-month replacement';
         promos.push({ key: 'warranty_6m', qty: 1, label, priceCents: parsePrecoToCents(priceStr) });
       }
       if (upgradeChecked) {
         let priceStr = document.querySelector('.promo-prices[data-promo="upgrade"] .new-price')?.textContent || '';
         const highlight = document.getElementById('orderBumpHighlight')?.textContent || '';
-        promos.push({ key: 'upgrade', qty: 1, label: `Upgrade de pacote ${highlight ? `(${highlight})` : ''}`.trim(), priceCents: parsePrecoToCents(priceStr) });
+        promos.push({ key: 'upgrade', qty: 1, label: `Package upgrade ${highlight ? `(${highlight})` : ''}`.trim(), priceCents: parsePrecoToCents(priceStr) });
       }
     } catch (_) {}
     return promos;
@@ -2390,8 +2424,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (promos.length > 0) {
             resPromosContainer.style.display = 'block';
             
-            // Header "Promoções selecionadas:"
-            let html = '<div style="font-weight:600; margin-bottom:-4px; padding-bottom:0; color:var(--text-primary); line-height:1.2; margin-top:0.5rem;">Promoções selecionadas:</div>';
+            // Header "Selected add-ons:"
+            let html = '<div style="font-weight:600; margin-bottom:-4px; padding-bottom:0; color:var(--text-primary); line-height:1.2; margin-top:0.5rem;">Selected add-ons:</div>';
             
             html += promos.map((p, index) => {
                 // Tenta achar preço original do promo
@@ -2443,11 +2477,14 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       const method = String(window.currentPaymentMethod || '').trim();
       if (method === 'credit_card') {
-        try { populateInstallments(totalCents); } catch(_) {}
-        const cap = capInstallmentsBySubtotal(totalCents);
-        const inst = Math.max(1, Math.min(cap, getSelectedInstallments()));
-        const rate = cardSurchargeRate(inst);
-        totalCents = Math.round(totalCents * (1 + Math.max(0, rate) / 100));
+        const provider = String(window.CARD_PROVIDER || 'pagarme').trim().toLowerCase();
+        if (provider !== 'stripe') {
+          try { populateInstallments(totalCents); } catch(_) {}
+          const cap = capInstallmentsBySubtotal(totalCents);
+          const inst = Math.max(1, Math.min(cap, getSelectedInstallments()));
+          const rate = cardSurchargeRate(inst);
+          totalCents = Math.round(totalCents * (1 + Math.max(0, rate) / 100));
+        }
       }
     } catch(_) {}
     
@@ -2597,7 +2634,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const user = (checkoutProfileUsername && checkoutProfileUsername.textContent && checkoutProfileUsername.textContent.trim()) || '';
     if (!user) {
-        showStatusMessageCheckout('Valide seu perfil primeiro.', 'error');
+        showStatusMessageCheckout('Verify your profile first.', 'error');
         return;
     }
     
@@ -2608,12 +2645,12 @@ document.addEventListener('DOMContentLoaded', function() {
         ? window.__oppusSelectedPostsByKind[kind]
         : [];
       if (curList.length >= maxCount) {
-        showStatusMessageCheckout('Limite de posts atingido para este pacote.', 'error');
+        showStatusMessageCheckout('Post limit reached for this package.', 'error');
         return;
       }
     }
 
-    if (refs.postModalTitle) refs.postModalTitle.textContent = kind === 'views' ? 'Selecionar reels' : 'Selecionar post';
+    if (refs.postModalTitle) refs.postModalTitle.textContent = kind === 'views' ? 'Select Reels' : 'Select post';
     try {
       if (refs.postModal.parentNode !== document.body) {
         document.body.appendChild(refs.postModal);
@@ -2645,9 +2682,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
       let headerHtml = '';
       if (isCurtidasContext && kind === 'likes') {
-        headerHtml = '<div style="grid-column:1/-1; text-align:center; padding:0.5rem 0 1rem; font-weight:600; color:var(--text-primary);">Selecione o post que deseja receber as curtidas</div>';
+        headerHtml = '<div style="grid-column:1/-1; text-align:center; padding:0.5rem 0 1rem; font-weight:600; color:var(--text-primary);">Select the post you want to receive likes</div>';
       } else if (isViewsContext && kind === 'views') {
-        headerHtml = '<div style="grid-column:1/-1; text-align:center; padding:0.5rem 0 1rem; font-weight:600; color:var(--text-primary);">Selecione o Reels que deseja receber as visualizações</div>';
+        headerHtml = '<div style="grid-column:1/-1; text-align:center; padding:0.5rem 0 1rem; font-weight:600; color:var(--text-primary);">Select the Reels you want to receive views</div>';
       }
 
       const html = items.map(function(p){
@@ -2662,19 +2699,19 @@ document.addEventListener('DOMContentLoaded', function() {
             ? ('<div class="media-frame"><video data-src="'+vsrc+'" muted playsinline preload="none"></video></div>')
             : ('<div class="media-frame"><iframe src="https://www.instagram.com/p/'+p.shortcode+'/embed" loading="lazy" allowtransparency="true" allow="encrypted-media; picture-in-picture" scrolling="no"></iframe></div>'));
         const pickedClass = alreadySelected ? ' selected-mark' : '';
-        const btnText = alreadySelected ? 'Selecionado' : 'Selecionar';
+        const btnText = alreadySelected ? 'Selected' : 'Select';
         const btnStyle = alreadySelected ? 'width:100%; text-align:center; opacity:0.65; cursor:not-allowed;' : 'width:100%; text-align:center;';
         const btnDisabled = alreadySelected ? ' disabled' : '';
-        return '<div class="service-card"><div class="card-content pick-post-card'+pickedClass+'" data-kind="'+kind+'" data-shortcode="'+p.shortcode+'">'+media+'<div class="inline-msg" style="margin-top:6px">'+(p.takenAt? new Date(Number(p.takenAt)*1000).toLocaleString('pt-BR') : '-')+'</div><div style="margin-top:8px;display:flex;justify-content:center;align-items:center;"><button type="button" class="continue-button select-post-btn" style="'+btnStyle+'" data-shortcode="'+p.shortcode+'" data-kind="'+kind+'"'+btnDisabled+'>'+btnText+'</button></div></div></div>';
+        return '<div class="service-card"><div class="card-content pick-post-card'+pickedClass+'" data-kind="'+kind+'" data-shortcode="'+p.shortcode+'">'+media+'<div class="inline-msg" style="margin-top:6px">'+(p.takenAt? new Date(Number(p.takenAt)*1000).toLocaleString('en-US') : '-')+'</div><div style="margin-top:8px;display:flex;justify-content:center;align-items:center;"><button type="button" class="continue-button select-post-btn" style="'+btnStyle+'" data-shortcode="'+p.shortcode+'" data-kind="'+kind+'"'+btnDisabled+'>'+btnText+'</button></div></div></div>';
       }).join('');
       
       if (!html) {
           const manualHtml = `
             <div style="grid-column:1/-1; text-align:center; padding: 1rem;">
-                <p style="margin-bottom:0.5rem; color:var(--text-secondary);">Não encontramos posts recentes compatíveis automaticamente.</p>
+                <p style="margin-bottom:0.5rem; color:var(--text-secondary);">We couldn't automatically find compatible recent posts.</p>
                 <div style="display:flex; gap:0.5rem; max-width:400px; margin:0 auto;">
-                    <input type="text" id="manualPostLinkInput" placeholder="${kind === 'views' ? 'Cole o link do Reels/Vídeo aqui...' : 'Cole o link do post aqui...'}" style="flex:1; padding:0.6rem; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary);" />
-                    <button type="button" id="manualPostLinkBtn" class="continue-button" style="padding:0.6rem 1rem;">Usar Link</button>
+                    <input type="text" id="manualPostLinkInput" placeholder="${kind === 'views' ? 'Paste the Reels/Video link here...' : 'Paste the post link here...'}" style="flex:1; padding:0.6rem; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary);" />
+                    <button type="button" id="manualPostLinkBtn" class="continue-button" style="padding:0.6rem 1rem;">Use Link</button>
                 </div>
                 <div id="manualLinkMsg" style="margin-top:0.5rem; font-size:0.9rem;"></div>
             </div>
@@ -2688,14 +2725,14 @@ document.addEventListener('DOMContentLoaded', function() {
                   btn.addEventListener('click', () => {
                       const val = inp.value.trim();
                       if(!val || !val.includes('instagram.com/')) {
-                          if(msg) { msg.textContent = 'Link inválido'; msg.style.color = '#ff4444'; }
+                          if(msg) { msg.textContent = 'Invalid link.'; msg.style.color = '#ff4444'; }
                           return;
                       }
                       let sc = '';
                       const m = val.match(/\/(?:p|reel)\/([A-Za-z0-9_-]+)/);
                       if(m) sc = m[1];
                       if(!sc) {
-                           if(msg) { msg.textContent = 'Link inválido (não foi possível extrair ID)'; msg.style.color = '#ff4444'; }
+                           if(msg) { msg.textContent = 'Invalid link (unable to extract ID).'; msg.style.color = '#ff4444'; }
                            return;
                       }
                       try {
@@ -2704,8 +2741,8 @@ document.addEventListener('DOMContentLoaded', function() {
                           const maxCount = getSplitMaxForQtd(qtd);
                           const curList = Array.isArray(window.__oppusSelectedPostsByKind && window.__oppusSelectedPostsByKind[kind]) ? window.__oppusSelectedPostsByKind[kind] : [];
                           if (!curList.includes(sc) && curList.length >= maxCount) {
-                            if (msg) { msg.textContent = 'Limite de posts atingido para este pacote.'; msg.style.color = '#ff4444'; }
-                            showStatusMessageCheckout('Limite de posts atingido para este pacote.', 'error');
+                            if (msg) { msg.textContent = 'Post limit reached for this package.'; msg.style.color = '#ff4444'; }
+                            showStatusMessageCheckout('Post limit reached for this package.', 'error');
                             return;
                           }
                         }
@@ -2717,7 +2754,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (typeof updateSelectedPostPreview === 'function') {
                                 try { updateSelectedPostPreview(kind, sc, { append: postModalAppendMode }); } catch(_) {}
                             }
-                            if(msg) { msg.textContent = 'Link selecionado!'; msg.style.color = '#44ff44'; }
+                            if(msg) { msg.textContent = 'Link selected!'; msg.style.color = '#44ff44'; }
                             setTimeout(() => {
                                 const refs = getPostModalRefs(); 
                                 if(refs.postModal) refs.postModal.style.display='none';
@@ -2751,7 +2788,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (postModalAppendMode) {
               const curList0 = Array.isArray(window.__oppusSelectedPostsByKind && window.__oppusSelectedPostsByKind[k]) ? window.__oppusSelectedPostsByKind[k] : [];
               if (curList0.includes(sc)) {
-                showStatusMessageCheckout('Este post já foi selecionado. Escolha outro.', 'error');
+                showStatusMessageCheckout('This post is already selected. Choose another one.', 'error');
                 return;
               }
             }
@@ -2760,7 +2797,7 @@ document.addEventListener('DOMContentLoaded', function() {
               const maxCount = getSplitMaxForQtd(qtd);
               const curList = Array.isArray(window.__oppusSelectedPostsByKind && window.__oppusSelectedPostsByKind[k]) ? window.__oppusSelectedPostsByKind[k] : [];
               if (!curList.includes(sc) && curList.length >= maxCount) {
-                showStatusMessageCheckout('Limite de posts atingido para este pacote.', 'error');
+                showStatusMessageCheckout('Post limit reached for this package.', 'error');
                 return;
               }
             }
@@ -2796,7 +2833,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (postModalAppendMode) {
               const curList0 = Array.isArray(window.__oppusSelectedPostsByKind && window.__oppusSelectedPostsByKind[k]) ? window.__oppusSelectedPostsByKind[k] : [];
               if (curList0.includes(sc)) {
-                showStatusMessageCheckout('Este post já foi selecionado. Escolha outro.', 'error');
+                showStatusMessageCheckout('This post is already selected. Choose another one.', 'error');
                 return;
               }
             }
@@ -2805,7 +2842,7 @@ document.addEventListener('DOMContentLoaded', function() {
               const maxCount = getSplitMaxForQtd(qtd);
               const curList = Array.isArray(window.__oppusSelectedPostsByKind && window.__oppusSelectedPostsByKind[k]) ? window.__oppusSelectedPostsByKind[k] : [];
               if (!curList.includes(sc) && curList.length >= maxCount) {
-                showStatusMessageCheckout('Limite de posts atingido para este pacote.', 'error');
+                showStatusMessageCheckout('Post limit reached for this package.', 'error');
                 return;
               }
             }
@@ -2936,7 +2973,7 @@ document.addEventListener('DOMContentLoaded', function() {
           ? '<img src="'+dsrc+'" style="width:100%;height:100%;border-radius:12px;object-fit:cover;" loading="lazy" decoding="async"/>'
           : '<iframe src="https://www.instagram.com/p/'+p.shortcode+'/embed" allowtransparency="true" allow="encrypted-media; picture-in-picture" scrolling="no" style="width:100%;height:100%;border-radius:12px;"></iframe>';
         const frame = '<div style="width:100%;height:'+fixedH+'px;overflow:hidden;border-radius:12px;background:var(--bg-primary);">'+media+'</div>';
-        const dateText = p.takenAt ? new Date(Number(p.takenAt) * 1000).toLocaleString('pt-BR') : '';
+        const dateText = p.takenAt ? new Date(Number(p.takenAt) * 1000).toLocaleString('en-US') : '';
         const extra = dateText ? '<div style="font-size:0.8rem;color:var(--text-secondary);text-align:center;margin-top:6px;">'+dateText+'</div>' : '';
         return '<div style="scroll-snap-align:start;flex:0 0 240px;max-width:240px;background:var(--bg-secondary);border-radius:12px;padding:0.6rem;"><div style="position:relative;">'+frame+removeBtn+'</div>'+extra+'</div>';
       }).join('');
@@ -2945,7 +2982,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const addBtn = canAddMore
         ? '<button type="button" id="addMorePostsBtn" style="scroll-snap-align:start;flex:0 0 240px;max-width:240px;background:rgba(124,58,237,0.10);border:2px dashed rgba(124,58,237,0.5);border-radius:12px;padding:0.6rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--text-primary);cursor:pointer;">'
           + '<div style="width:42px;height:42px;border-radius:999px;background:rgba(124,58,237,0.15);display:flex;align-items:center;justify-content:center;font-size:26px;line-height:0;">+</div>'
-          + '<div style="font-weight:600;">Adicionar mais um post</div>'
+          + '<div style="font-weight:600;">Add another post</div>'
           + '</button>'
         : '';
 
@@ -2957,8 +2994,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const totalSent = ok ? (each * list.length) : 0;
         const extra = ok ? (totalSent - qtdEffective) : 0;
         const infoText = ok
-          ? ('Divisão: ' + each.toLocaleString('pt-BR') + ' por post (' + list.length + ' posts)' + (extra > 0 ? (' — enviaremos +' + extra.toLocaleString('pt-BR') + ' pra fechar a divisão') : ''))
-          : ('Divisão inválida. Para ' + qtdEffective.toLocaleString('pt-BR') + ', escolha: ' + countsAllowed.join(', ') + ' post(s).');
+          ? ('Split: ' + each.toLocaleString('en-US') + ' per post (' + list.length + ' post(s))' + (extra > 0 ? (' — we’ll send +' + extra.toLocaleString('en-US') + ' to match the split') : ''))
+          : ('Invalid split. For ' + qtdEffective.toLocaleString('en-US') + ', choose: ' + countsAllowed.join(', ') + ' post(s).');
         const infoColor = ok ? 'var(--text-secondary)' : '#ef4444';
         infoHtml = '<div id="splitInfoLine" style="margin-top:8px;font-size:0.9rem;color:'+infoColor+';text-align:center;">'+infoText+'</div>';
       }
@@ -2980,7 +3017,7 @@ document.addEventListener('DOMContentLoaded', function() {
           const maxN = getSplitMaxForQtd(q);
           const curList = Array.isArray(window.__oppusSelectedPostsByKind && window.__oppusSelectedPostsByKind[kind]) ? window.__oppusSelectedPostsByKind[kind] : [];
           if (curList.length >= maxN) {
-            showStatusMessageCheckout('Limite de posts atingido para este pacote.', 'error');
+            showStatusMessageCheckout('Post limit reached for this package.', 'error');
             return;
           }
           openPostModal(kind, { append: true });
@@ -3026,7 +3063,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const qtd = parseInt(String(qtdSelect && qtdSelect.value ? qtdSelect.value : '0'), 10) || 0;
             const maxCount = getSplitMaxForQtd(qtd);
             if (!prev.includes(sc) && prev.length >= maxCount) {
-              showStatusMessageCheckout('Limite de posts atingido para este pacote.', 'error');
+              showStatusMessageCheckout('Post limit reached for this package.', 'error');
               return;
             }
             window.__oppusSelectedPostsByKind[kind] = prev.includes(sc) ? prev : prev.concat([sc]);
@@ -3042,13 +3079,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!usernameCheckoutInput) return;
     const rawInput = usernameCheckoutInput.value.trim();
     if (!rawInput) {
-      showStatusMessageCheckout('Digite o usuário ou URL do Instagram.', 'error');
+      showStatusMessageCheckout('Enter the Instagram username or URL.', 'error');
       return;
     }
     
     const username = normalizeInstagramUsername(rawInput);
     if (!isValidInstagramUsername(username)) {
-      showStatusMessageCheckout('Nome de usuário inválido.', 'error');
+      showStatusMessageCheckout('Invalid username.', 'error');
       return;
     }
     if (username !== rawInput) usernameCheckoutInput.value = username;
@@ -3107,7 +3144,45 @@ document.addEventListener('DOMContentLoaded', function() {
       if (data.success) {
         const profile = data.profile || {};
 
-        if (checkoutProfileImage && profile.profilePicUrl) checkoutProfileImage.src = profile.profilePicUrl;
+        const profilePicRaw = String(profile.profilePicUrl || profile.driveImageUrl || profile.originalProfilePicUrl || '').trim();
+        const fallbackPic = '/images/default-avatar.svg';
+        const toProxyIfNeeded = (url) => {
+          const s = String(url || '').trim();
+          if (!s) return '';
+          if (s.indexOf('/image-proxy?') === 0) return s;
+          if (/^https?:\/\//i.test(s)) {
+            try {
+              const u = new URL(s);
+              const h = String(u.hostname || '').toLowerCase();
+              if (h.includes('instagram') || h.includes('cdninstagram') || h.includes('fbcdn') || h.includes('scontent')) {
+                return '/image-proxy?url=' + encodeURIComponent(s);
+              }
+            } catch(_) {}
+          }
+          return s;
+        };
+        const applyPic = (img) => {
+          if (!img) return;
+          const candidate = toProxyIfNeeded(profilePicRaw);
+          img.onerror = null;
+          img.src = fallbackPic;
+          if (!candidate) return;
+          const pre = new Image();
+          pre.onload = () => {
+            img.onerror = null;
+            img.src = candidate;
+            img.onerror = () => {
+              img.onerror = null;
+              img.src = fallbackPic;
+            };
+          };
+          pre.onerror = () => {
+            img.onerror = null;
+            img.src = fallbackPic;
+          };
+          pre.src = candidate;
+        };
+        applyPic(checkoutProfileImage);
         if (checkoutProfileUsername) checkoutProfileUsername.textContent = profile.username || username;
         if (checkoutFollowersCount) checkoutFollowersCount.textContent = String(profile.followersCount || '-');
         if (checkoutFollowingCount) checkoutFollowingCount.textContent = String(profile.followingCount || '-');
@@ -3135,7 +3210,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const revImg = document.getElementById('reviewProfileImage');
         const revUser = document.getElementById('reviewProfileUsername');
         const revFoll = document.getElementById('reviewProfileFollowers');
-        if (revImg) revImg.src = profile.profilePicUrl || '';
+        applyPic(revImg);
         if (revUser) revUser.textContent = profile.username || username;
         if (revFoll) revFoll.textContent = String(profile.followersCount || '-');
         
@@ -3173,7 +3248,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showResumoIfAllowed();
         updatePromosSummary();
         applyCheckoutFlow();
-        showStatusMessageCheckout('Perfil verificado com sucesso.', 'success');
+        showStatusMessageCheckout('Profile verified successfully.', 'success');
         
         try {
           const bid = getBrowserSessionId();
@@ -3186,19 +3261,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
       } else {
         const msg = (data && data.error) ? String(data.error) : '';
-        if (/não\s+localizad|não\s+encontrad|inexist|username_invalid|user_not_found/i.test(msg)) {
-          showStatusMessageCheckout('Usuário não encontrado. configra o nome digitado e tente novamente.', 'error');
-        } else if (/erro\s+na\s+verifica[cç][aã]o\s+do\s+perfil/i.test(msg)) {
-          showStatusMessageCheckout('Erro de usuário. configra o nome digitado e tente novamente.', 'error');
+        if (/não\s+localizad|não\s+encontrad|inexist|username_invalid|user_not_found|not\s+found/i.test(msg)) {
+          showStatusMessageCheckout('User not found. Check the username and try again.', 'error');
+        } else if (/invalid\s+session\s+token/i.test(msg)) {
+          showStatusMessageCheckout('Instagram session error. Please try again in a moment.', 'error');
+        } else if (/erro\s+na\s+verifica[cç][aã]o\s+do\s+perfil|profile\s+verification\s+error|unknown\s+error\s+while\s+verifying\s+profile/i.test(msg)) {
+          showStatusMessageCheckout('Profile verification error. Check the username and try again.', 'error');
         } else {
-          showStatusMessageCheckout(msg || 'Falha ao verificar perfil.', 'error');
+          showStatusMessageCheckout(msg || 'Failed to verify profile.', 'error');
         }
         const helpLink = document.getElementById('howToGetLinkContainer');
         if (helpLink) helpLink.style.display = 'block';
       }
     } catch (e) {
       hideLoadingCheckout();
-      showStatusMessageCheckout('Erro ao conectar com o servidor.', 'error');
+      showStatusMessageCheckout('Error connecting to the server.', 'error');
       const helpLink = document.getElementById('howToGetLinkContainer');
       if (helpLink) helpLink.style.display = 'block';
     }
@@ -3323,7 +3400,7 @@ document.addEventListener('DOMContentLoaded', function() {
           const total = current + selected;
           
           // Format numbers
-          const fmt = (n) => n.toLocaleString('pt-BR');
+          const fmt = (n) => n.toLocaleString('en-US');
 
           if (reviewSelectedQty) reviewSelectedQty.textContent = `+${fmt(selected)}`;
           if (reviewTotalFollowers) reviewTotalFollowers.textContent = fmt(total);
@@ -3343,10 +3420,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const pixResultado = document.getElementById('pixResultado');
     try {
       if (pixResultado) {
-        pixResultado.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;color:#22C55E;font-weight:700;font-size:1rem;"><span class="price-new">Pagamento confirmado</span></div>';
+        pixResultado.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;color:#22C55E;font-weight:700;font-size:1rem;"><span class="price-new">Payment confirmed</span></div>';
       }
     } catch(_) {}
-    try { showStatusMessageCheckout('Pagamento confirmado. Exibindo resumo abaixo.', 'success'); } catch(_) {}
+    try { showStatusMessageCheckout('Payment confirmed. Showing the summary below.', 'success'); } catch(_) {}
     try { showResumoIfAllowed(); } catch(_) {}
   }
 
@@ -3368,7 +3445,7 @@ document.addEventListener('DOMContentLoaded', function() {
       } catch(_) {}
       let providerOid = data && data.order ? extractProviderOid(data.order) : '';
       if (!data || !data.order || !providerOid) {
-        showStatusMessageCheckout('Pagamento recebido! Processando pedido...', 'success');
+        showStatusMessageCheckout('Payment received! Processing your order...', 'success');
         let attempts = 0;
         const maxAttempts = 10;
         while (attempts < maxAttempts && !providerOid) {
@@ -3390,7 +3467,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const finalOid = providerOid || (chargeId ? String(chargeId) : '');
       window.location.href = `/pedido?t=${encodeURIComponent(identifier)}&ref=${encodeURIComponent(correlationID||'')}&oid=${encodeURIComponent(finalOid||'')}`;
     } catch(_) {
-        showStatusMessageCheckout('Pagamento confirmado! Verifique seu email.', 'success');
+        showStatusMessageCheckout('Payment confirmed! Check your email.', 'success');
     }
   }
 
@@ -3487,7 +3564,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const instagramUsernameFinal = usernamePreview || usernameInputNorm || '';
 
       if (!instagramUsernameFinal) {
-        throw new Error('Nome de usuário do Instagram não identificado.');
+        throw new Error('Instagram username not identified.');
       }
 
       const serviceCategory = isViewsContext ? 'visualizacoes' : (isCurtidasContext ? 'curtidas' : 'seguidores');
@@ -3497,7 +3574,7 @@ document.addEventListener('DOMContentLoaded', function() {
         value: totalCents,
         comment: wooviComment,
         customer: {
-          name: 'Cliente Instagram',
+          name: 'Instagram Customer',
           phone: phoneValue,
           email: emailValue
         },
@@ -3625,7 +3702,7 @@ document.addEventListener('DOMContentLoaded', function() {
               payload.additionalInfo.push({ key: 'post_split_count', value: String(links.length) });
               const maxCount = getSplitMaxForQtd(qtd);
               if (links.length > maxCount) {
-                splitErrMsg = 'Quantidade de posts acima do limite do pacote.';
+                splitErrMsg = 'The number of posts is above the package limit.';
               }
               const qtdForSplit = getEffectiveQtdForSplit(tipo, qtd);
               const perPost = links.length ? Math.ceil(qtdForSplit / links.length) : qtdForSplit;
@@ -3634,7 +3711,7 @@ document.addEventListener('DOMContentLoaded', function() {
               payload.additionalInfo.push({ key: 'post_split_each', value: String(perPost) });
               if (extra > 0) payload.additionalInfo.push({ key: 'post_split_extra', value: String(extra) });
             } else {
-              splitErrMsg = 'Selecione pelo menos 1 post.';
+              splitErrMsg = 'Select at least 1 post.';
             }
           }
       } catch(_) {}
@@ -3648,7 +3725,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const data = await resp.json();
       if (!resp.ok) {
-        const errMsg = (data && (data.message || (data.details && data.details.message) || data.error)) || 'Falha ao criar cobrança';
+        const errMsg = (data && (data.message || (data.details && data.details.message) || data.error)) || 'Failed to create charge.';
         throw new Error(errMsg);
       }
 
@@ -3662,19 +3739,19 @@ document.addEventListener('DOMContentLoaded', function() {
       const inputId = 'pixBrCodeInputDynamic';
 
       const imgHtml = qrImage
-        ? `<img src="${qrImage}" alt="QR Code Pix" style="width: 180px; height: 180px; border-radius: 8px; display: block; margin: 0 auto 0.75rem; background: #fff;" />`
+        ? `<img src="${qrImage}" alt="Pix QR code" style="width: 180px; height: 180px; border-radius: 8px; display: block; margin: 0 auto 0.75rem; background: #fff;" />`
         : '';
 
       const codeFieldHtml = brCode
         ? `<div style="margin-bottom: 0.5rem; text-align: center;">
              <input id="${inputId}" type="text" readonly value="${brCode}" style="width: 100%; padding: 0.5rem; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.85); color: #111827; text-align: center;" />
            </div>`
-        : '<div style="color:#fff;">Não foi possível exibir o código Pix.</div>';
+        : '<div style="color:#fff;">Unable to display the Pix code.</div>';
 
       const copyBtnHtml = brCode
         ? `<div class="button-container" style="margin-bottom: 0.5rem;">
              <button id="${copyButtonId}" class="continue-button">
-               <span class="button-text">Copiar código Pix</span>
+               <span class="button-text">Copy Pix code</span>
              </button>
            </div>`
         : '';
@@ -3688,7 +3765,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
             </circle>
           </svg>
-          <span>Aguardando pagamento...</span>
+          <span>Waiting for payment...</span>
         </div>`;
 
       if (pixResultado) {
@@ -3721,15 +3798,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 const span = copyBtn.querySelector('.button-text');
                 const prev = span ? span.textContent : '';
-                if (span) span.textContent = 'Pix copiado';
-                try { showStatusMessageCheckout('Código Pix copiado', 'success'); } catch(_) {}
+                if (span) span.textContent = 'Pix copied';
+                try { showStatusMessageCheckout('Pix code copied', 'success'); } catch(_) {}
                 copyBtn.disabled = true;
                 setTimeout(() => {
                   copyBtn.disabled = false;
-                  if (span) span.textContent = prev || 'Copiar código Pix';
+                  if (span) span.textContent = prev || 'Copy Pix code';
                 }, 1200);
               } catch (e) {
-                alert('Não foi possível copiar o código Pix.');
+                alert('Unable to copy the Pix code.');
               }
             });
           }
@@ -3822,7 +3899,7 @@ document.addEventListener('DOMContentLoaded', function() {
        }
 
     } catch (err) {
-      alert('Erro ao criar PIX: ' + (err?.message || err));
+      alert('Error creating Pix: ' + (err?.message || err));
     } finally {
       if (btnPedido) {
         btnPedido.classList.remove('loading');
@@ -3857,6 +3934,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function scrollToCardsMobile() {
     try {
+      const delayMs = arguments.length > 0 ? Number(arguments[0]) : 3000;
       const isMobile = window.innerWidth <= 640;
       if (isMobile) {
         setTimeout(() => {
@@ -3868,7 +3946,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const targetTop = (rect.top + scrollTop) - 120;
             smoothScrollToY(targetTop, 1100);
           }
-        }, 3000);
+        }, Number.isFinite(delayMs) ? delayMs : 3000);
       }
     } catch (_) {}
   }
@@ -3900,7 +3978,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       // Scroll Mobile para os cards (deixando beirada da descrição)
-      scrollToCardsMobile();
+      const delayMs = (!isCurtidasContext && !isViewsContext && window.__oppusTipoChangeUserInitiated) ? 2000 : 3000;
+      window.__oppusTipoChangeUserInitiated = false;
+      scrollToCardsMobile(delayMs);
     });
   }
 
@@ -3911,7 +3991,7 @@ document.addEventListener('DOMContentLoaded', function() {
     arr.forEach(item => {
       const opt = document.createElement('option');
       opt.value = item.q;
-      opt.textContent = `${item.q} - ${item.p}`;
+      opt.textContent = `${item.q} - ${formatCentsToBRL(parsePrecoToCents(item.p))}`;
       qtdSelect.appendChild(opt);
     });
     qtdSelect.disabled = false;
@@ -3921,13 +4001,13 @@ document.addEventListener('DOMContentLoaded', function() {
     checkCheckoutButton.addEventListener('click', checkInstagramProfileCheckout);
   }
 
-  if (btnPedido) {
+  if (btnPedido && !disablePix) {
     btnPedido.addEventListener('click', criarPixWoovi);
   }
 
   const optionPixToggle = document.getElementById('optionPix');
   const optionCardToggle = document.getElementById('optionCard');
-  if (optionPixToggle) optionPixToggle.addEventListener('click', () => selectPaymentMethod('pix'));
+  if (optionPixToggle && !disablePix) optionPixToggle.addEventListener('click', () => selectPaymentMethod('pix'));
   if (optionCardToggle) optionCardToggle.addEventListener('click', () => selectPaymentMethod('credit_card'));
 
   const radioInputs = document.querySelectorAll('input[name="paymentMethod"]');
@@ -4003,7 +4083,7 @@ document.addEventListener('DOMContentLoaded', function() {
           
           if (!email || !email.includes('@')) {
               if (emailErrorMsg) emailErrorMsg.style.display = 'block';
-              else showStatusMessageCheckout('Por favor, informe um email válido.', 'error');
+              else showStatusMessageCheckout('Please enter a valid email.', 'error');
               
               if (contactEmailInput) contactEmailInput.focus();
               return;
@@ -4012,7 +4092,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           
           if (!phone || phone.length < 10) {
-              showStatusMessageCheckout('Por favor, informe um telefone válido.', 'error');
+              showStatusMessageCheckout('Please enter a valid phone number.', 'error');
               if (contactPhoneInput) contactPhoneInput.focus();
               return;
           }
@@ -4160,4 +4240,89 @@ document.addEventListener('DOMContentLoaded', function() {
   if (commentsModal) {
     commentsModal.addEventListener('click', function(e){ if (e.target === commentsModal) { closeCommentsModal(); } });
   }
+
+  (function initSaleToasts(){
+    const isCheckout = !!document.querySelector('.checkout-page');
+    if (!isCheckout) return;
+    const parent = document.querySelector('.checkout-page');
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toastContainer';
+      container.className = 'toast-container';
+    }
+    if (container.parentNode !== parent) {
+      parent.appendChild(container);
+    }
+
+    const minutesCycle = [20, 12, 10, 6, 3, 1];
+    let minutesIdx = 0;
+    function nextMinutes(){ const m = minutesCycle[minutesIdx]; minutesIdx = (minutesIdx + 1) % minutesCycle.length; return m; }
+    function getPlatformIcon(pl){
+      if (pl === 'tiktok') {
+        return '<svg class="toast-platform" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M14 3c.3 1.9 1.5 3.6 3.2 4.5 1 .6 2.1.9 3.2.9v3a8.6 8.6 0 01-3.2-.6 7.8 7.8 0 01-2.2-1.3v6.6a5.9 5.9 0 11-5.8-5.9c.4 0 .9.1 1.3.2v3a2.9 2.9 0 00-1.3-.3 2.9 2.9 0 102.9 2.9V3h2z"/></svg>';
+      }
+      return '<svg class="toast-platform" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm0 2a3 3 0 00-3 3v10a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H7zm5 3a5 5 0 110 10 5 5 0 010-10zm0 2a3 3 0 100 6 3 3 0 000-6zm5.5-3a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/></svg>';
+    }
+    function showToast(message){
+      if (!container) return;
+      const t = document.createElement('div');
+      t.className = 'toast';
+      const icon = getPlatformIcon(message.platform || 'instagram');
+      const timeText = message.time || `${nextMinutes()} minutes ago`;
+      t.innerHTML = `<button class="toast-close" aria-label="Close">×</button>${icon}<div class="toast-body"><div class="toast-title"></div><div class="toast-desc"></div><div class="toast-meta"><span class="toast-dot"></span><span class="toast-time">${timeText}</span></div></div>`;
+      const titleEl = t.querySelector('.toast-title');
+      const descEl = t.querySelector('.toast-desc');
+      if (titleEl) titleEl.textContent = message.title || '';
+      if (descEl) descEl.textContent = message.desc || '';
+      container.appendChild(t);
+      const btn = t.querySelector('.toast-close');
+      if (btn) {
+        btn.addEventListener('click', function(){
+          t.style.opacity='0';
+          t.style.transform='translateX(100%)';
+          setTimeout(()=>{ if(t.parentNode){ t.parentNode.removeChild(t);} },700);
+        });
+      }
+      setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(100%)'; setTimeout(()=>{ if(t.parentNode){ t.parentNode.removeChild(t);} },700); },4000);
+    }
+
+    const combos = [];
+    const tipos = Object.keys(tabela || {});
+    tipos.forEach(tp => {
+      const arr = Array.isArray(tabela[tp]) ? tabela[tp] : [];
+      arr.forEach(it => { if (it && typeof it.q !== 'undefined') combos.push({ q: it.q, tipo: tp }); });
+    });
+    function pickAny(){ const c = combos[Math.floor(Math.random()*combos.length)] || { q: 150, tipo: (isCurtidasContext ? 'mistos' : (isViewsContext ? 'visualizacoes_reels' : 'mistos')) }; return c; }
+
+    const firstNames = ['Michael','David','James','Daniel','Lucas','Ethan','Noah','Oliver','Henry','William','Emma','Sophia','Olivia','Ava','Mia','Isabella','Amelia','Charlotte','Emily','Grace'];
+    const lastInitials = ['S','J','B','C','M','D','W','P','R','K','T','G','L','H','N','F','A','O'];
+    let lastToastName = '';
+    function makeNameUnique(){
+      let attempt = 0; let name;
+      do {
+        const fn = firstNames[Math.floor(Math.random()*firstNames.length)] || 'Customer';
+        const ln = lastInitials[Math.floor(Math.random()*lastInitials.length)] || 'S';
+        name = `${fn} ${ln}.`;
+        attempt++;
+      } while (name === lastToastName && attempt < 10);
+      lastToastName = name;
+      return name;
+    }
+
+    function makeToast(){
+      const name = makeNameUnique();
+      const c = pickAny();
+      const unit = (typeof getUnitForTipo === 'function') ? getUnitForTipo(c.tipo) : (isCurtidasContext ? 'likes' : (isViewsContext ? 'views' : 'followers'));
+      const label = (typeof getLabelForTipo === 'function') ? getLabelForTipo(c.tipo) : String(c.tipo || '');
+      const qLabel = Number(c.q || 0).toLocaleString('en-US');
+      showToast({ title: `${name} confirmed a purchase`, desc: `Bought ${qLabel} ${unit} — ${label}`, platform: 'instagram' });
+    }
+
+    function cycle(){
+      makeToast();
+      setTimeout(cycle, 15000);
+    }
+    setTimeout(cycle, 7000);
+  })();
 });

@@ -5,7 +5,7 @@ let db;
 
 async function connect() {
   const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB_NAME || 'site-whatsapp';
+  const dbName = process.env.MONGODB_DB_NAME || 'you-agency';
   
   if (!uri) {
     console.warn('⚠️ MONGODB_URI não definido no .env. MongoDB desabilitado.');
