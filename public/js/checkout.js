@@ -223,8 +223,8 @@
     if (window.__ENG_MODE__) return 'seguidores';
     try {
       const path = window.location && window.location.pathname ? window.location.pathname : '';
-      if (path.indexOf('/servicos-curtidas') === 0) return 'curtidas';
-      if (path.indexOf('/servicos-visualizacoes') === 0) return 'visualizacoes';
+      if (path.indexOf('/servicos-curtidas') === 0 || path.indexOf('/likes-services') === 0) return 'curtidas';
+      if (path.indexOf('/servicos-visualizacoes') === 0 || path.indexOf('/views-services') === 0) return 'visualizacoes';
     } catch(_) {}
     return 'seguidores';
   }
@@ -3115,8 +3115,8 @@
         }
         try {
           const path = window.location && window.location.pathname ? window.location.pathname : '';
-          if (path.indexOf('/servicos-curtidas') === 0) return 'curtidas';
-          if (path.indexOf('/servicos-visualizacoes') === 0) return 'visualizacoes';
+          if (path.indexOf('/servicos-curtidas') === 0 || path.indexOf('/likes-services') === 0) return 'curtidas';
+          if (path.indexOf('/servicos-visualizacoes') === 0 || path.indexOf('/views-services') === 0) return 'visualizacoes';
         } catch(_) {}
         return 'seguidores';
       })();
@@ -3932,8 +3932,8 @@
           if (window.__ENG_MODE__) return 'seguidores';
           try {
             const path = window.location && window.location.pathname ? window.location.pathname : '';
-            if (path.indexOf('/servicos-curtidas') === 0) return 'curtidas';
-            if (path.indexOf('/servicos-visualizacoes') === 0) return 'visualizacoes';
+            if (path.indexOf('/servicos-curtidas') === 0 || path.indexOf('/likes-services') === 0) return 'curtidas';
+            if (path.indexOf('/servicos-visualizacoes') === 0 || path.indexOf('/views-services') === 0) return 'visualizacoes';
           } catch(_) {}
           return 'seguidores';
         })();

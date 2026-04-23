@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>InformaÃ§Ãµes do pedido</title>
+  <title>Order details</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <link href="/css/style.css?v=2" rel="stylesheet" />
   <link href="/css/perfil.css?v=2" rel="stylesheet" />
@@ -190,7 +190,7 @@
                     <path d="M20 6L9 17L4 12" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
-            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.5rem 0;">Agradecemos pela sua compra!</h2>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.5rem 0;">Thank you for your purchase!</h2>
             <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1.5rem;">
                 
                 <% 
@@ -251,9 +251,9 @@
                   }
                 %>
                 <% if (showRefilTool) { %>
-                <p style="color: var(--text-secondary); font-size: 1rem; margin: 0; text-align:center;">Acesse a ferramenta de reposiÃ§Ã£o do seu pedido</p>
+                <p style="color: var(--text-secondary); font-size: 1rem; margin: 0; text-align:center;">Access the refill tool for your order</p>
                 <a href="<%= refilHref %>" style="display: inline-block; background: var(--instagram-gradient); color: white; padding: 0.75rem 2rem; border-radius: 999px; text-decoration: none; font-weight: 600; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(220, 39, 67, 0.4);">
-                    Acessar ferramenta
+                    Open tool
                 </a>
                 <% } %>
             </div>
@@ -282,9 +282,9 @@
                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 9V11M12 15H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div>
-               <strong style="display: block; color: #92400e; margin-bottom: 0.25rem;">Perfil Privado Detectado</strong>
-               <span style="color: #b45309; font-size: 0.95rem;">Seu perfil do Instagram estÃ¡ privado. Por favor, <strong>altere para pÃºblico</strong> imediatamente para receber o serviÃ§o corretamente e evitar atrasos.</span>
-               <button id="retryPrivacyBtn" style="display: inline-block; margin-top: 0.75rem; background: #d97706; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: background 0.2s;">JÃ¡ deixei pÃºblico</button>
+               <strong style="display: block; color: #92400e; margin-bottom: 0.25rem;">Private Profile Detected</strong>
+               <span style="color: #b45309; font-size: 0.95rem;">Your Instagram profile is private. Please <strong>switch it to public</strong> now to receive the service properly and avoid delays.</span>
+               <button id="retryPrivacyBtn" style="display: inline-block; margin-top: 0.75rem; background: #d97706; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: background 0.2s;">I made it public</button>
             </div>
           </div>
         </div>
@@ -331,7 +331,7 @@
                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 9V11M12 15H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div style="color: #1e3a8a; line-height: 1.3;">
-               <strong>ServiÃ§o de qualidade superior, por esse motivo:</strong> O prazo para finalizaÃ§Ã£o Ã© de atÃ© 48h.
+               <strong>Premium-quality service:</strong> delivery can take up to 48 hours.
             </div>
         </div>
         <% } %>
@@ -341,24 +341,24 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
                 <h3 class="card-title" style="margin: 0; font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Detalhes do Pedido
+                    Order details
                 </h3>
             </div>
             
             <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
                 
                 <div class="info-item">
-                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">ServiÃ§o Contratado</div>
-                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary); text-transform: capitalize;" id="orderTipo"><%= (function(){ var map=order.additionalInfoMapPaid||{}; var t=String(map['tipo_servico']||order.tipo||order.tipoServico||'-').toLowerCase(); var c=String(map['categoria_servico']||'').toLowerCase(); var lbl=t; if(c==='curtidas'){ if(t==='mistos') lbl='Curtidas Mistas'; else if(t==='brasileiros'||t==='curtidas_brasileiras') lbl='Curtidas Padrao'; else if(t==='organicos'||t==='curtidas_reais') lbl='Curtidas Premium'; } else if(c==='visualizacoes'){ if(t==='visualizacoes_reels'||t==='views'||t==='reels') lbl='VisualizaÃ§Ãµes Reels'; else lbl='VisualizaÃ§Ãµes'; } else { if(t==='mistos') lbl='Seguidores Mistos'; else if(t==='brasileiros') lbl='Seguidores Padrao'; else if(t==='organicos') lbl='Seguidores Premium'; } return lbl; })() %></div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Service</div>
+                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary); text-transform: capitalize;" id="orderTipo"><%= (function(){ var map=order.additionalInfoMapPaid||{}; var t=String(map['tipo_servico']||order.tipo||order.tipoServico||'-').toLowerCase(); var c=String(map['categoria_servico']||'').toLowerCase(); var lbl=t; if(c==='curtidas'){ if(t==='mistos') lbl='Mixed Likes'; else if(t==='brasileiros'||t==='curtidas_brasileiras') lbl='Local Likes'; else if(t==='organicos'||t==='curtidas_reais') lbl='Premium Likes'; } else if(c==='visualizacoes'){ if(t==='visualizacoes_reels'||t==='views'||t==='reels') lbl='Reels Views'; else lbl='Views'; } else { if(t==='mistos') lbl='Mixed Followers'; else if(t==='brasileiros') lbl='Local Followers'; else if(t==='organicos') lbl='Premium Followers'; } return lbl; })() %></div>
                 </div>
 
                 <div class="info-item">
-                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Quantidade</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Quantity</div>
                     <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);" id="orderQtd"><%= Number(order.qtd || order.quantidade || 0) %></div>
                 </div>
 
                 <div class="info-item">
-                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Perfil Instagram</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Instagram profile</div>
                     <%
                       var iuRawPedido = (function(){
                         var map = order.additionalInfoMapPaid || {};
@@ -373,7 +373,7 @@
                       <% if (iuCleanPedido) { %>
                         <span style="display:inline-flex; align-items:center; gap:6px;">
                           <a href="<%= iuHrefPedido %>" target="_blank" rel="noopener noreferrer" style="color: var(--primary-purple); text-decoration: none;">@<%= iuCleanPedido %></a>
-                          <button type="button" class="copy-iu-btn" data-copy="<%= iuCleanPedido %>" title="Copiar usuÃ¡rio" aria-label="Copiar usuÃ¡rio" style="border:0; background:transparent; padding:2px; cursor:pointer; line-height:0;">
+                          <button type="button" class="copy-iu-btn" data-copy="<%= iuCleanPedido %>" title="Copy username" aria-label="Copy username" style="border:0; background:transparent; padding:2px; cursor:pointer; line-height:0;">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -387,17 +387,17 @@
                 </div>
 
                 <div class="info-item">
-                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Data Pagamento</div>
-                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);" id="paidAtLocal"><%= (function(){ var raw=(order.paghiper&&order.paghiper.paidAt)||(order.expay&&order.expay.paidAt)||(order.woovi&&order.woovi.paidAt)||order.paidAt||null; var st=String(order.status||(order.paghiper&&order.paghiper.status)||(order.expay&&order.expay.status)||(order.woovi&&order.woovi.status)||'').toLowerCase(); if(!raw && (st==='pago'||st==='paid'||st==='completed')) raw=order.createdAt||null; if(!raw) return '-'; try{ var d=new Date(raw); if(!d || isNaN(d.getTime())) return '-'; try{ var parts=new Intl.DateTimeFormat('pt-BR',{ timeZone:'America/Sao_Paulo', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false }).formatToParts(d); var mp={}; parts.forEach(function(p){ mp[p.type]=p.value; }); if(mp.day&&mp.month&&mp.year&&mp.hour&&mp.minute){ return mp.day+'/'+mp.month+'/'+mp.year+' Ã s '+mp.hour+':'+mp.minute; } }catch(_){ } var sp=new Date(d.getTime() - 3*60*60*1000); var dd=String(sp.getUTCDate()).padStart(2,'0'); var mm=String(sp.getUTCMonth()+1).padStart(2,'0'); var yyyy=sp.getUTCFullYear(); var hh=String(sp.getUTCHours()).padStart(2,'0'); var mn=String(sp.getUTCMinutes()).padStart(2,'0'); return dd+'/'+mm+'/'+yyyy+' Ã s '+hh+':'+mn; }catch(_){ return '-'; } })() %></div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Payment date</div>
+                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);" id="paidAtLocal"><%= (function(){ var raw=(order.paghiper&&order.paghiper.paidAt)||(order.expay&&order.expay.paidAt)||(order.woovi&&order.woovi.paidAt)||order.paidAt||null; var st=String(order.status||(order.paghiper&&order.paghiper.status)||(order.expay&&order.expay.status)||(order.woovi&&order.woovi.status)||'').toLowerCase(); if(!raw && (st==='pago'||st==='paid'||st==='completed')) raw=order.createdAt||null; if(!raw) return '-'; try{ var d=new Date(raw); if(!d || isNaN(d.getTime())) return '-'; try{ var parts=new Intl.DateTimeFormat('en-US',{ timeZone:'America/Sao_Paulo', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false }).formatToParts(d); var mp={}; parts.forEach(function(p){ mp[p.type]=p.value; }); if(mp.day&&mp.month&&mp.year&&mp.hour&&mp.minute){ return mp.day+'/'+mp.month+'/'+mp.year+' at '+mp.hour+':'+mp.minute; } }catch(_){ } var sp=new Date(d.getTime() - 3*60*60*1000); var dd=String(sp.getUTCDate()).padStart(2,'0'); var mm=String(sp.getUTCMonth()+1).padStart(2,'0'); var yyyy=sp.getUTCFullYear(); var hh=String(sp.getUTCHours()).padStart(2,'0'); var mn=String(sp.getUTCMinutes()).padStart(2,'0'); return dd+'/'+mm+'/'+yyyy+' at '+hh+':'+mn; }catch(_){ return '-'; } })() %></div>
                 </div>
 
                 <div class="info-item" style="grid-column: 1 / -1; border-top: 1px dashed var(--border-color); padding-top: 1rem;">
-                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Adicionais</div>
-                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);" id="orderBumpsBox"><%= (function(){ var arrPaid=Array.isArray(order.additionalInfoPaid)?order.additionalInfoPaid:[]; var arr=Array.isArray(order.additionalInfo)?order.additionalInfo:[]; var map=order.additionalInfoMapPaid||{}; var bs=(function(){ var fp=arrPaid.find(function(it){return it&&it.key==='order_bumps'}); if(fp&&typeof fp.value==='string'&&fp.value) return fp.value; var f=arr.find(function(it){return it&&it.key==='order_bumps'}); if(f&&typeof f.value==='string'&&f.value) return f.value; if(map&&typeof map['order_bumps']==='string'&&map['order_bumps']) return map['order_bumps']; return ''; })(); if(!bs) return 'Nenhum adicional selecionado'; var parts=bs.split(';').map(function(p){return p.trim();}).filter(Boolean); var labels=parts.map(function(p){ var kv=p.split(':'); var k=kv[0]; var v=kv[1]; if(k==='views') return 'VisualizaÃ§Ãµes ('+v+')'; if(k==='likes') return 'Curtidas ('+v+')'; if(k==='comments') return 'ComentÃ¡rios ('+v+')'; return k+' ('+v+')'; }); return labels.join(', '); })() %></div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Add-ons</div>
+                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);" id="orderBumpsBox"><%= (function(){ var arrPaid=Array.isArray(order.additionalInfoPaid)?order.additionalInfoPaid:[]; var arr=Array.isArray(order.additionalInfo)?order.additionalInfo:[]; var map=order.additionalInfoMapPaid||{}; var bs=(function(){ var fp=arrPaid.find(function(it){return it&&it.key==='order_bumps'}); if(fp&&typeof fp.value==='string'&&fp.value) return fp.value; var f=arr.find(function(it){return it&&it.key==='order_bumps'}); if(f&&typeof f.value==='string'&&f.value) return f.value; if(map&&typeof map['order_bumps']==='string'&&map['order_bumps']) return map['order_bumps']; return ''; })(); if(!bs) return 'No add-ons selected'; var parts=bs.split(';').map(function(p){return p.trim();}).filter(Boolean); var labels=parts.map(function(p){ var kv=p.split(':'); var k=kv[0]; var v=kv[1]; if(k==='views') return 'Views ('+v+')'; if(k==='likes') return 'Likes ('+v+')'; if(k==='comments') return 'Comments ('+v+')'; return k+' ('+v+')'; }); return labels.join(', '); })() %></div>
                 </div>
 
                 <div class="info-item">
-                     <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Valor Total</div>
+                     <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Total</div>
                      <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);" id="orderTotal"><%= (function(){ var totalCents=0; if(typeof order.valueCents==='number' && order.valueCents>0){ totalCents=order.valueCents; } else { var base=0; try{ var pix=order.woovi&&order.woovi.paymentMethods&&order.woovi.paymentMethods.pix; if(pix&&typeof pix.value==='number') base=pix.value; }catch(_){ } var bt=(function(){ var arrPaid=Array.isArray(order.additionalInfoPaid)?order.additionalInfoPaid:[]; var arr=Array.isArray(order.additionalInfo)?order.additionalInfo:[]; var map=order.additionalInfoMapPaid||{}; var fp=arrPaid.find(function(it){return it&&it.key==='order_bumps_total'}); var s=(fp&&typeof fp.value==='string')?fp.value:''; if(!s){ var f=arr.find(function(it){return it&&it.key==='order_bumps_total'}); s=(f&&typeof f.value==='string')?f.value:''; } if(!s && map && typeof map['order_bumps_total']==='string') s=map['order_bumps_total']; if(!s) return 0; var m=s.match(/(\d+)[,\.]?(\d{0,2})/); if(!m) return 0; var whole=Number(m[1]); var frac=String(m[2]||'').padEnd(2,'0').slice(0,2); return (whole*100)+Number(frac); })(); totalCents=base+bt; } if(totalCents>0){ var reais=Math.floor(totalCents/100); var cents=String(totalCents%100).padStart(2,'0'); return 'R$ '+reais+','+cents; } return '-'; })() %></div>
                 </div>
                 
@@ -437,14 +437,14 @@
                        return { list: list, text: text, count: list.length };
                      })();
                    %>
-                   <span style="font-size: 0.75rem; color: var(--text-secondary);"><%= providerOidsInfo.count > 1 ? 'IDs do Pedido' : 'ID do Pedido' %></span>
+                   <span style="font-size: 0.75rem; color: var(--text-secondary);"><%= providerOidsInfo.count > 1 ? 'Order IDs' : 'Order ID' %></span>
                    <div style="display: flex; align-items: center; gap: 0.25rem;">
                        <span style="font-family: monospace; font-size: 1.1rem; font-weight: 700; color: var(--text-primary);" id="orderNumberId"><%= providerOidsInfo.text %></span>
                        <div style="position: relative; display: flex; align-items: center;">
-                           <button id="copyOrderBtn" class="copy-icon-btn" aria-label="Copiar nÃºmero do pedido" style="background: transparent; border: none; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; cursor: pointer;">
+                           <button id="copyOrderBtn" class="copy-icon-btn" aria-label="Copy order number" style="background: transparent; border: none; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; cursor: pointer;">
                               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/><rect x="3" y="3" width="10" height="10" rx="2" fill="currentColor" opacity="0.4"/></svg>
                            </button>
-                           <span id="copyFeedback" style="opacity: 0; pointer-events: none; transition: opacity 0.3s; position: absolute; left: 100%; margin-left: 8px; background: #333; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; white-space: nowrap; z-index: 10;">Copiado!</span>
+                           <span id="copyFeedback" style="opacity: 0; pointer-events: none; transition: opacity 0.3s; position: absolute; left: 100%; margin-left: 8px; background: #333; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; white-space: nowrap; z-index: 10;">Copied!</span>
                        </div>
                    </div>
                 </div>
@@ -457,28 +457,28 @@
                   var mapStatusBadge = function(s){
                     var t = String(s || '').toLowerCase();
                     if (!t) return '-';
-                    if (/cancel/.test(t)) return 'Cancelado';
-                    if (/partial/.test(t)) return 'Parcial';
-                    if (/duplicate/.test(t)) return 'Duplicado';
-                    if (/error|fail|invalid/.test(t)) return 'Parcial';
-                    if (/pend/.test(t)) return 'Pendente';
-                    if (/process|progress|start|running|created/.test(t)) return 'Em andamento';
-                    if (/complete|success|finished|done|conclu/.test(t)) return 'ConcluÃ­do';
+                    if (/cancel/.test(t)) return 'Canceled';
+                    if (/partial/.test(t)) return 'Partial';
+                    if (/duplicate/.test(t)) return 'Duplicate';
+                    if (/error|fail|invalid/.test(t)) return 'Partial';
+                    if (/pend/.test(t)) return 'Pending';
+                    if (/process|progress|start|running|created/.test(t)) return 'In progress';
+                    if (/complete|success|finished|done|conclu/.test(t)) return 'Completed';
                     return s;
                   };
                   var stMap = (function(){
                     if (isMultiSplit) {
                       var normalized = multiOrdersView.map(function(it){ return mapStatusBadge(it && it.status ? it.status : ''); }).filter(Boolean);
                       if (!normalized.length) return '-';
-                      var allDone = normalized.every(function(x){ return x === 'ConcluÃ­do'; });
-                      if (allDone) return 'ConcluÃ­do';
-                      var anyProgress = normalized.some(function(x){ return x === 'Em andamento'; });
-                      if (anyProgress) return 'Em andamento';
-                      var anyPending = normalized.some(function(x){ return x === 'Pendente'; });
-                      if (anyPending) return 'Pendente';
-                      var allCanceled = normalized.every(function(x){ return x === 'Cancelado'; });
-                      if (allCanceled) return 'Cancelado';
-                      return 'Parcial';
+                      var allDone = normalized.every(function(x){ return x === 'Completed'; });
+                      if (allDone) return 'Completed';
+                      var anyProgress = normalized.some(function(x){ return x === 'In progress'; });
+                      if (anyProgress) return 'In progress';
+                      var anyPending = normalized.some(function(x){ return x === 'Pending'; });
+                      if (anyPending) return 'Pending';
+                      var allCanceled = normalized.every(function(x){ return x === 'Canceled'; });
+                      if (allCanceled) return 'Canceled';
+                      return 'Partial';
                     }
                     var famaPayload = (order && order.fama24h && order.fama24h.statusPayload) || null;
                     var sRawBase = '';
@@ -490,20 +490,20 @@
                 %>
                 <% if (!isMultiSplit) { %>
                   <div class="info-item status-box-custom" style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; background: rgba(107, 70, 193, 0.1); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(107, 70, 193, 0.2);">
-                      <span style="font-size: 1rem; font-weight: 500; color: var(--primary-purple); font-family: inherit;">Status do ServiÃ§o</span>
-                      <span id="famaServicoStatus" class="status-badge <%= (stMap==='ConcluÃ­do'?'status-green':(stMap==='Cancelado'?'status-red':(stMap==='Em andamento'?'status-yellow':(stMap==='Pendente'?'status-blue':'')))) %>" style="font-size: 1rem; font-weight: 500; letter-spacing: 0.05em; font-family: inherit;"><%= stMap %></span>
+                      <span style="font-size: 1rem; font-weight: 500; color: var(--primary-purple); font-family: inherit;">Service status</span>
+                      <span id="famaServicoStatus" class="status-badge <%= (stMap==='Completed'?'status-green':(stMap==='Canceled'?'status-red':(stMap==='In progress'?'status-yellow':(stMap==='Pending'?'status-blue':'')))) %>" style="font-size: 1rem; font-weight: 500; letter-spacing: 0.05em; font-family: inherit;"><%= stMap %></span>
                   </div>
                 <% } %>
                 <% if (multiOrdersView && multiOrdersView.length > 0) { %>
                 <div class="info-item" style="grid-column: 1 / -1; margin-top: 0.75rem;">
-                  <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">DivisÃ£o por Post</div>
+                  <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Split by post</div>
                   <div style="overflow:auto;">
                     <table class="multi-orders-table" style="width:100%; border-collapse: collapse; font-size: 0.95rem;">
                       <thead>
                         <tr>
                           <th style="text-align:left; padding: 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">Post</th>
-                          <th style="text-align:center; padding: 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">Quantidade</th>
-                          <th style="text-align:center; padding: 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">ID do Pedido</th>
+                          <th style="text-align:center; padding: 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">Quantity</th>
+                          <th style="text-align:center; padding: 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">Order ID</th>
                           <th style="text-align:right; padding: 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">Status</th>
                         </tr>
                       </thead>
@@ -526,8 +526,8 @@
                               <a class="multi-order-link" href="<%= link %>" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: none; word-break: break-all;"><%= link %></a>
                             <% } else { %>-<% } %>
                           </td>
-                          <td data-label="Quantidade" class="multi-order-qty" style="padding: 0.5rem; border-bottom: 1px solid var(--border-color); text-align:center;"><%= qty || '-' %></td>
-                          <td data-label="ID do Pedido" class="multi-order-oid" style="padding: 0.5rem; border-bottom: 1px solid var(--border-color); text-align:center; font-family: monospace;"><%= oid || '-' %></td>
+                          <td data-label="Quantity" class="multi-order-qty" style="padding: 0.5rem; border-bottom: 1px solid var(--border-color); text-align:center;"><%= qty || '-' %></td>
+                          <td data-label="Order ID" class="multi-order-oid" style="padding: 0.5rem; border-bottom: 1px solid var(--border-color); text-align:center; font-family: monospace;"><%= oid || '-' %></td>
                           <td data-label="Status" class="multi-order-status" style="padding: 0.5rem; border-bottom: 1px solid var(--border-color); text-align:right;"><span class="multi-status <%= stCls %>"><%= st %></span></td>
                         </tr>
                         <% }); %>
@@ -552,7 +552,7 @@
             
             <div class="button-container" style="margin-top:1.5rem; display: flex; justify-content: center;">
               <button id="backToPrevBtn" class="continue-button" style="text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem; background: var(--instagram-gradient); color: white; border: none; box-shadow: 0 4px 6px -1px rgba(220, 39, 67, 0.4); transition: transform 0.2s;">
-                <span class="button-text">Voltar</span>
+                <span class="button-text">Back</span>
               </button>
             </div>
           </div>
@@ -565,27 +565,27 @@
   <div id="upsellFollowersModal" class="modal-overlay" style="display:none; align-items:center; justify-content:center; z-index:9999;">
     <div class="modal-dialog" style="max-width:480px; width:95%; border-radius:16px;">
       <div class="modal-header">
-        <h3 class="modal-title" style="flex:1; text-align:center;">Mais seguidores com 25% OFF</h3>
-        <button id="upsellFollowersClose" class="modal-close" type="button" aria-label="Fechar">âœ•</button>
+        <h3 class="modal-title" style="flex:1; text-align:center;">More followers with 25% OFF</h3>
+        <button id="upsellFollowersClose" class="modal-close" type="button" aria-label="Close">âœ•</button>
       </div>
       <div class="modal-body">
         <div id="upsellExclusiveBanner" aria-live="polite" style="background:#22C55E; border-radius:14px; padding:0.9rem 1.25rem; margin-bottom:0.85rem; border:1px solid #15803D; color:#f9fafb; box-shadow:0 8px 16px rgba(22, 163, 74, 0.25);">
-          <div class="exclusive-title">Desconto exclusivo disponÃ­vel por tempo limitado</div>
-          <div class="exclusive-countdown">Expira em <span id="upsellTimer">10:00</span></div>
+          <div class="exclusive-title">Limited-time exclusive discount</div>
+          <div class="exclusive-countdown">Expires in <span id="upsellTimer">10:00</span></div>
         </div>
         <p style="margin-top:0; margin-bottom:0.75rem; color:var(--text-secondary);">
-          Aumente seu resultado com 25% OFF em pacotes de seguidores a partir de 500.
+          Boost your results with 25% OFF on follower packages from 500+.
         </p>
         <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap;">
-          <button type="button" class="continue-button" data-upsell-tipo="mistos" style="flex:1 1 100px; padding:0.4rem 0.75rem; font-size:0.85rem;">Seguidores mundiais</button>
-          <button type="button" class="continue-button" data-upsell-tipo="brasileiros" style="flex:1 1 100px; padding:0.4rem 0.75rem; font-size:0.85rem; background:transparent; color:var(--text-primary); border:1px solid var(--border-color);">Seguidores Padrao</button>
-          <button type="button" class="continue-button" data-upsell-tipo="organicos" style="flex:1 1 120px; padding:0.4rem 0.75rem; font-size:0.85rem; background:transparent; color:var(--text-primary); border:1px solid var(--border-color);">Seguidores Premium</button>
+          <button type="button" class="continue-button" data-upsell-tipo="mistos" style="flex:1 1 100px; padding:0.4rem 0.75rem; font-size:0.85rem;">Global followers</button>
+          <button type="button" class="continue-button" data-upsell-tipo="brasileiros" style="flex:1 1 100px; padding:0.4rem 0.75rem; font-size:0.85rem; background:transparent; color:var(--text-primary); border:1px solid var(--border-color);">Local followers</button>
+          <button type="button" class="continue-button" data-upsell-tipo="organicos" style="flex:1 1 120px; padding:0.4rem 0.75rem; font-size:0.85rem; background:transparent; color:var(--text-primary); border:1px solid var(--border-color);">Premium followers</button>
         </div>
         <div id="upsellFollowersList" class="plan-cards" style="margin-bottom:0.75rem;"></div>
         <div id="upsellPixContainer" style="margin-top:0.25rem; display:none;"></div>
       </div>
       <div class="modal-footer">
-        <button id="upsellFollowersClose2" class="continue-button" type="button">Fechar</button>
+        <button id="upsellFollowersClose2" class="continue-button" type="button">Close</button>
       </div>
     </div>
   </div>
@@ -664,10 +664,10 @@
         try { d = new Date(raw); } catch(_) { d = null; }
         if (!d || isNaN(d.getTime())) return null;
         try {
-          var parts = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(d);
+          var parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(d);
           var mp = {};
           parts.forEach(function(p){ mp[p.type] = p.value; });
-          if (mp.day && mp.month && mp.year && mp.hour && mp.minute) return mp.day + '/' + mp.month + '/' + mp.year + ' Ã s ' + mp.hour + ':' + mp.minute;
+          if (mp.day && mp.month && mp.year && mp.hour && mp.minute) return mp.day + '/' + mp.month + '/' + mp.year + ' at ' + mp.hour + ':' + mp.minute;
         } catch(_) {}
         try {
           var sp = new Date(d.getTime() - 3 * 60 * 60 * 1000);
@@ -676,7 +676,7 @@
           var yyyy = sp.getUTCFullYear();
           var hh = String(sp.getUTCHours()).padStart(2,'0');
           var min = String(sp.getUTCMinutes()).padStart(2,'0');
-          return dd + '/' + mm + '/' + yyyy + ' Ã s ' + hh + ':' + min;
+          return dd + '/' + mm + '/' + yyyy + ' at ' + hh + ':' + min;
         } catch(_) {}
         return null;
       }
@@ -698,11 +698,11 @@
         var mapFamaInit = function(s){
           var t = String(s || '').toLowerCase();
           if (!t) return '';
-          if (/cancel/.test(t)) return 'Cancelado';
-          if (/partial/.test(t)) return 'Parcial';
-          if (/pend/.test(t)) return 'Pendente';
-          if (/process|progress|start|running|created/.test(t)) return 'Em andamento';
-          if (/complete|success|finished|done|conclu/.test(t)) return 'ConcluÃ­do';
+          if (/cancel/.test(t)) return 'Canceled';
+          if (/partial/.test(t)) return 'Partial';
+          if (/pend/.test(t)) return 'Pending';
+          if (/process|progress|start|running|created/.test(t)) return 'In progress';
+          if (/complete|success|finished|done|conclu/.test(t)) return 'Completed';
           return s;
         };
         if (initialNorm && elFamaInit) {
@@ -713,9 +713,9 @@
             try {
               elFamaInit.classList.remove('status-green','status-yellow','status-red','status-blue');
               var sN = stN.toLowerCase();
-              if (/conclu/.test(sN)) elFamaInit.classList.add('status-green');
+              if (/completed|conclu/.test(sN)) elFamaInit.classList.add('status-green');
               else if (/cancel/.test(sN)) elFamaInit.classList.add('status-red');
-              else if (/andament|process|progress|start|running/.test(sN)) elFamaInit.classList.add('status-yellow');
+              else if (/in\s+progress|andament|process|progress|start|running/.test(sN)) elFamaInit.classList.add('status-yellow');
               else if (/pend/.test(sN)) elFamaInit.classList.add('status-blue');
             } catch(_){ }
           }
@@ -728,9 +728,9 @@
             try {
               elFamaInit.classList.remove('status-green','status-yellow','status-red','status-blue');
               var s0 = st0.toLowerCase();
-              if (/conclu/.test(s0)) elFamaInit.classList.add('status-green');
+              if (/completed|conclu/.test(s0)) elFamaInit.classList.add('status-green');
               else if (/cancel/.test(s0)) elFamaInit.classList.add('status-red');
-              else if (/andament|process|progress|start|running/.test(s0)) elFamaInit.classList.add('status-yellow');
+              else if (/in\s+progress|andament|process|progress|start|running/.test(s0)) elFamaInit.classList.add('status-yellow');
               else if (/pend/.test(s0)) elFamaInit.classList.add('status-blue');
             } catch(_){ }
           }
@@ -819,7 +819,7 @@
           if (!upsellPixContainer) return;
           if (!valueCents || !qtdLocal) return;
           upsellPixContainer.style.display = 'block';
-          upsellPixContainer.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; color:#166534;"><div class="You Agency-spinner" style="width:24px;height:24px;border:3px solid rgba(22,101,52,0.15);border-top-color:#16a34a;border-radius:50%;animation:oppusSpin 1s linear infinite;"></div><span>Gerando Pix do seu upsell...</span></div>';
+          upsellPixContainer.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; color:#166534;"><div class="You Agency-spinner" style="width:24px;height:24px;border:3px solid rgba(22,101,52,0.15);border-top-color:#16a34a;border-radius:50%;animation:oppusSpin 1s linear infinite;"></div><span>Generating your upsell PIX...</span></div>';
           var orderDataLocal = orderData || {};
           var nameValue = '';
           var phoneValue = '';
@@ -895,7 +895,7 @@
           ensureOrderFromServer(function(){
             if (!nameValue) nameValue = 'Cliente Instagram';
             if (!instaUser) {
-              var errorMsg = 'NÃ£o foi possÃ­vel identificar o usuÃ¡rio do Instagram para o upsell.';
+              var errorMsg = 'We could not identify the Instagram username for the upsell.';
               upsellPixContainer.innerHTML = '<div style="color:#b91c1c; text-align:center;">' + errorMsg + '</div>';
               return;
             }
@@ -933,8 +933,8 @@
           .then(function(resp){ return resp.json().then(function(data){ return { ok: resp.ok, data: data }; }); })
           .then(function(result){
             if (!result.ok) {
-              var msg = (result.data && result.data.details && result.data.details.message) ? result.data.details.message : 'Falha ao criar cobranÃ§a';
-              upsellPixContainer.innerHTML = '<div style="color:#b91c1c; text-align:center;">Erro ao criar Pix: ' + msg + '</div>';
+              var msg = (result.data && result.data.details && result.data.details.message) ? result.data.details.message : 'Failed to create charge';
+              upsellPixContainer.innerHTML = '<div style="color:#b91c1c; text-align:center;">Failed to create PIX: ' + msg + '</div>';
               return;
             }
             var data = result.data || {};
@@ -947,10 +947,10 @@
             if (qrImage) {
               html += '<div style="text-align:center; margin-bottom:0.75rem;"><img src="' + qrImage + '" alt="QR Code Pix Upsell" style="width:200px; height:200px; border-radius:12px; background:#ffffff; box-shadow:0 4px 12px rgba(15,23,42,0.15);" /></div>';
             }
-            html += '<div style="font-size:1rem; font-weight:700; text-align:center; margin-bottom:0.75rem; color:#166534;">Valor do Pix: <span>' + totalFormatted + '</span></div>';
+            html += '<div style="font-size:1rem; font-weight:700; text-align:center; margin-bottom:0.75rem; color:#166534;">PIX amount: <span>' + totalFormatted + '</span></div>';
             html += '<div style="position:relative; margin-bottom:0.75rem;"><textarea id="upsellPixCodeArea" readonly style="width:100%; min-height:80px; padding:0.75rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; font-family:inherit; font-size:0.9rem; color:#022c22; resize:none;">' + brCode + '</textarea></div>';
-            html += '<button id="upsellPixCopyBtn" type="button" class="continue-button" style="width:100%; display:flex; align-items:center; justify-content:center; padding:0.9rem 1rem; margin-bottom:0.5rem;"><span class="button-text">Copiar cÃ³digo Pix</span></button>';
-            html += '<div style="font-size:0.85rem; color:#6b7280; text-align:center;">ApÃ³s o pagamento, seu novo pedido serÃ¡ criado automaticamente.</div>';
+            html += '<button id="upsellPixCopyBtn" type="button" class="continue-button" style="width:100%; display:flex; align-items:center; justify-content:center; padding:0.9rem 1rem; margin-bottom:0.5rem;"><span class="button-text">Copy PIX code</span></button>';
+            html += '<div style="font-size:0.85rem; color:#6b7280; text-align:center;">After payment, your new order will be created automatically.</div>';
             upsellPixContainer.innerHTML = html;
             upsellPixContainer.style.display = 'block';
             try {
@@ -989,14 +989,14 @@
                   }
                   var span = copyBtn.querySelector('.button-text');
                   var prev = span ? span.textContent : '';
-                  if (span) span.textContent = 'Pix copiado';
+                  if (span) span.textContent = 'PIX copied';
                   copyBtn.classList.add('success');
                   setTimeout(function(){
                     copyBtn.classList.remove('success');
-                    if (span) span.textContent = prev || 'Copiar cÃ³digo Pix';
+                    if (span) span.textContent = prev || 'Copy PIX code';
                   }, 1600);
                 } catch(e) {
-                  alert('NÃ£o foi possÃ­vel copiar o cÃ³digo Pix.');
+                  alert('Could not copy the PIX code.');
                 }
               });
             }
@@ -1040,8 +1040,8 @@
             }
           })
           .catch(function(err){
-            var msg = err && err.message ? err.message : String(err || 'Erro desconhecido');
-            upsellPixContainer.innerHTML = '<div style="color:#b91c1c; text-align:center;">Erro ao criar Pix: ' + msg + '</div>';
+            var msg = err && err.message ? err.message : String(err || 'Unknown error');
+            upsellPixContainer.innerHTML = '<div style="color:#b91c1c; text-align:center;">Failed to create PIX: ' + msg + '</div>';
           });
           });
         };
@@ -1058,14 +1058,14 @@
             var it = items[i];
             var qNum = Number(it.q);
             var badgeText = '';
-            var quantityBadges = { 50: 'PACOTE TESTE', 150:'PACOTE INICIAL', 500:'PACOTE BÃSICO', 1000:'MAIS PEDIDO', 3000:'EXCLUSIVO', 5000:'VIP', 10000:'ELITE' };
+            var quantityBadges = { 50: 'TEST PACK', 150:'STARTER PACK', 500:'BASIC PACK', 1000:'BEST SELLER', 3000:'EXCLUSIVE', 5000:'VIP', 10000:'ELITE' };
             if (tipo === 'mistos') {
-              if (qNum === 1000) badgeText = 'MELHOR PREÃ‡O';
-              else if (qNum === 3000) { badgeText = 'MAIS PEDIDO'; }
+              if (qNum === 1000) badgeText = 'BEST VALUE';
+              else if (qNum === 3000) { badgeText = 'BEST SELLER'; }
             } else if (tipo === 'brasileiros') {
-              if (qNum === 1000) { badgeText = 'MAIS PEDIDO'; }
+              if (qNum === 1000) { badgeText = 'BEST SELLER'; }
             } else if (tipo === 'organicos') {
-              if (qNum === 1000) { badgeText = 'MAIS PEDIDO'; }
+              if (qNum === 1000) { badgeText = 'BEST SELLER'; }
             }
             if (!badgeText && quantityBadges[qNum]) badgeText = quantityBadges[qNum];
             if (!badgeText) continue;
@@ -1073,10 +1073,10 @@
             card.className = 'service-card plan-card';
             if ((tipo === 'mistos' && qNum === 3000) || ((tipo === 'brasileiros' || tipo === 'organicos') && qNum === 1000)) { card.classList.add('gold-card'); }
             var badgeHtml = '<div class="plan-badge">' + badgeText + '</div>';
-            var qtyFormatted = qNum.toLocaleString('pt-BR');
+            var qtyFormatted = qNum.toLocaleString('en-US');
             var baseText = String(it.base || '');
             var promoText = String(it.promo || '');
-            card.innerHTML = badgeHtml + '<div class="card-content"><div class="card-title">' + qtyFormatted + ' seguidores</div><div class="card-desc"><span class="price-old">' + baseText + '</span> <span class="price-new">' + promoText + '</span></div></div>';
+            card.innerHTML = badgeHtml + '<div class="card-content"><div class="card-title">' + qtyFormatted + ' followers</div><div class="card-desc"><span class="price-old">' + baseText + '</span> <span class="price-new">' + promoText + '</span></div></div>';
             (function(tipoLocal, qtdLocal, promoLabel, promoCents){
               card.addEventListener('click', function(){
                 try { createUpsellPix(tipoLocal, qtdLocal, promoCents, promoLabel); } catch(_) {}
@@ -1179,10 +1179,10 @@
         btn.addEventListener('click', function(){
             btn.disabled = true;
             var originalText = btn.textContent;
-            btn.textContent = 'Verificando...';
+            btn.textContent = 'Checking...';
             var idToUse = (orderData && (orderData.identifier || orderData._id)) || null;
             if (!idToUse) {
-                alert('Erro: ID do pedido nÃ£o encontrado.');
+                alert('Error: order ID not found.');
                 btn.disabled = false;
                 btn.textContent = originalText;
                 return;
@@ -1200,14 +1200,14 @@
                     else newUrl += '&t=' + new Date().getTime();
                     location.href = newUrl;
                 } else {
-                    alert(data.error || 'Ainda nÃ£o identificamos o perfil como pÃºblico. Aguarde uns instantes e tente novamente.');
+                    alert(data.error || 'We still cannot confirm the profile as public. Please wait a moment and try again.');
                     btn.disabled = false;
                     btn.textContent = originalText;
                 }
             })
             .catch(function(err){
                 console.error(err);
-                alert('Erro de conexÃ£o. Tente novamente.');
+                alert('Connection error. Please try again.');
                 btn.disabled = false;
                 btn.textContent = originalText;
             });
@@ -1304,11 +1304,11 @@
               var oidText = getAllProviderOidsText(o) || '';
               var oidFirst = getFirstProviderOid(o) || '';
               var paidRaw = (o.expay && o.expay.paidAt) || (o.woovi && o.woovi.paidAt) || o.paidAt || null;
-              var status = String(o.status || (o.expay && o.expay.status) || (o.woovi && o.woovi.status) || 'pendente');
+              var status = String(o.status || (o.expay && o.expay.status) || (o.woovi && o.woovi.status) || 'pending');
                 var mapPaid = o && o.additionalInfoMapPaid || {};
                 var cat0 = String(mapPaid['categoria_servico'] || '').toLowerCase();
                 var t0 = String(mapPaid['tipo_servico'] || o.tipo || o.tipoServico || '-').toLowerCase();
-                var tipo = (function(){ if(cat0==='curtidas'){ if(t0==='mistos') return 'Curtidas Mistas'; if(t0==='brasileiros'||t0==='curtidas_brasileiras') return 'Curtidas Padrao'; if(t0==='organicos'||t0==='curtidas_reais') return 'Curtidas Premium'; } else if(cat0==='visualizacoes'){ if(t0==='visualizacoes_reels'||t0==='views'||t0==='reels') return 'VisualizaÃ§Ãµes Reels'; return 'VisualizaÃ§Ãµes'; } else { if(t0==='mistos') return 'Seguidores Mistos'; if(t0==='brasileiros') return 'Seguidores Padrao'; if(t0==='organicos') return 'Seguidores Premium'; } return t0; })();
+                var tipo = (function(){ if(cat0==='curtidas'){ if(t0==='mistos') return 'Mixed Likes'; if(t0==='brasileiros'||t0==='curtidas_brasileiras') return 'Local Likes'; if(t0==='organicos'||t0==='curtidas_reais') return 'Premium Likes'; } else if(cat0==='visualizacoes'){ if(t0==='visualizacoes_reels'||t0==='views'||t0==='reels') return 'Reels Views'; return 'Views'; } else { if(t0==='mistos') return 'Mixed Followers'; if(t0==='brasileiros') return 'Local Followers'; if(t0==='organicos') return 'Premium Followers'; } return t0; })();
               var qtd = String(o.qtd || o.quantidade || '0');
               var insta = String(o.instagramUsername || o.instauser || '-');
               var paidStr = formatDateTimeSP(paidRaw);
@@ -1320,10 +1320,10 @@
               var elSt = document.getElementById('orderStatus');
               if (elSt) {
                 var s = String(status||'').toLowerCase();
-                  elSt.textContent = (s==='pago'||s==='paid'||s==='completed') ? 'pedido pago' : status;
+                  elSt.textContent = (s==='pago'||s==='paid'||s==='completed') ? 'paid' : (/pendente/.test(s) ? 'pending' : status);
                 try {
                   elSt.classList.toggle('status-green', (s==='pago'||s==='paid'||s==='completed'));
-                  elSt.classList.toggle('status-yellow', s==='pendente');
+                  elSt.classList.toggle('status-yellow', s==='pendente' || s==='pending');
                 } catch(_) {}
               }
               var elTipo = document.getElementById('orderTipo');
@@ -1381,9 +1381,9 @@
                       var kv = p.split(':');
                       var k = kv[0];
                       var v = kv[1];
-                      if (k === 'views') return 'VisualizaÃ§Ãµes Reels (' + v + ')';
-                      if (k === 'likes') return 'Curtidas (' + v + ')';
-                      if (k === 'comments') return 'ComentÃ¡rios (' + v + ')';
+                      if (k === 'views') return 'Reels Views (' + v + ')';
+                      if (k === 'likes') return 'Likes (' + v + ')';
+                      if (k === 'comments') return 'Comments (' + v + ')';
                       return k + ' (' + v + ')';
                     });
                     elB.textContent = labels.join(', ');
@@ -1401,7 +1401,7 @@
                   var shouldPoll = function(state){
                     var s = String(state || lastFamaStatus || '').toLowerCase();
                     if (!s || s === '-') return true;
-                    if (/parcial/.test(s)) return true;
+                    if (/partial|parcial/.test(s)) return true;
                     return /pend/.test(s) || /andament|process|progress|start|running/.test(s) || /created|unknown/.test(s);
                   };
                   var schedulePoll = function(){
@@ -1413,19 +1413,19 @@
                   var mapFama = function(s){
                     var t = String(s || '').toLowerCase();
                     if (!t) return '-';
-                    if (/cancel/.test(t)) return 'Cancelado';
-                    if (/partial/.test(t)) return 'Parcial';
-                    if (/duplicate/.test(t)) return 'Duplicado';
-                    if (/pend/.test(t)) return 'Pendente';
-                    if (/process|progress|start|running|created/.test(t)) return 'Em andamento';
-                    if (/complete|success|finished|done|conclu/.test(t)) return 'ConcluÃ­do';
+                    if (/cancel/.test(t)) return 'Canceled';
+                    if (/partial/.test(t)) return 'Partial';
+                    if (/duplicate/.test(t)) return 'Duplicate';
+                    if (/pend/.test(t)) return 'Pending';
+                    if (/process|progress|start|running|created/.test(t)) return 'In progress';
+                    if (/complete|success|finished|done|conclu/.test(t)) return 'Completed';
                     return s;
                   };
                   var getStatusCls = function(label){
                     var t = String(label || '').toLowerCase();
-                    if (/conclu/.test(t)) return 'status-green';
+                    if (/completed|conclu/.test(t)) return 'status-green';
                     if (/cancel/.test(t)) return 'status-red';
-                    if (/andament|process|progress|start|running/.test(t)) return 'status-yellow';
+                    if (/in\s+progress|andament|process|progress|start|running/.test(t)) return 'status-yellow';
                     if (/pend/.test(t)) return 'status-blue';
                     return '';
                   };
@@ -1437,7 +1437,7 @@
                     lastFamaStatus = show;
                     if (elFama) elFama.textContent = show;
                     var s1 = show.toLowerCase();
-                    var isDone = /conclu/.test(s1) || /complete|success|finished|done/.test(s1);
+                    var isDone = /completed|conclu/.test(s1) || /complete|success|finished|done/.test(s1);
                     try {
                       if (elFama) {
                         elFama.classList.remove('status-green','status-yellow','status-red','status-blue');
@@ -1445,7 +1445,7 @@
                           elFama.classList.add('status-green');
                         } else if (/cancel/.test(s1)) {
                           elFama.classList.add('status-red');
-                        } else if (/andament|process|progress|start|running/.test(s1)) {
+                        } else if (/in\s+progress|andament|process|progress|start|running/.test(s1)) {
                           elFama.classList.add('status-yellow');
                         } else if (/pend/.test(s1)) {
                           elFama.classList.add('status-blue');
@@ -1523,8 +1523,8 @@
                               html += '-';
                             }
                             html += '</td>';
-                            html += '<td data-label="Quantidade" class="multi-order-qty" style="padding: 0.5rem; border-bottom: 1px solid var(--border-color); text-align:center;">' + (qty0 ? String(qty0) : '-') + '</td>';
-                            html += '<td data-label="ID do Pedido" class="multi-order-oid" style="padding: 0.5rem; border-bottom: 1px solid var(--border-color); text-align:center; font-family: monospace;">' + (oid0 ? String(oid0).replace(/</g,'&lt;').replace(/>/g,'&gt;') : '-') + '</td>';
+                            html += '<td data-label="Quantity" class="multi-order-qty" style="padding: 0.5rem; border-bottom: 1px solid var(--border-color); text-align:center;">' + (qty0 ? String(qty0) : '-') + '</td>';
+                            html += '<td data-label="Order ID" class="multi-order-oid" style="padding: 0.5rem; border-bottom: 1px solid var(--border-color); text-align:center; font-family: monospace;">' + (oid0 ? String(oid0).replace(/</g,'&lt;').replace(/>/g,'&gt;') : '-') + '</td>';
                             html += '<td data-label="Status" class="multi-order-status" style="padding: 0.5rem; border-bottom: 1px solid var(--border-color); text-align:right;"><span class="multi-status ' + String(cls0 || '') + '">' + escHtml(st0 || '-') + '</span></td>';
                             html += '</tr>';
                           }
@@ -1574,15 +1574,15 @@
                         var decideOverall = function(labels){
                           var arr = (labels || []).filter(function(x){ return !!x && String(x).trim() && String(x).trim() !== '-'; }).map(function(x){ return String(x).trim(); });
                           if (!arr.length) return '-';
-                          var allDone = arr.every(function(x){ return x === 'ConcluÃ­do'; });
-                          if (allDone) return 'ConcluÃ­do';
-                          var anyProgress = arr.some(function(x){ return x === 'Em andamento'; });
-                          if (anyProgress) return 'Em andamento';
-                          var anyPending = arr.some(function(x){ return x === 'Pendente'; });
-                          if (anyPending) return 'Pendente';
-                          var allCanceled = arr.every(function(x){ return x === 'Cancelado'; });
-                          if (allCanceled) return 'Cancelado';
-                          return 'Parcial';
+                          var allDone = arr.every(function(x){ return x === 'Completed'; });
+                          if (allDone) return 'Completed';
+                          var anyProgress = arr.some(function(x){ return x === 'In progress'; });
+                          if (anyProgress) return 'In progress';
+                          var anyPending = arr.some(function(x){ return x === 'Pending'; });
+                          if (anyPending) return 'Pending';
+                          var allCanceled = arr.every(function(x){ return x === 'Canceled'; });
+                          if (allCanceled) return 'Canceled';
+                          return 'Partial';
                         };
                         var fetchOne = function(oid){
                           var url = '/api/order/provider-status?order=' + encodeURIComponent(String(oid));
@@ -1750,11 +1750,11 @@
         var mapLabel = function(raw){
           var t = String(raw || '').trim().toLowerCase();
           if (!t) return '';
-          if (/cancel/.test(t)) return 'Cancelado';
-          if (/partial/.test(t)) return 'Parcial';
-          if (/pend/.test(t)) return 'Pendente';
-          if (/process|progress|start|running|created/.test(t)) return 'Em andamento';
-          if (/complete|success|finished|done|conclu/.test(t)) return 'ConcluÃ­do';
+          if (/cancel/.test(t)) return 'Canceled';
+          if (/partial/.test(t)) return 'Partial';
+          if (/pend/.test(t)) return 'Pending';
+          if (/process|progress|start|running|created/.test(t)) return 'In progress';
+          if (/complete|success|finished|done|conclu/.test(t)) return 'Completed';
           return '';
         };
         var getRawStatus = function(x){
@@ -1774,9 +1774,9 @@
           try {
             el.classList.remove('status-green','status-yellow','status-red','status-blue');
             var s = label.toLowerCase();
-            if (/conclu/.test(s)) el.classList.add('status-green');
+            if (/completed|conclu/.test(s)) el.classList.add('status-green');
             else if (/cancel/.test(s)) el.classList.add('status-red');
-            else if (/andament|process|progress|start|running/.test(s)) el.classList.add('status-yellow');
+            else if (/in\s+progress|andament|process|progress|start|running/.test(s)) el.classList.add('status-yellow');
             else if (/pend/.test(s)) el.classList.add('status-blue');
           } catch(_) {}
         };
@@ -1805,9 +1805,9 @@
         };
         var getStatusCls = function(label){
           var t = String(label || '').toLowerCase();
-          if (/conclu/.test(t)) return 'status-green';
+          if (/completed|conclu/.test(t)) return 'status-green';
           if (/cancel/.test(t)) return 'status-red';
-          if (/andament|process|progress|start|running/.test(t)) return 'status-yellow';
+          if (/in\s+progress|andament|process|progress|start|running/.test(t)) return 'status-yellow';
           if (/pend/.test(t)) return 'status-blue';
           return '';
         };
@@ -1828,15 +1828,15 @@
         var decideOverall = function(labels){
           var arr = (labels || []).filter(function(x){ return !!x && String(x).trim() && String(x).trim() !== '-'; }).map(function(x){ return String(x).trim(); });
           if (!arr.length) return '';
-          var allDone = arr.every(function(x){ return x === 'ConcluÃ­do'; });
-          if (allDone) return 'ConcluÃ­do';
-          var anyProgress = arr.some(function(x){ return x === 'Em andamento'; });
-          if (anyProgress) return 'Em andamento';
-          var anyPending = arr.some(function(x){ return x === 'Pendente'; });
-          if (anyPending) return 'Pendente';
-          var allCanceled = arr.every(function(x){ return x === 'Cancelado'; });
-          if (allCanceled) return 'Cancelado';
-          return 'Parcial';
+          var allDone = arr.every(function(x){ return x === 'Completed'; });
+          if (allDone) return 'Completed';
+          var anyProgress = arr.some(function(x){ return x === 'In progress'; });
+          if (anyProgress) return 'In progress';
+          var anyPending = arr.some(function(x){ return x === 'Pending'; });
+          if (anyPending) return 'Pending';
+          var allCanceled = arr.every(function(x){ return x === 'Canceled'; });
+          if (allCanceled) return 'Canceled';
+          return 'Partial';
         };
         var fetchOne = function(oid){
           var url = '/api/order/provider-status?order=' + encodeURIComponent(String(oid));
@@ -1915,19 +1915,19 @@
       <div style="width:64px; height:64px; background:#FEF3C7; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:1.5rem; box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2);">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
       </div>
-      <h3 style="margin:0 0 0.75rem 0; color:var(--text-primary); font-size: 1.25rem; font-weight: 700;">Perfil Privado Detectado</h3>
+      <h3 style="margin:0 0 0.75rem 0; color:var(--text-primary); font-size: 1.25rem; font-weight: 700;">Private Profile Detected</h3>
       <div style="font-size: 1.2rem; color: var(--text-primary); margin-bottom: 1rem; font-weight: 600;">@<%= (function(){ var map=order.additionalInfoMapPaid||{}; var v=String(map['instagram_username']||'').trim(); if(v){ return v; } return String(order.instagramUsername || order.instauser || '-'); })() %></div>
-      <p style="color:var(--text-secondary); margin-bottom:2rem; line-height: 1.5;">Deixe o seu perfil no modo publico para receber o serviÃ§os. Apos ficar no modo publico retorne nessa tela e clique em confirmar para confirmamos que esta publico.</p>
+      <p style="color:var(--text-secondary); margin-bottom:2rem; line-height: 1.5;">Switch your profile to public to receive the service. After changing it to public, come back here and click confirm so we can verify it.</p>
       <button id="btnConfirmPrivacy" onclick="checkPrivacyStatus()" class="continue-button" style="width:100%; justify-content:center; margin-top:1rem;">
-        <span class="button-text">Confirmar</span>
+        <span class="button-text">Confirm</span>
       </button>
     </div>
 
     <!-- Step 2: Loading -->
     <div id="privacyStepLoading" style="display:none; padding: 1rem 0;">
       <div class="spinner" style="border: 3px solid rgba(0,0,0,0.1); width: 48px; height: 48px; border-radius: 50%; border-left-color: #22c55e; animation: spin 1s linear infinite; margin: 0 auto 1.5rem;"></div>
-      <h3 style="margin:0 0 0.5rem 0; color:var(--text-primary); font-size: 1.1rem;">Verificando perfil...</h3>
-      <p style="color:var(--text-secondary);">Aguarde um momento</p>
+      <h3 style="margin:0 0 0.5rem 0; color:var(--text-primary); font-size: 1.1rem;">Checking profile...</h3>
+      <p style="color:var(--text-secondary);">Please wait a moment</p>
     </div>
 
     <!-- Step 3: Still Private (Timer) -->
@@ -1935,16 +1935,16 @@
       <div style="width:64px; height:64px; background:#FEE2E2; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:1.5rem;">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </div>
-      <h3 style="margin:0 0 0.75rem 0; color:var(--text-primary); font-size: 1.25rem; font-weight: 700;">O PERFIL ainda estÃ¡ privado</h3>
+      <h3 style="margin:0 0 0.75rem 0; color:var(--text-primary); font-size: 1.25rem; font-weight: 700;">The profile is still private</h3>
       <div style="font-size: 1.2rem; color: var(--text-primary); margin-bottom: 1rem; font-weight: 600;">@<%= (function(){ var map=order.additionalInfoMapPaid||{}; var v=String(map['instagram_username']||'').trim(); if(v){ return v; } return String(order.instagramUsername || order.instauser || '-'); })() %></div>
-      <p style="color:var(--text-secondary); margin-bottom:2rem; line-height: 1.5;">VocÃª nÃ£o deixou seu perfil no modo pÃºblico, deixe-o no modo pÃºblico e retorne nessa tela para confirmar e finalizar o recebimento do serviÃ§o</p>
+      <p style="color:var(--text-secondary); margin-bottom:2rem; line-height: 1.5;">Your profile is still private. Switch it to public and come back here to confirm and finalize delivery.</p>
       
       <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1.5rem; font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums;">
         0:<span id="privacyTimer">59</span>
       </div>
 
       <button disabled style="width:100%; background:var(--bg-primary); color:var(--text-secondary); border:1px solid var(--border-color); padding:1rem; border-radius:12px; font-weight:600; cursor:not-allowed; font-size:1rem; opacity: 0.7;">
-        Aguarde...
+        Please wait...
       </button>
     </div>
 
@@ -2097,7 +2097,7 @@ function checkPrivacyStatus() {
   }
 
   if (!username) {
-      alert('NÃ£o foi possÃ­vel identificar o usuÃ¡rio do Instagram.');
+      alert('We could not identify the Instagram username.');
       return;
   }
 
@@ -2128,7 +2128,7 @@ function checkPrivacyStatus() {
           if (!successDiv) {
               successDiv = document.createElement('div');
               successDiv.id = 'privacyStepSuccess';
-              successDiv.innerHTML = '<div style="width:64px; height:64px; background:#D1FAE5; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:1.5rem;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div><h3 style="margin:0 0 0.75rem 0; color:var(--text-primary); font-size: 1.25rem; font-weight: 700;">Perfil Confirmado!</h3><p style="color:var(--text-secondary); margin-bottom:1rem; line-height: 1.5;">Por favor, aguarde que vocÃª serÃ¡ redirecionado para tela com detalhes do seu pedido.</p>';
+              successDiv.innerHTML = '<div style="width:64px; height:64px; background:#D1FAE5; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:1.5rem;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div><h3 style="margin:0 0 0.75rem 0; color:var(--text-primary); font-size: 1.25rem; font-weight: 700;">Profile confirmed!</h3><p style="color:var(--text-secondary); margin-bottom:1rem; line-height: 1.5;">Please wait — you will be redirected to your order details.</p>';
               var modalContent = document.querySelector('#privacyModal > div');
               if (modalContent) modalContent.appendChild(successDiv);
           }
@@ -2208,4 +2208,3 @@ function startPrivacyTimer(seconds) {
   <script src="/js/main.js"></script>
 </body>
 </html>
-

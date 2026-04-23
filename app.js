@@ -3190,6 +3190,12 @@ app.get('/__debug/views-list', (req, res) => {
 });
 
 // Rotas diretas antes de estáticos (mantidas apenas para depuração, se necessário)
+app.get('/images/logo.png', (req, res) => {
+  return res.sendFile(path.join(__dirname, 'public', 'images', 'y preto.png'));
+});
+app.get(/^\/images\/logo(\s|%20)escura\.png$/i, (req, res) => {
+  return res.sendFile(path.join(__dirname, 'public', 'images', 'y preto.png'));
+});
 
 // Servir arquivos estáticos
 app.use((req, res, next) => {

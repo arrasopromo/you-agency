@@ -1,7 +1,8 @@
 
 document.addEventListener('DOMContentLoaded', function() {
-  const isCurtidasContext = window.location.pathname.startsWith('/servicos-curtidas');
-  const isViewsContext = window.location.pathname.startsWith('/servicos-visualizacoes');
+  const _path = String(window.location.pathname || '');
+  const isCurtidasContext = _path.startsWith('/servicos-curtidas') || _path.startsWith('/likes-services');
+  const isViewsContext = _path.startsWith('/servicos-visualizacoes') || _path.startsWith('/views-services');
 
   function getBrowserSessionId() {
       let bid = '';
