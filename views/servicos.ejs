@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <link href="/css/style.css" rel="stylesheet" />
   <link href="/css/perfil.css" rel="stylesheet" />
-  <link rel="icon" type="image/png" href="/images/logo.png" />
+  <link rel="icon" type="image/png" href="/images/y%20branco.png" />
 </head>
 <body class="theme-light has-fixed-menu">
   <%- include('partials/menu') %>
@@ -16,15 +16,15 @@
       <h1 class="title">Selecione o serviÃ§o de seguidores</h1>
       <p class="subtitle" style="margin-top:0.25rem;">Escolha entre Mistos, Brasileiros ou Reais para continuar.</p>
     </header>
-    <div id="clientPage" class="client-page" aria-label="Consulta de pedidos" style="display:none;">
+    <div id="clientPage" class="client-page" aria-label="Order lookup" style="display:none;">
       <div class="client-page-inner">
-        <h2 class="client-title">Consultar Pedido</h2>
-        <p class="client-desc">Digite seu nÃºmero de telefone para localizar seu pedido.</p>
+        <h2 class="client-title">Order Lookup</h2>
+        <p class="client-desc">Enter your email or order number to find your orders.</p>
         <div class="client-form">
-          <input id="clientPhoneInputPage" type="tel" class="select-input" placeholder="(DDD) 9XXXX-XXXX" />
+          <input id="clientLookupInputPage" type="email" class="select-input" placeholder="" autocomplete="email" />
           <div class="client-actions">
-            <button id="clientPageConsultBtn" class="continue-button"><span class="button-text">Consultar</span></button>
-            <button id="clientPageBackBtn" class="continue-button" style="background: transparent; border-color: var(--border-color); color: var(--text-primary);"><span class="button-text">Voltar</span></button>
+            <button id="clientPageConsultBtn" class="continue-button"><span class="button-text">Search</span></button>
+            <button id="clientPageBackBtn" class="continue-button" style="background: transparent; border-color: var(--border-color); color: var(--text-primary);"><span class="button-text">Back</span></button>
           </div>
         </div>
         <div id="clientPageOrders" class="client-orders"></div>
@@ -66,4 +66,3 @@
   <script src="/js/checkout.js"></script>
 </body>
 </html>
-

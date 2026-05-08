@@ -113,7 +113,7 @@ body.theme-light #tutorial5Pedido::after { border-top-color: #cc2366 !important;
 body.theme-light .toast { background: #ffffff; }
 
 /* Notificações de venda no checkout: canto inferior esquerdo */
-.checkout-page .toast-container { position: fixed; bottom: 1rem; right: 1rem; left: auto; top: auto; z-index: 1000; display: flex; flex-direction: column; gap: 0.4rem; }
+.checkout-page .toast-container { position: fixed; bottom: 1rem; left: 1rem; right: auto; top: auto; z-index: 1000; display: flex; flex-direction: column; gap: 0.4rem; }
 .checkout-page .toast { display: flex; align-items: center; gap: 0.28rem; background: #ffffff; color: #0f172a; border: 1px solid #e5e7eb; box-shadow: 0 6px 16px rgba(0,0,0,0.10); padding: 0.24rem 0.80rem; border-radius: 6px; max-width: 240px; font-size: 0.74rem; font-family: 'Segoe UI', system-ui, sans-serif; transition: opacity 0.7s ease, transform 0.7s ease; }
 .checkout-page .toast { position: relative; }
 .checkout-page .toast-close { position: absolute; top: 4px; right: 6px; background: transparent; border: 0; color: #64748b; font-size: 0.6rem; line-height: 1; cursor: pointer; }

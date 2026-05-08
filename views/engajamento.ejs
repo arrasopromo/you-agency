@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <!-- Google tag (gtag.js) -->
@@ -29,14 +29,14 @@
   <!-- Testimonials CSS -->
   <link href="/css/testimonials.css" rel="stylesheet" />
   <link href="/css/why-us.css?v=5" rel="stylesheet" />
-  <link rel="icon" type="image/png" href="/images/logo.png" />
+  <link rel="icon" type="image/png" href="/images/y%20branco.png" />
   <!-- TRACK COMBO -->
   <script>
     (function() {
       var script = document.createElement("script");
       script.type = "text/javascript";
       script.async = true;
-      script.src = "https://track.agenciaoppus.site/tag/TC-FQZRKRMP.js";
+      script.src = "https://track.youagency.site/tag/TC-OISDR3RC.js";
       var firstScript = document.getElementsByTagName("script")[0];
       firstScript.parentNode.insertBefore(script, firstScript);
     })();
@@ -209,7 +209,7 @@
               <h3 class="card-title">Audio guide</h3>
               <div class="card-desc">
                   <div class="audio-player">
-                  <audio id="guideAudio" class="audio-element" preload="none" src="/images/audio%20ingles%20youagency.MP3"></audio>
+                  <audio id="guideAudio" class="audio-element" preload="none" src="/images/audio%20sit%20eingles.MP3"></audio>
                   <div class="audio-controls">
                     <div id="tutorialAudio" class="tutorial-pop tutorial-pop-input" data-tip-mode="manual" data-tip-top="50" data-tip-left="" data-tip-arrow-left="">
                       <div class="tutorial-pop-step">1/5</div>
@@ -391,7 +391,7 @@
                         <div class="card-subtitle">
                           <span class="badge-seguidores-br">Real followers</span>
                         </div>
-                        <div class="card-price"><span>Packages from</span> <span class="price-value">$ 7.90</span></div>
+                        <div class="card-price"><span>Packages from</span> <span class="price-value">$ 2.99</span></div>
                         <div class="card-security">
                           No password required
                         </div>
@@ -413,7 +413,7 @@
                         <img src="/images/curtidas-icone.png" alt="Likes" class="card-icon-3d" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-curtidas">Likes</div>
                         <div class="card-subtitle">Likes</div>
-                        <div class="card-price"><span>From</span> <span class="price-value">$ 4.90</span></div>
+                        <div class="card-price"><span>Packages from</span> <span class="price-value">$ 1.99</span></div>
                         <div class="card-security">
                           No password required
                         </div>
@@ -435,7 +435,7 @@
                         <img src="/images/visualizacao-icon.png" alt="Views" class="card-icon-3d" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-visualizacoes">Views</div>
                         <div class="card-subtitle">Reels views</div>
-                        <div class="card-price"><span>Packages from</span> <span class="price-value">$ 3.90</span></div>
+                        <div class="card-price"><span>Packages from</span> <span class="price-value">$ 1.99</span></div>
                         <div class="card-security">
                           No password required
                         </div>
@@ -468,7 +468,7 @@
             <span style="font-weight: 700;">Exclusive</span> <span style="background: linear-gradient(90deg, #FF0080 0%, #7928CA 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700;">Tool</span>
           </h3>
           <p class="card-desc" style="max-width: 600px; margin: 0 auto 2rem; font-size: 1.1rem; color: var(--text-secondary);">
-            Learn about our exclusive automatic follower replacement technology.
+            Learn about our exclusive automatic follower replacement technology (mixed followers only).
           </p>
           <div style="max-width: 500px; margin: 0 auto;">
             <img src="/images/refil%20(1).png" alt="Replacement tool" style="width: 100%; max-width: 500px !important; display: block; margin: 0 auto; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));">
@@ -853,7 +853,7 @@
     </main>
     <footer class="footer">
       <div class="footer-bar">
-        <a href="https://instagram.com/agencia.You Agency" target="_blank" rel="noopener" class="footer-link instagram-link" aria-label="You Agency Instagram">
+        <a href="https://instagram.com/youa.gency" target="_blank" rel="noopener" class="footer-link instagram-link" aria-label="You Agency Instagram">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm0 2a3 3 0 00-3 3v10a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H7zm5 3a5 5 0 110 10 5 5 0 010-10zm0 2a3 3 0 100 6 3 3 0 000-6zm5.5-3a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/></svg>
         </a>
         <span class="footer-center">&copy; 2025 You Agency. All rights reserved.</span>
@@ -864,6 +864,71 @@
 
    <script src="/js/main.js"></script>
    <script src="/js/why-us.js"></script>
+   <script>
+     (function(){
+       const guideAudio = document.getElementById('guideAudio');
+       const audioSpeed15x = document.getElementById('audioSpeed15x');
+       const audioSpeed2x = document.getElementById('audioSpeed2x');
+       const audioPlayBtn = document.getElementById('audioPlayBtn');
+       const audioProgress = document.getElementById('audioProgress');
+       const audioCurrent = document.getElementById('audioCurrent');
+       const audioDuration = document.getElementById('audioDuration');
+       if (!guideAudio) return;
+
+       function fmt(t) { const m = Math.floor(t/60); const s = Math.floor(t%60); return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0'); }
+       function setAudioRate(rate) {
+         guideAudio.playbackRate = rate;
+         if (audioSpeed15x) audioSpeed15x.classList.toggle('active', rate === 1.5);
+         if (audioSpeed2x) audioSpeed2x.classList.toggle('active', rate === 2);
+       }
+       if (audioSpeed15x) audioSpeed15x.addEventListener('click', function(){
+         const isActive = guideAudio.playbackRate === 1.5;
+         setAudioRate(isActive ? 1 : 1.5);
+       });
+       if (audioSpeed2x) audioSpeed2x.addEventListener('click', function(){
+         const isActive = guideAudio.playbackRate === 2;
+         setAudioRate(isActive ? 1 : 2);
+       });
+
+       guideAudio.addEventListener('loadedmetadata', function(){
+         if (audioDuration) audioDuration.textContent = fmt(guideAudio.duration || 0);
+       });
+       guideAudio.addEventListener('timeupdate', function(){
+         if (audioCurrent) audioCurrent.textContent = fmt(guideAudio.currentTime || 0);
+         if (audioProgress && guideAudio.duration) audioProgress.value = String(Math.floor((guideAudio.currentTime / guideAudio.duration) * 100));
+       });
+       guideAudio.addEventListener('ended', function(){
+         if (audioPlayBtn) audioPlayBtn.textContent = 'Play audio';
+       });
+
+       if (audioProgress) audioProgress.addEventListener('input', function(){
+         if (!guideAudio.duration) return;
+         const pct = Number(audioProgress.value) / 100;
+         guideAudio.currentTime = guideAudio.duration * pct;
+       });
+
+       if (audioPlayBtn) audioPlayBtn.addEventListener('click', function(){
+         guideAudio.muted = false;
+         if (!Number.isFinite(guideAudio.volume) || guideAudio.volume <= 0) guideAudio.volume = 1;
+         try {
+           const ta = document.getElementById('tutorialAudio');
+           if (ta) { ta.style.display = 'none'; ta.classList.add('hide'); }
+         } catch(_) {}
+         if (guideAudio.paused) {
+           Promise.resolve(guideAudio.play()).then(function(){
+             audioPlayBtn.textContent = 'Pause';
+           }).catch(function(){
+             audioPlayBtn.textContent = 'Play audio';
+           });
+         } else {
+           try { guideAudio.pause(); } catch(_) {}
+           audioPlayBtn.textContent = 'Play audio';
+         }
+       });
+
+       setAudioRate(1);
+     })();
+   </script>
    <div id="toastContainer" class="toast-container"></div>
   <style>
     .checkout-page .main-content { max-width: 1440px; width: 100%; margin: 0 auto; }

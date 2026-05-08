@@ -10,10 +10,17 @@ const LinkManager = require("./linkManager");
 const GoogleDriveManager = require("./googleDriveManager");
 const BaserowManager = require("./baserowManager");
 const axios = require('axios');
+const https = require('https');
 const fs = require('fs');
 const EfiPay = require('gn-api-sdk-node');
 const { validatePrice, verifyPrice } = require('./pricing');
 const nodemailer = require('nodemailer');
+
+const stripeKeepAliveAgent = new https.Agent({
+  keepAlive: true,
+  maxSockets: 50,
+  keepAliveMsecs: 10000
+});
 
 const app = express();
 app.set("trust proxy", true); // Confiar em cabeçalhos de proxy
@@ -322,6 +329,8 @@ const pageViewDedupe = new Map();
 const pageViewDedupeTtlMs = 30 * 60 * 1000;
 const geoCache = new Map();
 const geoCacheTtlMs = 12 * 60 * 60 * 1000;
+const phoneDialCache = new Map();
+const phoneDialCacheTtlMs = 12 * 60 * 60 * 1000;
 
 let smtpTransporter = null;
 const getSmtpTransporter = () => {
@@ -2860,6 +2869,85 @@ async function geoLookupIp(ipRaw) {
   } catch (_) { return null; }
 }
 
+async function lookupPhoneDialByIp(ipRaw) {
+  try {
+    let ip = String(ipRaw || '').split(',')[0].trim();
+    ip = ip.replace('::ffff:', '').trim();
+    if (ip.startsWith('[') && ip.includes(']')) {
+      ip = ip.slice(1, ip.indexOf(']')).trim();
+    }
+    if (/^\d{1,3}(?:\.\d{1,3}){3}:\d+$/.test(ip)) {
+      ip = ip.split(':')[0].trim();
+    }
+    if (!ip || ip === 'unknown') return null;
+    if (ip === '::1' || ip === '127.0.0.1') return null;
+    if (/^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(ip)) return null;
+
+    const cached = phoneDialCache.get(ip);
+    if (cached && typeof cached.ts === 'number' && (Date.now() - cached.ts) < phoneDialCacheTtlMs) {
+      return cached.data || null;
+    }
+
+    const axios = require('axios');
+    const tryIpApiCo = async () => {
+      const url = `https://ipapi.co/${encodeURIComponent(ip)}/json/`;
+      const resp = await axios.get(url, { timeout: 1200, validateStatus: () => true });
+      const data = resp && resp.data ? resp.data : null;
+      if (!data || data.error) return null;
+      const dial = String(data.country_calling_code || '').trim();
+      const country = String(data.country_name || data.country || '').trim();
+      const countryCode = String(data.country_code || '').trim().toUpperCase();
+      if (!dial) return null;
+      return { dial, country, countryCode, source: 'ipapi.co' };
+    };
+    const tryIpWhoIs = async () => {
+      const url = `https://ipwho.is/${encodeURIComponent(ip)}?fields=success,country,country_code,calling_code`;
+      const resp = await axios.get(url, { timeout: 1200, validateStatus: () => true });
+      const data = resp && resp.data ? resp.data : null;
+      if (!data || data.success !== true) return null;
+      const dial = String(data.calling_code || '').trim();
+      const country = String(data.country || '').trim();
+      const countryCode = String(data.country_code || '').trim().toUpperCase();
+      if (!dial) return null;
+      const dialNorm = dial.startsWith('+') ? dial : `+${dial}`;
+      return { dial: dialNorm, country, countryCode, source: 'ipwho.is' };
+    };
+
+    let out = null;
+    try { out = await tryIpApiCo(); } catch (_) { out = null; }
+    if (!out) {
+      try { out = await tryIpWhoIs(); } catch (_) { out = null; }
+    }
+
+    phoneDialCache.set(ip, { ts: Date.now(), data: out });
+    return out;
+  } catch (_) { return null; }
+}
+
+app.get('/api/geo/phone-default', async (req, res) => {
+  try {
+    const ip = (function () {
+      const cf = String(req.headers['cf-connecting-ip'] || '').trim();
+      if (cf) return cf;
+      const xff = String(req.headers['x-forwarded-for'] || '').trim();
+      if (xff) return xff.split(',')[0].trim();
+      return req.realIP || req.ip || req.connection?.remoteAddress || 'unknown';
+    })();
+    const data = await lookupPhoneDialByIp(ip);
+    if (!data) return res.json({ dial: '', callingCode: '', country: '', countryCode: '' });
+    const dial = String(data.dial || '').trim();
+    const callingCode = dial ? dial.replace(/[^\d]/g, '') : '';
+    return res.json({
+      dial,
+      callingCode,
+      country: String(data.country || ''),
+      countryCode: String(data.countryCode || '')
+    });
+  } catch (_) {
+    return res.json({ dial: '', callingCode: '', country: '', countryCode: '' });
+  }
+});
+
 function toSha256(str) {
   try {
     const crypto = require('crypto');
@@ -3466,7 +3554,8 @@ app.get('/oppus', (req, res) => {
 
 app.get('/customer', (req, res) => {
     console.log('👤 Acessando rota /customer');
-    const language = String(req.query?.lang || req.query?.language || '').trim().toLowerCase() === 'en' ? 'en' : '';
+    const hasLang = !!String(req.query?.lang || req.query?.language || '').trim();
+    const language = hasLang ? (String(req.query?.lang || req.query?.language || '').trim().toLowerCase() === 'en' ? 'en' : '') : 'en';
     try {
         if (req.session) {
             req.session.lastPaidIdentifier = '';
@@ -4427,7 +4516,7 @@ const refilPageHandler = (fromPath) => async (req, res) => {
       const oid = pickOrderId(lastDoc);
       if (oid) {
         lastRefilOrderId = oid;
-        const msg = `Perdi seguidores e preciso de reposição. ID do meu pedido: ${lastRefilOrderId}`;
+        const msg = `I lost followers and I need a replacement. My order ID: ${lastRefilOrderId}`;
         whatsappHref = `https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`;
       }
     }
@@ -5523,28 +5612,25 @@ app.post('/api/stripe/create-intent', async (req, res) => {
       const d2 = calc(cpf.slice(0, 10), 11);
       return d1 === Number(cpf[9]) && d2 === Number(cpf[10]);
     };
-    const normalizeBrMobile = (raw) => {
-      let d = normalizeDigits(raw);
+    const normalizePhoneInternational = (raw) => {
+      const txt = String(raw || '').trim();
+      if (!txt) return '';
+      const hasPlus = txt.startsWith('+');
+      let d = normalizeDigits(txt);
       if (!d) return '';
       d = d.replace(/^0+/, '');
-      if (d.startsWith('55') && d.length > 11) d = d.slice(2);
-      if (d.length > 11) d = d.slice(-11);
-      if (!(d.length === 10 || d.length === 11)) return '';
-      if (d.startsWith('0')) return '';
-      if (d.length === 11 && d[2] !== '9') {
-        const d2 = d.slice(0, 2) + d.slice(3);
-        if (/^[1-9]{2}[0-9]{8}$/.test(d2)) d = d2;
-      }
-      if (!/^[1-9]{2}\d{8,9}$/.test(d)) return '';
-      return d;
+      if (d.length < 8) return '';
+      if (d.length > 15) d = d.slice(0, 15);
+      return hasPlus ? `+${d}` : d;
     };
 
     const cpfDigits = normalizeDigits(customer?.cpf);
     if (cpfDigits && !isValidCPF(cpfDigits)) return res.status(400).json({ error: 'invalid_cpf', message: 'CPF inválido.' });
 
     const phoneRaw = customer?.phone_number || customer?.phone || customer?.telefone || customer?.whatsapp || '';
-    const phoneDigits = normalizeBrMobile(phoneRaw);
-    if (!phoneDigits) return res.status(400).json({ error: 'missing_phone', message: 'Telefone (DDD + número) é obrigatório para pagamento no cartão.' });
+    const phoneDigits = normalizePhoneInternational(phoneRaw);
+    if (!String(phoneRaw || '').trim()) return res.status(400).json({ error: 'missing_phone', message: 'Phone number is required for card payments.' });
+    if (!phoneDigits) return res.status(400).json({ error: 'invalid_phone', message: 'Invalid phone number.' });
 
     const emailSafe = (function () {
       const raw = String(customer?.email || '').trim();
@@ -5579,12 +5665,8 @@ app.post('/api/stripe/create-intent', async (req, res) => {
     const isPrivate = profile_is_private === true || profile_is_private === 'true' || addInfoMap['profile_is_private'] === 'true';
     const createdIso = new Date().toISOString();
 
-    let geolocation = null;
-    try {
-      const geoPromise = geoLookupIp(ip);
-      const timeout = new Promise((resolve) => setTimeout(() => resolve(null), 1200));
-      geolocation = await Promise.race([geoPromise, timeout]);
-    } catch (_) { geolocation = null; }
+    let geolocationPromise = null;
+    try { geolocationPromise = geoLookupIp(ip); } catch (_) { geolocationPromise = null; }
 
     const installmentsSafe = (function () {
       const n = parseInt(String(installments || '1'), 10);
@@ -5727,7 +5809,7 @@ app.post('/api/stripe/create-intent', async (req, res) => {
       qtd,
       tipo,
       utms,
-      geolocation,
+      geolocation: null,
       valueCents: Number(total_cents),
       expectedValueCents: Number(validatedValueCents),
       customer: Object.assign({}, customer || {}, (cpfDigits ? { cpf: cpfDigits } : {}), (emailSafe ? { email: emailSafe } : {}), { phone_number: phoneDigits }),
@@ -5756,6 +5838,17 @@ app.post('/api/stripe/create-intent', async (req, res) => {
     const col = await getCollection('checkout_orders');
     const insertResult = await col.insertOne(record);
     try { record._id = insertResult?.insertedId; } catch (_) {}
+    if (geolocationPromise && insertResult && insertResult.insertedId) {
+      Promise.resolve()
+        .then(async () => {
+          const timeout = new Promise((resolve) => setTimeout(() => resolve(null), 2500));
+          let geo = null;
+          try { geo = await Promise.race([geolocationPromise, timeout]); } catch (_) { geo = null; }
+          if (!geo) return;
+          await col.updateOne({ _id: insertResult.insertedId }, { $set: { geolocation: geo } });
+        })
+        .catch(() => {});
+    }
     Promise.resolve()
       .then(() => queuePaymentRecoveryForNewOrder(col, insertResult && insertResult.insertedId, record))
       .catch(() => {});
@@ -5955,28 +6048,25 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
       const d2 = calc(cpf.slice(0, 10), 11);
       return d1 === Number(cpf[9]) && d2 === Number(cpf[10]);
     };
-    const normalizeBrMobile = (raw) => {
-      let d = normalizeDigits(raw);
+    const normalizePhoneInternational = (raw) => {
+      const txt = String(raw || '').trim();
+      if (!txt) return '';
+      const hasPlus = txt.startsWith('+');
+      let d = normalizeDigits(txt);
       if (!d) return '';
       d = d.replace(/^0+/, '');
-      if (d.startsWith('55') && d.length > 11) d = d.slice(2);
-      if (d.length > 11) d = d.slice(-11);
-      if (!(d.length === 10 || d.length === 11)) return '';
-      if (d.startsWith('0')) return '';
-      if (d.length === 11 && d[2] !== '9') {
-        const d2 = d.slice(0, 2) + d.slice(3);
-        if (/^[1-9]{2}[0-9]{8}$/.test(d2)) d = d2;
-      }
-      if (!/^[1-9]{2}\d{8,9}$/.test(d)) return '';
-      return d;
+      if (d.length < 8) return '';
+      if (d.length > 15) d = d.slice(0, 15);
+      return hasPlus ? `+${d}` : d;
     };
 
     const cpfDigits = normalizeDigits(customer?.cpf);
     if (cpfDigits && !isValidCPF(cpfDigits)) return res.status(400).json({ error: 'invalid_cpf', message: 'CPF inválido.' });
 
     const phoneRaw = customer?.phone_number || customer?.phone || customer?.telefone || customer?.whatsapp || '';
-    const phoneDigits = normalizeBrMobile(phoneRaw);
-    if (!phoneDigits) return res.status(400).json({ error: 'missing_phone', message: 'Telefone (DDD + número) é obrigatório para pagamento no cartão.' });
+    const phoneDigits = normalizePhoneInternational(phoneRaw);
+    if (!String(phoneRaw || '').trim()) return res.status(400).json({ error: 'missing_phone', message: 'Phone number is required for card payments.' });
+    if (!phoneDigits) return res.status(400).json({ error: 'invalid_phone', message: 'Invalid phone number.' });
 
     const emailSafe = (function () {
       const raw = String(customer?.email || '').trim();
@@ -6136,6 +6226,7 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Idempotency-Key': correlationIDSafe
       },
+      httpsAgent: stripeKeepAliveAgent,
       timeout: 45000
     });
     const sessionData = sessionResp && sessionResp.data ? sessionResp.data : null;
@@ -8802,73 +8893,72 @@ async function processOrderFulfillment(record, col, req) {
                     const totalSent = planFiltered.reduce((s, p) => s + (Number(p.quantity) || 0), 0);
                     const existingOrders = Array.isArray(record?.fama24h_multi?.orders) ? record.fama24h_multi.orders : [];
                     const allDone = existingOrders.length >= planFiltered.length && existingOrders.every(o => o && (o.orderId || o.status === 'duplicate'));
-                    if (allDone) return;
-
-                    const retryAfterIso = new Date(Date.now() - (25 * 1000)).toISOString();
-                    const lockUpdateMulti = await col.updateOne(
-                        {
-                            _id: record._id,
-                            'fama24h.orderId': { $exists: false },
-                            $or: [
-                                { 'fama24h_multi.status': { $exists: false } },
-                                { 'fama24h_multi.status': { $ne: 'processing' } },
-                                { 'fama24h_multi.attemptedAt': { $lt: retryAfterIso } },
-                                { 'fama24h_multi.attemptedAt': { $exists: false } }
-                            ]
-                        },
-                        {
-                            $set: {
-                                'fama24h_multi.status': 'processing',
-                                'fama24h_multi.attemptedAt': new Date().toISOString(),
-                                'fama24h_multi.requestPayload': { service: serviceId, plan: planFiltered, totalQuantity: qtd, totalQuantitySent: totalSent },
-                                'fama24h_multi.requestedAt': new Date().toISOString()
-                            }
-                        }
-                    );
-                    if (lockUpdateMulti.modifiedCount > 0) {
-                      const orders = [];
-                        for (const it of planFiltered) {
-                            const rawLink = it && it.link;
-                            const qtyForPost = Number(it && it.quantity) || 0;
-                            const linkForFama = sanitizeIgLink(rawLink);
-                            if (!linkForFama) {
-                                orders.push({ link: String(rawLink || ''), status: 'invalid_link', quantity: qtyForPost });
-                                continue;
-                            }
-                            const payload = new URLSearchParams({ key, action: 'add', service: String(serviceId), link: String(linkForFama), quantity: String(qtyForPost) });
-                            try {
-                                const famaResp = await postFormWithRetry('https://fama24h.net/api/v2', payload.toString(), 25000, 3);
-                                const famaData = normalizeProviderResponseData(famaResp.data);
-                                const orderId = extractProviderOrderId(famaData);
-                                const hasErr = !!(famaData && (famaData.error || famaData.errors));
-                                const errText = String((famaData && (famaData.error || famaData.errors || famaData.message)) || '').toLowerCase();
-                                const isDup = !orderId && (errText.includes('link_duplicate') || /neworder\.error\.link_duplicate/.test(errText));
-                                let oid = orderId ? String(orderId) : null;
-                                if (!oid && isDup) {
-                                    const prev = await findExistingFamaOrderIdByLink(col, linkForFama);
-                                    if (prev) oid = prev;
+                    if (!allDone) {
+                        const retryAfterIso = new Date(Date.now() - (25 * 1000)).toISOString();
+                        const lockUpdateMulti = await col.updateOne(
+                            {
+                                _id: record._id,
+                                'fama24h.orderId': { $exists: false },
+                                $or: [
+                                    { 'fama24h_multi.status': { $exists: false } },
+                                    { 'fama24h_multi.status': { $ne: 'processing' } },
+                                    { 'fama24h_multi.attemptedAt': { $lt: retryAfterIso } },
+                                    { 'fama24h_multi.attemptedAt': { $exists: false } }
+                                ]
+                            },
+                            {
+                                $set: {
+                                    'fama24h_multi.status': 'processing',
+                                    'fama24h_multi.attemptedAt': new Date().toISOString(),
+                                    'fama24h_multi.requestPayload': { service: serviceId, plan: planFiltered, totalQuantity: qtd, totalQuantitySent: totalSent },
+                                    'fama24h_multi.requestedAt': new Date().toISOString()
                                 }
-                                const st = oid ? (isDup && !orderId ? 'duplicate' : 'created') : (isDup ? 'duplicate' : (hasErr ? 'error' : 'unknown'));
-                                orders.push({ link: linkForFama, quantity: qtyForPost, orderId: oid, id: oid, status: st, response: famaData });
-                            } catch (err) {
-                                const errVal = err?.response?.data || err?.message || String(err);
-                                const errStr = (typeof errVal === 'string') ? errVal : JSON.stringify(errVal);
-                                const st = errStr && errStr.includes('link_duplicate') ? 'duplicate' : 'error';
-                                let oid = null;
-                                if (st === 'duplicate') {
-                                    const prev = await findExistingFamaOrderIdByLink(col, linkForFama);
-                                    if (prev) oid = prev;
-                                }
-                                orders.push({ link: linkForFama, quantity: qtyForPost, orderId: oid, id: oid, status: st, error: errVal });
                             }
+                        );
+                        if (lockUpdateMulti.modifiedCount > 0) {
+                          const orders = [];
+                            for (const it of planFiltered) {
+                                const rawLink = it && it.link;
+                                const qtyForPost = Number(it && it.quantity) || 0;
+                                const linkForFama = sanitizeIgLink(rawLink);
+                                if (!linkForFama) {
+                                    orders.push({ link: String(rawLink || ''), status: 'invalid_link', quantity: qtyForPost });
+                                    continue;
+                                }
+                                const payload = new URLSearchParams({ key, action: 'add', service: String(serviceId), link: String(linkForFama), quantity: String(qtyForPost) });
+                                try {
+                                    const famaResp = await postFormWithRetry('https://fama24h.net/api/v2', payload.toString(), 25000, 3);
+                                    const famaData = normalizeProviderResponseData(famaResp.data);
+                                    const orderId = extractProviderOrderId(famaData);
+                                    const hasErr = !!(famaData && (famaData.error || famaData.errors));
+                                    const errText = String((famaData && (famaData.error || famaData.errors || famaData.message)) || '').toLowerCase();
+                                    const isDup = !orderId && (errText.includes('link_duplicate') || /neworder\.error\.link_duplicate/.test(errText));
+                                    let oid = orderId ? String(orderId) : null;
+                                    if (!oid && isDup) {
+                                        const prev = await findExistingFamaOrderIdByLink(col, linkForFama);
+                                        if (prev) oid = prev;
+                                    }
+                                    const st = oid ? (isDup && !orderId ? 'duplicate' : 'created') : (isDup ? 'duplicate' : (hasErr ? 'error' : 'unknown'));
+                                    orders.push({ link: linkForFama, quantity: qtyForPost, orderId: oid, id: oid, status: st, response: famaData });
+                                } catch (err) {
+                                    const errVal = err?.response?.data || err?.message || String(err);
+                                    const errStr = (typeof errVal === 'string') ? errVal : JSON.stringify(errVal);
+                                    const st = errStr && errStr.includes('link_duplicate') ? 'duplicate' : 'error';
+                                    let oid = null;
+                                    if (st === 'duplicate') {
+                                        const prev = await findExistingFamaOrderIdByLink(col, linkForFama);
+                                        if (prev) oid = prev;
+                                    }
+                                    orders.push({ link: linkForFama, quantity: qtyForPost, orderId: oid, id: oid, status: st, error: errVal });
+                                }
+                            }
+                            const createdCount = orders.filter(o => o && o.orderId).length;
+                            const doneCount = orders.filter(o => o && (o.orderId || o.status === 'duplicate')).length;
+                            const overall = doneCount === orders.length ? (createdCount > 0 ? 'created' : 'duplicate') : (createdCount > 0 ? 'partial' : 'error');
+                            await col.updateOne(filter, { $set: { fama24h_multi: { status: overall, requestPayload: { service: serviceId, plan: planFiltered, totalQuantity: qtd, totalQuantitySent: totalSent }, orders, requestedAt: new Date().toISOString() } } });
+                            try { await broadcastPaymentPaid(identifier, correlationID); } catch(_) {}
                         }
-                        const createdCount = orders.filter(o => o && o.orderId).length;
-                        const doneCount = orders.filter(o => o && (o.orderId || o.status === 'duplicate')).length;
-                        const overall = doneCount === orders.length ? (createdCount > 0 ? 'created' : 'duplicate') : (createdCount > 0 ? 'partial' : 'error');
-                        await col.updateOne(filter, { $set: { fama24h_multi: { status: overall, requestPayload: { service: serviceId, plan: planFiltered, totalQuantity: qtd, totalQuantitySent: totalSent }, orders, requestedAt: new Date().toISOString() } } });
-                        try { await broadcastPaymentPaid(identifier, correlationID); } catch(_) {}
                     }
-                    return;
                 }
                 const lockUpdate = await col.updateOne(
                     { 
@@ -8933,7 +9023,6 @@ async function processOrderFulfillment(record, col, req) {
                                         retried = true;
                                         if (orderIdAlt) {
                                             try { await broadcastPaymentPaid(identifier, correlationID); } catch(_) {}
-                                            return;
                                         }
                                     } catch (_) {}
                                 }
@@ -9065,7 +9154,6 @@ async function processOrderFulfillment(record, col, req) {
                 const overall = createdCount === orders.length ? 'created' : (createdCount > 0 ? 'partial' : 'error');
                 await col.updateOne(filter, { $set: { fornecedor_social_multi: { status: overall, requestPayload: { service: serviceFS, links: multiLinks, quantityPerPost: perPostQty, totalQuantity: qtd, totalQuantitySent: totalSent }, orders, requestedAt: new Date().toISOString() } }, $unset: { fama24h: '' } });
             }
-            return;
         }
         const sanitizedLink = sanitizeLink(linkToSend);
         const canSendFS = !!keyFS && !!sanitizedLink && qtd > 0;
@@ -12750,33 +12838,65 @@ app.get('/api/orders', async (req, res) => {
 app.get('/api/checkout-orders', async (req, res) => {
   try {
     const phone = String(req.query.phone || '').trim();
-    if (!phone) return res.status(400).json({ ok: false, error: 'missing_phone' });
-    const digitsRaw = phone.replace(/\D/g, '');
-    const digitsNo55 = digitsRaw ? digitsRaw.replace(/^55/, '') : '';
-    const phonePlus55 = digitsNo55 ? `+55${digitsNo55}` : '';
-    const phoneOr = [];
-    if (phone) phoneOr.push(phone);
-    if (digitsNo55) phoneOr.push(digitsNo55);
-    if (digitsRaw) phoneOr.push(digitsRaw);
-    if (phonePlus55) phoneOr.push(phonePlus55);
+    const email = String(req.query.email || '').trim();
+    if (!phone && !email) return res.status(400).json({ ok: false, error: 'missing_query' });
+
     const col = await getCollection('checkout_orders');
-    const primaryFilter = {
-      $or: [
-        { 'customer.phone': { $in: phoneOr } },
-        { telefone: { $in: phoneOr } },
-        { phone: { $in: phoneOr } }
-      ]
-    };
-    let orders = await col.find(primaryFilter).sort({ _id: -1 }).limit(20).toArray();
-    if (!orders || !orders.length) {
-      const secondaryFilter = {
+    let orders = [];
+
+    if (email) {
+      const escRe = (s) => String(s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const rx = new RegExp(`^${escRe(email)}$`, 'i');
+      const primaryFilter = {
         $or: [
-          { 'additionalInfoPaid': { $elemMatch: { key: 'phone', value: { $in: phoneOr } } } },
-          { 'additionalInfo': { $elemMatch: { key: 'phone', value: { $in: phoneOr } } } }
+          { 'customer.email': rx },
+          { email: rx }
         ]
       };
-      orders = await col.find(secondaryFilter).sort({ _id: -1 }).limit(20).toArray();
+      orders = await col.find(primaryFilter).sort({ _id: -1 }).limit(20).toArray();
+      if (!orders || !orders.length) {
+        const secondaryFilter = {
+          $or: [
+            { 'additionalInfoPaid': { $elemMatch: { key: 'email', value: rx } } },
+            { 'additionalInfoPaid': { $elemMatch: { key: 'customer_email', value: rx } } },
+            { 'additionalInfo': { $elemMatch: { key: 'email', value: rx } } },
+            { 'additionalInfo': { $elemMatch: { key: 'customer_email', value: rx } } }
+          ]
+        };
+        orders = await col.find(secondaryFilter).sort({ _id: -1 }).limit(20).toArray();
+      }
+    } else if (phone) {
+      const digitsRaw = phone.replace(/\D/g, '');
+      const digitsNo55 = digitsRaw ? digitsRaw.replace(/^55/, '') : '';
+      const phonePlus55 = digitsNo55 ? `+55${digitsNo55}` : '';
+      const phonePlusDigits = digitsRaw ? `+${digitsRaw}` : '';
+      const phoneOr = [];
+      if (phone) phoneOr.push(phone);
+      if (digitsNo55) phoneOr.push(digitsNo55);
+      if (digitsRaw) phoneOr.push(digitsRaw);
+      if (phonePlusDigits) phoneOr.push(phonePlusDigits);
+      if (phonePlus55) phoneOr.push(phonePlus55);
+      const uniq = Array.from(new Set(phoneOr.filter(Boolean)));
+
+      const primaryFilter = {
+        $or: [
+          { 'customer.phone': { $in: uniq } },
+          { telefone: { $in: uniq } },
+          { phone: { $in: uniq } }
+        ]
+      };
+      orders = await col.find(primaryFilter).sort({ _id: -1 }).limit(20).toArray();
+      if (!orders || !orders.length) {
+        const secondaryFilter = {
+          $or: [
+            { 'additionalInfoPaid': { $elemMatch: { key: 'phone', value: { $in: uniq } } } },
+            { 'additionalInfo': { $elemMatch: { key: 'phone', value: { $in: uniq } } } }
+          ]
+        };
+        orders = await col.find(secondaryFilter).sort({ _id: -1 }).limit(20).toArray();
+      }
     }
+
     res.json({ ok: true, orders });
   } catch (e) {
     res.status(500).json({ ok: false, error: e?.message || String(e) });
@@ -13726,7 +13846,7 @@ app.post('/session/mark-paid', async (req, res) => {
             const addMapX = (arrPaidX.length ? arrPaidX : arrOrigX).reduce((acc, it) => { const k = String(it?.key||'').trim(); if (k) acc[k] = String(it?.value||'').trim(); return acc; }, {});
             const isRefilExt = String(addMapX['tipo_servico'] || '').trim() === 'refil_extensao';
             const linkIdX = String(addMapX['refil_link_id'] || '').trim();
-            const modeX = String(addMapX['refil_mode'] || '').trim();
+            const modeX = String(addMapX['refil_mode'] || '').trim().toLowerCase();
             if (isRefilExt && linkIdX) {
               const tl = await getCollection('temporary_links');
               const nowMsX = Date.now();
@@ -13744,10 +13864,12 @@ app.post('/session/mark-paid', async (req, res) => {
                 setsX.warrantyMode = 'life';
                 setsX.warrantyDays = null;
               } else {
-                const expMsX = baseMsX + 30 * 24 * 60 * 60 * 1000;
+                const dayMsX = 24 * 60 * 60 * 1000;
+                const addDaysX = (modeX === '6m' || modeX === '6mo' || modeX === '6months' || modeX === 'warranty6m' || modeX === 'warranty_6m' || modeX === '180') ? 180 : 180;
+                const expMsX = baseMsX + addDaysX * dayMsX;
                 setsX.expiresAt = new Date(expMsX).toISOString();
-                setsX.warrantyMode = '30';
-                setsX.warrantyDays = 30;
+                setsX.warrantyMode = String(addDaysX);
+                setsX.warrantyDays = addDaysX;
               }
               await tl.updateOne({ id: linkIdX }, { $set: setsX });
               try { await col.updateOne(filter, { $set: { refilLinkId: linkIdX } }); } catch(_) {}
@@ -14243,7 +14365,7 @@ app.post('/api/refil/create', async (req, res) => {
     };
     const usernameInput = normalizeUsername(usernameRaw);
     if (!orderIdInput && !usernameInput && !refilTokenInput) {
-      return res.status(400).json({ ok: false, error: 'missing_username_or_order_id', message: 'Informe o @ do Instagram para solicitar reposição.' });
+      return res.status(400).json({ ok: false, error: 'missing_username_or_order_id', message: 'Enter your Instagram @ to request a replacement.' });
     }
 
     const col = await getCollection('checkout_orders');
@@ -14355,7 +14477,7 @@ app.post('/api/refil/create', async (req, res) => {
           if (nextMs && Number.isFinite(nextMs) && now < nextMs) {
             const remainingH = Math.max(0, (nextMs - now) / (60 * 60 * 1000));
             const remainingStr = Number.isFinite(remainingH) ? remainingH.toFixed(1) : '6.0';
-            return res.status(400).json({ ok: false, error: 'refill_unavailable', message: `Reposicao indisponivel. Aguarde ${remainingStr}h para liberar a reposicao.` });
+            return res.status(400).json({ ok: false, error: 'refill_unavailable', message: `Replacement unavailable. Wait ${remainingStr}h before requesting again.` });
           }
         } catch (_) {}
       }
@@ -14372,7 +14494,7 @@ app.post('/api/refil/create', async (req, res) => {
           if (lastMs && (now - lastMs) < ms6h) {
             const remainingH = Math.max(0, (ms6h - (now - lastMs)) / (60 * 60 * 1000));
             const remainingStr = Number.isFinite(remainingH) ? remainingH.toFixed(1) : '6.0';
-            return res.status(400).json({ ok: false, error: 'refill_unavailable', message: `Reposicao indisponivel. Aguarde ${remainingStr}h para liberar a reposicao.` });
+            return res.status(400).json({ ok: false, error: 'refill_unavailable', message: `Replacement unavailable. Wait ${remainingStr}h before requesting again.` });
           }
         }
       } catch (_) {}
@@ -14418,7 +14540,7 @@ app.post('/api/refil/create', async (req, res) => {
               return res.status(400).json({ ok: false, error: 'refill_not_supported', message: String(refillData.error) });
             }
             if (!isOrderNotFound) {
-              return res.status(400).json({ ok: false, error: String(refillData.error), message: `Resposta do Fornecedor: ${String(refillData.error)}` });
+              return res.status(400).json({ ok: false, error: String(refillData.error), message: `Supplier response: ${String(refillData.error)}` });
             }
             return res.status(400).json({ ok: false, error: 'invalid_order_id', message: String(refillData.error) });
           }
@@ -14454,20 +14576,20 @@ app.post('/api/refil/create', async (req, res) => {
             }
             return res.json({
               ok: true,
-              message: 'Reposição solicitada com sucesso',
+              message: 'Replacement requested successfully',
               data: { refill_id: refillId, status: 'initiated', provider_response: refillData }
             });
           }
-          return res.status(400).json({ ok: false, error: 'refill_failed', message: refillMsg || 'Falha ao solicitar reposição' });
+          return res.status(400).json({ ok: false, error: 'refill_failed', message: refillMsg || 'Failed to request replacement' });
         } catch (e) {
           const errMsg = e?.response?.data?.error || e?.message || String(e);
-          return res.status(500).json({ ok: false, error: 'refill_failed', message: `Erro ao comunicar com fornecedor: ${errMsg}` });
+          return res.status(500).json({ ok: false, error: 'refill_failed', message: `Failed to communicate with supplier: ${errMsg}` });
         }
       }
-      return res.status(400).json({ ok: false, error: 'invalid_order_id', message: 'order_id inválido' });
+      return res.status(400).json({ ok: false, error: 'invalid_order_id', message: 'Invalid order_id' });
     }
 
-    if (!order) return res.status(404).json({ ok: false, error: 'order_not_found', message: 'Pedido não encontrado' });
+    if (!order) return res.status(404).json({ ok: false, error: 'order_not_found', message: 'Order not found' });
 
     const getProviderCandidates = (o) => {
       const out = [];
@@ -14517,10 +14639,10 @@ app.post('/api/refil/create', async (req, res) => {
     let linkToSend = picked ? picked.link : null;
 
     if (!provider || !apiUrl || !baseExternalOrderId) {
-      return res.status(400).json({ ok: false, error: 'no_provider_payload', message: 'Este pedido não possui dados suficientes para solicitar reposição.' });
+      return res.status(400).json({ ok: false, error: 'no_provider_payload', message: 'This order does not have enough data to request a replacement.' });
     }
     if (!apiKey) {
-        return res.status(500).json({ ok: false, error: 'missing_api_key', message: 'Configuração de API ausente no servidor.' });
+        return res.status(500).json({ ok: false, error: 'missing_api_key', message: 'Missing API configuration on the server.' });
     }
 
     try {
@@ -14643,7 +14765,7 @@ app.post('/api/refil/create', async (req, res) => {
             error: errMsg,
             status: 'failed'
         }}});
-        return res.status(500).json({ ok: false, error: 'provider_error', message: `Erro ao comunicar com fornecedor: ${errMsg}` });
+        return res.status(500).json({ ok: false, error: 'provider_error', message: `Failed to communicate with supplier: ${errMsg}` });
     }
 
   } catch (e) {
@@ -14710,9 +14832,9 @@ app.post('/api/refil/history', async (req, res) => {
       if (!followersOrders.length) {
         const anyOrder = await col.find({ $and: [{ $or: paidOr }, { $or: byUserOr }] }).limit(1).toArray();
         if (!anyOrder.length) {
-          return res.status(404).json({ ok: false, error: 'no_orders', message: 'Nenhum pedido pago encontrado para este usuário.' });
+          return res.status(404).json({ ok: false, error: 'no_orders', message: 'No paid orders found for this user.' });
         }
-        return res.json({ ok: true, status: 'no_followers_purchase', message: 'Nenhuma compra de seguidores encontrada para este usuário.', data: { username: usernameInput } });
+        return res.json({ ok: true, status: 'no_followers_purchase', message: 'No followers purchase found for this user.', data: { username: usernameInput } });
       }
       const order = followersOrders[0];
       const resolveQty = (o) => {
@@ -14840,7 +14962,7 @@ app.post('/api/refil/history', async (req, res) => {
         return res.json({
           ok: true,
           status: 'above_target',
-          message: 'Perfil está acima da meta da última compra. Reposição indisponível.',
+          message: 'Your profile is above the target from the last purchase. Replacement is not available.',
           data: {
             username: usernameInput,
             last_order_id: String(order._id || ''),
@@ -15279,7 +15401,7 @@ app.post('/api/refil/preview', async (req, res) => {
     };
     const username = normalizeUsername(raw);
     if (!username) {
-      return res.status(400).json({ ok: false, error: 'missing_username', message: 'Informe o @ do Instagram' });
+      return res.status(400).json({ ok: false, error: 'missing_username', message: 'Enter your Instagram @' });
     }
     const srcRaw = String((req.body && (req.body.source || req.body.from || req.body.origin || req.body.page)) || '').trim();
     const src = srcRaw.toLowerCase().replace(/^\/+/, '');
@@ -15587,7 +15709,7 @@ app.post('/api/refil/preview', async (req, res) => {
           return res.json({
             ok: true,
             status: 'initiated',
-            message: 'Sem queda detectada',
+            message: 'No drop detected',
             data: { quantidade_inicial: initial, quantidade_atual: followerCount, quantidade_de_queda: deficit }
           });
         }
@@ -15659,7 +15781,7 @@ app.post('/api/refil/preview', async (req, res) => {
               upstream: { add_reorder: addJson }
             });
             if (isExpired && !addOk) {
-              return res.status(409).json({ ok: false, error: 'reorder_expired', message: 'Prazo de reposição expirado para este serviço.', raw: addJson });
+              return res.status(409).json({ ok: false, error: 'reorder_expired', message: 'Replacement period has expired for this service.', raw: addJson });
             }
             return res.status(502).json({ ok: false, error: 'provider_error', message: providerMsg || 'Falha ao iniciar reposição.', raw: addJson });
           }
@@ -15678,7 +15800,7 @@ app.post('/api/refil/preview', async (req, res) => {
         return res.json({
           ok: true,
           status: 'initiated',
-          message: 'Reposição iniciada',
+          message: 'Replacement started',
           data: { quantidade_inicial: initial, quantidade_atual: followerCount, quantidade_de_queda: deficit },
           raw: addJson
         });
@@ -15690,9 +15812,9 @@ app.post('/api/refil/preview', async (req, res) => {
           meta: { step: 'exception', tookMs: Date.now() - startedAt }
         });
         if (debugMode) {
-          return res.status(500).json({ ok: false, error: 'internal_error', message: 'Falha ao processar reposição.', debugId, details: { message: e?.message || String(e) } });
+          return res.status(500).json({ ok: false, error: 'internal_error', message: 'Failed to process replacement.', debugId, details: { message: e?.message || String(e) } });
         }
-        return res.status(500).json({ ok: false, error: 'internal_error', message: 'Falha ao processar reposição.' });
+        return res.status(500).json({ ok: false, error: 'internal_error', message: 'Failed to process replacement.' });
       }
     }
 
@@ -15772,7 +15894,7 @@ app.post('/api/refil/preview', async (req, res) => {
         return {
           ok: true,
           status: 'initiated',
-          message: 'Reposição iniciada',
+          message: 'Replacement started',
           data: {
             quantidade_inicial: initial,
             quantidade_atual: current,
@@ -16094,7 +16216,7 @@ app.post('/api/refil/preview', async (req, res) => {
     const orders = await col.find({ $and: [{ $or: paidOr }, { $or: byUserOr }] }).sort({ 'woovi.paidAt': -1, paidAt: -1, createdAt: -1, _id: -1 }).limit(50).toArray();
     if (!orders.length) {
       logRefil2Request({ status: 'no_orders', decision: 'nao_repor', decisionReason: 'no_orders' });
-      return res.status(404).json(wrap({ ok: false, error: 'no_orders', message: 'Nenhum pedido pago encontrado para este usuário.' }));
+      return res.status(404).json(wrap({ ok: false, error: 'no_orders', message: 'No paid orders found for this user.' }));
     }
     const followersOr = [
       { additionalInfoPaid: { $elemMatch: { key: 'categoria_servico', value: new RegExp('^seguidores$', 'i') } } },
@@ -16108,7 +16230,7 @@ app.post('/api/refil/preview', async (req, res) => {
     const followersOrders = await col.find({ $and: [{ $or: paidOr }, { $or: byUserOr }, { $or: followersOr }] }).sort({ 'woovi.paidAt': -1, paidAt: -1, createdAt: -1, _id: -1 }).limit(10).toArray();
     if (!followersOrders.length) {
       logRefil2Request({ status: 'no_followers_purchase', decision: 'nao_repor', decisionReason: 'no_followers_purchase' });
-      return res.json(wrap({ ok: true, status: 'no_followers_purchase', message: 'Nenhuma compra de seguidores encontrada para este usuário.', data: { username } }));
+      return res.json(wrap({ ok: true, status: 'no_followers_purchase', message: 'No followers purchase found for this user.', data: { username } }));
     }
     const order = followersOrders[0];
     const resolveQty = (o) => {
@@ -16249,7 +16371,7 @@ app.post('/api/refil/preview', async (req, res) => {
         return res.json(wrap({
           ok: true,
           status: 'initiated',
-          message: 'Reposição iniciada',
+          message: 'Replacement started',
           data: {
             quantidade_inicial: targetFollowers,
             quantidade_atual: currentFollowers,
@@ -16304,7 +16426,7 @@ app.post('/api/refil/preview', async (req, res) => {
         return res.json(wrap({
           ok: true,
           status: 'initiated',
-          message: 'Reposição iniciada',
+          message: 'Replacement started',
           data: {
             quantidade_inicial: targetFollowers,
             quantidade_atual: currentFollowers,
@@ -16328,7 +16450,7 @@ app.post('/api/refil/preview', async (req, res) => {
       return res.json(wrap({
           ok: true,
           status: 'above_target',
-          message: 'Perfil está acima da meta da última compra. Reposição indisponível.',
+          message: 'Your profile is above the target from the last purchase. Replacement is not available.',
           data: {
             username,
             last_order_id: String(order._id || ''),
@@ -16376,7 +16498,7 @@ app.post('/api/refil/preview', async (req, res) => {
       return res.json(wrap({
         ok: true,
         status: 'initiated',
-        message: 'Reposição iniciada',
+        message: 'Replacement started',
         data: {
           quantidade_inicial: targetFollowers,
           quantidade_atual: currentFollowers,
@@ -23150,7 +23272,7 @@ const maybeSendPaymentApprovedPreviewEmail = async (server) => {
     }
 
     if (!record) {
-      throw new Error('Nenhum pedido pago encontrado para prévia do email.');
+      throw new Error('No paid order found for email preview.');
     }
 
     const serviceOverrideRaw = String(process.env.PAYMENT_APPROVED_PREVIEW_SERVICE_LINES || '').trim();

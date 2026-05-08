@@ -54,13 +54,22 @@
     window.__DISABLE_PIX__ = true;
   </script>
   <% if (typeof STRIPE_PUBLISHABLE_KEY !== 'undefined' && STRIPE_PUBLISHABLE_KEY) { %>
-    <script src="https://js.stripe.com/v3/"></script>
+    <link rel="preconnect" href="https://js.stripe.com" crossorigin />
+    <link rel="preconnect" href="https://api.stripe.com" crossorigin />
+    <link rel="preconnect" href="https://checkout.stripe.com" crossorigin />
+    <link rel="preconnect" href="https://m.stripe.network" crossorigin />
+    <link rel="dns-prefetch" href="//js.stripe.com" />
+    <link rel="dns-prefetch" href="//api.stripe.com" />
+    <link rel="dns-prefetch" href="//checkout.stripe.com" />
+    <link rel="dns-prefetch" href="//m.stripe.network" />
+    <link rel="preload" as="script" href="https://js.stripe.com/v3/" crossorigin />
+    <script src="https://js.stripe.com/v3/" defer></script>
   <% } %>
   <link href="/css/style.css?v=6" rel="stylesheet" />
   <link href="/css/badges.css" rel="stylesheet" />
   <link href="/css/perfil.css" rel="stylesheet" />
   <link href="/css/why-us.css?v=5" rel="stylesheet" />
-  <link rel="icon" type="image/png" href="/images/logo.png" />
+  <link rel="icon" type="image/png" href="/images/y%20branco.png" />
   <!-- Google Tag Manager --> 
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': 
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], 
@@ -74,7 +83,7 @@
       var script = document.createElement("script");
       script.type = "text/javascript";
       script.async = true;
-      script.src = "https://track.agenciaoppus.site/tag/TC-FQZRKRMP.js";
+      script.src = "https://track.youagency.site/tag/TC-OISDR3RC.js";
       var firstScript = document.getElementsByTagName("script")[0];
       firstScript.parentNode.insertBefore(script, firstScript);
     })();
@@ -314,7 +323,7 @@
                    <div style="margin-bottom: 2rem;">
                       <label for="contactPhoneInput" style="display:block; margin-bottom:0.5rem; color:var(--text-primary); font-weight:500;">Phone <span style="color:#ef4444">*</span></label>
                       <div class="phone-field" style="width:100%;">
-                         <input type="tel" id="contactPhoneInput" class="select-input" placeholder="(00) 00000-0000" maxlength="15" style="width:100%; border-radius: 8px;" />
+                         <input type="tel" id="contactPhoneInput" class="select-input" placeholder="Phone number" maxlength="24" style="width:100%; border-radius: 8px;" />
                       </div>
                    </div>
                    <a href="javascript:void(0)" id="btnActionProceed" class="continue-button contact-continue-btn" style="width: 100%; padding: 1rem; font-size: 1.1rem; border-radius: 8px; display: flex; justify-content: center; align-items: center; background: var(--instagram-gradient); text-decoration: none; color: white; cursor: pointer;">
@@ -598,7 +607,9 @@
           </div>
           <div class="modal-body" style="text-align:center;">
             <div style="position:relative; aspect-ratio: 9 / 16; height: clamp(320px, 60vh, 560px); max-width: 100%; margin: 0.75rem auto 0; border-radius:12px; overflow:hidden; box-shadow: var(--shadow); background: #000;">
-              <video id="commentsVideoPlayer" src="/images/comentarios.mp4" controls muted playsinline style="position:absolute; inset:0; width:100%; height:100%; object-fit: cover;"></video>
+              <video id="commentsVideoPlayer" controls muted playsinline preload="auto" style="position:absolute; inset:0; width:100%; height:100%; object-fit: cover;">
+                <source src="/images/comentarios.mp4" type="video/mp4" />
+              </video>
             </div>
             <p style="margin-top:0.75rem; color: var(--text-secondary);">High-quality profiles, positive comments, and minimal drop.</p>
           </div>
@@ -644,7 +655,7 @@
     </main>
     <footer class="footer">
       <div class="footer-bar">
-        <a href="https://instagram.com/agencia.You Agency" target="_blank" rel="noopener" class="footer-link instagram-link" aria-label="You Agency on Instagram">
+        <a href="https://instagram.com/youa.gency" target="_blank" rel="noopener" class="footer-link instagram-link" aria-label="You Agency on Instagram">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm0 2a3 3 0 00-3 3v10a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H7zm5 3a5 5 0 110 10 5 5 0 010-10zm0 2a3 3 0 100 6 3 3 0 000-6zm5.5-3a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/></svg>
         </a>
         <span class="footer-center">&copy; 2025 You Agency. All rights reserved.</span>

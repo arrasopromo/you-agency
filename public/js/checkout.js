@@ -796,87 +796,86 @@
       { q: 15000, p: 'R$ 329,90' },
     ],
     brasileiros: [
-      { q: 150, p: 'R$ 12,90' },
-      { q: 300, p: 'R$ 24,90' },
-      { q: 500, p: 'R$ 39,90' },
-      { q: 700, p: 'R$ 49,90' },
-      { q: 1000, p: 'R$ 79,90' },
-      { q: 2000, p: 'R$ 129,90' },
-      { q: 3000, p: 'R$ 179,90' },
-      { q: 4000, p: 'R$ 249,90' },
-      { q: 5000, p: 'R$ 279,90' },
-      { q: 7500, p: 'R$ 399,90' },
-      { q: 10000, p: 'R$ 499,90' },
-      { q: 15000, p: 'R$ 799,90' },
+      { q: 150, p: '$ 2.99' },
+      { q: 300, p: '$ 4.99' },
+      { q: 500, p: '$ 5.99' },
+      { q: 700, p: '$ 7.99' },
+      { q: 1000, p: '$ 8.99' },
+      { q: 2000, p: '$ 14.99' },
+      { q: 3000, p: '$ 19.99' },
+      { q: 4000, p: '$ 24.99' },
+      { q: 5000, p: '$ 29.99' },
+      { q: 7500, p: '$ 39.99' },
+      { q: 10000, p: '$ 49.99' },
+      { q: 15000, p: '$ 69.99' },
     ],
     organicos: [
-      { q: 150, p: 'R$ 39,90' },
-      { q: 300, p: 'R$ 49,90' },
-      { q: 500, p: 'R$ 69,90' },
-      { q: 700, p: 'R$ 89,90' },
-      { q: 1000, p: 'R$ 129,90' },
-      { q: 2000, p: 'R$ 199,90' },
-      { q: 3000, p: 'R$ 249,90' },
-      { q: 4000, p: 'R$ 329,90' },
-      { q: 5000, p: 'R$ 499,90' },
-      { q: 7500, p: 'R$ 599,90' },
-      { q: 10000, p: 'R$ 899,90' },
-      { q: 15000, p: 'R$ 1.299,90' },
+      { q: 150, p: '$ 8.90' },
+      { q: 300, p: '$ 10.90' },
+      { q: 500, p: '$ 15.90' },
+      { q: 1000, p: '$ 27.90' },
+      { q: 2000, p: '$ 42.90' },
+      { q: 3000, p: '$ 53.90' },
+      { q: 4000, p: '$ 70.90' },
+      { q: 5000, p: '$ 106.90' },
+      { q: 7500, p: '$ 128.90' },
+      { q: 10000, p: '$ 192.90' },
+      { q: 15000, p: '$ 277.90' },
     ],
     curtidas_brasileiras: [
-      { q: 150, p: 'R$ 4,90' },
-      { q: 300, p: 'R$ 9,90' },
-      { q: 500, p: 'R$ 14,90' },
-      { q: 700, p: 'R$ 29,90' },
-      { q: 1000, p: 'R$ 39,90' },
-      { q: 2000, p: 'R$ 49,90' },
-      { q: 3000, p: 'R$ 59,90' },
-      { q: 4000, p: 'R$ 69,90' },
-      { q: 5000, p: 'R$ 79,90' },
-      { q: 7500, p: 'R$ 109,90' },
-      { q: 10000, p: 'R$ 139,90' },
-      { q: 15000, p: 'R$ 199,90' },
+      { q: 150, p: '$ 1.99' },
+      { q: 300, p: '$ 2.99' },
+      { q: 500, p: '$ 3.99' },
+      { q: 700, p: '$ 4.99' },
+      { q: 1000, p: '$ 5.99' },
+      { q: 2000, p: '$ 7.99' },
+      { q: 3000, p: '$ 9.99' },
+      { q: 4000, p: '$ 11.99' },
+      { q: 5000, p: '$ 13.99' },
+      { q: 7500, p: '$ 16.99' },
+      { q: 10000, p: '$ 19.99' },
+      { q: 15000, p: '$ 24.99' },
     ],
     curtidas_mistos: [
-      { q: 150, p: 'R$ 5,90' },
-      { q: 300, p: 'R$ 7,90' },
-      { q: 500, p: 'R$ 9,90' },
-      { q: 700, p: 'R$ 14,90' },
-      { q: 1000, p: 'R$ 19,90' },
-      { q: 2000, p: 'R$ 24,90' },
-      { q: 3000, p: 'R$ 29,90' },
-      { q: 4000, p: 'R$ 34,90' },
-      { q: 5000, p: 'R$ 39,90' },
-      { q: 7500, p: 'R$ 49,90' },
-      { q: 10000, p: 'R$ 69,90' },
-      { q: 15000, p: 'R$ 89,90' },
+      { q: 150, p: '$ 1.99' },
+      { q: 300, p: '$ 2.99' },
+      { q: 500, p: '$ 3.99' },
+      { q: 700, p: '$ 4.99' },
+      { q: 1000, p: '$ 5.99' },
+      { q: 2000, p: '$ 7.99' },
+      { q: 3000, p: '$ 9.99' },
+      { q: 4000, p: '$ 11.99' },
+      { q: 5000, p: '$ 13.99' },
+      { q: 7500, p: '$ 16.99' },
+      { q: 10000, p: '$ 19.99' },
+      { q: 15000, p: '$ 24.99' },
     ],
     curtidas_organicos: [
-      { q: 150, p: 'R$ 16,90' },
-      { q: 300, p: 'R$ 28,90' },
-      { q: 500, p: 'R$ 49,90' },
-      { q: 1000, p: 'R$ 69,90' },
-      { q: 2000, p: 'R$ 104,90' },
-      { q: 3000, p: 'R$ 139,90' },
-      { q: 4000, p: 'R$ 174,90' },
-      { q: 5000, p: 'R$ 224,90' },
-      { q: 7500, p: 'R$ 279,90' },
-      { q: 10000, p: 'R$ 349,90' },
-      { q: 15000, p: 'R$ 449,90' },
+      { q: 150, p: '$ 4.99' },
+      { q: 300, p: '$ 7.99' },
+      { q: 500, p: '$ 12.99' },
+      { q: 1000, p: '$ 16.99' },
+      { q: 2000, p: '$ 24.99' },
+      { q: 3000, p: '$ 34.99' },
+      { q: 4000, p: '$ 44.99' },
+      { q: 5000, p: '$ 54.99' },
+      { q: 7500, p: '$ 69.99' },
+      { q: 10000, p: '$ 89.99' },
+      { q: 15000, p: '$ 119.99' },
     ],
     visualizacoes_reels: [
-      { q: 1000, p: 'R$ 4,90' },
-      { q: 2500, p: 'R$ 9,90' },
-      { q: 5000, p: 'R$ 14,90' },
-      { q: 10000, p: 'R$ 19,90' },
-      { q: 25000, p: 'R$ 24,90' },
-      { q: 50000, p: 'R$ 34,90' },
-      { q: 100000, p: 'R$ 49,90' },
-      { q: 150000, p: 'R$ 59,90' },
-      { q: 200000, p: 'R$ 69,90' },
-      { q: 250000, p: 'R$ 89,90' },
-      { q: 500000, p: 'R$ 109,90' },
-      { q: 1000000, p: 'R$ 159,90' },
+      { q: 1000, p: '$ 1.99' },
+      { q: 2500, p: '$ 2.99' },
+      { q: 5000, p: '$ 3.99' },
+      { q: 10000, p: '$ 5.99' },
+      { q: 25000, p: '$ 7.99' },
+      { q: 50000, p: '$ 9.99' },
+      { q: 100000, p: '$ 14.99' },
+      { q: 150000, p: '$ 16.99' },
+      { q: 200000, p: '$ 19.99' },
+      { q: 250000, p: '$ 24.99' },
+      { q: 500000, p: '$ 29.99' },
+      { q: 1000000, p: '$ 39.99' },
     ],
   };
 
@@ -3839,6 +3838,23 @@
     } catch (_) {}
   })();
 
+  (function prefetchStripeJsForEmbeddedCheckout(){
+    try {
+      const provider = String(window.CARD_PROVIDER || 'pagarme').trim().toLowerCase();
+      const useCheckout = window.STRIPE_USE_CHECKOUT === true || String(window.STRIPE_USE_CHECKOUT || '').toLowerCase() === 'true';
+      const pk = String(window.STRIPE_PUBLISHABLE_KEY || '').trim();
+      if (provider !== 'stripe') return;
+      if (!useCheckout) return;
+      if (!pk) return;
+      const run = () => { ensureStripeJsReady().catch(() => {}); };
+      if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(run, { timeout: 2500 });
+      } else {
+        setTimeout(run, 350);
+      }
+    } catch (_) {}
+  })();
+
   function getStripeEmbeddedPrefetchKey() {
     try {
       const provider = String(window.CARD_PROVIDER || 'pagarme').trim().toLowerCase();
@@ -5258,26 +5274,24 @@
   (function initClientHeader(){
     const fetchBtn = document.getElementById('clientFetchBtn');
     const clientPage = document.getElementById('clientPage');
-    const phoneInputPage = document.getElementById('clientPhoneInputPage');
+    const lookupInputPage = document.getElementById('clientLookupInputPage') || document.getElementById('clientPhoneInputPage');
     const consultBtn = document.getElementById('clientPageConsultBtn');
     const backBtn = document.getElementById('clientPageBackBtn');
     const ordersBox = document.getElementById('clientPageOrders');
-    function applyPhone(v) {
-      phoneFromUrl = v;
-      try { localStorage.setItem('oppus_client_phone', v); } catch (_) {}
-    }
     async function fetchOrders(v){
-      const digits = String(v || '').replace(/\D/g, '');
-      if (!digits) { if (ordersBox) { ordersBox.style.display = 'block'; ordersBox.textContent = 'Digite seu telefone ou número de pedido.'; } return; }
+      const raw = String(v || '').trim();
+      const isEmail = raw.indexOf('@') >= 0;
+      const digits = raw.replace(/\D/g, '');
+      if (!raw) { if (ordersBox) { ordersBox.style.display = 'block'; ordersBox.textContent = 'Enter your email or order number.'; } return; }
       try {
-        if (digits.length >= 5 && digits.length <= 10) {
+        if (!isEmail && digits.length >= 5 && digits.length <= 10) {
           const r = await fetch(`/api/order?orderID=${encodeURIComponent(digits)}`);
           const d = await r.json();
           const o = d && d.order ? d.order : null;
           if (ordersBox) {
             ordersBox.style.display = 'block';
             if (!o) {
-              ordersBox.textContent = 'Pedido não encontrado.';
+              ordersBox.textContent = 'Order not found.';
             } else {
               try {
                 const oid = (o && o.fama24h && o.fama24h.orderId) ? String(o.fama24h.orderId) : ((o && o.fornecedor_social && o.fornecedor_social.orderId) ? String(o.fornecedor_social.orderId) : String(o._id || ''));
@@ -5303,35 +5317,35 @@
                   const yyyy = sp.getUTCFullYear();
                   const hh = String(sp.getUTCHours()).padStart(2,'0');
                   const mn = String(sp.getUTCMinutes()).padStart(2,'0');
-                  paidStr = `${dd}/${mm}/${yyyy} as ${hh}:${mn}`;
+                  paidStr = `${dd}/${mm}/${yyyy} ${hh}:${mn}`;
                 } catch(_) {}
               }
               const fama = o && o.fama24h && o.fama24h.statusPayload ? o.fama24h.statusPayload : null;
               const rawF = String((fama && (fama.status || fama.Status || fama.status_text || fama.statusText || fama.StatusText)) || '').trim();
               const tF = rawF.toLowerCase();
-              const stF = tF ? (/cancel/.test(tF) ? 'Cancelado' : (/partial/.test(tF) ? 'Parcial' : (/pend/.test(tF) ? 'Pendente' : (/process|progress|start|running/.test(tF) ? 'Em andamento' : (/complete|success|finished|done/.test(tF) ? 'Concluído' : rawF))))) : '-';
-              const clsF = stF==='Concluído' ? 'status-green' : (stF==='Cancelado' ? 'status-red' : (stF==='Em andamento' ? 'status-yellow' : (stF==='Pendente' ? 'status-blue' : '')));
+              const stF = tF ? (/cancel/.test(tF) ? 'Canceled' : (/partial/.test(tF) ? 'Partial' : (/pend/.test(tF) ? 'Pending' : (/process|progress|start|running/.test(tF) ? 'In progress' : (/complete|success|finished|done/.test(tF) ? 'Completed' : rawF))))) : '-';
+              const clsF = stF==='Completed' ? 'status-green' : (stF==='Canceled' ? 'status-red' : (stF==='In progress' ? 'status-yellow' : (stF==='Pending' ? 'status-blue' : '')));
               ordersBox.innerHTML = `<div style="padding:10px;border:1px solid var(--border-color);border-radius:10px;margin:6px auto;max-width:620px;color:var(--text-primary);">
                 <div><strong>Status:</strong> <span class="${(String(status).toLowerCase()==='pago'?'status-green':(String(status).toLowerCase()==='pendente'?'status-yellow':''))}">${status}</span></div>
-                <div><strong>Serviço:</strong> <span>${tipo}</span></div>
-                <div><strong>Quantidade:</strong> <span>${qtd}</span></div>
+                <div><strong>Service:</strong> <span>${tipo}</span></div>
+                <div><strong>Quantity:</strong> <span>${qtd}</span></div>
                 <div><strong>Instagram:</strong> <span>${user}</span></div>
-                <div><strong>Pago em:</strong> <span>${paidStr}</span></div>
-                <div><strong>Número do pedido:</strong> <span>${oid || '-'}</span></div>
-                <div><strong>Status do serviço:</strong> <span id="famaStatus_${oid}" class="status-text ${clsF}">${stF}</span></div>
-                <div style="margin-top:8px;">${oid ? `<button type="button" class="continue-button small open-pedido-btn" data-orderid="${encodeURIComponent(oid)}">Detalhes do pedido</button>` : ''}</div>
+                <div><strong>Paid at:</strong> <span>${paidStr}</span></div>
+                <div><strong>Order number:</strong> <span>${oid || '-'}</span></div>
+                <div><strong>Service status:</strong> <span id="famaStatus_${oid}" class="status-text ${clsF}">${stF}</span></div>
+                <div style="margin-top:8px;">${oid ? `<button type="button" class="continue-button small open-pedido-btn" data-orderid="${encodeURIComponent(oid)}">Order details</button>` : ''}</div>
               </div>`;
             }
           }
           return;
         }
-        const resp = await fetch(`/api/checkout-orders?phone=${encodeURIComponent(digits)}`);
+        const resp = await fetch(isEmail ? (`/api/checkout-orders?email=${encodeURIComponent(raw)}`) : (`/api/checkout-orders?phone=${encodeURIComponent(raw)}`));
         const data = await resp.json();
         const list = Array.isArray(data.orders) ? data.orders : [];
         if (ordersBox) {
           ordersBox.style.display = 'block';
           if (!list.length) {
-            ordersBox.textContent = 'Nenhum pedido encontrado.';
+            ordersBox.textContent = 'No orders found.';
           } else {
             if (list.length === 1) {
               try {
@@ -5365,29 +5379,29 @@
                   const yyyy = sp.getUTCFullYear();
                   const hh = String(sp.getUTCHours()).padStart(2,'0');
                   const mn = String(sp.getUTCMinutes()).padStart(2,'0');
-                  paidStr = `${dd}/${mm}/${yyyy} as ${hh}:${mn}`;
+                  paidStr = `${dd}/${mm}/${yyyy} ${hh}:${mn}`;
                 } catch(_) {}
               }
               const fama = o && o.fama24h && o.fama24h.statusPayload ? o.fama24h.statusPayload : null;
               const rawF = String((fama && (fama.status || fama.Status || fama.status_text || fama.statusText || fama.StatusText)) || '').trim();
               const tF = rawF.toLowerCase();
-              const stF = tF ? (/cancel/.test(tF) ? 'Cancelado' : (/partial/.test(tF) ? 'Parcial' : (/pend/.test(tF) ? 'Pendente' : (/process|progress|start|running/.test(tF) ? 'Em andamento' : (/complete|success|finished|done/.test(tF) ? 'Concluído' : rawF))))) : '-';
-              const clsF = stF==='Concluído' ? 'status-green' : (stF==='Cancelado' ? 'status-red' : (stF==='Em andamento' ? 'status-yellow' : (stF==='Pendente' ? 'status-blue' : '')));
+              const stF = tF ? (/cancel/.test(tF) ? 'Canceled' : (/partial/.test(tF) ? 'Partial' : (/pend/.test(tF) ? 'Pending' : (/process|progress|start|running/.test(tF) ? 'In progress' : (/complete|success|finished|done/.test(tF) ? 'Completed' : rawF))))) : '-';
+              const clsF = stF==='Completed' ? 'status-green' : (stF==='Canceled' ? 'status-red' : (stF==='In progress' ? 'status-yellow' : (stF==='Pending' ? 'status-blue' : '')));
               return `<div style="padding:10px;border:1px solid var(--border-color);border-radius:10px;margin:6px auto;max-width:620px;color:var(--text-primary);">
                 <div><strong>Status:</strong> <span class="${(String(status).toLowerCase()==='pago'?'status-green':(String(status).toLowerCase()==='pendente'?'status-yellow':''))}">${status}</span></div>
-                <div><strong>Serviço:</strong> <span>${tipo}</span></div>
-                <div><strong>Quantidade:</strong> <span>${qtd}</span></div>
+                <div><strong>Service:</strong> <span>${tipo}</span></div>
+                <div><strong>Quantity:</strong> <span>${qtd}</span></div>
                 <div><strong>Instagram:</strong> <span>${user}</span></div>
-                <div><strong>Pago em:</strong> <span>${paidStr}</span></div>
-                <div><strong>Número do pedido:</strong> <span>${displayOid}</span></div>
-                <div><strong>Status do serviço:</strong> <span id="famaStatus_${functionalOid}" class="status-text ${clsF}">${stF}</span></div>
-                <div style="margin-top:8px;">${functionalOid ? `<button type="button" class="continue-button small open-pedido-btn" data-orderid="${encodeURIComponent(functionalOid)}">Detalhes do pedido</button>` : ''}</div>
+                <div><strong>Paid at:</strong> <span>${paidStr}</span></div>
+                <div><strong>Order number:</strong> <span>${displayOid}</span></div>
+                <div><strong>Service status:</strong> <span id="famaStatus_${functionalOid}" class="status-text ${clsF}">${stF}</span></div>
+                <div style="margin-top:8px;">${functionalOid ? `<button type="button" class="continue-button small open-pedido-btn" data-orderid="${encodeURIComponent(functionalOid)}">Order details</button>` : ''}</div>
               </div>`;
             }).join('');
           }
         }
       } catch (_) {
-        if (ordersBox) { ordersBox.style.display = 'block'; ordersBox.textContent = 'Erro ao buscar pedidos.'; }
+        if (ordersBox) { ordersBox.style.display = 'block'; ordersBox.textContent = 'Failed to fetch orders.'; }
       }
     }
     function showClientPage(){ if (clientPage) { clientPage.style.display = 'block'; } }
@@ -5402,7 +5416,6 @@
         }
       });
     }
-    attachPhoneMask(phoneInputPage);
     // Fallback de delegação caso o botão não esteja disponível no momento do carregamento
     document.addEventListener('click', (ev) => {
       const t = ev.target;
@@ -5418,12 +5431,12 @@
     if (backBtn) backBtn.addEventListener('click', hideClientPage);
     if (consultBtn) {
       consultBtn.addEventListener('click', async () => {
-        const raw = (phoneInputPage && phoneInputPage.value && phoneInputPage.value.trim()) || '';
-        const v = onlyDigits(raw);
-        if (!v) { alert('Digite seu telefone ou número do pedido.'); return; }
-        try { localStorage.setItem('oppus_client_phone', v); } catch (_) {}
-        const digits = v;
-        if (digits.length >= 5 && digits.length <= 10) {
+        const raw = (lookupInputPage && lookupInputPage.value && lookupInputPage.value.trim()) || '';
+        if (!raw) { alert('Enter your email or order number.'); return; }
+        try { localStorage.setItem('oppus_client_lookup', raw); } catch (_) {}
+        const isEmail = raw.indexOf('@') >= 0;
+        const digits = raw.replace(/\D/g, '');
+        if (!isEmail && digits.length >= 5 && digits.length <= 10) {
           try {
             const r = await fetch(`/api/order?orderID=${encodeURIComponent(digits)}`);
             const d = await r.json();
@@ -5436,7 +5449,7 @@
             }
           } catch(_) {}
         }
-        fetchOrders(v);
+        fetchOrders(raw);
       });
     }
   async function openPedido(orderID) {
@@ -5455,8 +5468,8 @@
       }
     });
     try {
-      const stored = localStorage.getItem('oppus_client_phone');
-      if (stored && phoneInputPage) phoneInputPage.value = stored;
+      const stored = localStorage.getItem('oppus_client_lookup') || localStorage.getItem('oppus_client_phone');
+      if (stored && lookupInputPage) lookupInputPage.value = stored;
     } catch (_) {}
   // Termos de uso
   const termsLink = document.getElementById('termsLink');
@@ -5529,7 +5542,9 @@
 
   if (commentsBtn && commentsModal) {
     commentsBtn.addEventListener('click', function(e){
-      try { e.stopPropagation(); } catch(_) {}
+      try { if (e && typeof e.preventDefault === 'function') e.preventDefault(); } catch(_) {}
+      try { if (e && typeof e.stopPropagation === 'function') e.stopPropagation(); } catch(_) {}
+      try { if (e && typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation(); } catch(_) {}
       suppressOpenPostModalOnce = true;
       setTimeout(function(){ suppressOpenPostModalOnce = false; }, 500);
       try {
@@ -5539,7 +5554,9 @@
       } catch(_) {}
       commentsModal.style.display = 'flex';
       if (commentsVideo) {
-        commentsVideo.currentTime = 0;
+        try { commentsVideo.pause(); } catch(_) {}
+        try { commentsVideo.currentTime = 0; } catch(_) {}
+        try { commentsVideo.load(); } catch(_) {}
         try { commentsVideo.play(); } catch(e) { console.log('Video play failed', e); }
       }
     });

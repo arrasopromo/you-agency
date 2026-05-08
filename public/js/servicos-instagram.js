@@ -153,46 +153,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const tabelaSeguidores = {
     mistos: [
-      { q: 150, p: 'R$ 7,90' },
-      { q: 300, p: 'R$ 12,90' },
-      { q: 500, p: 'R$ 16,90' },
-      { q: 700, p: 'R$ 22,90' },
-      { q: 1000, p: 'R$ 29,90' },
-      { q: 2000, p: 'R$ 49,90' },
-      { q: 3000, p: 'R$ 79,90' },
-      { q: 4000, p: 'R$ 99,90' },
-      { q: 5000, p: 'R$ 129,90' },
-      { q: 7500, p: 'R$ 169,90' },
-      { q: 10000, p: 'R$ 229,90' },
-      { q: 15000, p: 'R$ 329,90' },
+      { q: 150, p: '$ 2.99' },
+      { q: 300, p: '$ 4.99' },
+      { q: 500, p: '$ 5.99' },
+      { q: 700, p: '$ 7.99' },
+      { q: 1000, p: '$ 8.99' },
+      { q: 2000, p: '$ 14.99' },
+      { q: 3000, p: '$ 19.99' },
+      { q: 4000, p: '$ 24.99' },
+      { q: 5000, p: '$ 29.99' },
+      { q: 7500, p: '$ 39.99' },
+      { q: 10000, p: '$ 49.99' },
+      { q: 15000, p: '$ 69.99' },
     ],
     brasileiros: [
-      { q: 150, p: 'R$ 12,90' },
-      { q: 300, p: 'R$ 24,90' },
-      { q: 500, p: 'R$ 39,90' },
-      { q: 700, p: 'R$ 49,90' },
-      { q: 1000, p: 'R$ 79,90' },
-      { q: 2000, p: 'R$ 129,90' },
-      { q: 3000, p: 'R$ 179,90' },
-      { q: 4000, p: 'R$ 249,90' },
-      { q: 5000, p: 'R$ 279,90' },
-      { q: 7500, p: 'R$ 399,90' },
-      { q: 10000, p: 'R$ 499,90' },
-      { q: 15000, p: 'R$ 799,90' },
+      { q: 150, p: '$ 2.99' },
+      { q: 300, p: '$ 4.99' },
+      { q: 500, p: '$ 5.99' },
+      { q: 700, p: '$ 7.99' },
+      { q: 1000, p: '$ 8.99' },
+      { q: 2000, p: '$ 14.99' },
+      { q: 3000, p: '$ 19.99' },
+      { q: 4000, p: '$ 24.99' },
+      { q: 5000, p: '$ 29.99' },
+      { q: 7500, p: '$ 39.99' },
+      { q: 10000, p: '$ 49.99' },
+      { q: 15000, p: '$ 69.99' },
     ],
     organicos: [
-      { q: 150, p: 'R$ 39,90' },
-      { q: 300, p: 'R$ 49,90' },
-      { q: 500, p: 'R$ 69,90' },
-      { q: 700, p: 'R$ 89,90' },
-      { q: 1000, p: 'R$ 129,90' },
-      { q: 2000, p: 'R$ 199,90' },
-      { q: 3000, p: 'R$ 249,90' },
-      { q: 4000, p: 'R$ 329,90' },
-      { q: 5000, p: 'R$ 499,90' },
-      { q: 7500, p: 'R$ 599,90' },
-      { q: 10000, p: 'R$ 899,90' },
-      { q: 15000, p: 'R$ 1.299,90' },
+      { q: 150, p: '$ 8.90' },
+      { q: 300, p: '$ 10.90' },
+      { q: 500, p: '$ 15.90' },
+      { q: 1000, p: '$ 27.90' },
+      { q: 2000, p: '$ 42.90' },
+      { q: 3000, p: '$ 53.90' },
+      { q: 4000, p: '$ 70.90' },
+      { q: 5000, p: '$ 106.90' },
+      { q: 7500, p: '$ 128.90' },
+      { q: 10000, p: '$ 192.90' },
+      { q: 15000, p: '$ 277.90' },
     ],
   };
 
@@ -227,62 +226,62 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const tabelaCurtidas = {
     mistos: [
-      { q: 150, p: 'R$ 4,90' },
-      { q: 300, p: 'R$ 7,90' },
-      { q: 500, p: 'R$ 9,90' },
-      { q: 700, p: 'R$ 14,90' },
-      { q: 1000, p: 'R$ 19,90' },
-      { q: 2000, p: 'R$ 24,90' },
-      { q: 3000, p: 'R$ 29,90' },
-      { q: 4000, p: 'R$ 34,90' },
-      { q: 5000, p: 'R$ 39,90' },
-      { q: 7500, p: 'R$ 49,90' },
-      { q: 10000, p: 'R$ 69,90' },
-      { q: 15000, p: 'R$ 89,90' },
+      { q: 150, p: '$ 1.99' },
+      { q: 300, p: '$ 2.99' },
+      { q: 500, p: '$ 3.99' },
+      { q: 700, p: '$ 4.99' },
+      { q: 1000, p: '$ 5.99' },
+      { q: 2000, p: '$ 7.99' },
+      { q: 3000, p: '$ 9.99' },
+      { q: 4000, p: '$ 11.99' },
+      { q: 5000, p: '$ 13.99' },
+      { q: 7500, p: '$ 16.99' },
+      { q: 10000, p: '$ 19.99' },
+      { q: 15000, p: '$ 24.99' },
     ],
     curtidas_brasileiras: [
-      { q: 150, p: 'R$ 5,90' },
-      { q: 300, p: 'R$ 9,90' },
-      { q: 500, p: 'R$ 14,90' },
-      { q: 700, p: 'R$ 29,90' },
-      { q: 1000, p: 'R$ 39,90' },
-      { q: 2000, p: 'R$ 49,90' },
-      { q: 3000, p: 'R$ 59,90' },
-      { q: 4000, p: 'R$ 69,90' },
-      { q: 5000, p: 'R$ 79,90' },
-      { q: 7500, p: 'R$ 109,90' },
-      { q: 10000, p: 'R$ 139,90' },
-      { q: 15000, p: 'R$ 199,90' },
+      { q: 150, p: '$ 1.99' },
+      { q: 300, p: '$ 2.99' },
+      { q: 500, p: '$ 3.99' },
+      { q: 700, p: '$ 4.99' },
+      { q: 1000, p: '$ 5.99' },
+      { q: 2000, p: '$ 7.99' },
+      { q: 3000, p: '$ 9.99' },
+      { q: 4000, p: '$ 11.99' },
+      { q: 5000, p: '$ 13.99' },
+      { q: 7500, p: '$ 16.99' },
+      { q: 10000, p: '$ 19.99' },
+      { q: 15000, p: '$ 24.99' },
     ],
     organicos: [
-      { q: 150, p: 'R$ 16,90' },
-      { q: 300, p: 'R$ 28,90' },
-      { q: 500, p: 'R$ 49,90' },
-      { q: 1000, p: 'R$ 69,90' },
-      { q: 2000, p: 'R$ 104,90' },
-      { q: 3000, p: 'R$ 139,90' },
-      { q: 4000, p: 'R$ 174,90' },
-      { q: 5000, p: 'R$ 224,90' },
-      { q: 7500, p: 'R$ 279,90' },
-      { q: 10000, p: 'R$ 349,90' },
-      { q: 15000, p: 'R$ 449,90' },
+      { q: 150, p: '$ 4.99' },
+      { q: 300, p: '$ 7.99' },
+      { q: 500, p: '$ 12.99' },
+      { q: 1000, p: '$ 16.99' },
+      { q: 2000, p: '$ 24.99' },
+      { q: 3000, p: '$ 34.99' },
+      { q: 4000, p: '$ 44.99' },
+      { q: 5000, p: '$ 54.99' },
+      { q: 7500, p: '$ 69.99' },
+      { q: 10000, p: '$ 89.99' },
+      { q: 15000, p: '$ 119.99' },
     ],
   };
 
   const tabelaVisualizacoes = {
     visualizacoes_reels: [
-      { q: 1000, p: 'R$ 4,90' },
-      { q: 2500, p: 'R$ 9,90' },
-      { q: 5000, p: 'R$ 14,90' },
-      { q: 10000, p: 'R$ 19,90' },
-      { q: 25000, p: 'R$ 24,90' },
-      { q: 50000, p: 'R$ 34,90' },
-      { q: 100000, p: 'R$ 49,90' },
-      { q: 150000, p: 'R$ 59,90' },
-      { q: 200000, p: 'R$ 69,90' },
-      { q: 250000, p: 'R$ 89,90' },
-      { q: 500000, p: 'R$ 109,90' },
-      { q: 1000000, p: 'R$ 159,90' }
+      { q: 1000, p: '$ 1.99' },
+      { q: 2500, p: '$ 2.99' },
+      { q: 5000, p: '$ 3.99' },
+      { q: 10000, p: '$ 5.99' },
+      { q: 25000, p: '$ 7.99' },
+      { q: 50000, p: '$ 9.99' },
+      { q: 100000, p: '$ 14.99' },
+      { q: 150000, p: '$ 16.99' },
+      { q: 200000, p: '$ 19.99' },
+      { q: 250000, p: '$ 24.99' },
+      { q: 500000, p: '$ 29.99' },
+      { q: 1000000, p: '$ 39.99' }
     ]
   };
 
@@ -361,6 +360,68 @@ document.addEventListener('DOMContentLoaded', function() {
   // Inputs de contato
   const contactPhoneInput = document.getElementById('contactPhoneInput');
   const contactEmailInput = document.getElementById('contactEmailInput');
+
+  function getPhoneDigitsLen(v) {
+    try {
+      const d = onlyDigits(String(v || ''));
+      return d ? d.length : 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  (function applyDefaultDialCodeOnce() {
+    try {
+      if (!contactPhoneInput) return;
+      if (window.__oppus_phone_dial_loaded === true) return;
+      window.__oppus_phone_dial_loaded = true;
+
+      const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const timeoutId = setTimeout(() => { try { ctrl && ctrl.abort(); } catch (_) {} }, 1200);
+      fetch('/api/geo/phone-default', { signal: ctrl ? ctrl.signal : undefined })
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          const rawDial = data ? String(data.dial || data.dialPrefix || '').trim() : '';
+          const rawCalling = data ? String(data.callingCode || '').trim() : '';
+          const rawCountryCode = data ? String(data.countryCode || '').trim().toUpperCase() : '';
+          const fallback = rawCalling ? `+${rawCalling}` : (rawDial || '');
+          let prefix = fallback.startsWith('+') ? fallback : (fallback ? `+${fallback}` : '');
+          let countryCode = rawCountryCode;
+          if (!prefix) {
+            const tz = (function () {
+              try { return String(Intl.DateTimeFormat().resolvedOptions().timeZone || '').trim(); } catch (_) { return ''; }
+            })();
+            const lang = (function () {
+              try { return String(navigator.language || '').trim(); } catch (_) { return ''; }
+            })();
+            const looksBr = tz === 'America/Sao_Paulo' || /^pt(-BR)?$/i.test(lang) || /^pt-BR/i.test(lang);
+            if (looksBr) {
+              prefix = '+55';
+              countryCode = 'BR';
+            }
+          }
+          if (!prefix) return;
+
+          if (!contactPhoneInput.value || !String(contactPhoneInput.value).trim()) {
+            contactPhoneInput.value = `${prefix} `;
+          }
+          const ph = String(contactPhoneInput.placeholder || '').trim();
+          const shouldUpdatePlaceholder =
+            !ph ||
+            ph === '(00) 00000-0000' ||
+            ph === '+1 555 123 456' ||
+            /\b555\s+123\s+456\b/.test(ph);
+          if (shouldUpdatePlaceholder) {
+            contactPhoneInput.placeholder = (countryCode === 'BR')
+              ? `${prefix} 11 98765 4321`
+              : `${prefix} 555 123 456`;
+          }
+          try { contactPhoneInput.maxLength = 24; } catch (_) {}
+        })
+        .catch(() => {})
+        .finally(() => { clearTimeout(timeoutId); });
+    } catch (_) {}
+  })();
 
   // --- Helpers ---
   function parsePrecoToCents(precoStr) {
@@ -535,6 +596,22 @@ document.addEventListener('DOMContentLoaded', function() {
   let stripeEmbeddedCheckout = null;
   let stripeEmbeddedMountedKey = '';
   let stripeEmbeddedRefreshTimer = null;
+  let stripeEmbeddedCreateCtrl = null;
+  let stripeEmbeddedCreateSeq = 0;
+
+  function fnv1a36(input) {
+    try {
+      let h = 0x811c9dc5;
+      const s = String(input || '');
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+      }
+      return h.toString(36);
+    } catch (_) {
+      return String(Math.random()).slice(2);
+    }
+  }
 
   function getStripeEmbeddedCheckoutKey() {
     try {
@@ -542,20 +619,27 @@ document.addEventListener('DOMContentLoaded', function() {
       const usernameInputRaw = (usernameCheckoutInput && usernameCheckoutInput.value && usernameCheckoutInput.value.trim()) || '';
       const usernameInputNorm = normalizeInstagramUsername(usernameInputRaw);
       const instagramUsernameFinal = usernamePreview || usernameInputNorm || '';
-      const phoneValue = onlyDigits(contactPhoneInput ? contactPhoneInput.value : '');
-      let emailValue = contactEmailInput ? contactEmailInput.value.trim() : '';
-      if (emailValue && !emailValue.includes('@')) emailValue = '';
       const tipo = tipoSelect ? String(tipoSelect.value || '') : '';
       const qtdSelectVal = qtdSelect ? String(qtdSelect.value || '0') : '0';
       const qtd = parseInt(qtdSelectVal, 10);
       const totalCents = calculateTotalCents();
+      const coupon = String(window.couponCode || '').trim().toUpperCase();
+      let promosKey = '';
+      try {
+        const promos = (typeof getSelectedPromos === 'function') ? getSelectedPromos() : [];
+        promosKey = (Array.isArray(promos) ? promos : [])
+          .map(p => `${String(p?.key || '')}:${String(p?.qty ?? 1)}`)
+          .filter(Boolean)
+          .sort()
+          .join(',');
+      } catch (_) { promosKey = ''; }
       return [
         String(instagramUsernameFinal || ''),
-        String(phoneValue || ''),
-        String(emailValue || ''),
         String(tipo || ''),
         String(qtd || 0),
-        String(totalCents || 0)
+        String(totalCents || 0),
+        String(coupon || ''),
+        String(promosKey || '')
       ].join('|');
     } catch (_) {
       return '';
@@ -577,26 +661,24 @@ document.addEventListener('DOMContentLoaded', function() {
         if (stripeEmbeddedMounted && stripeEmbeddedCheckout && stripeEmbeddedMountedKey && stripeEmbeddedMountedKey === key) return;
         try { window.__oppus_stripe_checkout_key = key; } catch (_) {}
         try { window.__oppus_stripe_auto_done = false; } catch (_) {}
-        if (stripeEmbeddedMounted && stripeEmbeddedCheckout) {
-          try { stripeEmbeddedCheckout.destroy(); } catch (_) {}
-          stripeEmbeddedCheckout = null;
-          stripeEmbeddedMounted = false;
-          stripeEmbeddedMountedKey = '';
-          try {
-            const stripeEmbeddedMount = document.getElementById('stripeEmbeddedCheckout');
-            if (stripeEmbeddedMount) stripeEmbeddedMount.innerHTML = '<div style="padding:14px; text-align:center; color:#6b7280; font-size:0.95rem;">Atualizando valor do checkout da Stripe...</div>';
-          } catch (_) {}
-        }
-        if (!window.__oppus_stripe_auto_inflight && !window.__oppus_stripe_auto_done && !stripeEmbeddedMounted) {
-          window.__oppus_stripe_auto_inflight = true;
-          Promise.resolve()
-            .then(() => handleCardPayment(null, { auto: true }))
-            .catch(() => {})
-            .finally(() => { window.__oppus_stripe_auto_inflight = false; });
-        }
+        Promise.resolve()
+          .then(() => handleCardPayment(null, { auto: true }))
+          .catch(() => {});
       } catch (_) {}
-    }, 350);
+    }, 650);
   }
+
+  try {
+    const onContactChange = () => { try { scheduleStripeEmbeddedCheckoutRefresh(); } catch (_) {} };
+    if (contactPhoneInput) {
+      contactPhoneInput.addEventListener('blur', onContactChange);
+      contactPhoneInput.addEventListener('change', onContactChange);
+    }
+    if (contactEmailInput) {
+      contactEmailInput.addEventListener('blur', onContactChange);
+      contactEmailInput.addEventListener('change', onContactChange);
+    }
+  } catch (_) {}
 
   async function ensureStripeMounted() {
     const provider = String(window.CARD_PROVIDER || 'pagarme').trim().toLowerCase();
@@ -686,12 +768,23 @@ document.addEventListener('DOMContentLoaded', function() {
     return !!window.Stripe;
   }
 
+  try {
+    const provider = String(window.CARD_PROVIDER || 'pagarme').trim().toLowerCase();
+    const useCheckout = window.STRIPE_USE_CHECKOUT === true || String(window.STRIPE_USE_CHECKOUT || '').toLowerCase() === 'true';
+    const publishableKey = String(window.STRIPE_PUBLISHABLE_KEY || '').trim();
+    if (provider === 'stripe' && useCheckout && publishableKey) {
+      setTimeout(() => { try { ensureStripeJsReady(); } catch (_) {} }, 0);
+    }
+  } catch (_) {}
+
   async function mountStripeEmbeddedCheckout(clientSecret) {
     const wrapper = document.getElementById('stripeEmbeddedWrapper');
     const mount = document.getElementById('stripeEmbeddedCheckout');
     if (!wrapper || !mount) throw new Error('Embedded checkout area not found.');
     wrapper.style.display = 'block';
-    mount.innerHTML = '<div style="padding:14px; text-align:center; color:#6b7280; font-size:0.95rem;">Loading Stripe checkout...</div>';
+    if (!stripeEmbeddedMounted || !stripeEmbeddedCheckout) {
+      mount.innerHTML = '<div style="padding:14px; text-align:center; color:#6b7280; font-size:0.95rem;">Loading Stripe checkout...</div>';
+    }
     const ok = await ensureStripeJsReady();
     if (!ok) throw new Error('Unable to load Stripe. Reload the page and try again.');
     const publishableKey = String(window.STRIPE_PUBLISHABLE_KEY || '').trim();
@@ -699,17 +792,36 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!stripe || typeof stripe.initEmbeddedCheckout !== 'function') {
       throw new Error('Your Stripe integration does not support embedded checkout.');
     }
-    if (stripeEmbeddedMounted && stripeEmbeddedCheckout) {
-      try { stripeEmbeddedCheckout.destroy(); } catch (_) {}
-      stripeEmbeddedCheckout = null;
-      stripeEmbeddedMounted = false;
-    }
-    mount.innerHTML = '';
     const fields = document.getElementById('cardPaymentForm');
     if (fields) fields.style.display = 'none';
-    stripeEmbeddedCheckout = await stripe.initEmbeddedCheckout({ clientSecret: String(clientSecret || '').trim() });
-    stripeEmbeddedCheckout.mount('#stripeEmbeddedCheckout');
-    stripeEmbeddedMounted = true;
+    const secret = String(clientSecret || '').trim();
+    if (!secret) throw new Error('Embedded checkout did not return the required data.');
+
+    if (stripeEmbeddedMounted && stripeEmbeddedCheckout) {
+      try {
+        const existingNext = document.getElementById('stripeEmbeddedCheckoutNext');
+        if (existingNext && existingNext.parentNode) existingNext.parentNode.removeChild(existingNext);
+      } catch (_) {}
+      const next = document.createElement('div');
+      next.id = 'stripeEmbeddedCheckoutNext';
+      mount.insertAdjacentElement('afterend', next);
+      const nextCheckout = await stripe.initEmbeddedCheckout({ clientSecret: secret });
+      nextCheckout.mount('#stripeEmbeddedCheckoutNext');
+      try { stripeEmbeddedCheckout.destroy(); } catch (_) {}
+      stripeEmbeddedCheckout = nextCheckout;
+      stripeEmbeddedMounted = true;
+      try {
+        if (mount && mount.parentNode) mount.parentNode.removeChild(mount);
+        next.id = 'stripeEmbeddedCheckout';
+      } catch (_) {
+        try { next.id = 'stripeEmbeddedCheckout'; } catch (_) {}
+      }
+    } else {
+      mount.innerHTML = '';
+      stripeEmbeddedCheckout = await stripe.initEmbeddedCheckout({ clientSecret: secret });
+      stripeEmbeddedCheckout.mount('#stripeEmbeddedCheckout');
+      stripeEmbeddedMounted = true;
+    }
     try { stripeEmbeddedMountedKey = getStripeEmbeddedCheckoutKey() || ''; } catch(_) { stripeEmbeddedMountedKey = ''; }
   }
 
@@ -1172,6 +1284,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       })();
 
+      try {
+        if (isStripe && isStripeCheckout) {
+          const key = getStripeEmbeddedCheckoutKey();
+          const bid = (typeof getBrowserSessionId === 'function') ? getBrowserSessionId() : '';
+          if (key && bid) {
+            correlationID = `EC_${fnv1a36(`${bid}|${key}`)}`;
+          }
+        }
+      } catch (_) {}
+
       const payload = {
         correlationID,
         installments: Number(installments) || 1,
@@ -1240,7 +1362,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (useCheckout) {
           if (isAuto) {
             const emailOk = !!(emailValue && emailValue.includes('@'));
-            const phoneOk = !!(phoneValue && phoneValue.length >= 10);
+            const phoneOk = !!(phoneValue && phoneValue.length >= 8);
             if (!emailOk || !phoneOk) {
               try {
                 const wrapper = document.getElementById('stripeEmbeddedWrapper');
@@ -1262,7 +1384,12 @@ document.addEventListener('DOMContentLoaded', function() {
           }
 
           stripePayload.checkoutUiMode = 'embedded';
-          const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+          const reqSeq = ++stripeEmbeddedCreateSeq;
+          if (stripeEmbeddedCreateCtrl) {
+            try { stripeEmbeddedCreateCtrl.abort(); } catch (_) {}
+          }
+          stripeEmbeddedCreateCtrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+          const ctrl = stripeEmbeddedCreateCtrl;
           const timeoutId = ctrl ? setTimeout(() => { try { ctrl.abort(); } catch (_) {} }, 45000) : null;
           let checkoutResp = null;
           try {
@@ -1272,14 +1399,17 @@ document.addEventListener('DOMContentLoaded', function() {
               body: JSON.stringify(stripePayload),
               signal: ctrl ? ctrl.signal : undefined
             });
-          } catch (_) {
+          } catch (e) {
+            if (ctrl && ctrl.signal && ctrl.signal.aborted) return;
             throw new Error('Failed to connect to the server. Reload the page and try again.');
           } finally {
             if (timeoutId) clearTimeout(timeoutId);
           }
+          if (reqSeq !== stripeEmbeddedCreateSeq) return;
 
           let checkoutData = null;
           try { checkoutData = await checkoutResp.json(); } catch (_) { checkoutData = {}; }
+          if (reqSeq !== stripeEmbeddedCreateSeq) return;
           if (!checkoutResp.ok) {
             const errCode = String(checkoutData?.error || '').trim().toLowerCase();
             if (errCode === 'invalid_cpf') {
@@ -1309,6 +1439,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           const clientSecret = String(checkoutData?.clientSecret || checkoutData?.client_secret || '').trim();
           if (!clientSecret) throw new Error('Embedded checkout did not return the required data.');
+          if (reqSeq !== stripeEmbeddedCreateSeq) return;
           await mountStripeEmbeddedCheckout(clientSecret);
           try { window.__oppus_stripe_auto_done = true; } catch (_) {}
           return;
@@ -1607,7 +1738,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (emailErrorMsg) emailErrorMsg.style.display = 'none';
       }
 
-      if (!phone || phone.length < 10) {
+      const phoneDigitsLen = getPhoneDigitsLen(phone);
+      if (!phoneDigitsLen || phoneDigitsLen < 8) {
         showStatusMessageCheckout('Please enter a valid phone number.', 'error');
         if (window.goToStep) window.goToStep(2);
 
@@ -2194,18 +2326,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (!Array.isArray(likesTable) || likesTable.length === 0) {
       likesTable = [
-        { q: 150, price: 'R$ 4,90' },
-        { q: 300, price: 'R$ 9,90' },
-        { q: 500, price: 'R$ 14,90' },
-        { q: 700, price: 'R$ 19,90' },
-        { q: 1000, price: 'R$ 24,90' },
-        { q: 2000, price: 'R$ 34,90' },
-        { q: 3000, price: 'R$ 49,90' },
-        { q: 4000, price: 'R$ 59,90' },
-        { q: 5000, price: 'R$ 69,90' },
-        { q: 7500, price: 'R$ 89,90' },
-        { q: 10000, price: 'R$ 109,90' },
-        { q: 15000, price: 'R$ 159,90' }
+        { q: 150, price: '$ 1.99' },
+        { q: 300, price: '$ 2.99' },
+        { q: 500, price: '$ 3.99' },
+        { q: 700, price: '$ 4.99' },
+        { q: 1000, price: '$ 5.99' },
+        { q: 2000, price: '$ 7.99' },
+        { q: 3000, price: '$ 9.99' },
+        { q: 4000, price: '$ 11.99' },
+        { q: 5000, price: '$ 13.99' },
+        { q: 7500, price: '$ 16.99' },
+        { q: 10000, price: '$ 19.99' },
+        { q: 15000, price: '$ 24.99' }
       ];
     }
     try {
@@ -2268,18 +2400,18 @@ document.addEventListener('DOMContentLoaded', function() {
   if (likesQtyEl) updateLikesPrice(Number(likesQtyEl.textContent || 150));
 
   const viewsTable = [
-    { q: 1000, price: '$ 4.90' },
-    { q: 2500, price: '$ 9.90' },
-    { q: 5000, price: '$ 14.90' },
-    { q: 10000, price: '$ 19.90' },
-    { q: 25000, price: '$ 24.90' },
-    { q: 50000, price: '$ 34.90' },
-    { q: 100000, price: '$ 49.90' },
-    { q: 150000, price: '$ 59.90' },
-    { q: 200000, price: '$ 69.90' },
-    { q: 250000, price: '$ 89.90' },
-    { q: 500000, price: '$ 109.90' },
-    { q: 1000000, price: '$ 159.90' }
+    { q: 1000, price: '$ 1.99' },
+    { q: 2500, price: '$ 2.99' },
+    { q: 5000, price: '$ 3.99' },
+    { q: 10000, price: '$ 5.99' },
+    { q: 25000, price: '$ 7.99' },
+    { q: 50000, price: '$ 9.99' },
+    { q: 100000, price: '$ 14.99' },
+    { q: 150000, price: '$ 16.99' },
+    { q: 200000, price: '$ 19.99' },
+    { q: 250000, price: '$ 24.99' },
+    { q: 500000, price: '$ 29.99' },
+    { q: 1000000, price: '$ 39.99' }
   ];
   const viewsQtyEl = document.getElementById('viewsQty');
   const viewsDec = document.getElementById('viewsDec');
@@ -3952,6 +4084,19 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (_) {}
   }
 
+  function updateExclusiveToolVisibility(tipo) {
+    try {
+      const el = document.getElementById('ferramentaExclusivaSection');
+      if (!el) return;
+      if (isCurtidasContext || isViewsContext) {
+        el.style.display = 'none';
+        return;
+      }
+      const t = String(tipo || (tipoSelect ? tipoSelect.value : '') || '').trim();
+      el.style.display = (t === 'mistos') ? '' : 'none';
+    } catch (_) {}
+  }
+
   if (tipoSelect) {
     tipoSelect.addEventListener('change', () => {
       const tipo = tipoSelect.value;
@@ -3960,6 +4105,7 @@ document.addEventListener('DOMContentLoaded', function() {
       renderTipoDescription(tipo);
       updatePerfilVisibility();
       updateWarrantyVisibility();
+      updateExclusiveToolVisibility(tipo);
       try {
         refreshLikesTable();
         applyLikesPromoVariant();
@@ -3984,6 +4130,8 @@ document.addEventListener('DOMContentLoaded', function() {
       scrollToCardsMobile(delayMs);
     });
   }
+
+  try { updateExclusiveToolVisibility(tipoSelect ? tipoSelect.value : ''); } catch (_) {}
 
   function popularQuantidades(tipo) {
     if (!qtdSelect) return;
@@ -4062,9 +4210,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Removido: esconder em cliques/focus globais para evitar sumir imediatamente ao carregar
   }
 
-  if (contactPhoneInput) attachPhoneMask(contactPhoneInput);
-  if (document.getElementById('checkoutPhoneInput')) attachPhoneMask(document.getElementById('checkoutPhoneInput'));
-
   // --- Step Navigation Listeners ---
   const backToStep1Btn = document.getElementById('backToStep1Btn');
   if (backToStep1Btn) {
@@ -4092,7 +4237,8 @@ document.addEventListener('DOMContentLoaded', function() {
               if (emailErrorMsg) emailErrorMsg.style.display = 'none';
           }
           
-          if (!phone || phone.length < 10) {
+          const digitsLen = getPhoneDigitsLen(phone);
+          if (!digitsLen || digitsLen < 8) {
               showStatusMessageCheckout('Please enter a valid phone number.', 'error');
               if (contactPhoneInput) contactPhoneInput.focus();
               return;
@@ -4213,7 +4359,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (commentsBtn && commentsModal) {
     commentsBtn.addEventListener('click', function(e){
-      try { e.stopPropagation(); } catch(_) {}
+      try { if (e && typeof e.preventDefault === 'function') e.preventDefault(); } catch(_) {}
+      try { if (e && typeof e.stopPropagation === 'function') e.stopPropagation(); } catch(_) {}
+      try { if (e && typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation(); } catch(_) {}
       suppressOpenPostModalOnce = true;
       setTimeout(function(){ suppressOpenPostModalOnce = false; }, 500);
       try {
@@ -4223,7 +4371,9 @@ document.addEventListener('DOMContentLoaded', function() {
       } catch(_) {}
       commentsModal.style.display = 'flex';
       if (commentsVideo) {
-        commentsVideo.currentTime = 0;
+        try { commentsVideo.pause(); } catch(_) {}
+        try { commentsVideo.currentTime = 0; } catch(_) {}
+        try { commentsVideo.load(); } catch(_) {}
         try { commentsVideo.play(); } catch(e) { console.log('Video play failed', e); }
       }
     });
