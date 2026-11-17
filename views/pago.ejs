@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Completa tu pago | You Agency</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <link href="/css/style.css?v=20261111" rel="stylesheet" />
+  <style>
+    .pago-wrap { max-width: 560px; margin: 0 auto; padding: 96px 16px 48px; }
+    .pago-card { background: var(--bg-secondary, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 16px; padding: 22px 20px; }
+    .pago-title { font-size: 1.35rem; font-weight: 800; margin: 0 0 4px; color: var(--text-primary, #111827); text-align: center; }
+    .pago-sub { font-size: 0.95rem; color: var(--text-secondary, #6b7280); text-align: center; margin: 0 0 18px; }
+    .pago-total { text-align: center; font-size: 2rem; font-weight: 800; color: var(--text-primary, #111827); margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
+    .pago-total small { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary, #6b7280); }
+    .pago-item { font-size: 0.9rem; color: var(--text-secondary, #6b7280); text-align: center; margin-bottom: 18px; }
+    .pago-campo { border: 1px solid var(--border-color, #e5e7eb); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .pago-campo .rot { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary, #6b7280); }
+    .pago-campo .val { font-size: 1.05rem; font-weight: 700; color: var(--text-primary, #111827); word-break: break-all; font-variant-numeric: tabular-nums; }
+    .pago-copiar { flex: none; border: 0; border-radius: 10px; padding: 8px 12px; font-weight: 700; cursor: pointer; background: #111827; color: #fff; font-size: 0.85rem; }
+    .pago-passos { margin: 16px 0 0; padding-left: 20px; font-size: 0.9rem; line-height: 1.6; color: var(--text-primary, #111827); }
+    .pago-estado { margin-top: 18px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.92rem; color: var(--text-secondary, #6b7280); }
+    .pago-spin { width: 18px; height: 18px; border: 3px solid rgba(17,24,39,0.12); border-top-color: #16a34a; border-radius: 50%; animation: pagoGiro 1s linear infinite; }
+    .pago-ok { color: #15803d; font-weight: 700; }
+    .pago-barcode { display: block; max-width: 100%; margin: 6px auto 12px; background: #fff; padding: 8px; border-radius: 8px; }
+    .pago-parcial { margin: -4px 0 14px; padding: 10px 12px; border-radius: 10px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: 0.9rem; line-height: 1.45; text-align: center; }
+    .pago-aviso { margin-top: 14px; font-size: 0.82rem; color: var(--text-secondary, #6b7280); text-align: center; }
+    @keyframes pagoGiro { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="theme-light">
+  <%- include('partials/menu', { language: 'es' }) %>
+  <%
+    const metodo = String(xpag.method || 'SPEI').toUpperCase();
+    const total = (function (x) { var d = x % 100 === 0 ? 0 : 2; return (x / 100).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); })(Math.round(Number(valueCents || 0)));
+    const unidade = /curtid|likes/i.test(String(tipo || '')) ? 'me gusta' : (/visualiz|views/i.test(String(tipo || '')) ? 'visualizaciones' : 'seguidores');
+    const expira = xpag.expiresAt ? new Date(xpag.expiresAt) : null;
+    const aberta = typeof clabeAberta !== 'undefined' && clabeAberta;
+    const recebidoC = typeof recebidoCents !== 'undefined' ? Number(recebidoCents || 0) : 0;
+    const fmtM = (c) => (function (x) { var d = x % 100 === 0 ? 0 : 2; return (x / 100).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); })(Math.round(Number(c || 0)));
+    const restanteC = Math.max(0, Number(valueCents || 0) - recebidoC);
+    const parcial = aberta && recebidoC > 0 && restanteC > 0;
+    const aPagar = parcial ? fmtM(restanteC) : total;
+  %>
+  <main class="pago-wrap">
+    <div class="pago-card">
+      <h1 class="pago-title"><%= metodo === 'OXXO' ? 'Paga en cualquier OXXO' : 'Paga con transferencia SPEI' %></h1>
+      <p class="pago-sub"><%= metodo === 'OXXO' ? 'Muestra la referencia en caja y paga en efectivo.' : 'Transfiere el monto desde la app de tu banco.' %></p>
+      <div class="pago-total">$ <span id="vTotal"><%= aPagar %></span> <small>MXN</small></div>
+      <% if (aberta) { %>
+        <div class="pago-parcial" id="pagoParcial"<%= parcial ? '' : ' hidden' %>>Recibimos <strong>$ <span id="vRecebido"><%= fmtM(recebidoC) %></span></strong> de <strong>$ <%= total %></strong>. Transfiere el restante a la misma CLABE para liberar tu pedido.</div>
+      <% } %>
+      <div class="pago-item"><%= qtd ? Number(qtd).toLocaleString('en-US') + ' ' + unidade : '' %><%= instagram ? ' para @' + instagram : '' %></div>
+
+      <% if (metodo === 'SPEI') { %>
+        <div class="pago-campo"><div><div class="rot">CLABE</div><div class="val" id="vClabe"><%= xpag.clabe %></div></div><button class="pago-copiar" data-copiar="vClabe" type="button">Copiar</button></div>
+        <div class="pago-campo"><div><div class="rot" id="vMontoRot"><%= parcial ? 'Monto restante' : (aberta ? 'Monto' : 'Monto exacto') %></div><div class="val" id="vMonto"><%= aPagar %></div></div><button class="pago-copiar" data-copiar="vMonto" type="button">Copiar</button></div>
+        <% if (xpag.bank_name) { %><div class="pago-campo"><div><div class="rot">Banco</div><div class="val"><%= xpag.bank_name %></div></div></div><% } %>
+        <% if (xpag.beneficiary) { %><div class="pago-campo"><div><div class="rot">Beneficiario</div><div class="val"><%= xpag.beneficiary %></div></div></div><% } %>
+        <ol class="pago-passos">
+          <li>Abre la app de tu banco y elige <strong>Transferir</strong> (SPEI).</li>
+          <li>Pega la CLABE y escribe el monto: <strong>$ <span id="vMontoPasso"><%= aPagar %></span></strong>.</li>
+          <li>Confirma. En cuanto llegue el pago, iniciamos tu pedido automáticamente.</li>
+        </ol>
+        <% if (aberta) { %>
+          <div class="pago-aviso">Esta CLABE es solo de este pedido. Si transfieres menos, aquí verás el saldo pendiente para completarlo con la misma CLABE.</div>
+        <% } else { %>
+          <div class="pago-aviso">Si transfieres un monto distinto, el banco lo devuelve y el pedido no se activa.</div>
+        <% } %>
+      <% } else { %>
+        <% if (xpag.checkout_url) { %>
+          <a class="continue-button" href="<%= xpag.checkout_url %>" target="_blank" rel="noopener" style="display:block; text-align:center; text-decoration:none; margin-bottom:12px;">Ver ficha de pago OXXO</a>
+        <% } %>
+        <% if (xpag.barcode) { %><img class="pago-barcode" src="<%= xpag.barcode %>" alt="Código de barras para pagar en OXXO" /><% } %>
+        <% if (xpag.reference) { %>
+          <div class="pago-campo"><div><div class="rot">Referencia OXXO</div><div class="val" id="vRef"><%= xpag.reference %></div></div><button class="pago-copiar" data-copiar="vRef" type="button">Copiar</button></div>
+        <% } %>
+        <ol class="pago-passos">
+          <li>Ve a cualquier tienda OXXO y dile al cajero que quieres pagar un servicio con <strong>referencia</strong>.</li>
+          <li>Muestra la referencia o el código de barras y paga <strong>$ <%= total %></strong> en efectivo.</li>
+          <li>Guarda tu ticket. Al confirmarse el pago, iniciamos tu pedido automáticamente.</li>
+        </ol>
+      <% } %>
+
+      <div class="pago-estado" id="pagoEstado"><span class="pago-spin" aria-hidden="true"></span><span>Esperando tu pago…</span></div>
+      <% if (expira && !isNaN(expira.getTime())) { %>
+        <div class="pago-aviso">Esta ficha vence el <%= expira.toLocaleString('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'medium', timeStyle: 'short' }) %> (hora del centro de México).</div>
+      <% } %>
+    </div>
+  </main>
+  <%- include('partials/footer') %>
+  <script src="/js/main.js"></script>
+  <script>
+    (function () {
+      document.querySelectorAll('[data-copiar]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var el = document.getElementById(btn.getAttribute('data-copiar'));
+          var txt = el ? String(el.textContent || '').trim() : '';
+          var ok = function () { var t = btn.textContent; btn.textContent = '¡Copiado!'; setTimeout(function () { btn.textContent = t; }, 1600); };
+          try {
+            navigator.clipboard.writeText(txt).then(ok).catch(function () { try { var r = document.createRange(); r.selectNodeContents(el); var s = getSelection(); s.removeAllRanges(); s.addRange(r); } catch (_) {} });
+          } catch (_) {}
+        });
+      });
+      var cid = <%- JSON.stringify(String(correlationID)) %>;
+      var estado = document.getElementById('pagoEstado');
+      var fim = false;
+      function checar() {
+        if (fim) return;
+        fetch('/api/xpag/status?correlationID=' + encodeURIComponent(cid), { headers: { 'Accept': 'application/json' } })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (d && d.status === 'pago') {
+              fim = true;
+              estado.innerHTML = '<span class="pago-ok">¡Pago recibido! Abriendo tu pedido…</span>';
+              setTimeout(function () { location.href = '/pedido?correlationID=' + encodeURIComponent(cid); }, 1200);
+            } else if (d && d.restanteCents > 0 && d.recebidoCents > 0) {
+              var fmt = function (c) { return (function (x) { var d = x % 100 === 0 ? 0 : 2; return (x / 100).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); })(Math.round(Number(c || 0))); };
+              var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
+              set('vTotal', fmt(d.restanteCents)); set('vMonto', fmt(d.restanteCents)); set('vMontoPasso', fmt(d.restanteCents));
+              set('vRecebido', fmt(d.recebidoCents)); set('vMontoRot', 'Monto restante');
+              var bx = document.getElementById('pagoParcial'); if (bx) bx.hidden = false;
+              estado.innerHTML = '<span class="pago-spin" aria-hidden="true"></span><span>Esperando el restante de tu pago…</span>';
+            } else if (d && d.status === 'falha') {
+              fim = true;
+              estado.innerHTML = '<span>Esta ficha venció o fue cancelada. Vuelve a la tienda para generar una nueva.</span>';
+            }
+          })
+          .catch(function () {});
+      }
+      setInterval(checar, 10000);
+      setTimeout(checar, 3000);
+    })();
+  </script>
+</body>
+</html>

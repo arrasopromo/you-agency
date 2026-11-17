@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Follow-up do bot</title>
+  <link href="/css/style.css" rel="stylesheet" />
+  <style>
+    body { font-family: sans-serif; background: #f0f2f5; color: #1f2937; margin: 0; }
+    .main-content h1 { margin: 0 0 4px; }
+    .sub { color: #6b7280; font-size: 13px; margin-bottom: 16px; }
+    .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+    .dia { padding: 6px 10px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; color: #374151; text-decoration: none; font-size: 13px; }
+    .dia.on { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+    .dia .pill { display: inline-block; min-width: 16px; padding: 0 5px; margin-left: 5px; border-radius: 999px; background: #fee2e2; color: #b91c1c; font-size: 11px; font-weight: 700; }
+    .dia.on .pill { background: #fff; }
+    .btn { padding: 8px 14px; border-radius: 8px; border: 0; background: #111827; color: #fff; cursor: pointer; font-size: 13px; }
+    .btn:disabled { opacity: .6; cursor: default; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; }
+    .card .n { font-size: 22px; font-weight: 800; }
+    .card .l { font-size: 12px; color: #6b7280; }
+    .card.alerta .n { color: #b91c1c; }
+    .card.ok .n { color: #15803d; }
+    .card.clicavel { cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
+    .card.clicavel:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.10); border-color: #c7cbd3; }
+    @keyframes flashPend { 0% { background:#fff7ed; } 50% { background:#ffedd5; } 100% { background:#fff; } }
+    .flash { animation: flashPend 1.1s ease; }
+    .modalbg { position: fixed; inset: 0; background: rgba(15,23,42,.5); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .modalcard { background: #fff; border-radius: 14px; max-width: 720px; width: 100%; max-height: 82vh; overflow: auto; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+    .modalhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #eef0f5; position: sticky; top: 0; background: #fff; }
+    .modalx { cursor: pointer; font-size: 20px; color: #6b7280; line-height: 1; }
+    .modalbody { padding: 6px 18px 16px; }
+    .mitem { border-bottom: 1px solid #f1f2f6; padding: 12px 0; }
+    .mitem:last-child { border-bottom: 0; }
+    .mitem .top { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    .mitem .cli { font-weight: 700; color: #111827; }
+    .mitem .dt { font-size: 12px; color: #9ca3af; white-space: nowrap; }
+    .mitem .det { font-size: 13px; color: #4b5563; margin-top: 4px; }
+    .mono { font-family: ui-monospace, Consolas, monospace; }
+    .btnReenviar { margin-left: 6px; padding: 3px 9px; border: 1px solid #fecaca; border-radius: 999px; background: #fff5f5; color: #b91c1c; cursor: pointer; font-size: 12px; font-weight: 600; }
+    .btnReenviar:disabled { opacity: .6; cursor: default; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .box { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+    .ponto h3 { margin: 0 0 4px; font-size: 14px; }
+    .ponto .oc { font-size: 12px; color: #6b7280; }
+    .ponto p { margin: 6px 0 0; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+    th { background: #f9fafb; color: #6b7280; font-size: 12px; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .t-sem_resposta, .t-pago_sem_envio, .t-cancelado_fornecedor { background: #fee2e2; color: #b91c1c; }
+    .t-privado_segurando, .t-parcial, .t-reclamacao, .t-adicional_cancelado, .t-na_fila, .t-aguardando_retorno { background: #ffedd5; color: #9a3412; }
+    .t-suporte { background: #e0e7ff; color: #3730a3; }
+    .t-ia { background: #f3f4f6; color: #374151; }
+    .s-entregue { background: #dcfce7; color: #166534; } .s-em_andamento { background: #e0f2fe; color: #075985; }
+    .s-pix_nao_pago { background: #f3f4f6; color: #4b5563; } .s-estornado { background: #f3f4f6; color: #4b5563; }
+    details.conv { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 8px; }
+    details.conv > summary { cursor: pointer; padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; list-style: none; }
+    details.conv > summary::-webkit-details-marker { display: none; }
+    details.conv .corpo { padding: 0 14px 12px; font-size: 13px; }
+    .sat-negativa { color: #b91c1c; } .sat-positiva { color: #15803d; } .sat-neutra { color: #6b7280; }
+    .muted { color: #6b7280; } a.crm { font-size: 12px; }
+    ul { margin: 4px 0 8px 18px; padding: 0; }
+    .scroll { overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <%- include('partials/painel_sidebar', { page: 'ia-followup' }) %>
+  <div class="main-content">
+    <h1>Follow-up do bot</h1>
+    <div class="sub">Todo dia às <%= (process.env.IA_FOLLOWUP_HORA || '23:30') %> o sistema lê as conversas do bot, confere os pedidos no fornecedor e aponta o que ficou pendente e o que melhorar.</div>
+
+    <div class="bar">
+      <% (dias || []).forEach(function(d){ var t = d.totais || {}; var pend = t.conversasComPendencia || 0; %>
+        <a class="dia <%= d._id === diaSelecionado ? 'on' : '' %>" href="/painel/ia-followup?dia=<%= d._id %>"><%= d._id.slice(8,10) %>/<%= d._id.slice(5,7) %><% if (pend) { %><span class="pill"><%= pend %></span><% } %><% if (d.gerando) { %> ⏳<% } %></a>
+      <% }); %>
+      <input type="date" id="dataPicker" value="<%= diaSelecionado || hoje %>" max="<%= hoje %>" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;color:#374151;" title="Escolher um dia">
+      <span class="muted" style="font-size:12px">acumular:</span>
+      <input type="date" id="deData" value="<%= (typeof intervalo !== 'undefined' && intervalo) ? intervalo.de : '' %>" max="<%= hoje %>" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;color:#374151;" title="De">
+      <input type="date" id="ateData" value="<%= (typeof intervalo !== 'undefined' && intervalo) ? intervalo.ate : hoje %>" max="<%= hoje %>" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;color:#374151;" title="Até">
+      <button class="btn" id="acumular" style="background:#4f46e5">Ver período</button>
+      <button class="btn" id="gerar" data-dia="<%= hoje %>">Gerar o de hoje agora</button>
+      <% if (diaSelecionado && diaSelecionado !== hoje) { %><button class="btn" id="regerar" data-dia="<%= diaSelecionado %>" style="background:#4b5563">Refazer <%= diaSelecionado.slice(8,10) %>/<%= diaSelecionado.slice(5,7) %></button><% } %>
+      <span id="msg" class="muted"></span>
+    </div>
+
+    <% if (!rel) { %>
+      <div class="box">Ainda não há relatório. Clique em <strong>Gerar o de hoje agora</strong>.</div>
+    <% } else if (rel.gerando && !rel.conversas) { %>
+      <div class="box">Gerando o relatório de <%= rel._id %>… recarregue em instantes.</div>
+    <% } else {
+         var t = rel.totais || {};
+         var todasPend = [];
+         (rel.conversas || []).forEach(function(c){ (c.pendencias || []).forEach(function(p){ todasPend.push({ c: c, p: p }); }); });
+         var ordemTipo = { pago_sem_envio: 0, cancelado_fornecedor: 1, sem_resposta: 2, aguardando_retorno: 3, parcial: 4, adicional_cancelado: 5, privado_segurando: 6, na_fila: 7, reclamacao: 8, suporte: 9, ia: 10 };
+         todasPend.sort(function(a, b){ return (ordemTipo[a.p.tipo] ?? 9) - (ordemTipo[b.p.tipo] ?? 9); });
+         var nomeTipo = { sem_resposta: 'sem resposta', aguardando_retorno: 'aguardando retorno', pago_sem_envio: 'pago sem envio', privado_segurando: 'perfil privado', cancelado_fornecedor: 'fornecedor cancelou', adicional_cancelado: 'adicional cancelado', na_fila: 'parado na fila', parcial: 'entrega parcial', suporte: 'suporte', reclamacao: 'reclamação', ia: 'apontado pela IA' };
+         var nomeSit = { entregue: 'entregue', em_andamento: 'em andamento', pix_nao_pago: 'SPEI não pago', estornado: 'estornado', pago_sem_envio: 'pago sem envio', privado_segurando: 'perfil privado', cancelado_fornecedor: 'cancelado no fornecedor', adicional_cancelado: 'adicional cancelado', na_fila: 'na fila', parcial: 'parcial', upsell_aguardando_pai: 'upsell aguardando' };
+         var brl = function(v){ return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ','); };
+         var hh = function(d){ try { return new Date(new Date(d).getTime() - 3*3600e3).toISOString().slice(11,16); } catch(_) { return ''; } };
+    %>
+      <% if (rel.intervalo) { %>
+        <div class="muted" style="margin-bottom:10px;font-size:12px">Acumulado de <strong><%= rel.intervalo.de.slice(8,10) %>/<%= rel.intervalo.de.slice(5,7) %></strong> a <strong><%= rel.intervalo.ate.slice(8,10) %>/<%= rel.intervalo.ate.slice(5,7) %></strong> · status conferido ao vivo agora (sem análise da IA neste modo)</div>
+      <% } else { %>
+        <div class="muted" style="margin-bottom:10px;font-size:12px">Relatório de <strong><%= rel._id.slice(8,10) %>/<%= rel._id.slice(5,7) %></strong> gerado às <%= hh(rel.geradoEm) %><%= rel.modelo ? ' · análise: ' + rel.modelo : '' %></div>
+      <% } %>
+      <div class="cards">
+        <div class="card"><div class="n"><%= t.conversas || 0 %></div><div class="l">conversas<% if (t.botPausadas) { %> · <%= t.botAtivas %> com bot ativo<% } %></div></div>
+        <div class="card ok"><div class="n"><%= t.vendas || 0 %></div><div class="l">vendas do bot · <%= brl(t.receita) %></div></div>
+        <div class="card ok"><div class="n"><%= (t.conversaoPct != null ? t.conversaoPct : 0) %>%</div><div class="l">conversão (conversas × pago)</div></div>
+        <div class="card"><div class="n"><%= t.pixNaoPago || 0 %></div><div class="l">SPEI gerado e não pago</div></div>
+        <div class="card clicavel <%= t.conversasComPendencia ? 'alerta' : 'ok' %>" id="cardPendencia" title="Clique para ver as pendências"><div class="n"><%= t.conversasComPendencia || 0 %></div><div class="l">conversas com pendência ›</div></div>
+        <div class="card <%= t.semResposta ? 'alerta' : '' %>"><div class="n"><%= t.semResposta || 0 %></div><div class="l">cliente sem resposta (bot ativo)</div></div>
+        <div class="card clicavel <%= (t.pagoSemEnvio || t.canceladoFornecedor) ? 'alerta' : '' %>" id="cardEnvio" title="Clique para ver os pedidos"><div class="n"><%= (t.pagoSemEnvio || 0) + (t.canceladoFornecedor || 0) + (t.adicionalCancelado || 0) %></div><div class="l">pago sem envio / cancelado no fornecedor ›</div></div>
+        <div class="card"><div class="n"><%= t.privadoSegurando || 0 %></div><div class="l">travado por perfil privado</div></div>
+        <div class="card"><div class="n"><%= t.suporte || 0 %></div><div class="l">suporte acionado</div></div>
+        <div class="card clicavel <%= t.satisfacaoNegativa ? 'alerta' : '' %>" id="cardInsat" title="Clique para ver os motivos"><div class="n"><%= t.satisfacaoNegativa || 0 %></div><div class="l">clientes insatisfeitos (bot ativo) ›</div></div>
+      </div>
+      <% if (t.botPausadas) { %><div class="muted" style="font-size:12px;margin:-8px 0 16px">Os cards do bot (sem resposta, insatisfeitos) contam só as <strong><%= t.botAtivas %></strong> conversas com o bot ativo. <%= t.botPausadas %> estavam com atendimento humano (bot pausado) e ficam de fora.</div><% } %>
+
+      <%
+        var tiposEnvio = { pago_sem_envio: 1, cancelado_fornecedor: 1, adicional_cancelado: 1, na_fila: 1 };
+        var envioItens = todasPend.filter(function(x){ return tiposEnvio[x.p.tipo]; }).map(function(x){
+          var ped = (x.c.pedidos || []).find(function(p){ return p.identifier === x.p.identifier; }) || {};
+          return { tipo: x.p.tipo, cliente: x.c.nome || '—', telefone: x.c.telefone, detalhe: x.p.detalhe, identifier: x.p.identifier || '', data: ped.criado || x.c.ultima || null };
+        });
+        var insatItens = (rel.conversas || []).filter(function(c){ return !c.botPausado && c.ia && c.ia.satisfacao === 'negativa'; }).map(function(c){
+          return { nome: c.nome || ('+' + c.telefone), telefone: c.telefone, motivo: (c.ia && c.ia.resumo) || 'Cliente demonstrou insatisfação.' };
+        });
+      %>
+      <script>
+        window.__envioItens = <%- JSON.stringify(envioItens) %>;
+        window.__insatItens = <%- JSON.stringify(insatItens) %>;
+      </script>
+
+      <div id="modalEnvio" class="modalbg" style="display:none"><div class="modalcard">
+        <div class="modalhead"><strong>Pago sem envio / cancelado no fornecedor</strong><span class="modalx" data-close="modalEnvio">×</span></div>
+        <div class="modalbody" id="modalEnvioBody"></div>
+      </div></div>
+      <div id="modalInsat" class="modalbg" style="display:none"><div class="modalcard">
+        <div class="modalhead"><strong>Clientes insatisfeitos — motivo</strong><span class="modalx" data-close="modalInsat">×</span></div>
+        <div class="modalbody" id="modalInsatBody"></div>
+      </div></div>
+
+      <h2>Pontos de melhoria do dia</h2>
+      <% if (!(rel.melhorias || []).length) { %><div class="box muted">Nenhum ponto recorrente.</div><% } %>
+      <% (rel.melhorias || []).forEach(function(m){ %>
+        <div class="box ponto">
+          <h3><%= m.titulo %></h3>
+          <div class="oc"><%= m.ocorrencias %> ocorrência(s)</div>
+          <p><strong>O que acontece:</strong> <%= m.o_que_acontece %></p>
+          <p><strong>Como corrigir:</strong> <%= m.como_corrigir %></p>
+        </div>
+      <% }); %>
+
+      <h2 id="secPendencias">Pendências (<span id="pendCount"><%= todasPend.length %></span>)</h2>
+      <% if (!todasPend.length) { %><div class="box muted">Nada pendente. 🎉</div><% } else {
+           var tiposPend = {}; todasPend.forEach(function(x){ tiposPend[x.p.tipo] = (tiposPend[x.p.tipo] || 0) + 1; });
+           var tiposOrd = Object.keys(tiposPend).sort(function(a,b){ return (ordemTipo[a] ?? 9) - (ordemTipo[b] ?? 9); });
+           var fmtDataBR = function(iso){ try { if(!iso) return ''; var d=new Date(iso); if(isNaN(d.getTime())) return ''; var b=new Date(d.getTime()-3*3600000); var p=function(n){return String(n).padStart(2,'0');}; return p(b.getUTCDate())+'/'+p(b.getUTCMonth()+1)+' '+p(b.getUTCHours())+':'+p(b.getUTCMinutes()); } catch(e){ return ''; } }; %>
+      <div class="bar" id="pendFiltro" style="margin-bottom:10px">
+        <a class="dia on" data-tipo="" href="javascript:void(0)">todos <span class="pill" style="background:#e5e7eb;color:#374151"><%= todasPend.length %></span></a>
+        <% tiposOrd.forEach(function(tp){ %><a class="dia" data-tipo="<%= tp %>" href="javascript:void(0)"><%= nomeTipo[tp] || tp %> <span class="pill" style="background:#e5e7eb;color:#374151"><%= tiposPend[tp] %></span></a><% }); %>
+      </div>
+      <div class="box scroll"><table>
+        <tr><th>Tipo</th><th>Cliente</th><th>Detalhe</th><th></th></tr>
+        <% todasPend.forEach(function(x){ %>
+          <tr class="pendRow" data-tipo="<%= x.p.tipo %>" data-pid="<%= x.p.__pid || '' %>">
+            <td><span class="tag t-<%= x.p.tipo %>"><%= nomeTipo[x.p.tipo] || x.p.tipo %></span></td>
+            <td><%= x.c.nome || '—' %><br><span class="muted">+<%= x.c.telefone %></span><% if (x.p.usuario) { %><br><a class="mono" href="https://instagram.com/<%= x.p.usuario %>" target="_blank" style="font-size:12px">@<%= x.p.usuario %></a><% } %></td>
+            <td><%= x.p.detalhe %><% if (x.p.identifier) { %> · <a class="mono" href="/pedido?identifier=<%= encodeURIComponent(x.p.identifier) %>" target="_blank" title="Abrir pedido no site"><%= x.p.identifier %></a><% if (x.p.reenviavel) { %> <button class="btnReenviar" data-id="<%= x.p.identifier %>" data-motivo="<%= x.p.motivoReenvio || '' %>">revisar e enviar</button><% } %><% } %><% if ((x.p.tipo === 'reclamacao' || x.p.tipo === 'aguardando_retorno') && x.p.data) { %> <span class="muted" style="font-size:12px">· última mensagem: <%= fmtDataBR(x.p.data) %></span><% } %></td>
+            <td style="white-space:nowrap;"><a class="crm" href="/painel/ia-crm?phone=<%= x.c.telefone %>" target="_blank">abrir conversa</a> <button type="button" class="btnExcluirPend" data-pid="<%= x.p.__pid || '' %>" title="Excluir esta pendência da lista" style="border:1px solid #fecaca;background:#fff5f5;color:#b91c1c;border-radius:6px;cursor:pointer;padding:2px 8px;font-weight:700;line-height:1;">✕</button></td>
+          </tr>
+        <% }); %>
+      </table></div>
+      <% } %>
+    <% } %>
+  </div>
+  <script>
+    (function(){
+      var msg = document.getElementById('msg');
+      // Excluir pendência (X) — some da lista e não volta a aparecer.
+      document.addEventListener('click', function(ev){
+        var b = ev.target && ev.target.closest ? ev.target.closest('.btnExcluirPend') : null;
+        if (!b) return;
+        var pid = b.getAttribute('data-pid') || '';
+        if (!pid) return;
+        if (!confirm('Excluir esta pendência da lista? Ela não vai mais aparecer.')) return;
+        b.disabled = true;
+        fetch('/api/painel/ia-followup/excluir-pendencia', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ pid: pid }) })
+          .then(function(r){ return r.json(); })
+          .then(function(d){
+            if (d && d.ok) {
+              var row = b.closest('tr'); if (row && row.parentNode) row.parentNode.removeChild(row);
+              var cnt = document.getElementById('pendCount'); if (cnt) { var n = parseInt(cnt.textContent,10)||0; cnt.textContent = Math.max(0, n-1); }
+            } else { b.disabled=false; alert('Falha ao excluir: '+((d&&d.error)||'erro')); }
+          })
+          .catch(function(){ b.disabled=false; alert('Erro de rede.'); });
+      });
+      function iniciar(btn){
+        var dia = btn.getAttribute('data-dia');
+        btn.disabled = true; msg.textContent = 'Gerando… (leva 1–2 min)';
+        fetch('/api/painel/ia-followup/gerar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ dia: dia }) })
+          .then(function(r){ return r.json(); })
+          .then(function(){
+            var tentativas = 0;
+            var t = setInterval(function(){
+              tentativas++;
+              fetch('/api/painel/ia-followup/status?dia=' + dia, { credentials: 'same-origin' }).then(function(r){ return r.json(); }).then(function(s){
+                if (s && s.ok && !s.gerando && s.geradoEm) { clearInterval(t); location.href = '/painel/ia-followup?dia=' + dia; }
+                else if (s && s.erro && !s.gerando) { clearInterval(t); msg.textContent = 'Erro: ' + s.erro; btn.disabled = false; }
+                else if (tentativas > 60) { clearInterval(t); msg.textContent = 'Ainda gerando — recarregue daqui a pouco.'; }
+              }).catch(function(){});
+            }, 5000);
+          })
+          .catch(function(){ msg.textContent = 'Falha ao iniciar.'; btn.disabled = false; });
+      }
+      ['gerar', 'regerar'].forEach(function(id){ var b = document.getElementById(id); if (b) b.addEventListener('click', function(){ iniciar(b); }); });
+
+      // seletor de data → abre o relatório daquele dia
+      var dp = document.getElementById('dataPicker');
+      if (dp) dp.addEventListener('change', function(){ if (dp.value) location.href = '/painel/ia-followup?dia=' + dp.value; });
+
+      // "Ver período" → visão cumulativa (intervalo de datas, status ao vivo)
+      var btnAcum = document.getElementById('acumular');
+      if (btnAcum) btnAcum.addEventListener('click', function(){
+        var de = document.getElementById('deData').value, ate = document.getElementById('ateData').value;
+        if (!de || !ate) { alert('Escolha as duas datas do período.'); return; }
+        btnAcum.disabled = true; btnAcum.textContent = 'calculando…';
+        location.href = '/painel/ia-followup?de=' + de + '&ate=' + ate;
+      });
+
+      // card "conversas com pendência" → rola até a lista de pendências e dá um flash
+      var cardPend = document.getElementById('cardPendencia');
+      if (cardPend) cardPend.addEventListener('click', function(){
+        var sec = document.getElementById('secPendencias');
+        if (!sec) return;
+        sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        var box = sec.nextElementSibling; // a caixa da tabela (ou os chips de filtro)
+        var alvo = document.querySelector('.box.scroll') || box;
+        if (alvo) { alvo.classList.remove('flash'); void alvo.offsetWidth; alvo.classList.add('flash'); }
+      });
+
+      // filtro por tipo nas pendências
+      var filtro = document.getElementById('pendFiltro');
+      if (filtro) {
+        filtro.addEventListener('click', function(e){
+          var a = e.target.closest('a[data-tipo]'); if (!a) return;
+          var tipo = a.getAttribute('data-tipo');
+          filtro.querySelectorAll('a[data-tipo]').forEach(function(x){ x.classList.toggle('on', x === a); });
+          var vis = 0;
+          document.querySelectorAll('tr.pendRow').forEach(function(row){
+            var ok = !tipo || row.getAttribute('data-tipo') === tipo;
+            row.style.display = ok ? '' : 'none'; if (ok) vis++;
+          });
+          var cnt = document.getElementById('pendCount'); if (cnt) cnt.textContent = vis;
+        });
+      }
+
+      // ── Modais dos cards ──────────────────────────────────────────────
+      function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' })[c]; }); }
+      function dataBR(iso){ if (!iso) return ''; try { var d = new Date(new Date(iso).getTime() - 3*3600e3); var p = function(n){ return String(n).padStart(2,'0'); }; return p(d.getUTCDate())+'/'+p(d.getUTCMonth()+1)+' '+p(d.getUTCHours())+':'+p(d.getUTCMinutes()); } catch(_) { return ''; } }
+      var nomeTipoJs = { pago_sem_envio: 'pago sem envio', cancelado_fornecedor: 'fornecedor cancelou', adicional_cancelado: 'adicional cancelado', na_fila: 'parado na fila' };
+      function abrir(id){ var m = document.getElementById(id); if (m) m.style.display = 'flex'; }
+      function fechar(id){ var m = document.getElementById(id); if (m) m.style.display = 'none'; }
+      document.querySelectorAll('.modalx').forEach(function(x){ x.addEventListener('click', function(){ fechar(x.getAttribute('data-close')); }); });
+      document.querySelectorAll('.modalbg').forEach(function(bg){ bg.addEventListener('click', function(e){ if (e.target === bg) bg.style.display = 'none'; }); });
+      document.addEventListener('keydown', function(e){ if (e.key === 'Escape') document.querySelectorAll('.modalbg').forEach(function(b){ b.style.display='none'; }); });
+
+      var cardEnvio = document.getElementById('cardEnvio');
+      if (cardEnvio) cardEnvio.addEventListener('click', function(){
+        var itens = window.__envioItens || [];
+        var html = itens.length ? itens.map(function(it){
+          var idLink = it.identifier ? '<a class="mono" href="/pedido?identifier=' + encodeURIComponent(it.identifier) + '" target="_blank">' + esc(it.identifier) + '</a>' : '';
+          return '<div class="mitem"><div class="top"><span class="cli">' + esc(it.cliente) + ' <span class="tag t-' + it.tipo + '">' + (nomeTipoJs[it.tipo] || it.tipo) + '</span></span><span class="dt">' + dataBR(it.data) + '</span></div>'
+            + '<div class="det">' + esc(it.detalhe) + '</div>'
+            + '<div class="det">' + idLink + ' · <a href="/painel/ia-crm?phone=' + esc(it.telefone) + '" target="_blank">abrir conversa</a></div></div>';
+        }).join('') : '<div class="muted" style="padding:12px 0">Nenhum pedido pago sem envio ou cancelado no fornecedor. 🎉</div>';
+        document.getElementById('modalEnvioBody').innerHTML = html; abrir('modalEnvio');
+      });
+
+      // botão "revisar e enviar" nas pendências de pago-sem-envio (duplicate) / adicional cancelado
+      document.querySelectorAll('.btnReenviar').forEach(function(b){
+        b.addEventListener('click', function(){
+          var id = b.getAttribute('data-id'), motivo = b.getAttribute('data-motivo');
+          if (!confirm('Revisar e reenviar o pedido ' + id + '?\nO sistema confere o status no fornecedor e, se preciso, envia um novo pedido (gera custo).')) return;
+          b.disabled = true; var txt = b.textContent; b.textContent = 'enviando…';
+          fetch('/api/painel/ia-followup/reenviar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ identifier: id, motivo: motivo }) })
+            .then(function(r){ return r.json(); })
+            .then(function(d){
+              if (d && d.ok) { b.textContent = '✓ ' + d.provider + ' ' + d.orderId; b.style.background = '#e9f7ee'; b.style.borderColor = '#bbf7d0'; b.style.color = '#166534'; }
+              else { b.disabled = false; b.textContent = txt; alert('Não reenviou: ' + ((d && d.error) || 'erro')); }
+            })
+            .catch(function(){ b.disabled = false; b.textContent = txt; alert('Falha na chamada.'); });
+        });
+      });
+
+      var cardInsat = document.getElementById('cardInsat');
+      if (cardInsat) cardInsat.addEventListener('click', function(){
+        var itens = window.__insatItens || [];
+        var html = itens.length ? itens.map(function(it){
+          return '<div class="mitem"><div class="top"><span class="cli">' + esc(it.nome) + '</span></div>'
+            + '<div class="det">' + esc(it.motivo) + '</div>'
+            + '<div class="det"><a href="/painel/ia-crm?phone=' + esc(it.telefone) + '" target="_blank">abrir conversa →</a></div></div>';
+        }).join('') : '<div class="muted" style="padding:12px 0">Nenhum cliente insatisfeito com o bot ativo. 🎉</div>';
+        document.getElementById('modalInsatBody').innerHTML = html; abrir('modalInsat');
+      });
+    })();
+  </script>
+</body>
+</html>

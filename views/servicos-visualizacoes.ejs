@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Comprar visualizaciones para Instagram | You Agency</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <script>
+    try {
+      const currentParams = new URLSearchParams(window.location.search);
+      const hasUtms = ['utm_source', 'utm_medium', 'utm_campaign'].some(k => currentParams.has(k));
+      
+      if (!hasUtms) {
+        const stored = sessionStorage.getItem('ya_utms');
+        if (stored) {
+          const utms = JSON.parse(stored);
+          let updated = false;
+          Object.keys(utms).forEach(k => {
+            if (!currentParams.has(k)) {
+              currentParams.set(k, utms[k]);
+              updated = true;
+            }
+          });
+          
+          if (updated) {
+            const newUrl = window.location.pathname + '?' + currentParams.toString() + window.location.hash;
+            window.history.replaceState({}, '', newUrl);
+          }
+        }
+      } else {
+        const utms = {};
+        ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid'].forEach(k => {
+           const v = currentParams.get(k);
+           if(v) utms[k] = v;
+        });
+        if (Object.keys(utms).length > 0) {
+            sessionStorage.setItem('ya_utms', JSON.stringify(utms));
+        }
+      }
+    } catch(e) { console.error('Erro ao restaurar UTMs:', e); }
+  </script>
+  <script>
+    window.PAGARME_PUBLIC_KEY = "<%= PAGARME_PUBLIC_KEY %>";
+    window.CARD_PROVIDER = "<%= typeof CARD_PROVIDER !== 'undefined' ? CARD_PROVIDER : 'nowpayments' %>";
+    window.STRIPE_USE_CHECKOUT = false;
+    window.__DISABLE_PIX__ = true;
+  </script>
+  <link href="/css/style.css?v=20261111" rel="stylesheet" />
+  <link href="/css/badges.css" rel="stylesheet" />
+  <link href="/css/perfil.css" rel="stylesheet" />
+  <link href="/css/why-us.css?v=20261111" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="/images/y%20branco.png" />
+  <!-- TRACK COMBO -->
+  <script>
+    (function() {
+      var script = document.createElement("script");
+      script.type = "text/javascript";
+      script.async = true;
+      script.src = "https://track.youagency.site/tag/TC-OISDR3RC.js";
+      var firstScript = document.getElementsByTagName("script")[0];
+      firstScript.parentNode.insertBefore(script, firstScript);
+    })();
+  </script>
+  <!-- End TRACK COMBO -->
+</head>
+<body class="theme-light has-fixed-menu page-instagram-services">
+  <%- include('partials/menu', { logoLink: '/interaccion' }) %>
+  <script>window.__ENG_MODE__ = false;</script>
+  <div class="container checkout-page">
+    <style>
+      /* Centralizar card Ãºnico de VisualizaÃ§Ãµes Reels */
+      #tipoCards {
+        display: flex !important;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      #tipoCards .service-card {
+        max-width: 300px;
+        flex: 0 0 100%; /* Mobile: full width up to max-width */
+      }
+      @media (min-width: 640px) {
+        #tipoCards .service-card {
+          flex: 0 0 auto;
+          width: 200px; /* Desktop: fixed width */
+        }
+      }
+
+      #postSelectModal.modal-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); z-index: 1000; }
+      #postSelectModal .modal-dialog { width: 98vw; max-width: 1600px; max-height: calc(100vh - 2rem); overflow: auto; aspect-ratio: 16 / 9; height: auto; }
+      #postModalGrid.post-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); }
+      @media (min-width: 1024px) { #postModalGrid.post-grid { grid-template-columns: repeat(4, 1fr); } }
+      .media-frame { position: relative; border-radius: 8px; overflow: hidden; background: #000; aspect-ratio: 16/9; }
+      .selected-mark { outline: 2px solid #7c3aed; border-radius: 8px; }
+      #postModalGrid.post-grid .inline-msg { font-size: 12px; color: var(--text-secondary); text-align: center; }
+      #postModalGrid.post-grid .continue-button { justify-content: center; }
+      @media (min-width: 1024px) { #postModalGrid.post-grid .inline-msg { font-size: 12px; } }
+      .media-frame > img, .media-frame > video, .media-frame > iframe { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: none; }
+      @media (max-width: 640px) { #postSelectModal.modal-overlay { align-items: flex-start; } #postSelectModal .modal-dialog { width: 100%; max-width: 95vw; margin-top: 1rem; aspect-ratio: 9 / 16; height: 80vh; } .media-frame { aspect-ratio: 9/16; max-height: 200px; } #postModalGrid.post-grid .inline-msg { font-size: 11px; } }
+    </style>
+    
+    <main class="main-content">
+      <div class="stepper-container">
+        <div class="step active" id="step1" onclick="window.goToStep && window.goToStep(1)" style="cursor: pointer;">
+          <div class="step-circle">1</div>
+          <div class="step-label">Servicio</div>
+        </div>
+        <div class="step-line" id="line1"></div>
+        <div class="step" id="step2" onclick="window.goToStep && window.goToStep(2)" style="cursor: pointer;">
+          <div class="step-circle">2</div>
+          <div class="step-label">Detalles</div>
+        </div>
+        <div class="step-line" id="line2"></div>
+        <div class="step" id="step3" onclick="window.goToStep && window.goToStep(3)" style="cursor: pointer;">
+          <div class="step-circle">3</div>
+          <div class="step-label">Pago</div>
+        </div>
+      </div>
+
+      <%- include('partials/rede_selecionada', { rede: 'instagram' }) %>
+
+      <section class="section-block">
+        <div id="step1Container" class="cards-grid checkout-grid">
+          <div class="service-card" id="plataformaCard" style="display:none;">
+            <div class="card-content">
+              <h3 class="card-title">Plataforma</h3>
+              <div class="card-desc">
+                  <div class="platform-toggle" aria-label="Elige la plataforma">
+                  <button type="button" class="platform-btn instagram" aria-pressed="true" aria-label="Instagram">
+                    <span>Instagram</span>
+                  </button>
+                  <button type="button" class="platform-btn tiktok" aria-pressed="false" aria-label="TikTok">
+                    <span>TikTok</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="tipoCards" class="option-cards" style="display:none;"></div>
+          <div class="service-card" id="tipoDescCard" style="display:none;">
+            <div class="card-content">
+              <h3 class="card-title" id="tipoDescTitle"></h3>
+              <div class="card-desc" id="tipoDescContent"></div>
+            </div>
+          </div>
+          <div id="planCards" class="plan-cards" style="display:none;"></div>
+
+          <div class="service-card" id="tipoSelectCard">
+            <div class="card-content">
+              <h3 class="card-title">Tipo de servicio</h3>
+              <div class="input-group" id="grupoTipo" style="position:relative;">
+                <select id="tipoSelect" class="select-input" style="flex:1;">
+                  <option value="visualizacoes_reels" selected>Visualizaciones de Reels</option>
+                </select>
+                <div id="tutorial1Tipo" class="tutorial-pop tutorial-pop-input" style="display:none;">
+                  <div class="tutorial-pop-step">2/4</div>
+                  <div class="tutorial-pop-text">Elige la red social</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="service-card" id="quantidadeSelectCard">
+            <div class="card-content">
+              <h3 class="card-title">Elige un paquete</h3>
+              <div class="input-group" id="grupoQuantidade" style="position:relative;">
+                <select id="quantidadeSelect" class="select-input" style="flex:1;">
+                  <option value="">Elige la cantidad...</option>
+                </select>
+                <div id="tutorial2Pacote" class="tutorial-pop tutorial-pop-input" style="display:none;">
+                  <div class="tutorial-pop-step">3/4</div>
+                  <div class="tutorial-pop-text">Elige el plan</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="service-card" id="ferramentaExclusivaSection" style="margin-top: 3rem; text-align: center; background: transparent; box-shadow: none; border: none;">
+            <div style="display: inline-block; background: rgba(139, 92, 246, 0.1); color: #8B5CF6; padding: 0.35rem 1rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;">
+              Exclusivo
+            </div>
+            <h3 class="card-title" style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--text-primary);">
+              <span style="font-weight: 700;">Herramienta</span> <span style="font-weight: 700; background: linear-gradient(90deg, #FF0080 0%, #7928CA 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">exclusiva</span>
+            </h3>
+            <p class="card-desc" style="max-width: 600px; margin: 0 auto 2rem; font-size: 1.1rem; color: var(--text-secondary);">
+              Conoce nuestra tecnología exclusiva de reposición automática de visualizaciones.
+            </p>
+            <div style="max-width: 320px; margin: 0 auto;">
+              <img src="/images/refil%20(1).png" alt="Herramienta exclusiva" style="width: 100%; height: auto; display: block; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-block">
+        <div id="perfilCard" style="display:none;">
+          <div class="service-card">
+            <div class="card-content">
+              <div style="text-align: center; margin-bottom: 1.5rem; position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                <button id="backToStep1Btn" type="button" style="background: none; border: none; cursor: pointer; color: var(--text-primary); padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; background-color: #f1f5f9;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <h3 class="card-title" style="margin-bottom: 0; font-size: 1.5rem;">Detalles del pedido</h3>
+              </div>
+              <div class="card-desc">
+                <div style="margin-bottom: 0.5rem;">
+                  <label class="input-label" style="display:block; margin-bottom:0.5rem; font-weight:600;">Usuario de Instagram <span style="color:#ef4444">*</span></label>
+                  <div class="input-group username-group" id="grupoUsername" style="position:relative; display: flex; gap: 0.5rem;">
+                    <input type="text" id="usernameCheckoutInput" placeholder="ej. @usuario" class="select-input" maxlength="100" style="flex: 1; border-radius: 8px;" />
+                    <button id="checkCheckoutButton" class="continue-button validate-btn" type="button" style="padding: 0 1.5rem; border-radius: 8px; font-weight: 600; background: var(--instagram-gradient);">
+                      <span class="button-text">Buscar</span>
+                      <svg class="button-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-left: 0.4rem;">
+                        <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <div id="tutorial3Usuario" class="tutorial-pop tutorial-pop-input" style="display:block;">
+                      <div class="tutorial-pop-step">3/5</div>
+                      <div class="tutorial-pop-text">Ingresa tu usuario de Instagram</div>
+                    </div>
+                  </div>
+                  <style>
+                    @media (max-width: 640px) {
+                        #grupoUsername { flex-direction: column; }
+                        #checkCheckoutButton { width: 100%; height: 40px; min-height: 40px; margin-top: 0.5rem; }
+                        #usernameCheckoutInput { width: 100%; }
+                    }
+                  </style>
+                  <div id="perfilHints" style="margin-top:0.4rem; color: var(--text-secondary); font-size: 0.85rem;">
+                    Puedes escribirlo con o sin @ (ej. @usuario o usuario). Los acentos se quitan automáticamente.
+                  </div>
+                  <div id="statusCheckoutMessage" class="status-message" style="display:none; margin-top:0.5rem;"></div>
+                  <div id="loadingCheckoutSpinner" class="loading-spinner" style="display:none; margin-top:0.5rem;">
+                    <div class="spinner"></div>
+                    <p>Verificando perfil...</p>
+                  </div>
+                  <div id="profilePreview" style="display:none; margin-top:1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color);">
+                    <div style="display:flex; align-items:center; gap:1rem;">
+                      <img id="checkoutProfileImage" alt="Foto" style="width:64px; height:64px; border-radius:50%; object-fit:cover; background:#fff;" />
+                      <div>
+                        <div style="font-weight:700; font-size:1.1rem; color: var(--text-primary);">@<span id="checkoutProfileUsername"></span></div>
+                        <div id="checkoutProfileStats" style="display:flex; gap:0.8rem; font-size:0.9rem; color: var(--text-secondary); margin-top:0.2rem;">
+                          <div><strong><span id="checkoutPostsCount"></span></strong> publicaciones</div>
+                          <div><strong><span id="checkoutFollowersCount">-</span></strong> seguidores</div>
+                          <div><strong><span id="checkoutFollowingCount">-</span></strong> seguidos</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="contactFieldsArea" style="display:none; margin-top: 2rem; border-top: 1px solid #e2e8f0; padding-top: 1.5rem;">
+                   <div id="selectedPostPreview" style="display:none; margin-bottom: 1.5rem;">
+                      <div style="font-weight:600; margin-bottom:0.5rem; color:var(--text-primary);">Reel seleccionado para recibir visualizaciones</div>
+                      <div id="selectedPostPreviewContent"></div>
+                   </div>
+                   <div style="margin-bottom: 1rem;">
+                      <div id="emailErrorMsg" style="color:#ef4444; font-size: 0.85rem; display:none; margin-bottom: 0.2rem;">Ingresa un correo electrónico válido</div>
+                      <div style="background-color: #eff6ff; padding: 0.75rem; border-radius: 8px; border: 1px solid #dbeafe; margin-bottom: 0.8rem;">
+                          <span style="color: #1e40af; font-weight: 700; font-size: 0.95rem; display: block; margin-bottom: 0.3rem;">¿Por qué te pedimos estos datos?</span>
+                          <p style="font-size: 0.85rem; color: #1e3a8a; margin: 0; line-height: 1.4;">Para poder contactarte y para que puedas ver los detalles de tu pedido.</p>
+                      </div>
+                      <div id="nameErrorMsg" style="color:#ef4444; font-size: 0.85rem; display:none; margin-bottom: 0.2rem;">Escribe tu nombre</div>
+                      <label for="contactNameInput" style="display:block; margin-bottom:0.5rem; color:var(--text-primary); font-weight:500;">Nombre <span style="color:#ef4444">*</span></label>
+                      <input type="text" id="contactNameInput" class="select-input" placeholder="Tu nombre" autocomplete="name" maxlength="80" style="width:100%; border-radius: 8px; margin-bottom: 1rem;" />
+                      <label for="contactEmailInput" style="display:block; margin-bottom:0.5rem; color:var(--text-primary); font-weight:500;">Correo electrónico <span style="color:#ef4444">*</span></label>
+                      <input type="email" id="contactEmailInput" class="select-input" placeholder="Tu mejor correo electrónico" style="width:100%; border-radius: 8px;" />
+                   </div>
+                   <div style="margin-bottom: 2rem;">
+                      <div id="phoneErrorMsg" style="color:#ef4444; font-size: 0.85rem; display:none; margin-bottom: 0.2rem;">Ingresa un teléfono de 10 dígitos</div>
+                      <label for="contactPhoneInput" style="display:block; margin-bottom:0.5rem; color:var(--text-primary); font-weight:500;">Teléfono <span style="color:#ef4444">*</span></label>
+                      <div class="phone-field" style="width:100%;">
+                         <input type="tel" id="contactPhoneInput" class="select-input" placeholder="55 1234 5678" inputmode="tel" autocomplete="tel-national" maxlength="24" style="width:100%; border-radius: 8px;" />
+                      </div>
+                   </div>
+                   <a href="javascript:void(0)" id="btnActionProceed" class="continue-button contact-continue-btn" style="width: 100%; padding: 1rem; font-size: 1.1rem; border-radius: 8px; display: flex; justify-content: center; align-items: center; background: var(--instagram-gradient); text-decoration: none; color: white; cursor: pointer;">
+                      <span class="button-text">Continuar</span>
+                   </a>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="step3Container" style="display:none;">
+          <div class="service-card" id="step3ProfileCard" style="overflow: hidden; max-width: 960px; margin: 0 auto;">
+            <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
+               <button onclick="window.goToStep && window.goToStep(2)" type="button" style="position: absolute; left: 1rem; top: 1.5rem; background: none; border: none; cursor: pointer; color: var(--text-primary); padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; background-color: #f1f5f9; z-index: 10;">
+                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                     <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                   </svg>
+               </button>
+               <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 1rem;">
+                  <div style="position: relative; margin-bottom: 0.5rem;">
+                    <img id="reviewProfileImage" src="" alt="Perfil" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);" />
+                  </div>
+                  <div style="font-weight: 700; font-size: 1.2rem; color: var(--text-primary);">@<span id="reviewProfileUsername"></span></div>
+               </div>
+               <div id="step3PostPreview" style="display:none; margin-top: 1.5rem;">
+                  <div style="font-weight:600; margin-bottom:0.5rem; color:var(--text-primary);">Reel seleccionado para recibir visualizaciones</div>
+                  <div id="step3PostPreviewContent"></div>
+               </div>
+
+               <!-- Coupon Section -->
+               <div class="coupon-section" style="margin-top: 1rem;">
+                   <div class="coupon-container">
+                       <input type="text" id="couponInput" class="select-input" placeholder="Cupón de descuento">
+                       <button type="button" id="applyCouponBtn" class="continue-button coupon-btn">
+                          Aplicar
+                       </button>
+                   </div>
+                   <div id="couponMessage" class="coupon-message"></div>
+               </div>
+            </div>
+
+            <div class="service-card" id="orderBumpInline" style="display:none;">
+              <div class="card-content">
+                <h3 class="card-title" style="background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; display: block; text-align: center; width: 100%;">Ofertas exclusivas para ti</h3>
+                <div class="card-desc promo-list">
+                    <label class="promo-item upgrade">
+                      <input type="checkbox" id="orderBumpCheckboxInline" />
+                      <div class="promo-content">
+                        <div class="promo-highlight" id="orderBumpHighlight">Mejora de paquete</div>
+                        <div class="promo-title">Mejora de paquete</div>
+                        <div id="orderBumpText" class="promo-desc">Elige un paquete para ver la mejora disponible.</div>
+                        <div class="promo-prices" data-promo="upgrade">
+                          <span class="old-price">—</span>
+                          <span class="discount-badge">OFERTA</span>
+                          <span class="new-price">—</span>
+                        </div>
+                      </div>
+                    </label>
+                    <label class="promo-item comments">
+                      <input type="checkbox" id="promoComments" data-promo="comments" />
+                      <div class="promo-content">
+                        <div class="promo-highlight">+ COMENTARIOS</div>
+                        <div class="promo-title" style="display:flex; align-items:center; gap:0.5rem;">
+                          <span>Comentario promocional</span>
+                          <button id="commentsExampleBtn" class="continue-button" type="button" style="padding:0.15rem 0.5rem; font-size:12px; line-height:1;">Ejemplos de comentarios</button>
+                        </div>
+                        <div class="promo-desc">1 comentario = $ 5.49 c/u.</div>
+                        <div class="promo-prices" data-promo="comments">
+                          <span class="old-price">$ 108</span>
+                          <span class="discount-badge">67% DE DESCUENTO</span>
+                          <span class="new-price">$ 35</span>
+                        </div>
+                        <div class="likes-control" aria-label="Cantidad de comentarios">
+                          <button type="button" id="commentsDec" class="likes-arrow" aria-label="Disminuir">‹</button>
+                          <span id="commentsQty" class="likes-qty">1</span>
+                          <button type="button" id="commentsInc" class="likes-arrow" aria-label="Aumentar">›</button>
+                        </div>
+                      </div>
+                    </label>
+                    <label class="promo-item warranty60">
+                      <input type="checkbox" id="promoWarranty60" data-promo="warranty60" />
+                      <div class="promo-content">
+                        <div id="warrantyHighlight" class="promo-highlight">REPOSICIÓN POR 6 MESES</div>
+                        <div class="promo-title" style="display:flex; align-items:center; gap:0.5rem;">
+                          <span>Reposición por 6 meses</span>
+                          <button id="warranty60InfoBtn" class="continue-button" type="button" style="padding:0.15rem 0.5rem; font-size:12px; line-height:1;">Más información</button>
+                        </div>
+                        <div id="warrantyDesc" class="promo-desc">Reposición garantizada por 6 meses</div>
+                        <div class="promo-prices" data-promo="warranty60">
+                          <span id="warrantyOldPrice" class="old-price">$ 144</span>
+                          <span id="warrantyDiscount" class="discount-badge">75% DE DESCUENTO</span>
+                          <span id="warrantyNewPrice" class="new-price">$ 35</span>
+                        </div>
+                        <div class="likes-control" style="display:none;" aria-label="Garantía extendida">
+                          <button type="button" id="warrantyModeDec" class="likes-arrow" aria-label="Anterior">‹</button>
+                          <span id="warrantyModeLabel" class="likes-qty">6 meses</span>
+                          <button type="button" id="warrantyModeInc" class="likes-arrow" aria-label="Siguiente">›</button>
+                        </div>
+                      </div>
+                    </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="service-card" id="resumo" style="display:none; margin-top: 1rem; max-width: 960px; margin-left: auto; margin-right: auto;">
+            <div class="card-content">
+              <h3 class="card-title">Resumen del pedido</h3>
+              <div class="resumo-row">
+                <span>Servicio</span>
+                <span id="resTipo">-</span>
+              </div>
+              <div class="resumo-row">
+                <span>Cantidad</span>
+                <span id="resQtd">-</span>
+              </div>
+              <div class="resumo-row">
+                <span>Precio del paquete</span>
+                <span id="resPreco">-</span>
+              </div>
+              <div id="resPromosContainer" style="display:none;">
+                 <div id="resPromos"></div>
+              </div>
+              
+
+              
+              <div class="resumo-total">
+                <span>Total</span>
+                <span id="resTotalFinal" style="color: #22c55e;">-</span>
+              </div>
+              <div id="grupoPedido" style="margin-top: 1.5rem; display:none;">
+                <div id="paymentMethodSelector" style="display:none;">
+                  <input type="radio" name="paymentMethod" value="credit_card" checked style="display:none;">
+                </div>
+                <style>
+                  @media (max-width: 640px) {
+                    #paymentMethodSelector { gap: 0.6rem !important; }
+                    #paymentMethodSelector .payment-option { max-width: none !important; }
+                  }
+                  @media (min-width: 641px) {
+                    #paymentMethodSelector .payment-option { max-width: 240px !important; }
+                  }
+                </style>
+
+                <div id="cardPaymentContent" style="display:none; margin-bottom:1.5rem;">
+                    <div id="stripeEmbeddedWrapper" style="display:none; width:100%; max-width:520px; margin:0 auto 1rem auto; border:1px solid #e5e7eb; border-radius:12px; background:#ffffff; padding:12px;">
+                      <div id="stripeEmbeddedCheckout"></div>
+                    </div>
+                    <form id="cardPaymentForm" onsubmit="event.preventDefault();">
+                        <div id="stripeCardFields" style="display:none;">
+                            <div class="form-group" style="margin-bottom:1rem;">
+                                <label for="stripeCardNumber" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Número de tarjeta</label>
+                                <div id="stripeCardNumber" class="select-input" style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:12px 14px; font-size:1rem; outline:none;"></div>
+                            </div>
+                            <div style="display:flex; gap:1rem; margin-bottom:1rem;">
+                                <div style="flex:1;">
+                                    <label for="stripeCardExpiry" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Vencimiento</label>
+                                    <div id="stripeCardExpiry" class="select-input" style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:12px 14px; font-size:1rem; outline:none;"></div>
+                                </div>
+                                <div style="flex:1;">
+                                    <label for="stripeCardCvc" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">CVV</label>
+                                    <div id="stripeCardCvc" class="select-input" style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:12px 14px; font-size:1rem; outline:none;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="pagarmeCardFields">
+                            <div class="form-group" style="margin-bottom:1rem;">
+                                <label for="cardNumber" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Número de tarjeta</label>
+                                <div style="position:relative;">
+                                    <input type="text" id="cardNumber" class="select-input" placeholder="0000 0000 0000 0000" maxlength="19" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 44px 0 14px; font-size:1rem; outline:none;">
+                                    <div style="position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none;">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display:flex; gap:1rem; margin-bottom:1rem;">
+                                <div style="flex:1;">
+                                    <label for="cardExpiry" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Vencimiento</label>
+                                    <input type="text" id="cardExpiry" class="select-input" placeholder="MM/AA" maxlength="5" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 14px; font-size:1rem; outline:none;">
+                                </div>
+                                <div style="flex:1;">
+                                    <label for="cardCvv" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">CVV</label>
+                                    <input type="text" id="cardCvv" class="select-input" placeholder="123" maxlength="4" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 14px; font-size:1rem; outline:none;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom:1rem;">
+                            <label for="cardInstallments" style="display:block; font-weight:600; margin-bottom:0.25rem;">Pagos</label>
+                            <select id="cardInstallments" class="select-input" style="width:100%;">
+                                <option value="1">1x</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom:1rem;">
+                            <label for="cardHolderName" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Nombre en la tarjeta</label>
+                            <input type="text" id="cardHolderName" class="select-input" placeholder="Nombre impreso en la tarjeta" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 14px; font-size:1rem; outline:none;">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom:1rem;">
+                            <label for="cardHolderCpf" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">CPF del titular de la tarjeta</label>
+                            <input type="text" id="cardHolderCpf" class="select-input" placeholder="000.000.000-00" maxlength="14" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 14px; font-size:1rem; outline:none;">
+                            <div style="margin-top:6px; font-size:0.85rem; color:#6b7280;">Obligatorio para transacciones nacionales (antifraude del emisor).</div>
+                        </div>
+
+                        <div id="pagarmeBadgeCard" style="display:none; align-items:center; justify-content:center; gap:10px; margin-top:8px; margin-bottom:10px; color:#6b7280; font-size:0.85rem; text-align:center;">
+                          <img src="/images/logo-pagarme.png" alt="Pagar.me" style="height:18px; width:auto; display:inline-block;"/>
+                          <span>Pago procesado por Pagar.me</span>
+                        </div>
+                        <div id="stripeBadgeCard" style="display:none; align-items:center; justify-content:center; gap:10px; margin-top:8px; margin-bottom:10px; color:#6b7280; font-size:0.85rem; text-align:center;">
+                          <span>Pago seguro por transferencia SPEI</span>
+                        </div>
+                        <%- include('partials/metodos_pago') %>
+                        <button id="payWithCardBtn" type="submit" class="continue-button" style="margin-top:0.5rem; display:flex; align-items:center; justify-content:center; position:relative; padding-right:52px;">
+                             <span class="button-text">Pagar con SPEI</span>
+                             <svg class="button-icon" style="position:absolute; right:16px;" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                    </form>
+                </div>
+              </div>
+
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div id="postSelectModal" class="modal-overlay" style="display:none;">
+        <div class="modal-dialog">
+          <div class="modal-header">
+            <h3 id="postModalTitle" class="modal-title">Elige los Reels</h3>
+            <button id="postModalClose" class="modal-close" type="button" aria-label="Cerrar">×</button>
+          </div>
+          <div class="modal-body">
+            <div id="postModalGrid" class="post-grid"></div>
+          </div>
+          <div class="modal-footer">
+            <button id="postModalClose2" class="continue-button" type="button">Cerrar</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="warranty60Modal" class="modal-overlay" style="display:none;">
+        <div class="modal-dialog">
+          <div class="modal-header">
+            <h3 class="modal-title">Garantía extendida</h3>
+            <button id="warranty60CloseBtn" class="modal-close" type="button" aria-label="Cerrar">×</button>
+          </div>
+          <div class="modal-body">
+            <p style="margin-top:0.75rem; color: var(--text-secondary);">En solo 4 clics y en menos de 30 segundos, el cliente puede ingresar el ID de su pedido en nuestro sistema y solicitar una reposición para recuperar las visualizaciones que se hayan caído.</p>
+            <div id="warrantyGifSlot" style="display:flex; align-items:center; justify-content:center; min-height:160px; margin-top: 1rem;">
+               <img src="/images/reposicao.jpeg" alt="Garantía de reposición" style="max-width:100%; border-radius:8px;">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="warranty60CloseBtn2" class="continue-button" type="button">Cerrar</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="commentsExampleModal" class="modal-overlay" style="display:none; align-items:center; justify-content:center; z-index:9999;">
+        <div class="modal-dialog" style="max-width:400px; width:90%; border-radius: 16px; padding: 1.5rem; position:relative; display:flex; flex-direction:column;">
+          <div class="modal-header" style="border:none; padding-bottom:0;">
+            <h3 class="modal-title" style="margin:0 auto;">Ejemplos de comentarios</h3>
+            <button id="commentsExampleCloseBtn" class="modal-close" type="button" aria-label="Cerrar" style="position:absolute; right:1rem; top:1rem;">×</button>
+          </div>
+          <div class="modal-body" style="text-align:center;">
+            <div style="position:relative; aspect-ratio: 9 / 16; height: clamp(320px, 60vh, 560px); max-width: 100%; margin: 0.75rem auto 0; border-radius:12px; overflow:hidden; box-shadow: var(--shadow); background: #000;">
+              <video id="commentsVideoPlayer" controls muted playsinline preload="auto" style="position:absolute; inset:0; width:100%; height:100%; object-fit: cover;">
+                <source src="/images/comentarios.mp4" type="video/mp4" />
+              </video>
+            </div>
+            <p style="margin-top:0.75rem; color: var(--text-secondary);">Perfiles de alta calidad, comentarios positivos y caída mínima.</p>
+          </div>
+          <div class="modal-footer">
+            <button id="commentsExampleCloseBtn2" class="continue-button" type="button">Cerrar</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+    <footer class="footer">
+      <div class="footer-bar">
+        <span class="footer-center">&copy; 2025 You Agency. Todos los derechos reservados.</span>
+        <a href="/terminos" id="termsLink" class="footer-link">Términos de uso</a>
+      </div>
+    </footer>
+  </div>
+
+   <script src="/js/main.js"></script>
+   <script src="/js/why-us.js"></script>
+   <script src="/js/servicos-instagram.js?v=<%= Date.now() %>"></script>
+   <div id="toastContainer" class="toast-container"></div>
+
+   <script>
+     (function(){
+       try {
+         var key = 'ya_client_id';
+         var cid = '';
+         try { cid = String(localStorage.getItem(key) || ''); } catch (_) {}
+         if (!cid) {
+           cid = (typeof crypto !== 'undefined' && crypto && typeof crypto.randomUUID === 'function')
+             ? crypto.randomUUID()
+             : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+           try { localStorage.setItem(key, cid); } catch (_) {}
+         }
+         var ping = function() {
+           try {
+             var payload = JSON.stringify({ clientId: cid, path: (location && location.pathname) ? location.pathname : '' });
+             if (navigator && typeof navigator.sendBeacon === 'function') {
+               navigator.sendBeacon('/api/online/ping', new Blob([payload], { type: 'application/json' }));
+               return;
+             }
+             fetch('/api/online/ping', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(function(){});
+           } catch (_) {}
+         };
+         ping();
+         setInterval(ping, 15000);
+         document.addEventListener('visibilitychange', function(){ if (!document.hidden) ping(); });
+       } catch (_) {}
+     })();
+   </script>
+
+
+
+</body>
+</html>
+</html>

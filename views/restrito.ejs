@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso restringido | You Agency</title>
+    <link rel="stylesheet" href="/css/style.css?v=20261111">
+    <link rel="stylesheet" href="/css/perfil.css">
+    <link rel="stylesheet" href="/css/used.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/images/y%20branco.png" />
+</head>
+<body class="theme-light">
+    <div class="container">
+        <main class="main-content">
+            <div class="profile-section" style="max-width:480px;margin:0 auto;padding:48px 24px;background:#fff;border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,0.07);text-align:center;">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" style="margin-bottom:24px;"><circle cx="12" cy="12" r="10" stroke="#E53E3E" stroke-width="2"/><path d="M12 8v4M12 16h.01" stroke="#E53E3E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <h1 class="error-title" style="color:#2D3748;font-size:2rem;font-weight:700;margin-bottom:12px;">Acceso restringido</h1>
+                <p class="error-message" style="color:#4A5568;font-size:1.1rem;margin-bottom:32px;">Solo puedes entrar a esta página con un enlace temporal válido.</p>
+                <div class="search-container" style="margin-bottom:24px;"></div>
+                <a href="/cliente" class="action-btn" style="display:inline-block;background:#111827;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:1.1em;transition:background 0.2s;">Ir al Área de clientes</a>
+                <div id="paymentCard" style="display:none;margin-top:16px;"></div>
+            </div>
+        </main>
+        <footer class="footer">
+            <p>&copy; 2025 You Agency. Todos los derechos reservados.</p>
+        </footer>
+    </div>
+    <script>
+      (function(){
+        try {
+          var params = new URLSearchParams(window.location.search || '');
+          var from = params.get('from') || '';
+          var referrer = document.referrer || '';
+          var msgEl = document.querySelector('.error-message');
+          var origin = String(from || referrer || '').toLowerCase();
+          if (msgEl) {
+            if (origin.includes('/refil')) {
+              msgEl.textContent = 'Solo puedes entrar a la reposición con un enlace temporal válido.';
+            } else if (origin.includes('/perfil')) {
+              msgEl.textContent = 'La página del perfil requiere un enlace temporal válido.';
+            } else {
+              msgEl.textContent = 'Solo puedes entrar a esta página con un enlace temporal válido.';
+            }
+          }
+          var btnEl = document.querySelector('.action-btn');
+          if (btnEl && origin.includes('/refil')) {
+            btnEl.outerHTML = '<div class="service-card" id="orderBumpInline" style="display:block;">\
+              <div class="card-content">\
+                <h3 class="card-title" style="background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; display: block; text-align: center; width: 100%;">Oferta exclusiva para ti</h3>\
+                <div class="card-desc promo-list">\
+                  <label class="promo-item upgrade">\
+                    <div class="promo-content">\
+                      <div class="promo-highlight" id="orderBumpHighlight">Extensión de reposición</div>\
+                      <div class="promo-title">por 6 meses</div>\
+                      <div id="orderBumpText" class="promo-desc">Extiende tu acceso a la reposición por 6 meses más.</div>\
+                      <div class="promo-prices" data-promo="upgrade">\
+                        <span class="new-price">$ 35</span>\
+                      </div>\
+                    </div>\
+                  </label>\
+                </div>\
+                <div class="button-container" style="margin-top: 12px;">\
+                  <button id="generateRefilPaymentBtn" class="continue-button"><span class="button-text">Pagar con SPEI</span></button>\
+                </div>\
+              </div>\
+            </div>';
+            var genBtn = document.getElementById('generateRefilPaymentBtn');
+            function setPaymentStatus(html){
+              var paymentCardEl = document.getElementById('paymentCard');
+              if (!paymentCardEl) return;
+              paymentCardEl.innerHTML = html;
+              paymentCardEl.style.display = 'block';
+            }
+            if (genBtn) {
+              genBtn.addEventListener('click', function(){
+                try {
+                  var params2 = new URLSearchParams(window.location.search || '');
+                  var phone = params2.get('phone') || '';
+                  var name = params2.get('name') || 'Refill Customer';
+                  var email = params2.get('email') || '';
+                  var token = params2.get('token') || '';
+                  if (!token) {
+                    alert('Falta el token. Usa el enlace original que recibiste.');
+                    return;
+                  }
+                  if (!phone) {
+                    alert('Falta el número de teléfono. Usa el enlace original que recibiste o contacta a soporte.');
+                    return;
+                  }
+                  genBtn.disabled = true;
+                  try {
+                    var span = genBtn.querySelector('.button-text');
+                    if (span) span.textContent = 'Redirigiendo...';
+                  } catch(_) {}
+                  setPaymentStatus('<div style="padding:12px; border:1px solid rgba(0,0,0,0.08); border-radius:12px; background:#f9fafb; color:#111827; font-size:0.95rem;">Generando tu pago por SPEI...</div>');
+                  fetch('/api/xpag/create-charge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      installments: 1,
+                      xpag_method: 'SPEI',
+                      total_cents: 3590,
+                      customer: { name: name, phone_number: phone, email: email },
+                      additionalInfo: [
+                        { key: 'tipo_servico', value: 'refil_extensao' },
+                        { key: 'refil_link_id', value: token },
+                        { key: 'refil_mode', value: '6m' },
+                        { key: 'quantidade', value: '1' },
+                        { key: 'pacote', value: 'Extensión de reposición (6 meses)' },
+                        { key: 'card_provider', value: 'xpag' }
+                      ]
+                    })
+                  }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, status: r.status, data: d }; }); }).then(function(resp){
+                    if (!resp || !resp.ok) {
+                      var m = (resp && resp.data && (resp.data.message || resp.data.error)) ? (resp.data.message || resp.data.error) : 'No se pudo iniciar el pago.';
+                      throw new Error(String(m || '').trim() || 'No se pudo iniciar el pago.');
+                    }
+                    var url = resp.data && resp.data.pay_url ? String(resp.data.pay_url).trim() : '';
+                    if (!url) throw new Error('El enlace de pago no está disponible.');
+                    window.location.href = url;
+                  }).catch(function(err){
+                    try {
+                      setPaymentStatus('<div style="padding:12px; border:1px solid rgba(229,62,62,0.25); border-radius:12px; background:#fff5f5; color:#b91c1c; font-size:0.95rem;">'+
+                        'No pudimos iniciar el pago. '+(err && err.message ? String(err.message) : 'Inténtalo de nuevo.')+
+                        '</div>');
+                    } catch(_) {}
+                    try {
+                      genBtn.disabled = false;
+                      var span2 = genBtn.querySelector('.button-text');
+                      if (span2) span2.textContent = 'Pagar con SPEI';
+                    } catch(_) {}
+                  });
+                } catch(_) {}
+              });
+            }
+          }
+        } catch(_) {}
+      })();
+    </script>
+  <%- include('partials/whatsapp-bubble') %>
+</body>
+</html>

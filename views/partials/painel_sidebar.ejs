@@ -1,0 +1,191 @@
+<%
+    var _p = (typeof page !== 'undefined') ? page : '';
+    function _a(k){ return _p === k ? 'active' : ''; }
+    var _groups = {
+        geral:       ['dashboard','vendas'],
+        operacao:    ['gerenciamento-seguidores','refil2','gestao-parcial-topfama','gestao-parcial-seguidores','aguardando','unknown_orderid','registro-pedido','privados'],
+        marketing:   ['coupons','upsell','ia-crm','ia-followup'],
+        ferramentas: ['consulta-perfil','service_types','testes-servicos']
+    };
+    function _open(list){ return (list.indexOf(_p) >= 0) ? 'open' : ''; }
+%>
+<div class="sidebar">
+    <input type="checkbox" id="sidebarToggle" class="sidebar-toggle" />
+    <div class="sidebar-top">
+        <h2>Painel Admin</h2>
+        <label for="sidebarToggle" class="sidebar-menu-btn" aria-label="Abrir menu">Menu</label>
+    </div>
+    <nav class="sidebar-menu">
+        <div class="nav-search">
+            <input type="text" id="navSearch" class="nav-search-input" placeholder="Pesquisar no menu…" autocomplete="off" spellcheck="false" aria-label="Pesquisar no menu" />
+            <button type="button" id="navSearchClear" class="nav-search-clear" aria-label="Limpar" title="Limpar">×</button>
+        </div>
+        <div class="nav-search-empty" id="navSearchEmpty" hidden>Nenhum item encontrado.</div>
+        <button type="button" class="nav-expand-all" id="navExpandAll" aria-expanded="false">Expandir tudo</button>
+
+        <details class="nav-group" data-group="geral" <%= _open(_groups.geral) %>>
+            <summary>Visão Geral <span class="nav-caret">›</span></summary>
+            <ul>
+                <li><a href="/painel?view=dashboard" class="<%= _a('dashboard') %>">Dashboard</a></li>
+                <li><a href="/painel?view=vendas" class="<%= _a('vendas') %>">Vendas</a></li>
+            </ul>
+        </details>
+
+        <details class="nav-group" data-group="operacao" <%= _open(_groups.operacao) %>>
+            <summary>Operação de Pedidos <span class="nav-caret">›</span></summary>
+            <ul>
+                <li><a href="/painel/gerenciamento-seguidores" class="<%= _a('gerenciamento-seguidores') %>">Gerenciamento de Seguidores</a></li>
+                <li><a href="/painel?view=refil2" class="<%= _a('refil2') %>">Gerenciamento Refil</a></li>
+                <li><a href="/painel/gestao-parcial-topfama" class="<%= _a('gestao-parcial-topfama') %>">Gestão Parcial (Topfama)</a></li>
+                <li><a href="/painel/gestao-parcial-seguidores" class="<%= _a('gestao-parcial-seguidores') %>">Gestão Parcial (Seguidores)</a></li>
+                <li><a href="/painel/aguardando" class="<%= _a('aguardando') %>">Aguardando Pedido</a></li>
+                <li><a href="/painel?view=unknown_orderid&period=all" class="<%= _a('unknown_orderid') %>">OrderID Unknown</a></li>
+                <li><a href="/painel/registro-pedido" class="<%= _a('registro-pedido') %>">Registro de Pedido</a></li>
+                <li><a href="/painel/privados" class="<%= _a('privados') %>">Perfis Privados</a></li>
+            </ul>
+        </details>
+
+        <details class="nav-group" data-group="marketing" <%= _open(_groups.marketing) %>>
+            <summary>Marketing <span class="nav-caret">›</span></summary>
+            <ul>
+                <li><a href="/painel?view=coupons"class="<%= _a('coupons') %>">Cupons</a></li>
+                <li><a href="/painel/upsell" class="<%= _a('upsell') %>">Gestão de Upsell</a></li>
+                <li><a href="/painel/ia-crm" class="<%= _a('ia-crm') %>">CRM IA WhatsApp</a></li>
+                <li><a href="/painel/ia-followup" class="<%= _a('ia-followup') %>">Follow-up do bot</a></li>
+            </ul>
+        </details>
+
+        <details class="nav-group" data-group="ferramentas" <%= _open(_groups.ferramentas) %>>
+            <summary>Ferramentas <span class="nav-caret">›</span></summary>
+            <ul>
+                <li><a href="/painel/consulta-perfil" class="<%= _a('consulta-perfil') %>">Consulta de Perfil</a></li>
+                <li><a href="/painel?view=service_types" class="<%= _a('service_types') %>">Gerenciamento Tipos</a></li>
+                <li><a href="/painel/testes-servicos" class="<%= _a('testes-servicos') %>">Testes de Serviços</a></li>
+            </ul>
+        </details>
+
+        <a href="/logout" class="nav-logout" onclick="return confirm('Tem certeza que deseja sair?')">Sair</a>
+    </nav>
+</div>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..700&display=swap" rel="stylesheet">
+<link href="/css/painel-admin.css?v=1022b5f0" rel="stylesheet">
+<script>
+    // Camada visual do admin (public/css/painel-admin.css). O Meta Ads usa só a base:
+    // tem tabela e botões próprios.
+    document.body.classList.add('pnl');
+    <% if (_p !== 'meta-ads') { %>document.body.classList.add('pnl-ui');<% } %>
+</script>
+<script>
+    (function () {
+        // Lembra quais tópicos ficam abertos/fechados entre navegações
+        var KEY = 'yaNavGroups';
+        var saved = {};
+        try { saved = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (_) { saved = {}; }
+        var groups = document.querySelectorAll('.nav-group[data-group]');
+        var btn = document.getElementById('navExpandAll');
+        var searching = false;
+
+        function refreshBtn() {
+            if (!btn) return;
+            var allOpen = Array.prototype.every.call(groups, function (g) { return g.open; });
+            btn.textContent = allOpen ? 'Recolher tudo' : 'Expandir tudo';
+            btn.setAttribute('aria-expanded', allOpen ? 'true' : 'false');
+        }
+
+        groups.forEach(function (g) {
+            var id = g.getAttribute('data-group');
+            // respeita estado salvo (mas mantém aberto o grupo do item ativo)
+            var hasActive = !!g.querySelector('a.active');
+            if (!hasActive && saved.hasOwnProperty(id)) {
+                g.open = !!saved[id];
+            }
+            g.addEventListener('toggle', function () {
+                if (searching) { return; } // durante a busca não sobrescreve o estado salvo
+                try {
+                    saved[id] = g.open;
+                    localStorage.setItem(KEY, JSON.stringify(saved));
+                } catch (_) {}
+                refreshBtn();
+            });
+        });
+
+        if (btn) {
+            btn.addEventListener('click', function () {
+                var allOpen = Array.prototype.every.call(groups, function (g) { return g.open; });
+                var target = !allOpen; // se nem todos abertos -> abre todos; senão fecha todos
+                groups.forEach(function (g) { g.open = target; });
+                refreshBtn();
+            });
+        }
+        refreshBtn();
+
+        // ── Pesquisa no menu ──────────────────────────────────────────────
+        var search = document.getElementById('navSearch');
+        var searchWrap = search ? search.parentElement : null;
+        var searchClear = document.getElementById('navSearchClear');
+        var searchEmpty = document.getElementById('navSearchEmpty');
+
+        function norm(s) {
+            try { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(); }
+            catch (_) { return String(s || '').toLowerCase().trim(); }
+        }
+
+        // Restaura os grupos ao estado normal (salvo / item ativo) ao sair da busca.
+        function restoreGroups() {
+            groups.forEach(function (g) {
+                g.style.display = '';
+                var id = g.getAttribute('data-group');
+                var hasActive = !!g.querySelector('a.active');
+                g.open = hasActive ? true : (saved.hasOwnProperty(id) ? !!saved[id] : g.open);
+                Array.prototype.forEach.call(g.querySelectorAll('li'), function (li) { li.style.display = ''; });
+                Array.prototype.forEach.call(g.querySelectorAll('a.nav-search-hit'), function (a) { a.classList.remove('nav-search-hit'); });
+            });
+            if (btn) btn.style.display = '';
+            if (searchEmpty) searchEmpty.hidden = true;
+        }
+
+        function applyFilter() {
+            var q = norm(search ? search.value : '');
+            if (searchWrap) searchWrap.classList.toggle('has-text', !!q);
+            if (!q) {
+                searching = false;
+                restoreGroups();
+                refreshBtn();
+                return;
+            }
+            searching = true;
+            if (btn) btn.style.display = 'none'; // esconde "Expandir tudo" durante a busca
+            var totalHits = 0;
+            groups.forEach(function (g) {
+                var groupHits = 0;
+                Array.prototype.forEach.call(g.querySelectorAll('li'), function (li) {
+                    var a = li.querySelector('a');
+                    var txt = norm(a ? a.textContent : '');
+                    var match = txt.indexOf(q) >= 0;
+                    li.style.display = match ? '' : 'none';
+                    if (a) a.classList.toggle('nav-search-hit', match);
+                    if (match) groupHits++;
+                });
+                g.style.display = groupHits ? '' : 'none';
+                g.open = groupHits > 0; // abre os grupos com resultado
+                totalHits += groupHits;
+            });
+            if (searchEmpty) searchEmpty.hidden = totalHits > 0;
+        }
+
+        if (search) {
+            search.addEventListener('input', applyFilter);
+            search.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') { search.value = ''; applyFilter(); search.blur(); }
+            });
+        }
+        if (searchClear) {
+            searchClear.addEventListener('click', function () {
+                if (search) { search.value = ''; search.focus(); }
+                applyFilter();
+            });
+        }
+    })();
+</script>

@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Reposición de seguidores | You Agency</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="/css/style.css?v=20261111" rel="stylesheet" />
+</head>
+<body class="refil-page theme-light">
+  <div class="container checkout-page">
+    <header class="header">
+      <h1 class="title">Reposición</h1>
+      <p class="subtitle">Escribe tu @ de Instagram para solicitar una reposición</p>
+      <% if (typeof refilIsLifetime !== 'undefined' && refilIsLifetime) { %>
+        <p class="subtitle" style="margin-top:0.25rem;">Acceso: <strong>De por vida</strong></p>
+      <% } else if (typeof refilDaysLeft === 'number' && !Number.isNaN(refilDaysLeft)) { %>
+        <% if (refilDaysLeft <= 0) { %>
+          <p class="subtitle" style="margin-top:0.25rem;">Acceso: <strong>Vencido</strong></p>
+        <% } else { %>
+          <p class="subtitle" style="margin-top:0.25rem;">Tu acceso vence en: <strong><%= refilDaysLeft %></strong> <%= (refilDaysLeft === 1 ? 'día' : 'días') %></p>
+        <% } %>
+      <% } %>
+    </header>
+    <main class="main-content">
+        <div class="refil-info-accordion" id="refilInfo">
+          <button class="refil-info-toggle" id="refilInfoToggle" type="button" aria-expanded="false" aria-controls="refilInfoContent">
+            <div class="refil-info-left">
+              <span class="info-icon" aria-hidden="true">i</span>
+              <span class="info-title">Reglas de reposición</span>
+            </div>
+            <span class="chevron" aria-hidden="true">▸</span>
+          </button>
+          <div class="refil-info-content" id="refilInfoContent" hidden>
+            <ul>
+              <li>Después de solicitar una reposición, espera 12 horas antes de pedir otra.</li>
+              <li>No podemos reponer seguidores en perfiles que cambiaron su usuario.</li>
+              <li>Tu perfil debe ser público para procesar la reposición.</li>
+            </ul>
+          </div>
+        </div>
+
+      <section class="section-block">
+        <div class="service-card" id="refilCard">
+          <div class="card-content">
+            <h3 class="card-title">Reposición</h3>
+            <div class="card-desc">
+              <div class="input-group" id="grupoRefil">
+                <div id="tutorialRefilPedidoId" class="tutorial-pop tutorial-pop-input">
+                  <div class="tutorial-pop-text">Escribe tu @ aquí</div>
+                </div>
+                <div class="refil-input-row">
+                  <input type="text" id="refilUsernameInput" class="select-input" placeholder="Escribe tu @ de Instagram..." value="<%= (typeof lastRefilUsername !== 'undefined' && lastRefilUsername) ? String(lastRefilUsername) : '' %>" maxlength="60" />
+                  <button id="refilSubmitBtn" class="continue-button" type="button">
+                    <span class="button-text">Solicitar reposición</span>
+                  </button>
+                </div>
+                <div id="refilStatus" class="status-message" style="display:none; margin-top:0.5rem;"></div>
+                <div id="refilResult" class="card-desc" style="display:none; margin-top:0.75rem;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="service-card" id="refilHistoryCard" style="display:none;">
+          <div class="card-content">
+            <h3 class="card-title">Historial de reposiciones</h3>
+            <div class="card-desc" id="refilHistoryList"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <style>
+    .refil-page .container.checkout-page { padding-top: 24px; }
+    .refil-page .section-block { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+    .refil-page .main-content { max-width: 1160px; width: 100%; margin: 0 auto; }
+    .refil-page .refil-info-accordion { width: 100%; max-width: 980px; margin: 6px auto 14px auto; }
+    .refil-page .refil-info-toggle { width:100%; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border:1px solid var(--border-color); border-radius:12px; background: #ffffff; color: var(--text-primary); cursor:pointer; }
+    .refil-page .refil-info-left { display:flex; align-items:center; gap:10px; }
+    .refil-page .refil-info-toggle .info-icon { flex:0 0 auto; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; background:#2563eb; color:#fff; line-height:22px; }
+    .refil-page .refil-info-toggle .info-title { font-weight:700; }
+    .refil-page .refil-info-toggle .chevron { transition: transform 160ms ease; transform: rotate(0deg); font-size:16px; opacity:0.9; }
+    .refil-page .refil-info-accordion.open .refil-info-toggle .chevron { transform: rotate(90deg); }
+    .refil-page .refil-info-content { border:1px solid var(--border-color); border-top:0; border-radius:0 0 12px 12px; padding:12px 16px; background: #ffffff; }
+    .refil-page .refil-info-content ul { margin:0; padding-left: 20px; list-style: disc; }
+    .refil-page .refil-info-content li { margin: 6px 0; }
+    .refil-page .refil-info-content .faq-item { display:block; }
+    .refil-page .refil-info-content .faq-q { font-weight:700; margin: 4px 0 6px 0; }
+    .refil-page .refil-info-content .faq-a { color: var(--text-secondary); line-height: 1.6; }
+    .refil-page #refilCard { width: 100%; max-width: 980px; margin: 0 auto; }
+    .refil-page #refilHistoryCard { width: 100%; max-width: 980px; margin: 0 auto; }
+    .refil-page #refilCard .card-content { display: flex; flex-direction: column; align-items: center; }
+    .refil-page #refilCard .card-desc { width: 100%; display: flex; flex-direction: column; align-items: center; }
+    .refil-page #grupoRefil { width: 100%; max-width: 760px; position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+    .refil-page #grupoRefil .refil-input-row { width: 100%; display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
+    .refil-page #grupoRefil .select-input { width: 100%; max-width: 760px; }
+    .refil-page #refilSubmitBtn { margin-left: 0 !important; }
+    .refil-page .tutorial-pop { display: flex !important; }
+    .refil-page .tutorial-pop.hide { display: none !important; }
+    body.theme-light.refil-page #tutorialRefilPedidoId { border-color: #cc2366 !important; background: var(--instagram-gradient) !important; color: #ffffff !important; }
+    body.theme-light.refil-page #tutorialRefilPedidoId .tutorial-pop-text { color: #ffffff !important; }
+    body.theme-light.refil-page #tutorialRefilPedidoId::after { border-top-color: #cc2366 !important; }
+    .refil-page #tutorialRefilPedidoId { top: 32px; left: 16px; transform: none; --tip-arrow-left: 34px; }
+    @media (max-width: 767px) {
+      .refil-page #refilCard { max-width: 1020px; }
+      .refil-page #grupoRefil { max-width: 100%; }
+      .refil-page #grupoRefil .select-input { max-width: 100%; }
+      .refil-page #tutorialRefilPedidoId { top: 56px; max-width: 280px; left: 6px; --tip-arrow-left: 22px; }
+      body.theme-light.refil-page #tutorialRefilPedidoId::after { top: -6px; bottom: auto; border-top: 0; border-bottom: 6px solid #cc2366 !important; }
+    }
+    @media (min-width: 768px) {
+      .refil-page #grupoRefil .refil-input-row { flex-direction: column; justify-content: center; }
+      .refil-page #refilSubmitBtn { white-space: nowrap; }
+      .refil-page #tutorialRefilPedidoId { top: 78px; left: 20px; --tip-arrow-left: 44px; }
+      body.theme-light.refil-page #tutorialRefilPedidoId::after { top: -6px; bottom: auto; border-top: 0; border-bottom: 6px solid #cc2366 !important; }
+    }
+  </style>
+  
+  <script>
+    (function(){
+      var accordions = document.querySelectorAll('.refil-info-accordion');
+      if (accordions && accordions.forEach) {
+        accordions.forEach(function(root){
+          var toggle = root.querySelector('.refil-info-toggle');
+          var content = root.querySelector('.refil-info-content');
+          if (!toggle || !content) return;
+          toggle.addEventListener('click', function(){
+            var expanded = String(toggle.getAttribute('aria-expanded') || '').toLowerCase() === 'true';
+            if (expanded) {
+              toggle.setAttribute('aria-expanded', 'false');
+              content.setAttribute('hidden', '');
+              try { root.classList.remove('open'); } catch(_) {}
+            } else {
+              toggle.setAttribute('aria-expanded', 'true');
+              content.removeAttribute('hidden');
+              try { root.classList.add('open'); } catch(_) {}
+            }
+          });
+        });
+      }
+      function safeTrim(v) {
+        try { return String(v || '').replace(/^\s+|\s+$/g, ''); } catch(_) { return ''; }
+      }
+      function hasClass(el, cls) {
+        if (!el) return false;
+        var c = el.className || '';
+        return (' ' + c + ' ').indexOf(' ' + cls + ' ') >= 0;
+      }
+      function addClass(el, cls) {
+        if (!el || !cls) return;
+        if (el.classList && el.classList.add) { el.classList.add(cls); return; }
+        if (hasClass(el, cls)) return;
+        el.className = safeTrim((el.className || '') + ' ' + cls);
+      }
+      function removeClass(el, cls) {
+        if (!el || !cls) return;
+        if (el.classList && el.classList.remove) { el.classList.remove(cls); return; }
+        var c = ' ' + (el.className || '') + ' ';
+        while (c.indexOf(' ' + cls + ' ') >= 0) c = c.replace(' ' + cls + ' ', ' ');
+        el.className = safeTrim(c);
+      }
+      function sanitizeSupplierName(input){
+        var s = '';
+        try { s = String(input || ''); } catch(_) { s = ''; }
+        return safeTrim(
+          s
+            .replace(/\bfama24h\b\s*[:\-–—]?\s*/ig, '')
+            .replace(/\(\s*fama24h\s*\)/ig, '')
+            .replace(/\[\s*fama24h\s*\]/ig, '')
+            .replace(/\{\s*fama24h\s*\}/ig, '')
+            .replace(/\s{2,}/g, ' ')
+        );
+      }
+      function setStatus(statusEl, msg, type){
+        if (!statusEl) return;
+        statusEl.textContent = sanitizeSupplierName(msg);
+        statusEl.style.display = 'block';
+        statusEl.style.textAlign = 'center';
+        statusEl.style.color = type === 'success' ? '#22C55E' : (type === 'error' ? '#ef4444' : 'var(--text-primary)');
+      }
+      function formatDatePtBR(iso){
+        try {
+          var d = new Date(iso);
+          if (!d || isNaN(d.getTime())) return String(iso || '');
+          var day = String(d.getDate()).padStart ? String(d.getDate()).padStart(2, '0') : ('0' + d.getDate()).slice(-2);
+          var month = String(d.getMonth() + 1).padStart ? String(d.getMonth() + 1).padStart(2, '0') : ('0' + (d.getMonth() + 1)).slice(-2);
+          var year = String(d.getFullYear()).slice(-2);
+          var hh = String(d.getHours()).padStart ? String(d.getHours()).padStart(2, '0') : ('0' + d.getHours()).slice(-2);
+          var mm = String(d.getMinutes()).padStart ? String(d.getMinutes()).padStart(2, '0') : ('0' + d.getMinutes()).slice(-2);
+          return day + '/' + month + '/' + year + ' ' + hh + ':' + mm;
+        } catch(_) {
+          return String(iso || '');
+        }
+      }
+      function httpJson(url, method, bodyObj, cb) {
+        try {
+          var xhr = new XMLHttpRequest();
+          xhr.open(method || 'GET', url, true);
+          xhr.setRequestHeader('Accept', 'application/json');
+          if (method === 'POST') xhr.setRequestHeader('Content-Type', 'application/json');
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState !== 4) return;
+            var status = xhr.status || 0;
+            var raw = '';
+            try { raw = xhr.responseText || ''; } catch(_) { raw = ''; }
+            var data = null;
+            try { data = raw ? JSON.parse(raw) : null; } catch(_) { data = null; }
+            if (!data && raw) data = { raw: raw };
+            cb(status >= 200 && status < 300, data || {}, status);
+          };
+          xhr.send(method === 'POST' ? JSON.stringify(bodyObj || {}) : null);
+        } catch (e) {
+          cb(false, { error: (e && e.message) ? e.message : String(e) }, 0);
+        }
+      }
+
+      function normalizeUsernameInput(v) {
+        try {
+          var s = safeTrim(v);
+          if (!s) return '';
+          s = s.replace(/[`"'“”‘’]/g, '');
+          s = s.replace(/\s+/g, '');
+          s = s.replace(/^@+/, '');
+          s = s.replace(/\/+$/, '');
+          if (/^https?:\/\//i.test(s)) {
+            try {
+              var u = new URL(s);
+              var p = String(u.pathname || '').replace(/\/+$/, '');
+              var parts = p.split('/').filter(function(x){ return !!x; });
+              s = parts.length ? parts[parts.length - 1] : '';
+            } catch(_) {}
+          } else if (s.indexOf('/') >= 0) {
+            var parts2 = s.split('/').filter(function(x){ return !!x; });
+            s = parts2.length ? parts2[parts2.length - 1] : s;
+          }
+          s = safeTrim(s.replace(/^@+/, ''));
+          if (!s) return '';
+          s = s.toLowerCase();
+          if (!/^[a-z0-9._]{1,30}$/.test(s)) return '';
+          return s;
+        } catch(_) { return ''; }
+      }
+
+      var orderInput = document.getElementById('refilUsernameInput');
+      var submitBtn = document.getElementById('refilSubmitBtn');
+      var statusEl = document.getElementById('refilStatus');
+      var resultEl = document.getElementById('refilResult');
+      var tipEl = document.getElementById('tutorialRefilPedidoId');
+      var historyCardEl = document.getElementById('refilHistoryCard');
+      var historyListEl = document.getElementById('refilHistoryList');
+      var refilToken = "<%= (typeof refilToken !== 'undefined' && refilToken) ? String(refilToken) : '' %>";
+
+      function syncTipVisibility(){
+        if (!tipEl || !orderInput) return;
+        var hasValue = !!safeTrim(orderInput.value);
+        if (hasValue) addClass(tipEl, 'hide');
+        else removeClass(tipEl, 'hide');
+      }
+
+      function renderHistory(items){
+        if (!historyCardEl || !historyListEl) return;
+        var arr = (items && items.length && typeof items.length === 'number') ? items : (Array.isArray && Array.isArray(items) ? items : []);
+        historyCardEl.style.display = 'block';
+        if (!arr.length) {
+          historyListEl.innerHTML = '<div style="text-align:center; color: var(--text-secondary);">Aún no tienes reposiciones exitosas.</div>';
+          return;
+        }
+        var html = '';
+        for (var i = 0; i < arr.length; i++) {
+          var it = arr[i] || {};
+          var when = formatDatePtBR(it && it.requestedAt ? it.requestedAt : '');
+          html += '<div style="display:flex; justify-content:space-between; gap: 0.75rem; padding: 0.6rem 0; border-top: 1px solid var(--border-color);">' +
+            '<div style="min-width: 0;">' +
+              '<div style="font-weight: 700;">Reposición solicitada</div>' +
+              '<div style="color: var(--text-secondary); font-size: 0.9rem;">' + when + '</div>' +
+            '</div>' +
+          '</div>';
+        }
+        historyListEl.innerHTML = html;
+      }
+
+      function loadHistory(username){
+        if (!historyCardEl || !historyListEl) return;
+        var v = normalizeUsernameInput(username);
+        if (!v) {
+          historyCardEl.style.display = 'none';
+          return;
+        }
+        var debugFlag = false;
+        try { debugFlag = String(window && window.location && window.location.search ? window.location.search : '').indexOf('debug=1') >= 0; } catch(_) { debugFlag = false; }
+        httpJson('/api/refil/history', 'POST', { username: v, debug: (debugFlag ? 1 : 0) }, function (ok, data) {
+          if (!ok || !data || data.ok !== true) {
+            historyCardEl.style.display = 'none';
+            return;
+          }
+          renderHistory(data.history);
+        });
+      }
+
+      function extractErrorMessage(data){
+        try {
+          if (!data) return 'No se pudo solicitar la reposición';
+          var main = safeTrim((data.message || data.error || ''));
+          if (!main && data.raw) main = safeTrim(String(data.raw || ''));
+          var details = data.details;
+          var sub = '';
+          if (typeof details === 'string') sub = details;
+          else if (details && typeof details === 'object') sub = (details.message || details.error || details.detail || details.reason || '');
+          var merged = [];
+          if (safeTrim(main)) merged.push(main);
+          if (safeTrim(sub)) merged.push(sub);
+          return sanitizeSupplierName(merged.length ? merged.join(' — ') : 'No se pudo solicitar la reposición');
+        } catch(_) { return 'No se pudo solicitar la reposición'; }
+      }
+
+      function submitRefil(){
+        var username = normalizeUsernameInput(orderInput && orderInput.value ? orderInput.value : '');
+        if (!username) { setStatus(statusEl, 'Escribe tu @ de Instagram', 'error'); return; }
+        setStatus(statusEl, 'Solicitando reposición...', 'info');
+        if (resultEl) resultEl.style.display = 'none';
+        if (submitBtn) { try { submitBtn.disabled = true; submitBtn.style.opacity = '0.7'; } catch(_) {} }
+
+        var pathname = '';
+        try { pathname = String(window && window.location && window.location.pathname ? window.location.pathname : ''); } catch(_) { pathname = ''; }
+        var isRefil2 = pathname.toLowerCase().indexOf('refil2') >= 0;
+        var debugFlag = false;
+        try { debugFlag = String(window && window.location && window.location.search ? window.location.search : '').indexOf('debug=1') >= 0; } catch(_) { debugFlag = false; }
+        httpJson('/api/refil/preview', 'POST', { username: username, source: (isRefil2 ? 'refil2' : 'refil'), debug: (debugFlag ? 1 : 0) }, function (ok, data) {
+          if (isRefil2) {
+            var statusCode = (arguments && arguments.length >= 3) ? arguments[2] : '';
+            var safeNum = function (v) {
+              if (v == null) return null;
+              if (typeof v === 'number' && isFinite(v)) return Math.trunc(v);
+              var s = String(v || '').replace(/[^\d]/g, '');
+              if (!s) return null;
+              var n = Number(s);
+              return isFinite(n) ? n : null;
+            };
+            var normalizeSaida = function (data) {
+              try {
+                if (!data) return '';
+                if (typeof data === 'string') return String(data || '');
+                if (data && typeof data === 'object') {
+                  if (typeof data.saida === 'string') return String(data.saida || '');
+                  if (typeof data.message === 'string') return String(data.message || '');
+                  if (typeof data.error === 'string') return String(data.error || '');
+                  if (typeof data.raw === 'string') return String(data.raw || '');
+                }
+                return '';
+              } catch (_) { return ''; }
+            };
+            var escapeHtml = function (s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+            var isFormatted = !!(ok && data && typeof data === 'object' && data.ok === true && String(data.status || '') === 'initiated' && data.data && typeof data.data === 'object');
+            if (isFormatted) {
+              var qi = safeNum(data.data.quantidade_inicial);
+              var qa = safeNum(data.data.quantidade_atual);
+              var qq = safeNum(data.data.quantidade_de_queda);
+              var title = String(data.message || 'Reposición iniciada');
+              var isNoDrop = (qq != null && qq < 50);
+              var userTitle = isNoDrop ? 'No se detectó caída' : title;
+              setStatus(statusEl, userTitle, 'success');
+              try { if (statusEl) statusEl.style.fontWeight = '400'; } catch (_) {}
+              if (isNoDrop) {
+                try { if (resultEl) { resultEl.style.display = 'none'; resultEl.innerHTML = ''; } } catch (_) {}
+              } else {
+                if (resultEl) resultEl.style.display = 'block';
+                if (resultEl) resultEl.innerHTML = '<div style="text-align:left;">' +
+                  '<div style="background: rgba(16,185,129,0.10); border: 1px solid rgba(16,185,129,0.25); border-radius: 12px; padding: 14px 14px;">' +
+                    '<div style="display:flex; justify-content:space-between; align-items:center; gap: 12px;">' +
+                      '<div style="font-weight: 400; color: #047857;">' + escapeHtml(userTitle) + '</div>' +
+                      '<button type="button" id="refilCloseResultBtn" style="border:none; background:transparent; color:#047857; font-size:18px; line-height:18px; cursor:pointer;">×</button>' +
+                    '</div>' +
+                    '<div style="margin-top:10px; color:#065F46; font-family: inherit; font-size: 0.95rem; line-height:1.65;">' +
+                      (qi != null ? ('<div>Cantidad inicial: ' + String(qi) + '</div>') : '') +
+                      (qa != null ? ('<div>Cantidad actual: ' + String(qa) + '</div>') : '') +
+                      (qq != null ? ('<div>Cantidad de caída: ' + String(qq) + '</div>') : '') +
+                    '</div>' +
+                  '</div>' +
+                '</div>';
+                try {
+                  var closeBtn = document.getElementById('refilCloseResultBtn');
+                  if (closeBtn) closeBtn.onclick = function () { try { if (resultEl) resultEl.style.display = 'none'; } catch (_) {} };
+                } catch (_) {}
+              }
+            } else {
+              var outTxt = '';
+              try {
+                outTxt = normalizeSaida(data);
+                if (!outTxt) outTxt = (typeof data === 'string') ? data : JSON.stringify(data, null, 2);
+              } catch(_) { outTxt = String(data || ''); }
+              outTxt = String(outTxt || '').trim();
+              if (/quantity\s+must\s+be\s+>=\s*1/i.test(outTxt)) outTxt = 'No se detectó caída';
+              setStatus(statusEl, outTxt || ('Webhook: HTTP ' + String(statusCode || '')), ok ? 'success' : 'error');
+              try { if (statusEl) statusEl.style.fontWeight = '400'; } catch (_) {}
+              try { if (resultEl) { resultEl.style.display = 'none'; resultEl.innerHTML = ''; } } catch (_) {}
+            }
+            try { if (historyCardEl) historyCardEl.style.display = 'none'; } catch(_) {}
+            if (submitBtn) { try { submitBtn.disabled = false; submitBtn.style.opacity = ''; } catch(_) {} }
+            return;
+          }
+          if (!ok) {
+            setStatus(statusEl, extractErrorMessage(data), 'error');
+            if (submitBtn) { try { submitBtn.disabled = false; submitBtn.style.opacity = ''; } catch(_) {} }
+            return;
+          }
+          var st = (data && data.status) ? String(data.status) : '';
+          var msg = (data && data.message) ? String(data.message) : 'OK';
+          if (st === 'above_target') {
+            setStatus(statusEl, 'Por encima de la meta: la reposición no está disponible', 'warning');
+          } else if (st === 'below_threshold') {
+            setStatus(statusEl, 'La caída está por debajo del mínimo para reposición (mínimo: 50).', 'warning');
+          } else if (st === 'deficit') {
+            setStatus(statusEl, 'Reposición calculada', 'success');
+          } else if (st === 'no_followers_purchase') {
+            setStatus(statusEl, 'No encontramos una compra de seguidores', 'error');
+          } else if (st === 'no_orders') {
+            setStatus(statusEl, 'No encontramos pedidos', 'error');
+          } else {
+            setStatus(statusEl, 'Verificación completada', 'info');
+          }
+          if (resultEl) resultEl.style.display = 'block';
+          var item = data;
+          var d = item && item.data ? item.data : {};
+          var target = (typeof d.target_followers !== 'undefined') ? d.target_followers : '—';
+          var current = (typeof d.current_followers !== 'undefined') ? d.current_followers : '—';
+          var deficit = (typeof d.deficit !== 'undefined') ? d.deficit : '—';
+          var minDrop = (typeof d.min_drop !== 'undefined') ? d.min_drop : 50;
+          var base = (typeof d.base_followers !== 'undefined' && d.base_followers !== null) ? d.base_followers : '—';
+          var note = (st === 'below_threshold') ? ('<div style="color:#b45309; margin-top:4px;">Nota: para reponer, la caída mínima es de ' + minDrop + ' seguidores.</div>') : '';
+          var webhook = (data && data.webhook) ? data.webhook : null;
+          var webhookHtml = '';
+          try {
+            if (webhook) {
+              var statusTxt = (webhook && webhook.ok === false) ? 'Falló' : 'OK';
+              var content = '';
+              try {
+                if (webhook && (webhook.data !== undefined)) {
+                  var raw = (typeof webhook.data === 'string') ? webhook.data : JSON.stringify(webhook.data);
+                  raw = String(raw || '');
+                  if (raw.length > 1800) raw = raw.slice(0, 1800) + '...';
+                  content = raw;
+                } else if (webhook && webhook.message) {
+                  content = String(webhook.message || '');
+                  if (content.length > 1800) content = content.slice(0, 1800) + '...';
+                }
+              } catch(_) { content = ''; }
+              webhookHtml = '<div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color);">' +
+                '<div><strong>Webhook:</strong> ' + statusTxt + '</div>' +
+                (content ? ('<div style="margin-top:6px; font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size: 12px; white-space: pre-wrap; word-break: break-word; opacity: 0.9;">' + content.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>') : '') +
+              '</div>';
+            }
+          } catch(_) { webhookHtml = ''; }
+          if (resultEl) resultEl.innerHTML = '<div style="text-align:left;">' +
+            '<div><strong>Usuario:</strong> ' + username + '</div>' +
+            '<div><strong>Mensaje:</strong> ' + msg + '</div>' +
+            '<div><strong>Base de la compra:</strong> ' + base + '</div>' +
+            '<div><strong>Seguidores meta:</strong> ' + target + '</div>' +
+            '<div><strong>Seguidores actuales:</strong> ' + current + '</div>' +
+            '<div><strong>Por reponer:</strong> ' + deficit + '</div>' +
+            note +
+          '</div>' + webhookHtml;
+
+          loadHistory(username);
+          if (submitBtn) { try { submitBtn.disabled = false; submitBtn.style.opacity = ''; } catch(_) {} }
+        });
+      }
+
+      try { window.submitRefil = submitRefil; } catch(_) {}
+      try { window.syncRefilTip = syncTipVisibility; } catch(_) {}
+
+      if (orderInput) {
+        var historyTimer = null;
+        orderInput.oninput = function () {
+          syncTipVisibility();
+          var v = normalizeUsernameInput(orderInput.value);
+          try { if (historyTimer) clearTimeout(historyTimer); } catch(_) {}
+          historyTimer = setTimeout(function () { loadHistory(v); }, 650);
+        };
+        orderInput.onkeyup = orderInput.oninput;
+        orderInput.onchange = orderInput.oninput;
+        syncTipVisibility();
+        try { if (normalizeUsernameInput(orderInput.value)) loadHistory(orderInput.value); } catch(_) {}
+      }
+      if (submitBtn) {
+        submitBtn.onclick = function (ev) {
+          try { if (ev && ev.preventDefault) ev.preventDefault(); } catch(_) {}
+          submitRefil();
+          return false;
+        };
+      }
+    })();
+  </script>
+</body>
+</html>

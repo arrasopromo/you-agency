@@ -1,0 +1,976 @@
+<%
+  // Mesma tela para o número da IA e o do LTV (config vem da rota; padrão = IA).
+  const C = (typeof crm !== 'undefined' && crm) ? crm : { modo: 'ia', titulo: 'CRM IA WhatsApp', page: 'ia-crm', api: '/api/painel/ia-crm', sendMedia: '/api/painel/ia-crm/send-media', temBot: true };
+%>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= C.titulo %></title>
+  <link href="/css/style.css" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: sans-serif; background: #f0f2f5; color: #111b21; margin: 0; padding: 0; }
+    /* Altura real do chat: desconta o topo do painel (no celular a sidebar fica
+       sticky em cima). --crm-top é medido no JS; sem isso o rodapé (campo de
+       digitação) e o botão Voltar ficavam fora da tela no celular. */
+    .crm { display: flex; height: calc(100vh - var(--crm-top, 0px)); height: calc(100dvh - var(--crm-top, 0px)); background: #fff; overflow: hidden; }
+    /* o painel dá min-height:100vh no .main-content — aqui isso criava rolagem
+       extra na página e empurrava o campo de digitação pra fora da tela. */
+    .main-content { min-height: 0 !important; overflow: hidden; }
+    /* Lista de conversas */
+    .convs { width: 360px; min-width: 300px; border-right: 1px solid #e9edef; display: flex; flex-direction: column; background: #fff; }
+    .convs-head { padding: 12px 14px; background: #f0f2f5; border-bottom: 1px solid #e9edef; display: flex; align-items: center; gap: 10px; }
+    .convs-head h2 { margin: 0; font-size: 1.05rem; color: #111b21; }
+    .convs-head .pill { margin-left: auto; font-size: 0.72rem; background: #25d366; color: #fff; padding: 2px 8px; border-radius: 999px; }
+    .search { padding: 8px 12px; border-bottom: 1px solid #f0f2f5; }
+    .so-resposta { display:flex; align-items:center; gap:8px; padding:2px 14px 8px; font-size:0.8rem; color:#54656f; cursor:pointer; user-select:none; }
+    .so-resposta input { width:15px; height:15px; accent-color:#25d366; }
+    .search input { width: 100%; padding: 8px 12px; border: none; background: #f0f2f5; border-radius: 8px; font-size: 0.9rem; outline: none; }
+    .conv-list { flex: 1; overflow-y: auto; }
+    .conv { display: flex; gap: 10px; padding: 11px 14px; cursor: pointer; border-bottom: 1px solid #f5f6f6; align-items: center; }
+    .conv:hover { background: #f5f6f6; }
+    .conv.active { background: #e9f7ef; }
+    .avatar { width: 44px; height: 44px; border-radius: 50%; background: #d1d7db; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; flex-shrink: 0; }
+    .conv-main { flex: 1; min-width: 0; }
+    .conv-top { display: flex; align-items: center; gap: 4px; min-width: 0; }
+    .conv-name { font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+    .conv-tags { flex: 0 0 auto; display: inline-flex; align-items: center; white-space: nowrap; }
+    .conv-time { font-size: 0.7rem; color: #667781; flex-shrink: 0; }
+    .conv-sub { font-size: 0.82rem; color: #667781; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .badge-unread { background: #25d366; color: #fff; border-radius: 999px; font-size: 0.68rem; padding: 1px 7px; margin-left: 6px; }
+    .tag-bot { font-size: 0.62rem; background: #7c3aed; color: #fff; padding: 1px 5px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+    .tag-paused { font-size: 0.62rem; background: #6b7280; color: #fff; padding: 1px 5px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+    /* Guias: Aguardando | Novas | Antigas | Todas — uma linha só, rolável no celular. */
+    /* Quebram linha: rolar as guias pro lado no celular não funcionava e a 3ª em
+       diante ficava inalcançável. Agora TODAS aparecem, em duas fileiras. */
+    .tabs { display:flex; flex-wrap:wrap; gap:6px; padding:2px 10px 10px; }
+    .tab { flex:0 0 auto; white-space:nowrap; font-size:0.76rem; font-weight:600; padding:7px 13px; border:1px solid #dfe5ea;
+      background:#fff; color:#54656f; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:background .12s, color .12s; }
+    .tab:hover { background:#f3f6f8; }
+    .tab.active { background:#111b21; color:#fff; border-color:#111b21; }
+    /* Aguardando resposta tem cor própria: é a fila de trabalho. */
+    .tab[data-tab="pending"] { background:#fffaf0; border-color:#f3d29a; color:#b45309; }
+    .tab[data-tab="pending"].active { background:#f59e0b; border-color:#f59e0b; color:#fff; }
+    .tab[data-tab="done"] { background:#f4fbf6; border-color:#c3e6d1; color:#15803d; }
+    .tab[data-tab="done"].active { background:#16a34a; border-color:#16a34a; color:#fff; }
+    .tab-badge { background:#f59e0b; color:#fff; border-radius:999px; font-size:0.66rem; font-weight:800; padding:0 6px; min-width:18px; text-align:center; }
+    .tab.active .tab-badge { background:#fff; color:#b45309; }
+    /* Conversa importada (histórico DataCrazy): IA pausada por origem, não por atendimento. */
+    .tag-legacy { font-size: 0.62rem; background: #b45309; color: #fff; padding: 1px 5px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+    /* Coluna de tempo à direita da conversa */
+    .conv-side { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width:52px; }
+    .side-elapsed { font-size:0.76rem; font-weight:700; color:#667781; }
+    .side-elapsed.pend { color:#d97706; }
+    .side-clock { font-size:0.68rem; color:#9aa5ab; }
+    /* Conversa aguardando resposta: barra laranja à esquerda */
+    .conv.pend { border-left:3px solid #f59e0b; background:#fffdf7; }
+    .conv.pend:hover { background:#fff8ea; }
+    .conv.pend.active { background:#e9f7ef; }
+    /* Thread */
+    .thread { flex: 1; display: flex; flex-direction: column; background: #efeae2; min-width: 0; }
+    .thread-head { padding: 10px 16px; background: #f0f2f5; border-bottom: 1px solid #e9edef; display: flex; align-items: center; gap: 10px; }
+    .thread-head .back { display: none; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #54656f; }
+    .thread-head .t-name { font-weight: 600; }
+    .thread-head .t-phone { font-size: 0.75rem; color: #667781; }
+    .thread-head .actions { margin-left: auto; display: flex; gap: 8px; }
+    .btn-bot { padding: 6px 12px; border-radius: 8px; border: 1px solid; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+    .btn-bot.on { border-color: #16a34a; color: #16a34a; background: #fff; }
+    .btn-bot.off { border-color: #d97706; color: #d97706; background: #fff; }
+    .btn-bot.btn-block { border-color: #dc2626; color: #dc2626; background: #fff; }
+    .btn-bot.btn-block.ativo { background: #dc2626; color: #fff; }
+    .hint.hint-block { color: #991b1b; background: #fee2e2; }
+    .tag-block { font-size: 0.62rem; background: #dc2626; color: #fff; padding: 1px 5px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+    .tab[data-tab="blocked"] { background:#fef2f2; border-color:#fecaca; color:#b91c1c; }
+    .tab[data-tab="blocked"].active { background:#dc2626; border-color:#dc2626; color:#fff; }
+    .tab[data-tab="blocked"] .tab-badge { background:#dc2626; }
+    .tab[data-tab="blocked"].active .tab-badge { background:#fff; color:#b91c1c; }
+    .msgs { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+    .b { max-width: 72%; padding: 7px 26px 7px 10px; border-radius: 8px;   /* espaço à direita p/ o botão responder */ font-size: 0.9rem; line-height: 1.35; white-space: pre-wrap; word-wrap: break-word; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); position: relative; }
+    .b { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+    .msg-menu-btn, .b .meta, .b .who { -webkit-user-select: none; user-select: none; }
+    .b .meta { font-size: 0.62rem; color: #667781; margin-top: 3px; text-align: right; }
+    .b.in { align-self: flex-start; background: #fff; }
+    .b.out { align-self: flex-end; background: #d9fdd3; }
+    .b.out.agent { background: #cfe9ff; }
+    .b .who { font-size: 0.62rem; font-weight: 700; margin-bottom: 2px; }
+    .b.out .who { color: #7c3aed; }
+    .b.out.agent .who { color: #1d6fd8; }
+    .msgs { background-color: #efeae2; background-image: radial-gradient(rgba(0,0,0,0.03) 1px, transparent 1px); background-size: 22px 22px; }
+    /* mídia nos balões */
+    .b .cap { margin-top: 4px; }
+    /* Cabeçalho: @ da compra + botão "Ver pedidos" (só aparece com pedido no banco) */
+    .t-ig { color:#0f766e; font-weight:600; margin-left:6px; }
+    .busca-info { padding:8px 14px; font-size:0.76rem; color:#54656f; background:#f7f8fa; border-bottom:1px solid #eef0f2; }
+    .busca-via { font-size:0.6rem; background:#e0f2fe; color:#075985; padding:1px 5px; border-radius:4px; margin-left:6px; vertical-align:middle; }
+    .btn-pedidos { margin-left:8px; border:1px solid #25d366; background:#fff; color:#128c4a; border-radius:999px;
+      padding:2px 9px; font-size:0.7rem; font-weight:700; cursor:pointer; vertical-align:middle; }
+    .btn-pedidos:hover { background:#eafaf0; }
+    .btn-reposicao { border-color:#0ea5e9; color:#0369a1; }
+    .btn-reposicao:hover { background:#e0f2fe; }
+    .btn-reposicao.copiado { background:#0ea5e9; color:#fff; }
+    /* Modal de pedidos */
+    .ped-back { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:80; display:flex; align-items:center; justify-content:center; padding:16px; }
+    .ped-box { background:#fff; border-radius:12px; width:min(680px,100%); max-height:82vh; display:flex; flex-direction:column; overflow:hidden; }
+    .ped-head { padding:12px 16px; border-bottom:1px solid #e9edef; display:flex; align-items:center; gap:10px; }
+    .ped-head h3 { margin:0; font-size:1rem; }
+    .ped-head .sub { font-size:0.76rem; color:#667781; }
+    .ped-head button { margin-left:auto; border:0; background:transparent; font-size:1.1rem; cursor:pointer; color:#667781; }
+    .ped-body { overflow:auto; padding:10px 14px 16px; }
+    .ped-item { border:1px solid #eceff1; border-radius:10px; padding:10px 12px; margin-bottom:8px; }
+    .ped-l1 { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:0.86rem; }
+    .ped-l1 b { font-size:0.9rem; }
+    .ped-l2 { font-size:0.76rem; color:#667781; margin-top:3px; }
+    .ped-st { font-size:0.68rem; font-weight:700; padding:1px 7px; border-radius:999px; }
+    .ped-st.pago { background:#dcfce7; color:#166534; }
+    .ped-st.outro { background:#f3f4f6; color:#4b5563; }
+    /* Anexo colado/escolhido aguardando o envio (igual ao WhatsApp: só vai ao clicar em ➤) */
+    .pend-bar { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #fff; border-top: 1px solid #e9edef; }
+    .pend-list { display: flex; gap: 6px; overflow-x: auto; max-width: 60%; padding-bottom: 2px; }
+    .pend-item { position: relative; flex: 0 0 auto; }
+    .pend-thumb { width: 46px; height: 46px; object-fit: cover; border-radius: 6px; display: block; background: #f0f2f5; }
+    .pend-file { width: 46px; height: 46px; border-radius: 6px; background: #f0f2f5; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+    .pend-x { position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%; border: 0; background: #54656f; color: #fff; font-size: 0.62rem; line-height: 1; cursor: pointer; padding: 0; }
+    .pend-ico { font-size: 1.6rem; width: 46px; text-align: center; flex: 0 0 auto; }
+    .pend-body { flex: 1; min-width: 0; }
+    .pend-name { font-size: 0.86rem; font-weight: 600; color: #111b21; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pend-sub { font-size: 0.75rem; color: #667781; }
+    .pend-bar button { background: transparent; border: 0; color: #667781; font-size: 1rem; cursor: pointer; padding: 4px 8px; }
+    .media-img, .media-sticker { max-width: 240px; max-height: 300px; border-radius: 8px; display: block; cursor: pointer; }
+    .media-sticker { max-width: 130px; background: transparent; }
+    .media-link { display: block; cursor: zoom-in; }
+    .media-video { max-width: 260px; border-radius: 8px; display: block; }
+    .media-audio { width: 230px; height: 38px; margin-top: 2px; }
+    .media-doc { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.05); padding: 9px 11px; border-radius: 8px; text-decoration: none; color: inherit; min-width: 180px; }
+    .media-doc .doc-ico { font-size: 1.4rem; }
+    .media-doc .doc-name { flex: 1; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .media-doc .doc-dl { font-size: 0.72rem; color: #027eb5; font-weight: 600; }
+    .b.media { padding: 4px; }
+    .b.media .meta { padding: 0 4px 2px; }
+    /* Citação dentro do balão + botão responder */
+    .b { position: relative; }
+    .quoted { border-left:3px solid #25d366; background:rgba(0,0,0,0.05); border-radius:5px; padding:4px 8px; margin-bottom:5px; }
+    .b.in .quoted { border-left-color:#7c3aed; }
+    .q-who { font-size:0.64rem; font-weight:800; color:#1d6fd8; }
+    .q-txt { font-size:0.78rem; color:#54656f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    /* Seta ⌄ no canto do balão (igual WhatsApp Web): abre o menu com "Responder".
+       No PC aparece ao passar o mouse; em tela touch fica sempre visível. */
+    .msg-menu-btn { position:absolute; top:2px; right:2px; width:24px; height:24px; opacity:0; border:none; background:transparent;
+      cursor:pointer; color:#54656f; padding:0; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:opacity .12s; }
+    .msg-menu-btn svg { width:18px; height:18px; display:block; }
+    .b:hover .msg-menu-btn, .msg-menu-btn.aberto { opacity:0.9; }
+    .msg-menu-btn:hover { opacity:1 !important; background:rgba(0,0,0,0.07); }
+    .b .msg-menu-btn + .who, .b > .msg-menu-btn ~ .quoted { margin-right: 18px; }
+    .b.media .msg-menu-btn { background:rgba(255,255,255,0.9); }
+    @media (hover: none) { .msg-menu-btn { opacity:0.55; } }
+    .msg-menu { position:fixed; z-index:60; min-width:160px; background:#fff; border-radius:8px; padding:6px 0;
+      box-shadow:0 4px 16px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.1); }
+    .msg-menu button { display:block; width:100%; text-align:left; border:none; background:transparent; padding:9px 18px;
+      font-size:0.9rem; color:#111b21; cursor:pointer; font-family:inherit; }
+    .msg-menu button:hover { background:#f0f2f5; }
+    .reply-bar { display:flex; align-items:center; gap:8px; padding:7px 14px; background:#eef2f5; border-top:1px solid #e2e8ec; }
+    .reply-bar .rb-body { flex:1; min-width:0; border-left:3px solid #25d366; padding-left:8px; }
+    .reply-bar .rb-who { font-size:0.68rem; font-weight:800; color:#1d6fd8; }
+    .reply-bar .rb-txt { font-size:0.8rem; color:#54656f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .reply-bar button { border:none; background:transparent; font-size:1rem; cursor:pointer; color:#54656f; }
+    /* composer — padrão WhatsApp: campo largo, ações como ícones redondos */
+    /* position/z-index: nada da conversa (balões, mídia, botões absolutos) pode
+       ficar por cima do campo de digitação. */
+    .composer { position: relative; z-index: 5; display: flex; gap: 6px; padding: 8px 10px; background: #f0f2f5; border-top: 1px solid #e9edef; align-items: flex-end; cursor: text; }
+    .composer textarea { position: relative; z-index: 1; flex: 1 1 auto; min-width: 0; min-height: 40px; padding: 10px 14px; border: 1px solid #e2e7ea; border-radius: 20px; font-size: 0.95rem; outline: none;
+      resize: none; font-family: inherit; line-height: 1.35; max-height: 120px; overflow-y: auto; background: #fff; color: #111b21; cursor: text; pointer-events: auto; -webkit-user-select: text; user-select: text; }
+    .composer textarea:focus { border-color: #25d366; box-shadow: 0 0 0 2px rgba(37,211,102,0.15); }
+    .icon-btn { width: 40px; height: 40px; flex: 0 0 40px; border: none; background: transparent; border-radius: 50%;
+      cursor: pointer; font-size: 1.15rem; line-height: 1; color: #54656f; display: flex; align-items: center; justify-content: center; padding: 0; }
+    .icon-btn:hover { background: #e2e7ea; }
+    .icon-btn.rec { background: #dc2626; color: #fff; animation: pulse 1s infinite; }
+    .composer #sendBtn { width: 40px; height: 40px; flex: 0 0 40px; border: none; border-radius: 50%; background: #25d366; color: #fff;
+      font-size: 1.05rem; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+    .composer #sendBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
+    .upmsg { font-size: 0.75rem; color: #667781; padding: 0 16px 6px; background: #f0f2f5; min-height: 0; }
+    .upmsg.err { color: #dc2626; }
+    /* Visualizador de imagem (abre ao tocar na foto do chat) */
+    .lightbox { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.92); display: flex; align-items: center; justify-content: center; }
+    .lightbox img { max-width: 96vw; max-height: 88vh; object-fit: contain; border-radius: 4px; }
+    .lb-close, .lb-open { position: absolute; top: 12px; border: none; border-radius: 20px; background: rgba(255,255,255,0.15); color: #fff;
+      cursor: pointer; font-size: 0.85rem; padding: 8px 14px; backdrop-filter: blur(4px); }
+    .lb-close { right: 12px; font-size: 1.1rem; padding: 6px 13px; }
+    .lb-open { left: 12px; text-decoration: none; }
+    .lb-close:hover, .lb-open:hover { background: rgba(255,255,255,0.28); }
+    .empty { flex: 1; display: flex; align-items: center; justify-content: center; color: #667781; text-align: center; padding: 20px; }
+    .hint { padding: 8px 14px; font-size: 0.72rem; color: #92400e; background: #fef3c7; }
+    @media (max-width: 820px) {
+      .convs { width: 100%; min-width: 0; }
+      .thread { display: none; }
+      .crm.show-thread .convs { display: none; }
+      .crm.show-thread .thread { display: flex; }
+      /* Voltar: botão de verdade, grande e sempre visível no topo da conversa. */
+      .thread-head { padding: 8px 10px; gap: 8px; }
+      .thread-head .back { display: inline-flex; align-items: center; justify-content: center;
+        width: 38px; height: 38px; flex: 0 0 38px; border-radius: 50%; background: #fff;
+        border: 1px solid #dfe5ea; font-size: 1.25rem; color: #111b21; }
+      .thread-head .back:active { background: #e2e7ea; }
+      .thread-head .avatar { width: 34px !important; height: 34px !important; }
+      .thread-head .t-name { font-size: 0.95rem; max-width: 42vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .btn-bot { padding: 6px 9px; font-size: 0.72rem; }
+      .b { max-width: 86%; }
+      .msg-menu-btn { width: 30px; height: 30px; }
+      .tab { font-size: 0.72rem; padding: 6px 10px; }
+      .media-img, .media-sticker, .media-video { max-width: 68vw; }
+      .media-audio { width: 62vw; max-width: 240px; }
+      /* Campo de digitação largo: as ações viram só ícone, como no WhatsApp. */
+      .composer { padding: 7px 8px; gap: 4px; }
+      .composer textarea { font-size: 16px; }   /* < 16px faz o iOS dar zoom sozinho */
+      .icon-btn { width: 36px; height: 36px; flex: 0 0 36px; font-size: 1.1rem; }
+      .composer #sendBtn { width: 40px; height: 40px; flex: 0 0 40px; }
+      .msgs { padding: 10px 8px; }
+    }
+  </style>
+</head>
+<body>
+  <%- include('partials/painel_sidebar', { page: C.page }) %>
+  <div class="main-content" style="padding:0;">
+    <div class="crm" id="crm">
+      <!-- Lista -->
+      <div class="convs">
+        <div class="convs-head">
+          <h2><%= C.titulo %></h2>
+          <span class="pill" id="convCount">0</span>
+        </div>
+        <div class="search"><input type="text" id="search" placeholder="Buscar conversa ou @perfil..." autocomplete="off"></div>
+        <% if (!C.temBot) { %>
+        <label class="so-resposta"><input type="checkbox" id="soResposta"> Só conversas com resposta do cliente</label>
+        <% } %>
+        <!-- Uma linha de guias: fila de trabalho + separação novas/histórico importado. -->
+        <div class="tabs" id="tabs">
+          <button type="button" class="tab" data-tab="pending" title="Você ainda não respondeu manualmente<%= C.temBot ? ' — atendimento só do bot continua aqui' : '' %>">⏳ Não respondidas <span class="tab-badge" id="pendCount">0</span></button>
+          <button type="button" class="tab" data-tab="done" title="Você já respondeu manualmente em algum momento">✓ Respondidas</button>
+          <button type="button" class="tab active" data-tab="all">Todas</button>
+          <% if (C.temBot) { %>
+          <button type="button" class="tab" data-tab="blocked" title="Contatos bloqueados: fora das outras guias e o bot não responde">🚫 Bloqueados <span class="tab-badge" id="blockCount">0</span></button>
+          <% } %>
+        </div>
+        <div class="conv-list" id="convList"></div>
+      </div>
+      <!-- Thread -->
+      <div class="thread" id="thread">
+        <div class="empty" id="emptyThread">Selecione uma conversa à esquerda para começar.</div>
+        <div id="threadInner" style="display:none; flex-direction:column; height:100%;">
+          <div class="thread-head">
+            <button class="back" id="backBtn">&#8592;</button>
+            <div class="avatar" id="tAvatar" style="width:38px;height:38px;font-size:0.85rem;">?</div>
+            <div>
+              <div class="t-name" id="tName">—</div>
+              <div class="t-phone">
+                <span id="tPhone"></span>
+                <span class="t-ig" id="tIg" style="display:none;"></span>
+                <button type="button" class="btn-pedidos" id="pedidosBtn" style="display:none;">🧾 Ver pedidos</button>
+                <button type="button" class="btn-pedidos btn-reposicao" id="reposicaoBtn" style="display:none;">♻️ Reposição</button>
+                <button type="button" class="btn-pedidos" id="cardReaisHeaderBtn" title="Enviar card: opções de seguidores (Mistos x Brasileiros Reais)" style="display:none; border-color:#8b5cf6; color:#6d28d9;">💠 Reais</button>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn-bot on" id="botBtn"<%- C.temBot ? '' : ' style="display:none;"' %>>🤖 Bot ligado</button>
+              <% if (C.temBot) { %><button type="button" class="btn-bot btn-block" id="blockBtn" title="Bloquear contato">🚫 Bloquear</button><% } %>
+            </div>
+          </div>
+          <div class="hint hint-block" id="blockHint" style="display:none;">🚫 Contato bloqueado: o bot não responde e a conversa só aparece na guia "Bloqueados". Você ainda pode ler e responder aqui.</div>
+          <div class="hint" id="pausedHint" style="display:none;">⏸ IA pausada neste chat — ela NÃO responde. Só você atende. Clique em "▶ Dar Play (IA)" para a IA voltar a responder.</div>
+          <div class="hint" id="janelaHint" style="display:none;"></div>
+          <div class="msgs" id="msgs"></div>
+          <div id="replyBar" class="reply-bar" style="display:none;">
+            <div class="rb-body"><div class="rb-who" id="rbWho"></div><div class="rb-txt" id="rbTxt"></div></div>
+            <button type="button" id="rbCancel" title="Cancelar resposta">✕</button>
+          </div>
+          <div id="pendBar" class="pend-bar" style="display:none;">
+            <div class="pend-list" id="pendList"></div>
+            <div class="pend-body"><div class="pend-name" id="pendName"></div><div class="pend-sub" id="pendSub">Escreva uma legenda (opcional) e toque em ➤ para enviar</div></div>
+            <button type="button" id="pendCancel" title="Remover todos os anexos">✕</button>
+          </div>
+          <div class="composer">
+            <button type="button" class="icon-btn" id="attachBtn" title="Anexar imagem, documento ou áudio" aria-label="Anexar">📎</button>
+            <input type="file" id="fileInput" multiple accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip" style="display:none">
+            <textarea id="msgInput" placeholder="Mensagem" rows="1" autocomplete="off"></textarea>
+            <button type="button" class="icon-btn" id="micBtn" title="Gravar áudio" aria-label="Gravar áudio">🎤</button>
+            <button type="button" id="sendBtn" title="Enviar" aria-label="Enviar">➤</button>
+          </div>
+          <div class="upmsg" id="upMsg"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Visualizador de imagem em tela cheia -->
+  <div class="lightbox" id="lightbox" style="display:none;">
+    <a class="lb-open" id="lbOpen" href="#" target="_blank" rel="noopener">abrir original</a>
+    <button type="button" class="lb-close" id="lbClose" title="Fechar (Esc)">✕</button>
+    <img id="lbImg" alt="">
+  </div>
+
+  <script>
+    (function(){
+      var CRM = <%- JSON.stringify({ modo: C.modo, api: C.api, sendMedia: C.sendMedia, temBot: !!C.temBot }) %>;
+      var API = CRM.api;
+      // Mensagem automática: na IA é o bot; no LTV é o disparo do LTV.
+      var AUTO = CRM.temBot ? 'Bot' : 'LTV';
+      function $(id){ return document.getElementById(id); }
+      function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      // Escapa e transforma URLs (http(s):// e www.) em links clicáveis.
+      function linkify(s){
+        return esc(s).replace(/((?:https?:\/\/|www\.)[^\s<>"]+)/gi, function(url){
+          var href = /^www\./i.test(url) ? ('https://'+url) : url;
+          return '<a href="'+href+'" target="_blank" rel="noopener noreferrer" style="color:#2563eb; text-decoration:underline; word-break:break-all;">'+url+'</a>';
+        });
+      }
+      function initials(name, phone){ var n=String(name||'').trim(); if(n) return n.slice(0,2).toUpperCase(); var p=String(phone||'').replace(/\D/g,''); return p.slice(-2) || '?'; }
+      function fmtTime(d){ try{ var x=new Date(d); var now=new Date(); var sameDay=x.toDateString()===now.toDateString(); return sameDay ? (('0'+x.getHours()).slice(-2)+':'+('0'+x.getMinutes()).slice(-2)) : (('0'+x.getDate()).slice(-2)+'/'+('0'+(x.getMonth()+1)).slice(-2)); }catch(_){ return ''; } }
+      async function api(url, opts){ var r=await fetch(url, Object.assign({ credentials:'same-origin', headers:{'Accept':'application/json'} }, opts||{})); return await r.json().catch(function(){return null;}); }
+
+      var state = { current: null, currentName: '', botPaused: false, convs: [], filter: '', tab: 'all', scope: 'all', answer: 'all', msgs: [], replyTo: null };
+
+      // Cada guia é um par (escopo, respondida?). A separação aguardando/respondida
+      // vive SÓ nos botões — a lista não tem mais cabeçalho de grupo no meio.
+      // Sem separação Novas/Antigas: uma lista só, por recência. A conversa importada
+      // do DataCrazy continua identificada pela tag laranja "antiga".
+      var TABS = {
+        pending: { scope: 'all', answer: 'pending' },  // você ainda não respondeu
+        done:    { scope: 'all', answer: 'done'    },  // você já respondeu
+        all:     { scope: 'all', answer: 'all' },
+        blocked: { scope: 'all', answer: 'all', bloqueados: true }   // só contatos bloqueados
+      };
+
+      // A sidebar do painel fica sticky no topo no celular: sem descontar a altura
+      // dela, o rodapé do chat (campo de digitação) some da tela.
+      function fitHeight(){
+        try{
+          var sb=document.querySelector('.sidebar');
+          var top=(sb && window.innerWidth<=768) ? Math.round(sb.getBoundingClientRect().height) : 0;
+          document.documentElement.style.setProperty('--crm-top', top+'px');
+        }catch(_){}
+      }
+      fitHeight();
+      window.addEventListener('resize', fitHeight);
+      window.addEventListener('orientationchange', function(){ setTimeout(fitHeight, 250); });
+
+      // Tempo decorrido compacto: 6min / 22h / 3d — mostrado À DIREITA da conversa.
+      function fmtElapsed(d){
+        try{
+          var ms=Date.now()-new Date(d).getTime(); if(!isFinite(ms)||ms<0) return '';
+          var min=Math.floor(ms/60000);
+          if(min<1) return 'agora';
+          if(min<60) return min+'min';
+          var h=Math.floor(min/60); if(h<24) return h+'h';
+          var dd=Math.floor(h/24); return dd+'d';
+        }catch(_){ return ''; }
+      }
+      function renderConvs(){
+        var list=$('convList'); var q=state.filter.toLowerCase();
+        // Busca por @perfil: mostra o que o servidor achou (pedidos e conversas com esse @),
+        // independente da guia e da lista carregada.
+        var modoArroba=!!(state.arroba && state.arroba.q);
+        var items=modoArroba ? (state.arroba.resultados||[]).slice() : state.convs.filter(function(c){
+          if(q && (c.name||'').toLowerCase().indexOf(q)<0 && (c.phone||'').indexOf(q)<0) return false;
+          // "respondida" = VOCÊ respondeu manualmente em algum momento. Conversa
+          // atendida só pelo BOT continua como não respondida. E o "ok" do cliente
+          // depois da sua resposta não joga a conversa de volta pra fila.
+          var respondida=(c.answered===undefined) ? (c.lastDir==='out') : !!c.answered;
+          // LTV: disparo que o cliente nunca respondeu não é pendência sua.
+          var semResposta=(c.inCount===0);
+          if(state.answer==='pending' && semResposta) return false;
+          if(state.answer==='pending' && respondida) return false;
+          if(state.answer==='done' && !respondida) return false;
+          return true;
+        });
+        // Ordem = mais recente no topo, igual WhatsApp. (Antes jogava pro FIM as
+        // conversas em que você falou por último — a que você acabou de responder
+        // "sumia" lá pra baixo da lista.)
+        items.sort(function(a,b){ return new Date(b.lastAt||0)-new Date(a.lastAt||0); });
+        // Badge da guia "Não respondidas" = o que está na lista carregada.
+        var nPend=state.convs.filter(function(c){ return !c.answered && c.inCount!==0; }).length;
+        $('convCount').textContent=state.convs.length;
+        var badgePend=$('pendCount'); if(badgePend && !state.bloqueados) badgePend.textContent=nPend;   // na guia Bloqueados a lista é outra
+
+        // Sem cabeçalho de grupo no meio da lista: a separação respondida/não
+        // respondida é feita pelos BOTÕES lá em cima.
+        var html='';
+        if(modoArroba){
+          var inf = state.arroba.carregando ? ('Procurando @'+esc(state.arroba.q)+'…')
+            : (items.length ? (items.length+' conversa(s) ligada(s) a @'+esc(state.arroba.q)) : ('Nenhuma conversa ligada a @'+esc(state.arroba.q)))
+              + (state.arroba.semConversa ? (' · '+state.arroba.semConversa+' telefone(s) de pedido sem conversa no CRM') : '');
+          html+='<div class="busca-info">'+inf+'</div>';
+        }
+        items.forEach(function(c){
+          var pendente=(c.lastDir!=='out');
+          var nm=c.name || ('+'+c.phone);
+          var prefix=(c.lastDir==='out')?'Você: ':'';
+          var tag=!CRM.temBot ? (c.blocked?'<span class="tag-paused" title="Descadastrou dos envios automáticos — você ainda pode responder">opt-out</span>':'') : c.bloqueado?'<span class="tag-block">bloqueado</span>' : c.botPaused?(c.legacy?'<span class="tag-legacy" title="Conversa antiga importada — IA pausada">antiga</span>':'<span class="tag-paused">humano</span>'):'<span class="tag-bot">bot</span>';
+          html+='<div class="conv'+(state.current===c.phone?' active':'')+(pendente?' pend':'')+'" data-phone="'+esc(c.phone)+'" data-name="'+esc(c.name||'')+'">'
+            +'<div class="avatar">'+esc(initials(c.name,c.phone))+'</div>'
+            +'<div class="conv-main">'
+              // Nome e etiquetas em spans SEPARADOS: o nome encolhe com "…" e a etiqueta
+              // (bot/humano/antiga) fica sempre visível. Antes, nome comprido escondia a etiqueta.
+              +'<div class="conv-top"><span class="conv-name" title="'+esc(nm)+'">'+esc(nm)+'</span>'
+                +'<span class="conv-tags">'+tag
+                +(modoArroba && c.via ? c.via.map(function(v){ return '<span class="busca-via">'+(v==='pedido'?'pedido':'citou')+'</span>'; }).join('') : '')
+                +'</span></div>'
+              +(modoArroba && c.usuarios && c.usuarios.length ? '<div class="conv-sub" style="color:#0f766e">@'+esc(c.usuarios.join(', @'))+'</div>' : '')
+              +'<div class="conv-sub">'+esc(prefix)+esc(c.lastText||'')+'</div>'
+            +'</div>'
+            // Coluna de tempo à DIREITA (não embaixo): decorrido + hora/data
+            +'<div class="conv-side">'
+              +'<div class="side-elapsed'+(pendente?' pend':'')+'">'+fmtElapsed(c.lastAt)+'</div>'
+              +'<div class="side-clock">'+fmtTime(c.lastAt)+'</div>'
+              +(c.unread?'<span class="badge-unread">novo</span>':'')
+            +'</div>'
+          +'</div>';
+        });
+        var vazio = (state.tab==='pending')
+          ? '<div class="empty" style="height:auto;padding:28px 20px;">✅ Nenhuma conversa sem resposta.</div>'
+          : (state.tab==='blocked')
+          ? '<div class="empty" style="height:auto;padding:24px;">Nenhum contato bloqueado.</div>'
+          : '<div class="empty" style="height:auto;padding:24px;">Nenhuma conversa aqui.</div>';
+        var novo = (modoArroba ? html : (html || vazio));
+        // O polling redesenha a lista a cada 5s. Se nada mudou, não mexe no DOM
+        // (senão o scroll do usuário volta pro topo enquanto ele está rolando).
+        if(novo===state._convsHtml) return;
+        var topoAntes=list.scrollTop;
+        list.innerHTML=novo;
+        state._convsHtml=novo;
+        list.scrollTop=topoAntes;   // mantém onde o usuário estava
+      }
+
+      async function loadConvs(){
+        var bloq=!!state.bloqueados;
+        var d=await api(API+'/conversations?scope='+encodeURIComponent(state.scope)+(state.soResposta?'&withReply=1':'')+(bloq?'&bloqueados=1':''));
+        if(bloq!==!!state.bloqueados) return;   // trocou de guia enquanto carregava
+        if(d&&d.ok){
+          state.convs=d.conversations||[]; if(typeof d.pendingNew==='number') state.pendingNew=d.pendingNew;
+          if(typeof d.bloqueadosTotal==='number' && $('blockCount')) $('blockCount').textContent=d.bloqueadosTotal;
+          renderConvs();
+        }
+      }
+
+      function mediaHtml(m){
+        var src=API+'/media?id='+encodeURIComponent(m.mediaId||'');
+        // sem onclick inline: as aspas escapadas quebravam o atributo e o clique
+        // não fazia nada. Quem abre é o visualizador (delegação de clique em #msgs).
+        // A imagem fica dentro de um link: o clique normal abre o visualizador (JS
+        // faz preventDefault); se o JS falhar, o link ainda abre a foto numa aba nova.
+        if(m.type==='image') return '<a class="media-link" href="'+src+'" target="_blank" rel="noopener"><img class="media-img" src="'+src+'" alt="imagem" loading="lazy"></a>';
+        if(m.type==='sticker') return '<a class="media-link" href="'+src+'" target="_blank" rel="noopener"><img class="media-sticker" src="'+src+'" alt="figurinha" loading="lazy"></a>';
+        if(m.type==='audio') return '<audio class="media-audio" controls preload="none" src="'+src+'"></audio>';
+        if(m.type==='video') return '<video class="media-video" controls preload="metadata" src="'+src+'"></video>';
+        if(m.type==='document') return '<a class="media-doc" href="'+src+'" target="_blank"><span class="doc-ico">📄</span><span class="doc-name">'+esc(m.filename||'documento')+'</span><span class="doc-dl">abrir</span></a>';
+        return linkify(m.text||'');
+      }
+      // force=true só quando ABRE a conversa (aí sim vai pro fim).
+      // Nos refreshes automáticos NUNCA arrasta a tela: só desce sozinho se o
+      // usuário já estava colado no rodapé; se ele rolou pra cima, fica onde está.
+      function renderMsgs(msgs, force){
+        var box=$('msgs');
+        var MEDIA=['image','audio','video','document','sticker'];
+        state.msgs = msgs||[];
+        // índice por wamid p/ montar o trecho citado
+        var porWamid={}; state.msgs.forEach(function(m){ if(m.wamid) porWamid[m.wamid]=m; });
+        var html=state.msgs.map(function(m){
+          var isMedia = MEDIA.indexOf(m.type)>=0 && m.mediaId;
+          var cls='b '+(m.direction==='out'?('out'+(m.agent?' agent':'')):'in')+((m.type==='image'||m.type==='sticker'||m.type==='video')&&m.mediaId?' media':'');
+          var who=(m.direction==='out')?(m.agent?'Atendente':AUTO):'';
+          var inner;
+          if(isMedia){ var cap=String(m.text||'').replace(/^\[[^\]]*\]\s*/,''); inner=mediaHtml(m)+(cap?('<div class="cap">'+linkify(cap)+'</div>'):''); }
+          else inner=linkify(m.text);
+          // Bloco da mensagem CITADA (quando esta responde a outra)
+          var quote='';
+          if(m.replyTo && porWamid[m.replyTo]){
+            var q=porWamid[m.replyTo];
+            var qwho=(q.direction==='out')?(q.agent?'Atendente':AUTO):'Cliente';
+            quote='<div class="quoted"><div class="q-who">'+qwho+'</div><div class="q-txt">'+esc(String(q.text||'').slice(0,120))+'</div></div>';
+          }
+          // Só mensagem com ID REAL do WhatsApp pode ser citada. As importadas do
+          // DataCrazy ("dc_…") não existem no WhatsApp: citar uma fazia o envio falhar.
+          var citavel = /^wamid\./.test(String(m.wamid||''));
+          var btn = citavel ? '<button type="button" class="msg-menu-btn" data-wamid="'+esc(m.wamid)+'" title="Opções" aria-label="Opções da mensagem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>' : '';
+          var dw = citavel ? ' data-wamid="'+esc(m.wamid)+'"' : '';   // p/ toque longo no celular
+          return '<div class="'+cls+'"'+dw+'>'+btn+(who?'<div class="who">'+who+'</div>':'')+quote+inner+'<div class="meta">'+fmtTime(m.createdAt)+'</div></div>';
+        }).join('');
+        // Nada mudou? não redesenha (evita piscar áudio/imagem e perder o scroll).
+        if(!force && html===state._msgsHtml) return;
+        var perto=(box.scrollHeight-box.scrollTop-box.clientHeight)<80; // usuário estava no rodapé?
+        var topoAntes=box.scrollTop;
+        box.innerHTML=html;
+        state._msgsHtml=html;
+        if(force || perto) box.scrollTop=box.scrollHeight;
+        else box.scrollTop=topoAntes;   // respeita onde o usuário parou
+      }
+
+      function setBotBtn(paused){
+        state.botPaused=paused;
+        if(!CRM.temBot) return;   // LTV não tem bot
+        var b=$('botBtn');
+        if(paused){ b.className='btn-bot off'; b.textContent='▶ Dar Play (IA)'; $('pausedHint').style.display='block'; }
+        else { b.className='btn-bot on'; b.textContent='⏸ Pausar IA'; $('pausedHint').style.display='none'; }
+      }
+
+      function setBlockBtn(bloqueado){
+        state.bloqueadoAtual=!!bloqueado;
+        var b=$('blockBtn'); if(!b) return;   // LTV não tem bloqueio
+        b.textContent=bloqueado?'✅ Desbloquear':'🚫 Bloquear';
+        b.title=bloqueado?'Desbloquear: volta para as guias normais':'Bloquear contato: sai das guias e o bot para de responder';
+        b.classList.toggle('ativo', !!bloqueado);
+        $('blockHint').style.display=bloqueado?'block':'none';
+      }
+
+      // LTV: avisa quando passou das 24h da Meta (texto livre não é entregue) e quando
+      // o cliente descadastrou (só bloqueia disparo automático; responder continua liberado).
+      function pintarJanela(d){
+        var h=$('janelaHint'); if(!h) return;
+        if(CRM.temBot || typeof d.canReply==='undefined'){ h.style.display='none'; return; }
+        var partes=[];
+        if(!d.canReply) partes.push('⏱ Fora da janela de 24h da Meta: o cliente precisa mandar mensagem antes. Texto livre não é entregue.');
+        if(d.blocked) partes.push('🚫 Cliente descadastrou dos envios automáticos — você ainda pode responder.');
+        h.textContent=partes.join(' '); h.style.display=partes.length?'block':'none';
+      }
+      // Volta pra lista de conversas (celular).
+      function voltarLista(){
+        $('crm').classList.remove('show-thread');
+        state.current=null; state.replyTo=null; $('replyBar').style.display='none'; try{ clearPending(); }catch(_){} try{ fecharPedidos(); limparPedidos(); }catch(_){} try{ $('cardReaisHeaderBtn').style.display='none'; }catch(_){}
+        renderConvs();
+        try{ window.scrollTo(0,0); }catch(_){}
+      }
+
+      async function openChat(phone, name){
+        var jaAberto=$('crm').classList.contains('show-thread');
+        state.current=phone; state.currentName=name; try{ clearPending(); }catch(_){}
+        $('emptyThread').style.display='none'; $('threadInner').style.display='flex';
+        $('crm').classList.add('show-thread');
+        // No celular a lista some: registra no histórico pra tecla/gesto "voltar"
+        // do aparelho trazer de volta a lista em vez de sair da página.
+        var jaNoHistorico=!!(history.state && history.state.crmThread);
+        if(!jaAberto && !jaNoHistorico && window.innerWidth<=820){ try{ history.pushState({ crmThread:1 }, ''); }catch(_){} }
+        try{ window.scrollTo(0,0); }catch(_){}
+        fitHeight();
+        $('tName').textContent=name || ('+'+phone); $('tPhone').textContent='+'+phone; $('tAvatar').textContent=initials(name,phone);
+        try{ $('cardReaisHeaderBtn').style.display='inline-block'; }catch(_){}
+        renderConvs();
+        var d=await api(API+'/messages?phone='+encodeURIComponent(phone));
+        if(d&&d.ok){ renderMsgs(d.messages, true); setBotBtn(d.botPaused); setBlockBtn(d.bloqueado); pintarJanela(d); if(d.name){ state.currentName=d.name; $('tName').textContent=d.name; } }
+        carregarResumoPedidos(phone);   // depois das mensagens: não atrasa o chat
+      }
+
+      // ── Pedidos do telefone (botão ao lado do número) ───────────────────────
+      // Consulta própria, feita depois das mensagens. Não passa pelo envio nem pelo bot.
+      function limparPedidos(){ $('tIg').style.display='none'; $('tIg').textContent=''; $('pedidosBtn').style.display='none'; $('reposicaoBtn').style.display='none'; state.reposicao=null; state.pedidosTotal=0; }
+      async function carregarResumoPedidos(phone){
+        limparPedidos();
+        var d=await api(API+'/pedidos?resumo=1&phone='+encodeURIComponent(phone));
+        if(!d||!d.ok||state.current!==phone||!d.total) return;   // sem pedido: não mostra nada
+        state.pedidosTotal=d.total;
+        if(d.usuarios&&d.usuarios[0]){ $('tIg').textContent='@'+d.usuarios[0]; $('tIg').style.display='inline'; }
+        state.pedidosPor=String(d.achadoPor||'');
+        $('pedidosBtn').textContent='🧾 Ver pedidos ('+d.total+')';
+        $('pedidosBtn').title=/^arroba:/.test(state.pedidosPor) ? ('Encontrado pelo @ citado na conversa (o telefone do pedido é outro)') : 'Pedidos deste telefone';
+        $('pedidosBtn').style.display='inline-block';
+        // Link de reposição do perfil do cliente (pedido pago mais recente com link).
+        if(d.reposicao && d.reposicao.link){
+          state.reposicao=d.reposicao;
+          $('reposicaoBtn').title='Copiar link de reposição'+(d.reposicao.instagram?(' de @'+d.reposicao.instagram):'')+(d.reposicao.tipo?(' ('+d.reposicao.tipo+')'):'')+' — '+d.reposicao.link;
+          $('reposicaoBtn').style.display='inline-block';
+        }
+      }
+      function fecharPedidos(){ var b=document.getElementById('pedBack'); if(b) b.remove(); }
+      async function abrirPedidos(){
+        if(!state.current) return;
+        fecharPedidos();
+        var back=document.createElement('div'); back.className='ped-back'; back.id='pedBack';
+        var comoAchou=/^arroba:/.test(String(state.pedidosPor||'')) ? (' · pelo @'+esc(String(state.pedidosPor).replace('arroba:',''))+' da conversa') : '';
+        back.innerHTML='<div class="ped-box"><div class="ped-head"><div><h3>Pedidos</h3><div class="sub">+'+esc(state.current)+comoAchou+'</div><div class="sub" id="pedStats" style="margin-top:3px; font-weight:700; color:#0f766e;"></div></div><button type="button" title="Fechar">✕</button></div><div class="ped-body" id="pedBody">Carregando…</div></div>';
+        document.body.appendChild(back);
+        back.addEventListener('click', function(ev){ if(ev.target===back||ev.target.closest('.ped-head button')) fecharPedidos(); });
+        var d=await api(API+'/pedidos?phone='+encodeURIComponent(state.current));
+        var body=document.getElementById('pedBody'); if(!body) return;
+        if(!d||!d.ok){ body.textContent='Não consegui carregar os pedidos.'; return; }
+        var lista=d.orders||[];
+        try {
+          var _pagos=lista.filter(function(o){ return o.status==='pago'; });
+          var _valPago=_pagos.reduce(function(s,o){ return s+(Number(o.valor)||0); },0);
+          var _st=document.getElementById('pedStats');
+          if(_st) _st.textContent=lista.length+' pedido'+(lista.length!==1?'s':'')+' · '+_pagos.length+' pago'+(_pagos.length!==1?'s':'')+(_valPago>0?(' · R$ '+_valPago.toFixed(2).replace('.',',')):'');
+        } catch(_){}
+        if(!lista.length){ body.textContent='Nenhum pedido para este telefone.'; return; }
+        body.innerHTML=lista.map(function(o){
+          var dt=o.pagoEm||o.criadoEm||'';
+          var data=dt?new Date(dt).toLocaleString('pt-BR',{ day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }):'-';
+          var pago=(o.status==='pago');
+          var srv=[o.categoria,o.tipo].filter(Boolean).join(' · ')||'-';
+          var val=o.valor?('R$ '+o.valor.toFixed(2).replace('.',',')):'';
+          return '<div class="ped-item">'
+            +'<div class="ped-l1"><b>'+(o.quantidade?o.quantidade.toLocaleString('pt-BR'):'-')+'</b> <span>'+esc(srv)+'</span>'
+            +'<span class="ped-st '+(pago?'pago':'outro')+'">'+esc(o.status||'—')+'</span>'
+            +(o.instagram?'<span class="t-ig">@'+esc(o.instagram)+'</span>':'')+'</div>'
+            +'<div class="ped-l2">'+esc(data)+(val?(' · '+val):'')+(o.bumps?(' · bumps: '+esc(o.bumps)):'')+' · <a href="/pedido?t='+encodeURIComponent(o.identifier)+'" target="_blank" rel="noopener">'+esc(o.identifier)+'</a></div>'
+            +'</div>';
+        }).join('');
+      }
+      $('pedidosBtn').addEventListener('click', abrirPedidos);
+      // Copia o link de reposição (com fallback p/ navegador sem clipboard API).
+      $('reposicaoBtn').addEventListener('click', async function(){
+        var r=state.reposicao; if(!r||!r.link) return;
+        var btn=this, ok=false;
+        try{ await navigator.clipboard.writeText(r.link); ok=true; }catch(_){
+          try{ var ta=document.createElement('textarea'); ta.value=r.link; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); ok=document.execCommand('copy'); ta.remove(); }catch(__){}
+        }
+        if(!ok){ window.prompt('Copie o link de reposição:', r.link); return; }
+        btn.classList.add('copiado'); btn.textContent='✓ Link copiado';
+        setTimeout(function(){ btn.classList.remove('copiado'); btn.textContent='♻️ Reposição'; }, 1800);
+      });
+
+      // force=true só quando VOCÊ acabou de enviar/agir (aí desce pro fim de propósito).
+      async function refreshOpen(force){
+        if(!state.current) return;
+        var d=await api(API+'/messages?phone='+encodeURIComponent(state.current));
+        if(d&&d.ok){ renderMsgs(d.messages, force===true); setBotBtn(d.botPaused); setBlockBtn(d.bloqueado); pintarJanela(d); }
+      }
+
+      // Eventos
+      $('convList').addEventListener('click', function(ev){ var c=ev.target.closest('.conv'); if(!c) return; openChat(c.getAttribute('data-phone'), c.getAttribute('data-name')); });
+      $('backBtn').addEventListener('click', function(){
+        if(history.state && history.state.crmThread){ history.back(); return; }  // desfaz o pushState
+        voltarLista();
+      });
+      // Botão/gesto "voltar" do aparelho e tecla Esc também voltam pra lista.
+      window.addEventListener('popstate', function(){ if($('crm').classList.contains('show-thread')) voltarLista(); });
+      document.addEventListener('keydown', function(e){
+        if(e.key!=='Escape') return;
+        if($('lightbox').style.display==='flex') return;   // Esc fecha a imagem primeiro
+        if(state.current && window.innerWidth<=820){ $('backBtn').click(); }
+      });
+      // O menu do painel abre/fecha e muda a altura do topo: recalcula.
+      var sbToggle=document.getElementById('sidebarToggle');
+      if(sbToggle) sbToggle.addEventListener('change', function(){ setTimeout(fitHeight, 30); });
+      if($('soResposta')) $('soResposta').addEventListener('change', function(){ state.soResposta=this.checked; state._convsHtml=null; loadConvs(); });
+      $('tabs').addEventListener('click', function(ev){
+        var b=ev.target.closest('.tab'); if(!b) return;
+        var t=b.getAttribute('data-tab'); var cfg=TABS[t]; if(!cfg) return;
+        document.querySelectorAll('#tabs .tab').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active');
+        var mudouEscopo=(state.scope!==cfg.scope) || (!!state.bloqueados!==!!cfg.bloqueados);
+        state.tab=t; state.scope=cfg.scope; state.answer=cfg.answer; state.bloqueados=!!cfg.bloqueados;
+        if(mudouEscopo){ state.convs=[]; state._convsHtml=null; renderConvs(); loadConvs(); } else renderConvs();
+      });
+      var buscaTimer=null, buscaSeq=0;
+      $('search').addEventListener('input', function(){
+        var v=String(this.value||'').trim();
+        if(v.charAt(0)==='@'){
+          var q=v.replace(/^@+/,'').toLowerCase();
+          state.filter='';
+          if(q.length<3){ state.arroba={ q:q, resultados:[], carregando:false }; renderConvs(); return; }
+          state.arroba={ q:q, resultados:(state.arroba&&state.arroba.q===q)?state.arroba.resultados:[], carregando:true };
+          renderConvs();
+          clearTimeout(buscaTimer);
+          var seq=++buscaSeq;
+          buscaTimer=setTimeout(async function(){
+            var d=await api(API+'/busca-arroba?u='+encodeURIComponent(q));
+            if(seq!==buscaSeq) return;   // chegou resposta de uma busca antiga
+            state.arroba={ q:q, resultados:(d&&d.ok&&d.resultados)||[], semConversa:(d&&d.telefonesSemConversa)||0, carregando:false };
+            state._convsHtml=null; renderConvs();
+          }, 400);
+          return;
+        }
+        state.arroba=null; state.filter=this.value; state._convsHtml=null; renderConvs();
+      });
+      $('botBtn').addEventListener('click', async function(){
+        if(!state.current) return;
+        var target=!state.botPaused; // se ligado -> pausa (você atende); se pausado -> religa
+        var d=await api(API+'/bot', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ phone: state.current, paused: target }) });
+        if(d&&d.ok){ setBotBtn(d.botPaused); loadConvs(); }
+      });
+      if($('blockBtn')) $('blockBtn').addEventListener('click', async function(){
+        if(!state.current) return;
+        var alvo=!state.bloqueadoAtual;
+        var quem=state.currentName || ('+'+state.current);
+        if(alvo && !confirm('Bloquear '+quem+'?\n\nA conversa sai das guias normais (fica em "Bloqueados") e o bot para de responder esse número.')) return;
+        var btn=this; btn.disabled=true;
+        var d=await api(API+'/bloquear', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ phone: state.current, bloqueado: alvo }) });
+        btn.disabled=false;
+        if(d&&d.ok){ setBlockBtn(d.bloqueado); state._convsHtml=null; loadConvs(); }
+        else alert('Não consegui '+(alvo?'bloquear':'desbloquear')+': '+((d&&(d.error||d.message))||'erro'));
+      });
+      async function send(){
+        // Trava de reentrada: o Enter (keydown) chama send() ignorando o botão desabilitado,
+        // e os anexos só saem da fila DEPOIS do upload. Sem isso, um 2º Enter/clique durante
+        // o upload (lento) reenviava a MESMA imagem — foi o que gerou 2 mensagens iguais.
+        if(state.sending) return; state.sending=true;
+        try {
+        // Anexo aguardando envio (colado ou escolhido no 📎): vai agora, com o texto de legenda.
+        if((state.pendings||[]).length){
+          if(!state.current) return;
+          var fila=state.pendings.slice(), cap=$('msgInput').value.trim();
+          $('sendBtn').disabled=true;
+          var enviados=0;
+          for(var i=0;i<fila.length;i++){
+            if(fila.length>1) upmsg('Enviando '+(i+1)+' de '+fila.length+'…');
+            var okUp=await uploadFile(fila[i].file, i===0?cap:'');
+            if(!okUp) break;
+            enviados++;
+          }
+          $('sendBtn').disabled=false;
+          if(enviados){
+            for(var j=0;j<enviados;j++) removePending(0);
+            if(!(state.pendings||[]).length){ $('msgInput').value=''; $('msgInput').style.height='auto'; }
+          }
+          return;
+        }
+        var txt=$('msgInput').value.trim(); if(!txt||!state.current) return;
+        $('sendBtn').disabled=true;
+        var d=await api(API+'/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ phone: state.current, text: txt, replyTo: state.replyTo || '' }) });
+        $('sendBtn').disabled=false;
+        if(d&&d.ok){ $('msgInput').value=''; $('msgInput').style.height='auto'; clearReply(); setBotBtn(true); await refreshOpen(true); loadConvs(); }
+        else { alert('Falha ao enviar: '+((d&&(d.detail||d.message||d.error))||'erro')); }
+        } finally { state.sending=false; }
+      }
+      // Responder mensagem específica (citação) — vale p/ mensagem do cliente e nossa.
+      function setReply(wamid){
+        var m=(state.msgs||[]).find(function(x){ return x.wamid===wamid; }); if(!m) return;
+        state.replyTo=wamid;
+        $('rbWho').textContent=(m.direction==='out')?(m.agent?'Atendente':AUTO):'Cliente';
+        $('rbTxt').textContent=String(m.text||'').slice(0,140);
+        $('replyBar').style.display='flex';
+        $('msgInput').focus();
+      }
+      function clearReply(){ state.replyTo=null; $('replyBar').style.display='none'; }
+      $('rbCancel').addEventListener('click', clearReply);
+      $('msgs').addEventListener('click', function(ev){
+        // Foto/figurinha: abre no visualizador em tela cheia.
+        var img=ev.target.closest('.media-link, .media-img, .media-sticker');
+        if(img){
+          ev.preventDefault();
+          var el=img.matches('img')?img:img.querySelector('img');
+          abrirImagem((el && el.getAttribute('src')) || img.getAttribute('href'));
+          return;
+        }
+        var b=ev.target.closest('.msg-menu-btn'); if(!b) return;
+        ev.stopPropagation();
+        if(b.classList.contains('aberto')){ fecharMenuMsg(); return; }
+        abrirMenuMsg(b.getAttribute('data-wamid'), b);
+      });
+      // ── Menu da mensagem (seta ⌄): Responder / Copiar ─────────────────────────
+      var menuMsg=null, menuBtn=null;
+      function fecharMenuMsg(){
+        if(menuMsg){ menuMsg.remove(); menuMsg=null; }
+        if(menuBtn){ menuBtn.classList.remove('aberto'); menuBtn=null; }
+      }
+      function abrirMenuMsg(wamid, ancora){
+        fecharMenuMsg();
+        var m=(state.msgs||[]).find(function(x){ return x.wamid===wamid; }); if(!m) return;
+        menuMsg=document.createElement('div'); menuMsg.className='msg-menu';
+        menuMsg.innerHTML='<button type="button" data-acao="responder">Responder</button>'+(m.text?'<button type="button" data-acao="copiar">Copiar texto</button>':'');
+        document.body.appendChild(menuMsg);
+        var r=ancora.getBoundingClientRect(), w=menuMsg.offsetWidth, h=menuMsg.offsetHeight;
+        var left=Math.min(Math.max(8, r.right-w), window.innerWidth-w-8);
+        var top=(r.bottom+4+h<window.innerHeight) ? r.bottom+4 : Math.max(8, r.top-h-4);
+        menuMsg.style.left=left+'px'; menuMsg.style.top=top+'px';
+        if(ancora.classList.contains('msg-menu-btn')){ menuBtn=ancora; menuBtn.classList.add('aberto'); }
+        menuMsg.addEventListener('click', function(e){
+          var a=e.target.closest('button'); if(!a) return;
+          var acao=a.getAttribute('data-acao'); fecharMenuMsg();
+          if(acao==='responder') setReply(wamid);
+          if(acao==='copiar'){ try{ navigator.clipboard.writeText(String(m.text||'')); }catch(_){} }
+        });
+      }
+      var ignoraProxClique=false;   // o toque longo termina num "clique" que fecharia o menu na hora
+      document.addEventListener('click', function(e){
+        if(ignoraProxClique){ ignoraProxClique=false; return; }
+        if(menuMsg && !menuMsg.contains(e.target) && !e.target.closest('.msg-menu-btn')) fecharMenuMsg();
+      }, true);
+      document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ fecharMenuMsg(); try{ fecharPedidos(); }catch(_){} } });
+      $('msgs').addEventListener('scroll', fecharMenuMsg, { passive:true });
+      // ── Visualizador de imagem ───────────────────────────────────────────────
+      function abrirImagem(src){
+        if(!src) return;
+        $('lbImg').src=src; $('lbOpen').href=src;
+        $('lightbox').style.display='flex';
+      }
+      function fecharImagem(){ $('lightbox').style.display='none'; $('lbImg').removeAttribute('src'); }
+      $('lbClose').addEventListener('click', fecharImagem);
+      // clicar no fundo (fora da imagem) fecha
+      $('lightbox').addEventListener('click', function(ev){ if(ev.target===this) fecharImagem(); });
+      document.addEventListener('keydown', function(e){ if(e.key==='Escape' && $('lightbox').style.display==='flex') fecharImagem(); });
+      // Nada de duplo-clique nem toque longo abrindo menu: segurar/arrastar e o duplo-clique
+      // servem para SELECIONAR e copiar o texto, como no WhatsApp. A seta ⌄ só abre no clique nela.
+      function cancelPress(){}
+      $('msgs').addEventListener('touchend', cancelPress, { passive:true });
+      $('msgs').addEventListener('touchcancel', cancelPress, { passive:true });
+      $('sendBtn').addEventListener('click', send);
+      // Celular (Android/iOS): a tecla Enter do teclado deve QUEBRAR LINHA — quem envia
+      // é o botão. No desktop: Enter envia, Ctrl+Enter e Shift+Enter quebram linha.
+      var IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth < 900);
+      function autoGrow(){ var el=$('msgInput'); el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+      $('msgInput').addEventListener('input', autoGrow);
+      // Clicar em qualquer ponto da barra de digitação (fora dos botões) já foca o campo.
+      document.querySelector('.composer').addEventListener('click', function(ev){
+        if(ev.target.closest('button, input, textarea, a')) return;
+        $('msgInput').focus();
+      });
+      $('msgInput').addEventListener('keydown', function(e){
+        if(e.key!=='Enter') return;
+        if(IS_MOBILE) return;                 // celular: deixa quebrar linha
+        if(e.ctrlKey||e.metaKey||e.shiftKey) return; // Ctrl/Cmd/Shift+Enter: quebra linha
+        e.preventDefault(); send();
+      });
+
+      // Anexar / enviar mídia
+      function upmsg(t, err){ var e=$('upMsg'); e.textContent=t||''; e.className='upmsg'+(err?' err':''); }
+      async function uploadFile(file, caption){
+        if(!file || !state.current) return false;
+        upmsg('Enviando '+(file.name||'arquivo')+'…');
+        var fd=new FormData(); fd.append('file', file); fd.append('phone', state.current);
+        if(caption) fd.append('caption', caption);
+        try {
+          var r=await fetch(CRM.sendMedia, { method:'POST', credentials:'same-origin', body: fd });
+          var d=await r.json().catch(function(){ return null; });
+          if(d&&d.ok){ upmsg(''); setBotBtn(true); await refreshOpen(true); loadConvs(); return true; }
+          upmsg('Falha: '+((d&&d.message)||(d&&d.error)||'erro'), true); return false;
+        } catch(e){ upmsg('Erro de rede ao enviar.', true); return false; }
+      }
+
+      // ── Botão "Reais": envia o card (imagem das opções de seguidores + legenda) ──
+      var CARD_REAIS_IMG = '/images/card-seguidores-opcoes.png';
+      var CARD_REAIS_CAP = [
+        'No nosso site você escolhe entre mais de uma opção de seguidores: Seguidores Mistos e Seguidores Brasileiros Reais, cada um com descrição e preço próprios.',
+        '',
+        'Essa diferença é informada em vários momentos antes da compra:',
+        '- No áudio que toca logo no início do site;',
+        '- No vídeo de tour do site;',
+        '- No resumo detalhado exibido antes de finalizar o pedido;',
+        '- Em um e-mail enviado antes da compra.',
+        '',
+        'Dessa forma, a informação sobre os tipos de seguidores fica sempre disponível e transparente para a sua escolha.'
+      ].join('\n');
+      async function enviarCardReais(){
+        if(!state.current){ alert('Abra uma conversa primeiro.'); return; }
+        if(!confirm('Enviar o card de opções de seguidores (Mistos x Brasileiros Reais) para este cliente?')) return;
+        var btn=$('cardReaisHeaderBtn') || $('cardReaisBtn');
+        try {
+          if(btn) btn.disabled=true; upmsg('Preparando card…');
+          var resp=await fetch(CARD_REAIS_IMG, { credentials:'same-origin' });
+          if(!resp.ok) throw new Error('img '+resp.status);
+          var blob=await resp.blob();
+          var file=new File([blob], 'opcoes-seguidores.png', { type: blob.type || 'image/png' });
+          await uploadFile(file, CARD_REAIS_CAP);
+        } catch(e){ upmsg('Erro ao enviar o card.', true); }
+        finally { if(btn) btn.disabled=false; }
+      }
+      if($('cardReaisHeaderBtn')) $('cardReaisHeaderBtn').addEventListener('click', enviarCardReais);
+
+      // ── Anexo pendente (colar imagem ou escolher no 📎) ────────────────────
+      // Fica na prévia acima da barra e só é enviado quando você clica em ➤ — o texto
+      // digitado vira legenda da imagem, como no WhatsApp.
+      // Vários anexos de uma vez: cada um vira uma mensagem, na ordem. A legenda
+      // digitada vai no PRIMEIRO (é assim que o WhatsApp trata um envio em lote).
+      var MAX_ANEXOS=10;
+      function clearPending(){
+        try { (state.pendings||[]).forEach(function(p){ if(p.url) URL.revokeObjectURL(p.url); }); } catch(_){}
+        state.pendings=[];
+        renderPending();
+      }
+      function removePending(i){
+        var p=(state.pendings||[])[i]; if(!p) return;
+        try { if(p.url) URL.revokeObjectURL(p.url); } catch(_){}
+        state.pendings.splice(i,1);
+        renderPending();
+      }
+      function renderPending(){
+        var lista=state.pendings||[];
+        if(!lista.length){ $('pendBar').style.display='none'; $('pendList').innerHTML=''; $('msgInput').placeholder='Mensagem'; return; }
+        $('pendList').innerHTML=lista.map(function(p,i){
+          var mini=p.url ? ('<img class="pend-thumb" src="'+p.url+'" alt="">') : ('<div class="pend-file">'+p.ico+'</div>');
+          return '<div class="pend-item" title="'+esc(p.file.name||'')+'">'+mini+'<button type="button" class="pend-x" data-i="'+i+'" title="Remover">✕</button></div>';
+        }).join('');
+        $('pendName').textContent = lista.length===1 ? (lista[0].file.name||'Imagem colada') : (lista.length+' anexos');
+        $('pendSub').textContent = lista.length===1 ? 'Escreva uma legenda (opcional) e toque em ➤ para enviar' : ('Vão em '+lista.length+' mensagens, na ordem. A legenda vai na primeira.');
+        $('pendBar').style.display='flex';
+        $('msgInput').placeholder='Legenda (opcional)';
+      }
+      function setPending(files){
+        var arr=(files && files.length!=null) ? Array.prototype.slice.call(files) : (files?[files]:[]);
+        if(!arr.length) return;
+        if(!state.current){ alert('Abra uma conversa primeiro.'); return; }
+        state.pendings=state.pendings||[];
+        var ignorados=0;
+        for(var k=0;k<arr.length;k++){
+          var file=arr[k]; if(!file) continue;
+          if(state.pendings.length>=MAX_ANEXOS){ ignorados++; continue; }
+          if(file.size && file.size > 16*1024*1024){ ignorados++; continue; }
+          var ehImg=/^image\//i.test(file.type||'');
+          state.pendings.push({ file:file, url: ehImg?URL.createObjectURL(file):'', ico: /^video\//i.test(file.type||'')?'🎬':(/^audio\//i.test(file.type||'')?'🎵':'📄') });
+        }
+        if(ignorados) alert(ignorados+' arquivo(s) não entraram (máximo de '+MAX_ANEXOS+' por vez e 16MB cada).');
+        renderPending();
+        $('msgInput').focus();
+      }
+      $('pendCancel').addEventListener('click', clearPending);
+      $('pendList').addEventListener('click', function(ev){
+        var b=ev.target.closest('.pend-x'); if(!b) return;
+        removePending(Number(b.getAttribute('data-i')));
+      });
+      $('attachBtn').addEventListener('click', function(){ if(!state.current){ alert('Abra uma conversa primeiro.'); return; } $('fileInput').click(); });
+      $('fileInput').addEventListener('change', function(){ if(this.files && this.files.length) setPending(this.files); this.value=''; });
+      // Colar (Ctrl+V) imagem da área de transferência, em qualquer lugar do chat.
+      document.addEventListener('paste', function(ev){
+        var dt=ev.clipboardData; if(!dt || !state.current) return;
+        var itens=dt.items?Array.prototype.slice.call(dt.items):[];
+        var arquivos=itens.filter(function(x){ return x && x.kind==='file' && /^image\//i.test(x.type||''); }).map(function(x){ return x.getAsFile(); }).filter(Boolean);
+        if(!arquivos.length && dt.files && dt.files.length) arquivos=Array.prototype.slice.call(dt.files).filter(function(f){ return /^image\//i.test(f.type||''); });
+        if(!arquivos.length) return;        // texto normal segue colando no campo
+        ev.preventDefault();
+        setPending(arquivos.map(function(f,i){
+          if(f.name) return f;
+          var ext=(String(f.type||'').split('/')[1]||'png').split('+')[0];
+          return new File([f],'imagem-colada'+(i?('-'+(i+1)):'')+'.'+ext,{ type:f.type });
+        }));
+      });
+      // Arrastar e soltar arquivo no chat também cai na prévia.
+      var dropArea=document.querySelector('.thread') || document;
+      dropArea.addEventListener('dragover', function(ev){ if(ev.dataTransfer && ev.dataTransfer.types && Array.prototype.indexOf.call(ev.dataTransfer.types,'Files')>=0){ ev.preventDefault(); } });
+      dropArea.addEventListener('drop', function(ev){
+        var fs=ev.dataTransfer && ev.dataTransfer.files;
+        if(!fs || !fs.length) return; ev.preventDefault(); setPending(fs);
+      });
+
+      // Gravar áudio (voz)
+      var mediaRecorder=null, recChunks=[], recording=false, recStream=null;
+      $('micBtn').addEventListener('click', async function(){
+        if(!state.current){ alert('Abra uma conversa primeiro.'); return; }
+        if(recording){ try{ mediaRecorder.stop(); }catch(_){} return; }
+        if(!navigator.mediaDevices || !window.MediaRecorder){ alert('Seu navegador não suporta gravação de áudio.'); return; }
+        try {
+          recStream=await navigator.mediaDevices.getUserMedia({ audio:true });
+          var mime = (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) ? 'audio/ogg;codecs=opus'
+            : ((MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) ? 'audio/webm;codecs=opus' : '');
+          mediaRecorder = mime ? new MediaRecorder(recStream,{ mimeType:mime }) : new MediaRecorder(recStream);
+          recChunks=[];
+          mediaRecorder.ondataavailable=function(e){ if(e.data&&e.data.size) recChunks.push(e.data); };
+          mediaRecorder.onstop=async function(){
+            recording=false; $('micBtn').classList.remove('rec'); $('micBtn').textContent='🎤';
+            try{ recStream.getTracks().forEach(function(t){ t.stop(); }); }catch(_){}
+            var type=(mediaRecorder.mimeType||'audio/webm').split(';')[0];
+            var ext=type.indexOf('ogg')>=0?'ogg':(type.indexOf('mp4')>=0?'mp4':'webm');
+            var blob=new Blob(recChunks,{ type:type });
+            await uploadFile(new File([blob],'audio.'+ext,{ type:type }));
+          };
+          mediaRecorder.start(); recording=true; $('micBtn').classList.add('rec'); $('micBtn').textContent='⏹'; upmsg('Gravando… toque no ⏹ para enviar.');
+        } catch(e){ alert('Não consegui acessar o microfone. Verifique a permissão.'); }
+      });
+
+      // Polling
+      loadConvs();
+      // Link direto (ex.: vindo do Follow-up do bot): /painel/ia-crm?phone=55...
+      try { var _ph = String(new URLSearchParams(location.search).get('phone') || '').replace(/\D/g, ''); if (_ph) openChat(_ph, ''); } catch(_){}
+      setInterval(loadConvs, 5000);
+      setInterval(refreshOpen, 3000);
+    })();
+  </script>
+</body>
+</html>

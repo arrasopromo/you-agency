@@ -1,0 +1,50 @@
+<% const isEn = String((typeof language !== 'undefined' && String(language || '').trim()) ? language : 'en').toLowerCase() === 'en'; %>
+<nav class="fixed-menu" aria-label="<%= 'Menú fijo' %>">
+  <div class="menu-left site-brand" aria-label="<%= 'Marca del sitio' %>">
+    <a href="<%= typeof logoLink !== 'undefined' ? logoLink : '/' %>" style="display:flex;align-items:center;gap:0.5rem;text-decoration:none;color:inherit;">
+      <img class="site-logo logo-dark" src="/images/y%20branco.png" alt="You Agency" />
+      <img class="site-logo logo-light" src="/images/y%20preto.png" alt="You Agency" />
+      <span class="site-brand-text">You Agency</span>
+    </a>
+  </div>
+  <div class="menu-right">
+    <button id="clientFetchBtn" class="client-btn" aria-label="<%= 'Buscar pedido' %>"><%= 'Cliente' %></button>
+    <button id="themeToggleBtn" class="theme-toggle" aria-label="<%= 'Cambiar tema' %>" aria-pressed="true"><span class="theme-label"><%= 'Tema: Oscuro' %></span><span class="icon icon-sun" aria-hidden="true"><svg class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.2" y1="4.2" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.8" y2="19.8"/><line x1="4.2" y1="19.8" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.8" y2="4.2"/></g></svg></span><span class="icon icon-moon" aria-hidden="true"><svg class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg></span></button>
+  </div>
+</nav>
+<script>
+  window.EFI_PAYEE_CODE = "<%= typeof EFI_PAYEE_CODE !== 'undefined' ? EFI_PAYEE_CODE : '' %>";
+  window.EFI_SANDBOX = "<%= typeof EFI_SANDBOX !== 'undefined' ? EFI_SANDBOX : false %>" === "true";
+  window.EFI_SCRIPT_URL = "<%= typeof EFI_SCRIPT_URL !== 'undefined' ? EFI_SCRIPT_URL : '' %>";
+  window.EFI_SCRIPT_FALLBACK_URL = "<%= typeof EFI_SCRIPT_FALLBACK_URL !== 'undefined' ? EFI_SCRIPT_FALLBACK_URL : '' %>";
+</script>
+<%- include('whatsapp-bubble') %>
+<script>
+  (function() {
+    // Client Button Logic: Redirect to /cliente if the modal is not available on this page
+    var clientBtn = document.getElementById('clientFetchBtn');
+    if (clientBtn) {
+      clientBtn.addEventListener('click', function(e) {
+        // If checkout.js is loaded and #clientPage exists, it might handle it.
+        // But if #clientPage does NOT exist, we definitely need to redirect.
+        // If #clientPage exists but is hidden (checkout page), we let checkout.js handle it (preventDefault is usually in checkout.js).
+        // However, we need to be careful not to race or conflict.
+        // If checkout.js is present, it usually attaches a listener.
+        // If we attach one too, and we don't preventDefault, both run.
+        // But if checkout.js prevents default, then we are good.
+        // If checkout.js is NOT present, we redirect.
+        var clientPage = document.getElementById('clientPage');
+        // Se estiver na página de detalhes do pedido, força o redirecionamento
+        if (window.location.pathname.indexOf('/pedido') === 0) {
+            e.preventDefault();
+            window.location.href = '/cliente';
+            return;
+        }
+        if (!clientPage) {
+          e.preventDefault(); // Just in case it was a submit button (it's type=submit by default in some browsers if in form, though here it is button)
+          window.location.href = '/cliente';
+        }
+      });
+    }
+  })();
+</script>

@@ -1,0 +1,32 @@
+<% const _xpagOn = (typeof XPAG_ENABLED !== 'undefined') && !!XPAG_ENABLED; const _oxxoOn = (typeof XPAG_OXXO !== 'undefined') && !!XPAG_OXXO; %>
+<style>
+  .ya-metodos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 4px 0 12px; }
+  .ya-metodo { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0; padding: 10px 6px; border: 2px solid var(--border-color, #e5e7eb); border-radius: 12px; cursor: pointer; background: var(--bg-secondary, #fff); text-align: center; }
+  .ya-metodo input { position: absolute; opacity: 0; pointer-events: none; }
+  .ya-metodo strong { font-size: 0.95rem; color: var(--text-primary, #111827); }
+  .ya-metodo span { font-size: 0.72rem; color: var(--text-secondary, #6b7280); line-height: 1.25; }
+  .ya-metodo.sel { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15); }
+  @media (max-width: 380px) { .ya-metodos { grid-template-columns: 1fr; } }
+</style>
+<script>window.XPAG_ENABLED = <%= _xpagOn ? 'true' : 'false' %>;</script>
+<% if (_xpagOn) { %>
+<div class="ya-metodos" id="yaMetodosPago" role="radiogroup" aria-label="Método de pago"<%- _oxxoOn ? '' : ' style="grid-template-columns:1fr;"' %>>
+  <label class="ya-metodo sel"><input type="radio" name="yaPayMethod" value="spei" checked /><strong>SPEI</strong><span>Transferencia desde tu banco</span></label>
+  <% if (_oxxoOn) { %><label class="ya-metodo"><input type="radio" name="yaPayMethod" value="oxxo" /><strong>OXXO</strong><span>Efectivo en tienda</span></label><% } %>
+</div>
+<script>
+  (function () {
+    var rotulos = { spei: 'Pagar con SPEI', oxxo: 'Generar ficha OXXO' };
+    var selos = { spei: 'Pago seguro por transferencia SPEI', oxxo: 'Paga en efectivo en cualquier OXXO' };
+    function aplicar() {
+      var sel = document.querySelector('input[name="yaPayMethod"]:checked');
+      var v = sel ? sel.value : 'spei';
+      document.querySelectorAll('#yaMetodosPago .ya-metodo').forEach(function (l) { l.classList.toggle('sel', !!l.querySelector('input:checked')); });
+      var b = document.querySelector('#payWithCardBtn .button-text'); if (b) { try { delete b.dataset.original; } catch (_) {} b.textContent = rotulos[v] || rotulos.spei; }
+      var s = document.querySelector('#stripeBadgeCard span'); if (s) s.textContent = selos[v] || '';
+    }
+    document.querySelectorAll('input[name="yaPayMethod"]').forEach(function (r) { r.addEventListener('change', aplicar); });
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', aplicar); else aplicar();
+  })();
+</script>
+<% } %>

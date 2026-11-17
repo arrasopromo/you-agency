@@ -1,0 +1,26 @@
+<%
+  // "Red seleccionada" logo abaixo das etapas 1-2-3 (Instagram, TikTok e Facebook).
+  // Uso: include('partials/rede_selecionada', { rede: 'instagram' | 'tiktok' | 'facebook' })
+  var _rs = (typeof rede !== 'undefined' && (rede === 'tiktok' || rede === 'facebook')) ? rede : 'instagram';
+  var _rsNome = _rs === 'tiktok' ? 'TikTok' : (_rs === 'facebook' ? 'Facebook' : 'Instagram');
+%>
+<style>
+  .rd-rede-sel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.45rem; width: 100%; margin: 0.1rem auto 1.4rem; text-align: center; }
+  .rd-rede-sel-label { color: var(--text-secondary); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .rd-rede-sel .platform-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-width: 150px; cursor: default; padding: 0.55rem 1.2rem; border-radius: 999px; border: 1px solid var(--border-color, rgba(15, 23, 42, .1)); box-shadow: 0 1px 4px rgba(15, 23, 42, .08); font-weight: 700; }
+  body .rd-rede-sel .platform-btn, body .rd-rede-sel .platform-btn:hover, body .rd-rede-sel .platform-btn:focus, body .rd-rede-sel .platform-btn[aria-pressed] { transform: none; outline: none; border: 1px solid var(--border-color, rgba(15, 23, 42, .1)); box-shadow: 0 1px 4px rgba(15, 23, 42, .08); }
+  .rd-rede-sel .platform-btn.facebook { background: var(--bg-secondary); color: var(--text-primary); }
+</style>
+<div class="rd-rede-sel">
+  <span class="rd-rede-sel-label">Red seleccionada</span>
+  <span class="platform-btn <%= _rs %>" aria-pressed="true" aria-label="<%= _rsNome %>">
+    <% if (_rs === 'facebook') { %>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13.5 22v-8.2h2.8l.4-3.2h-3.2V8.5c0-.9.3-1.6 1.6-1.6h1.7V4.1c-.3 0-1.3-.1-2.5-.1-2.5 0-4.1 1.5-4.1 4.2v2.4H7.4v3.2h2.8V22h3.3z" fill="#1877F2"/></svg>
+    <% } else if (_rs === 'tiktok') { %>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14 3c.3 1.9 1.5 3.6 3.2 4.5 1 .6 2.1.9 3.2.9v3a8.6 8.6 0 01-3.2-.6 7.8 7.8 0 01-2.2-1.3v6.6a5.9 5.9 0 11-5.8-5.9c.4 0 .9.1 1.3.2v3a2.9 2.9 0 00-1.3-.3 2.9 2.9 0 102.9 2.9V3h2z" fill="currentColor"/></svg>
+    <% } else { %>
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="rsIgG" cx="30%" cy="107%" r="150%"><stop offset="0" stop-color="#fdf497"/><stop offset=".05" stop-color="#fdf497"/><stop offset=".45" stop-color="#fd5949"/><stop offset=".6" stop-color="#d6249f"/><stop offset=".9" stop-color="#285AEB"/></radialGradient></defs><rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="url(#rsIgG)"/><rect x="6" y="6" width="12" height="12" rx="3.6" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="2.9" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="15.9" cy="8.1" r="1" fill="#fff"/></svg>
+    <% } %>
+    <span><%= _rsNome %></span>
+  </span>
+</div>

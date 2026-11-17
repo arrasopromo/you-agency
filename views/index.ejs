@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You Agency</title>
+    <link rel="stylesheet" href="/css/style.css?v=20261111">
+    <link rel="stylesheet" href="/css/perfil.css">
+    <link rel="icon" type="image/png" href="/images/y%20branco.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- TRACK COMBO -->
+    <script>
+      (function() {
+        var script = document.createElement("script");
+        script.type = "text/javascript";
+        script.async = true;
+        script.src = "https://track.youagency.site/tag/TC-OISDR3RC.js";
+        var firstScript = document.getElementsByTagName("script")[0];
+        firstScript.parentNode.insertBefore(script, firstScript);
+      })();
+    </script>
+    <!-- End TRACK COMBO -->
+  </head>
+<body class="theme-light has-fixed-menu">
+    <nav class="fixed-menu" aria-label="Menú fijo">
+      <div class="menu-left site-brand">
+        <a href="/" style="display:flex;align-items:center;gap:0.5rem;text-decoration:none;">
+          <img src="/images/y%20branco.png" alt="You Agency" class="site-logo logo-dark" />
+          <img src="/images/y%20preto.png" alt="You Agency" class="site-logo logo-light" />
+          <span class="site-brand-text">You Agency</span>
+        </a>
+      </div>
+      <div class="menu-right">
+        <button id="clientFetchBtn" class="client-btn" aria-label="Buscar pedido">Cliente</button>
+        
+      </div>
+    </nav>
+    <div class="container">
+        <!-- Landing Page -->
+        <div id="landingPage">
+            <header class="header">
+                <h1 class="title">Prueba nuestros servicios</h1>
+                <p class="subtitle">Elige el servicio que te interesa probar</p>
+                <button id="themeToggleBtn" class="theme-toggle" aria-label="Cambiar tema" aria-pressed="true"><span class="theme-label">Tema: Oscuro</span><span class="icon icon-sun" aria-hidden="true"><svg class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.2" y1="4.2" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.8" y2="19.8"/><line x1="4.2" y1="19.8" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.8" y2="4.2"/></g></svg></span><span class="icon icon-moon" aria-hidden="true"><svg class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg></span><span class="sr-only">Cambiar tema</span></button>
+            </header>
+            <main class="main-content">
+                <!-- SeÃ§Ã£o: Seguidores -->
+                <section class="section-block">
+                    <h2 class="section-label centered-label">Seguidores</h2>
+                    <div class="cards-grid">
+                        <a class="service-card" href="/perfil?servico=seguidores_mistos" data-servico="seguidores_mistos">
+                            <div class="card-content">
+                                <h3 class="card-title">Seguidores mixtos</h3>
+                                <p class="card-desc">Perfiles variados, entrega rápida y estable, con seguidores reales. 100% seguro y confidencial, sin contraseña.</p>
+                            </div>
+                        </a>
+                        <a class="service-card disabled" href="#" aria-disabled="true" title="Disponible para prueba solo después de tu primera compra." data-servico="seguidores_organicos">
+                            <div class="card-content">
+                                <h3 class="card-title">Seguidores reales</h3>
+                                <p class="card-desc">Perfiles reales y activos, disponibles para prueba después de tu primera compra. 100% seguro y confidencial, sin contraseña.</p>
+                            </div>
+                        </a>
+                    </div>
+                </section>
+
+                <!-- SeÃ§Ã£o: Curtidas -->
+                <%# Prueba de Me gusta retirada: solo existía con el tipo curtidas_brasileiras %>
+
+                <!-- SeÃ§Ã£o: VisualizaÃ§Ã£o Reels -->
+                <section class="section-block centered">
+                    <h2 class="section-label">Visualizaciones de Reels</h2>
+                    <div class="cards-grid">
+                        <a class="service-card" href="/perfil?servico=visualizacoes_reels" data-servico="visualizacoes_reels">
+                            <div class="card-content">
+                                <h3 class="card-title">Visualizaciones de Reels</h3>
+                                <p class="card-desc">Aumenta el alcance de tus videos.</p>
+                            </div>
+                        </a>
+                    </div>
+                </section>
+            </main>
+            <footer class="footer">
+                <p>&copy; 2025 You Agency. Todos los derechos reservados.</p>
+            </footer>
+        </div>
+        <!-- PÃ¡gina de Perfil (inicialmente oculta) -->
+        <div id="perfilPage" style="display:none;">
+            <div id="timer" class="timer">05:00</div>
+            <header class="header">
+                <button class="back-button" onclick="goBack()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Volver
+                </button>
+            </header>
+            <main class="main-content">
+                <div class="profile-section">
+                    <h1 class="title">Buscar perfil</h1>
+                    <p class="subtitle">Escribe tu usuario de Instagram</p>
+                    <div id="profileImageContainer" class="profile-image-container" style="display: none;">
+                        <div class="profile-image-embed">
+                            <img id="profileImage" src="" alt="Foto de perfil" class="profile-image">
+                            <div id="verifiedBadge" class="profile-verified-badge" style="display: none;">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="profile-info">
+                            <div id="profileUsername" class="profile-username"></div>
+                            <div id="profileStats" class="profile-stats"></div>
+                        </div>
+                    </div>
+                    <div class="search-container"></div>
+                    <div id="statusMessage" class="status-message" style="display: none;"></div>
+                    <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Verificando perfil...</p>
+                    </div>
+                    <div class="action-container">
+                        <button id="confirmButton" class="confirm-button" onclick="confirmProfile()" disabled>
+                            Confirmar
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </main>
+            <footer class="footer">
+                <p>&copy; 2025 You Agency. Todos los derechos reservados.</p>
+            </footer>
+            <div id="toastContainer" class="toast-container"></div>
+            <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                <div class="loading-content">
+                    <div class="spinner-large"></div>
+                    <p>Procesando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/js/main.js" defer></script>
+    <script src="/js/perfil.js" defer></script>
+  <%- include('partials/whatsapp-bubble') %>
+</body>
+</html>
+
+

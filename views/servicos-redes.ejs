@@ -1,0 +1,417 @@
+<% const _rede = (typeof rede !== 'undefined' && rede === 'facebook') ? 'facebook' : 'tiktok'; const _nome = _rede === 'facebook' ? 'Facebook' : 'TikTok';
+   const _sv = String((typeof queryParams !== 'undefined' && queryParams && queryParams.servicio) || '').toLowerCase();
+   const _foco = /coment|comment/.test(_sv) ? 'comentarios' : (/curtid|gusta|like/.test(_sv) ? 'curtidas' : (/visualiz|view/.test(_sv) ? 'visualizacoes' : 'seguidores'));
+   const _focoNome = _foco === 'curtidas' ? 'me gusta' : (_foco === 'visualizacoes' ? 'visualizaciones' : (_foco === 'comentarios' ? 'comentarios' : 'seguidores')); %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Comprar <%= _focoNome %> para <%= _nome %> | You Agency</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="description" content="Comprar <%= _focoNome %> para <%= _nome %>. Pago por SPEI, sin contraseña." />
+  <script>
+    (function () {
+      try {
+        var p = new URLSearchParams(location.search), utms = {};
+        ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid'].forEach(function (k) { var v = p.get(k); if (v) utms[k] = v; });
+        if (Object.keys(utms).length) sessionStorage.setItem('ya_utms', JSON.stringify(utms));
+      } catch (_) {}
+    })();
+  </script>
+  <link href="/css/style.css?v=20261111" rel="stylesheet" />
+  <link href="/css/badges.css" rel="stylesheet" />
+  <link href="/css/perfil.css" rel="stylesheet" />
+  <link href="/css/why-us.css?v=20261111" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="/images/y%20branco.png" />
+  <!-- TRACK COMBO -->
+  <script>
+    (function() {
+      var script = document.createElement("script");
+      script.type = "text/javascript"; script.async = true;
+      script.src = "https://track.youagency.site/tag/TC-OISDR3RC.js";
+      var firstScript = document.getElementsByTagName("script")[0];
+      firstScript.parentNode.insertBefore(script, firstScript);
+    })();
+  </script>
+  <!-- End TRACK COMBO -->
+</head>
+<body class="theme-light has-fixed-menu page-instagram-services page-redes">
+  <%- include('partials/menu', { logoLink: '/interaccion' }) %>
+  <div class="container checkout-page">
+    <style>
+      /* Mesmo layout dos cards de tipo da página do Instagram (servicos-instagram.ejs). */
+      #tipoCards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; width: 100%; max-width: 980px; margin: 0 auto; justify-content: center; }
+      #tipoCards .service-card { width: 100%; min-width: 0; min-height: 150px; padding: 14px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; box-sizing: border-box; margin: 0; cursor: pointer; }
+      #tipoCards .service-card.active { background: var(--primary-purple, #8B5CF6); border: 1px solid var(--primary-purple, #8B5CF6); color: white; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.4); transform: translateY(-2px); }
+      #tipoCards .service-card.active .card-title { color: white; }
+      @media (min-width: 1024px) {
+        #tipoCards { max-width: 1120px; gap: 1.25rem; }
+        #tipoCards .service-card { min-height: 170px; padding: 18px 16px; }
+      }
+      @media (max-width: 639px) {
+        #tipoCards { grid-template-columns: repeat(2, 1fr) !important; gap: 4px !important; width: calc(100% + 44px) !important; margin-left: -22px !important; padding: 0 4px !important; }
+        #tipoCards .service-card { min-height: 125px !important; padding: 8px 4px !important; }
+        #tipoCards .card-title { font-size: 0.88rem !important; line-height: 1.3 !important; text-align: center !important; font-weight: 600 !important; }
+      }
+      .rd-plat { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 auto 1rem; font-weight: 700; color: var(--text-primary); }
+      .rd-plat .rd-logo { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: #fff; }
+      .rd-plat .rd-logo.tiktok { background: #000; }
+      .rd-plat .rd-logo.facebook { background: #1877F2; }
+      .rd-plat .rd-logo svg { width: 17px; height: 17px; }
+      .rd-plat a { font-weight: 500; font-size: 0.85rem; color: var(--primary-purple, #7c3aed); text-decoration: none; margin-left: 6px; }
+      #resumo .rd-res-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--border-color, #eef0f3); }
+      #resumo .rd-res-row span:last-child { text-align: right; min-width: 0; overflow-wrap: anywhere; }
+      .rd-erro { color: #ef4444; font-size: 0.85rem; display: none; margin-bottom: 0.3rem; }
+      #resumo .resumo-row, #resumo .resumo-total { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 0.35rem 0; }
+      #resumo .resumo-row span:last-child { text-align: right; min-width: 0; overflow-wrap: anywhere; }
+      #resumo .resumo-total { font-weight: 700; font-size: 1.05rem; border-top: 1px solid var(--border-color); margin-top: 0.4rem; padding-top: 0.6rem; }
+      /* Celular: um tipo só (ex.: Me gusta mixtos) fica centralizado, com a largura de um card da grade de 2 */
+      @media (max-width: 640px) {
+        #step1Container #tipoCards[data-n="1"] { grid-template-columns: minmax(0, calc(50% - 6px)) !important; justify-content: center !important; }
+      }
+    </style>
+    <main class="main-content" id="rdMain" data-rede="<%= _rede %>">
+      <div class="stepper-container">
+        <div class="step active" id="step1" onclick="window.goToStep && window.goToStep(1)" style="cursor: pointer;">
+          <div class="step-circle">1</div>
+          <div class="step-label">Servicio</div>
+        </div>
+        <div class="step-line" id="line1"></div>
+        <div class="step" id="step2" onclick="window.goToStep && window.goToStep(2)" style="cursor: pointer;">
+          <div class="step-circle">2</div>
+          <div class="step-label">Detalles</div>
+        </div>
+        <div class="step-line" id="line2"></div>
+        <div class="step" id="step3" onclick="window.goToStep && window.goToStep(3)" style="cursor: pointer;">
+          <div class="step-circle">3</div>
+          <div class="step-label">Pago</div>
+        </div>
+      </div>
+
+      <%- include('partials/rede_selecionada', { rede: _rede }) %>
+
+      <section class="section-block">
+        <div id="step1Container" class="cards-grid checkout-grid">
+          <div id="tipoCards"></div>
+          <div class="service-card" id="tipoDescCard" style="display:none; margin-top: 1rem; margin-bottom: 1rem;">
+            <div class="card-content">
+              <h3 class="card-title" id="tipoDescTitle">Descripción del servicio</h3>
+              <div class="card-desc" id="tipoDescContent"></div>
+            </div>
+          </div>
+          <div id="planCards" class="plan-cards" style="display:none;"></div>
+        </div>
+      </section>
+
+      <section class="section-block">
+        <div id="perfilCard" style="display:none;">
+          <div class="service-card">
+            <div class="card-content">
+              <div style="text-align: center; margin-bottom: 1.5rem; position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                <button id="backToStep1Btn" type="button" aria-label="Volver" style="border: none; cursor: pointer; color: var(--text-primary); padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; background-color: #f1f5f9;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <h3 class="card-title" style="margin-bottom: 0; font-size: 1.5rem;">Detalles del pedido</h3>
+              </div>
+              <div class="card-desc">
+                <!-- 1. Busca do perfil (igual ao "Buscar" do Instagram) -->
+                <div style="margin-bottom: 0.5rem;">
+                  <label class="input-label" style="display:block; margin-bottom:0.5rem; font-weight:600;"><%= _rede === 'facebook' ? 'Perfil o página de Facebook' : 'Usuario de TikTok' %> <span style="color:#ef4444">*</span></label>
+                  <div class="input-group username-group" id="grupoUsername" style="position:relative; display: flex; gap: 0.5rem;">
+                    <input type="text" id="usernameCheckoutInput" placeholder="<%= _rede === 'facebook' ? 'ej. facebook.com/tupagina' : 'ej. @usuario' %>" class="select-input" maxlength="200" autocomplete="off" style="flex: 1; border-radius: 8px;" />
+                    <button id="checkCheckoutButton" class="continue-button validate-btn" type="button" style="padding: 0 1.5rem; border-radius: 8px; font-weight: 600; background: var(--instagram-gradient);">
+                      <span class="button-text">Buscar</span>
+                      <svg class="button-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" style="margin-left: 0.4rem;"><path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <div id="tutorial3Usuario" class="tutorial-pop tutorial-pop-input" style="display:block;">
+                      <div class="tutorial-pop-step">3/5</div>
+                      <div class="tutorial-pop-text"><%= _rede === 'facebook' ? 'Ingresa tu perfil o página de Facebook' : 'Ingresa tu usuario de TikTok' %></div>
+                    </div>
+                  </div>
+                  <style>
+                    @media (max-width: 640px) {
+                      #grupoUsername { flex-direction: column; }
+                      #checkCheckoutButton { width: 100%; height: 40px; min-height: 40px; margin-top: 0.5rem; }
+                      #usernameCheckoutInput { width: 100%; }
+                    }
+                  </style>
+                  <div id="perfilHints" style="margin-top:0.4rem; color: var(--text-secondary); font-size: 0.85rem;">
+                    <%= _rede === 'facebook' ? 'Pega el enlace de tu perfil o página (ej. facebook.com/tupagina) o solo el nombre de usuario.' : 'Puedes escribirlo con o sin @ (ej. @usuario o usuario), o pegar el enlace de tu perfil.' %>
+                  </div>
+                  <div id="statusCheckoutMessage" class="status-message" style="display:none; margin-top:0.5rem;"></div>
+                  <div id="loadingCheckoutSpinner" class="loading-spinner" style="display:none; margin-top:0.5rem;">
+                    <div class="spinner"></div>
+                    <p>Verificando perfil...</p>
+                  </div>
+
+                  <!-- Preview do Perfil -->
+                  <div id="profilePreview" style="display:none; margin-top:1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color);">
+                    <div style="display:flex; align-items:center; gap:1rem;">
+                      <img id="checkoutProfileImage" alt="Foto" referrerpolicy="no-referrer" style="width:64px; height:64px; border-radius:50%; object-fit:cover; background:#fff; flex:none;" />
+                      <div style="min-width:0;">
+                        <div style="font-weight:700; font-size:1.1rem; color: var(--text-primary); overflow-wrap:anywhere;"><span id="checkoutProfileUsername"></span></div>
+                        <div id="checkoutProfileName" style="font-size:0.85rem; color: var(--text-secondary);"></div>
+                        <div id="checkoutProfileStats" style="display:flex; flex-wrap:wrap; gap:0.8rem; font-size:0.9rem; color: var(--text-secondary); margin-top:0.2rem;"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. Campos de Contato (aparecem depois de buscar o perfil, como no Instagram) -->
+                <div id="contactFieldsArea" style="display:none; margin-top: 2rem; border-top: 1px solid #e2e8f0; padding-top: 1.5rem;">
+                  <div id="postLinkArea" style="display:none; margin-bottom: 1.25rem;">
+                    <div id="linkErrorMsg" class="rd-erro"></div>
+                    <div id="rdVideoSel" class="rd-video-sel" style="display:none;"></div>
+                    <button type="button" id="rdVideoBtn" class="rd-video-btn" style="display:none;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                      <span>Elegir de mis videos</span>
+                    </button>
+                    <label for="rdLink" style="display:block; margin-bottom:0.5rem; color:var(--text-primary); font-weight:500;"><span id="rdLinkLabel">Enlace</span> <span style="color:#ef4444">*</span></label>
+                    <input type="url" id="rdLink" class="select-input" inputmode="url" autocomplete="off" maxlength="300" style="width:100%; border-radius: 8px;" />
+                    <div id="rdLinkHint" style="margin-top:0.4rem; color: var(--text-secondary); font-size: 0.85rem;"></div>
+                  </div>
+                  <div style="margin-bottom: 1rem;">
+                    <div style="background-color: #eff6ff; padding: 0.75rem; border-radius: 8px; border: 1px solid #dbeafe; margin-bottom: 0.8rem;">
+                      <span style="color: #1e40af; font-weight: 700; font-size: 0.95rem; display: block; margin-bottom: 0.3rem;">¿Por qué te pedimos estos datos?</span>
+                      <p style="font-size: 0.85rem; color: #1e3a8a; margin: 0; line-height: 1.4;">Para poder contactarte y para que puedas ver los detalles de tu pedido.</p>
+                    </div>
+                    <div id="nameErrorMsg" class="rd-erro">Escribe tu nombre</div>
+                    <label for="contactNameInput" style="display:block; margin-bottom:0.5rem; color:var(--text-primary); font-weight:500;">Nombre <span style="color:#ef4444">*</span></label>
+                    <input type="text" id="contactNameInput" class="select-input" placeholder="Tu nombre" autocomplete="name" maxlength="80" style="width:100%; border-radius: 8px; margin-bottom: 1rem;" />
+                    <div id="emailErrorMsg" class="rd-erro">Ingresa un correo electrónico válido</div>
+                    <label for="contactEmailInput" style="display:block; margin-bottom:0.5rem; color:var(--text-primary); font-weight:500;">Correo electrónico <span style="color:#ef4444">*</span></label>
+                    <input type="email" id="contactEmailInput" class="select-input" placeholder="Tu mejor correo electrónico" autocomplete="email" style="width:100%; border-radius: 8px;" />
+                  </div>
+                  <div style="margin-bottom: 2rem;">
+                    <div id="phoneErrorMsg" class="rd-erro">Ingresa un teléfono de 10 dígitos</div>
+                    <label for="contactPhoneInput" style="display:block; margin-bottom:0.5rem; color:var(--text-primary); font-weight:500;">Teléfono <span style="color:#ef4444">*</span></label>
+                    <input type="tel" id="contactPhoneInput" class="select-input" placeholder="55 1234 5678" inputmode="tel" autocomplete="tel-national" maxlength="24" style="width:100%; border-radius: 8px;" />
+                  </div>
+                  <a href="javascript:void(0)" id="btnActionProceed" class="continue-button contact-continue-btn" style="width: 100%; padding: 1rem; font-size: 1.1rem; border-radius: 8px; display: flex; justify-content: center; align-items: center; background: var(--instagram-gradient); text-decoration: none; color: white; cursor: pointer;">
+                    <span class="button-text">Continuar</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-block">
+        <div id="step3Container" style="display:none;">
+          <!-- Mesmo layout da etapa 3 do Instagram (servicos-instagram.ejs) -->
+          <div class="service-card" id="step3ProfileCard" style="overflow: hidden; max-width: 960px; margin: 0 auto;">
+            <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); position: relative;">
+               <button onclick="window.goToStep && window.goToStep(2)" type="button" aria-label="Volver" style="position: absolute; left: 1rem; top: 1.5rem; border: none; cursor: pointer; color: var(--text-primary); padding: 0.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; background-color: #f1f5f9; z-index: 10;">
+                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+               </button>
+               <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 1rem;">
+                  <div style="position: relative; margin-bottom: 0.5rem;">
+                    <img id="reviewProfileImage" src="" alt="Perfil" referrerpolicy="no-referrer" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); background:#fff;" />
+                    <div style="position: absolute; bottom: 0; right: 0; background: #fff; border-radius: 50%; padding: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="#2563eb"><path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                  </div>
+                  <div style="font-weight: 700; font-size: 1.2rem; color: var(--text-primary); text-align:center; overflow-wrap:anywhere;" id="reviewProfileUsername"></div>
+                  <div style="display: flex; flex-direction: column; align-items: center; font-size: 0.95rem; color: var(--text-secondary); gap: 0.25rem; text-align:center;">
+                    <div id="reviewLinhaAtual"><span id="reviewProfileFollowers" style="font-weight: 600; color: var(--text-primary);">0</span> <span id="reviewUnidadeAtual">seguidores actuales</span></div>
+                    <div><span id="reviewSelectedQty" style="font-weight: 700; color: var(--primary-purple);">+0</span> (paquete seleccionado)</div>
+                    <div id="reviewLinhaTotalSep" style="border-top: 1px solid var(--border-color); width: 60%; margin: 0.25rem 0;"></div>
+                    <div id="reviewLinhaTotal" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);"><span id="reviewTotalFollowers">0</span> seguidores en total</div>
+                    <div id="reviewLinkPost" style="display:none; font-size:0.85rem; overflow-wrap:anywhere; max-width:100%;"></div>
+                  </div>
+               </div>
+               <div id="reviewBanner" style="margin-top: 1rem; text-align: center; font-size: 0.95rem; color: white; background: #22c55e; padding: 0.8rem; border-radius: 12px; font-weight: 600;">
+                  Completa tu pago para recibir los seguidores de arriba
+               </div>
+               <div class="coupon-section" style="margin-top: 1rem;">
+                   <div class="coupon-container">
+                       <input type="text" id="couponInput" class="select-input" placeholder="Cupón de descuento">
+                       <button type="button" id="applyCouponBtn" class="continue-button coupon-btn">Aplicar</button>
+                   </div>
+                   <div id="couponMessage" class="coupon-message"></div>
+               </div>
+            </div>
+
+            <!-- Ofertas (mesmos cards do Instagram): me gusta, visualizaciones e comentarios -->
+            <div class="service-card" id="orderBumpInline">
+              <div class="card-content">
+                <h3 class="card-title" style="background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; display: block; text-align: center; width: 100%;">Ofertas exclusivas para ti</h3>
+                <div class="card-desc promo-list">
+                  <label class="promo-item upgrade" id="promoItemUpgrade">
+                    <input type="checkbox" id="orderBumpCheckboxInline" />
+                    <div class="promo-content">
+                      <div class="promo-highlight" id="orderBumpHighlight">Mejora de paquete</div>
+                      <div class="promo-title">Mejora de paquete</div>
+                      <div id="orderBumpText" class="promo-desc">Elige un paquete para ver la mejora disponible.</div>
+                      <div class="promo-prices" data-promo="upgrade">
+                        <span class="old-price">—</span>
+                        <span class="discount-badge">OFERTA</span>
+                        <span class="new-price">—</span>
+                      </div>
+                    </div>
+                  </label>
+                  <label class="promo-item likes" id="promoItemLikes">
+                    <input type="checkbox" id="promoLikes" data-promo="likes" />
+                    <div class="promo-content">
+                      <div class="promo-highlight" id="likesHighlight">+ 150 ME GUSTA MIXTOS</div>
+                      <div class="promo-title">Extra de me gusta mixtos</div>
+                      <div class="promo-desc" id="likesDesc">Agrega me gusta a tu video.</div>
+                      <div class="promo-prices" data-promo="likes">
+                        <span class="old-price">-</span>
+                        <span class="discount-badge">41% OFF</span>
+                        <span class="new-price">-</span>
+                      </div>
+                      <div class="likes-control" aria-label="Cantidad de me gusta">
+                        <button type="button" id="likesDec" class="likes-arrow" aria-label="Disminuir">‹</button>
+                        <span id="likesQty" class="likes-qty">150</span>
+                        <button type="button" id="likesInc" class="likes-arrow" aria-label="Aumentar">›</button>
+                      </div>
+                    </div>
+                  </label>
+                  <label class="promo-item views" id="promoItemViews">
+                    <input type="checkbox" id="promoViews" data-promo="views" />
+                    <div class="promo-content">
+                      <div class="promo-highlight" id="viewsHighlight">+ 1000 VISUALIZACIONES</div>
+                      <div class="promo-title">Visualizaciones promocionales</div>
+                      <div class="promo-desc" id="viewsDesc">Agrega visualizaciones a tu video.</div>
+                      <div class="promo-prices" data-promo="views">
+                        <span class="old-price">-</span>
+                        <span class="discount-badge">41% OFF</span>
+                        <span class="new-price">-</span>
+                      </div>
+                      <div class="likes-control" aria-label="Cantidad de visualizaciones">
+                        <button type="button" id="viewsDec" class="likes-arrow" aria-label="Disminuir">‹</button>
+                        <span id="viewsQty" class="likes-qty">1000</span>
+                        <button type="button" id="viewsInc" class="likes-arrow" aria-label="Aumentar">›</button>
+                      </div>
+                    </div>
+                  </label>
+                  <label class="promo-item comments" id="promoItemComments">
+                    <input type="checkbox" id="promoComments" data-promo="comments" />
+                    <div class="promo-content">
+                      <div class="promo-highlight" id="commentsHighlight">+ 1 COMENTARIOS</div>
+                      <div class="promo-title" style="display:flex; align-items:center; gap:0.5rem;">
+                        <span>Comentario promocional</span>
+                        <button id="commentsExampleBtn" class="continue-button" type="button" style="padding:0.15rem 0.5rem; font-size:12px; line-height:1;">Ejemplos de comentarios</button>
+                      </div>
+                      <div class="promo-desc">1 comentario = $ 5.49 c/u.</div>
+                      <div class="promo-prices" data-promo="comments">
+                        <span class="old-price">-</span>
+                        <span class="discount-badge">41% OFF</span>
+                        <span class="new-price">-</span>
+                      </div>
+                      <div class="likes-control" aria-label="Cantidad de comentarios">
+                        <button type="button" id="commentsDec" class="likes-arrow" aria-label="Disminuir">‹</button>
+                        <span id="commentsQty" class="likes-qty">1</span>
+                        <button type="button" id="commentsInc" class="likes-arrow" aria-label="Aumentar">›</button>
+                      </div>
+                    </div>
+                  </label>
+                  <div id="bumpLinkArea" style="display:none; margin-top:0.5rem;">
+                    <div id="bumpLinkError" class="rd-erro"></div>
+                    <label for="bumpLink" style="display:block; margin-bottom:0.4rem; font-weight:600; color:var(--text-primary);"><span id="bumpLinkLabel">Enlace del video para las ofertas</span> <span style="color:#ef4444">*</span></label>
+                    <button type="button" id="bumpVideoBtn" class="rd-video-btn" style="display:none; margin-bottom:0.5rem;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                      <span>Elegir de mis videos</span>
+                    </button>
+                    <input type="url" id="bumpLink" class="select-input" inputmode="url" autocomplete="off" maxlength="300" style="width:100%; border-radius:8px;" />
+                    <div id="bumpLinkHint" style="margin-top:0.35rem; color: var(--text-secondary); font-size:0.82rem;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="service-card" id="resumo" style="margin-top: 1rem; max-width: 960px; margin-left: auto; margin-right: auto;">
+            <div class="card-content">
+              <h3 class="card-title">Resumen del pedido</h3>
+              <div class="resumo-row"><span>Servicio</span><span id="resTipo">-</span></div>
+              <div class="resumo-row"><span>Cantidad</span><span id="resQtd">-</span></div>
+              <div class="resumo-row"><span>Precio del paquete</span><span id="resPreco">-</span></div>
+              <div id="resPromosContainer" style="display:none;"><div id="resPromos"></div></div>
+              <div class="resumo-row" id="resCupomRow" style="display:none;"><span id="resCupomLabel">Cupón</span><span id="resCupom" style="color:#22c55e;">-</span></div>
+              <div class="resumo-total"><span>Total</span><span id="resTotalFinal" style="color: #22c55e;">-</span></div>
+              <div id="grupoPedido" style="margin-top: 1.5rem;">
+                <div id="stripeBadgeCard" style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:8px; margin-bottom:10px; color:#6b7280; font-size:0.85rem; text-align:center;">
+                  <span>Pago seguro por transferencia SPEI</span>
+                </div>
+                <%- include('partials/metodos_pago') %>
+                <div id="payErrorMsg" class="rd-erro"></div>
+                <button id="payWithCardBtn" type="button" class="continue-button" style="margin-top:0.5rem; display:flex; align-items:center; justify-content:center; position:relative; padding-right:52px;">
+                  <span class="button-text">Pagar con SPEI</span>
+                  <svg class="button-icon" style="position:absolute; right:16px;" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="commentsExampleModal" class="modal-overlay" style="display:none; align-items:center; justify-content:center; z-index:9999;">
+      <div class="modal-dialog" style="max-width:400px; width:90%; border-radius: 16px; padding: 1.5rem; position:relative; display:flex; flex-direction:column;">
+        <div class="modal-header" style="border:none; padding-bottom:0;">
+          <h3 class="modal-title" style="margin:0 auto;">Ejemplos de comentarios</h3>
+          <button id="commentsExampleCloseBtn" class="modal-close" type="button" aria-label="Cerrar" style="position:absolute; right:1rem; top:1rem;">×</button>
+        </div>
+        <div class="modal-body" style="text-align:center;">
+          <div style="position:relative; aspect-ratio: 9 / 16; height: clamp(320px, 60vh, 560px); max-width: 100%; margin: 0.75rem auto 0; border-radius:12px; overflow:hidden; box-shadow: var(--shadow); background: #000;">
+            <video id="commentsVideoPlayer" controls muted playsinline preload="none" style="position:absolute; inset:0; width:100%; height:100%; object-fit: cover;">
+              <source src="/images/comentarios.mp4" type="video/mp4" />
+            </video>
+          </div>
+          <p style="margin-top:0.75rem; color: var(--text-secondary);">Perfiles de alta calidad, comentarios positivos y caída mínima.</p>
+        </div>
+        <div class="modal-footer">
+          <button id="commentsExampleCloseBtn2" class="continue-button" type="button">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+    <!-- Grade de vídeos do TikTok (mesmo modal "Selecciona la publicación" do Instagram) -->
+    <div id="rdVideoModal" class="modal-overlay" style="display:none;">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3 id="rdVideoModalTitle" class="modal-title">Selecciona el video</h3>
+          <button id="rdVideoModalClose" class="modal-close" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="rdVideoGrid" class="post-grid"></div>
+        </div>
+        <div class="modal-footer">
+          <button id="rdVideoModalClose2" class="continue-button" type="button">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  <style>
+    #rdVideoModal.modal-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); z-index: 1000; }
+    #rdVideoModal .modal-dialog { width: 98vw; max-width: 1100px; max-height: calc(100vh - 2rem); overflow: auto; }
+    #rdVideoGrid.post-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); }
+    @media (min-width: 768px) { #rdVideoGrid.post-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 1024px) { #rdVideoGrid.post-grid { grid-template-columns: repeat(5, 1fr); } }
+    #rdVideoGrid .rd-vid { display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-secondary); cursor: pointer; min-width: 0; }
+    #rdVideoGrid .rd-vid.selected-mark { outline: 2px solid #7c3aed; }
+    #rdVideoGrid .rd-vid-media { position: relative; aspect-ratio: 9 / 16; border-radius: 8px; overflow: hidden; background: #000; }
+    #rdVideoGrid .rd-vid-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    #rdVideoGrid .rd-vid-views { position: absolute; left: 6px; bottom: 6px; padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,0.6); color: #fff; font-size: 12px; font-weight: 600; }
+    #rdVideoGrid .rd-vid-desc { font-size: 12px; color: var(--text-secondary); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 1.2em; }
+    #rdVideoGrid .continue-button { justify-content: center; width: 100%; padding: 0.55rem 0.5rem; font-size: 0.9rem; }
+    #rdVideoGrid .rd-vid-msg { grid-column: 1 / -1; text-align: center; color: var(--text-secondary); padding: 1rem; }
+    @media (max-width: 640px) { #rdVideoModal.modal-overlay { align-items: flex-start; } #rdVideoModal .modal-dialog { width: 100%; max-width: 95vw; margin-top: 1rem; max-height: 85vh; } #rdVideoGrid .rd-vid-media { max-height: 240px; } }
+    .rd-video-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; margin-bottom: 0.9rem; padding: 0.7rem 1rem; border-radius: 10px; border: 1.5px solid #7c3aed; background: rgba(124,58,237,0.08); color: #7c3aed; font-weight: 700; font-size: 0.95rem; cursor: pointer; }
+    .rd-video-btn:hover { background: rgba(124,58,237,0.15); }
+    .rd-video-sel { margin-bottom: 0.75rem; }
+    .rd-video-sel .rd-vs-box { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem; border-radius: 10px; border: 1.5px solid #22c55e; background: rgba(34,197,94,0.07); }
+    .rd-video-sel img { width: 48px; height: 64px; object-fit: cover; border-radius: 6px; background: #000; flex: none; }
+    .rd-video-sel .rd-vs-txt { min-width: 0; font-size: 0.85rem; color: var(--text-secondary); }
+    .rd-video-sel .rd-vs-txt strong { display: block; color: var(--text-primary); font-size: 0.92rem; }
+    .rd-video-sel .rd-vs-txt span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .contact-continue-btn { background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3), 0 2px 4px -1px rgba(16, 185, 129, 0.15); border: none; transition: transform 0.2s, box-shadow 0.2s; }
+    .contact-continue-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4), 0 4px 6px -2px rgba(16, 185, 129, 0.2); }
+    .contact-continue-btn:active { transform: translateY(0); }
+  </style>
+  <script src="/js/main.js"></script>
+  <script src="/js/servicos-redes.js?v=20261116c"></script>
+</body>
+</html>
