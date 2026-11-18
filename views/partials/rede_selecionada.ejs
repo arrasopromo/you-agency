@@ -1,27 +1,56 @@
 <%
-  // "Red seleccionada" logo abaixo das etapas 1-2-3 (Instagram, TikTok e Facebook).
-  // Uso: include('partials/rede_selecionada', { rede: 'instagram' | 'tiktok' | 'facebook' })
+  // Seletor de rede logo abaixo das etapas 1-2-3 (Instagram, TikTok e Facebook).
+  // Uso: include('partials/rede_selecionada', { rede: 'instagram'|'tiktok'|'facebook', servico: 'seguidores'|'curtidas'|'visualizacoes'|'comentarios' })
+  // Cada botão abre o MESMO serviço na outra rede e cai direto neste ponto da página (#red),
+  // então trocar de rede só troca os cards de baixo.
   var _rs = (typeof rede !== 'undefined' && (rede === 'tiktok' || rede === 'facebook')) ? rede : 'instagram';
-  var _rsNome = _rs === 'tiktok' ? 'TikTok' : (_rs === 'facebook' ? 'Facebook' : 'Instagram');
+  var _sv = (typeof servico !== 'undefined' && /^(seguidores|curtidas|visualizacoes|comentarios)$/.test(String(servico))) ? String(servico) : 'seguidores';
+  var _ig = { seguidores: '/servicios-instagram', curtidas: '/servicios-me-gusta', visualizacoes: '/servicios-visualizaciones', comentarios: '/servicios-comentarios' }[_sv];
+  var _href = {
+    instagram: _ig + '#red',
+    tiktok: '/servicios-tiktok?servicio=' + _sv + '#red',
+    facebook: '/servicios-facebook?servicio=' + _sv + '#red'
+  };
 %>
 <style>
-  .rd-rede-sel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.45rem; width: 100%; margin: 0.1rem auto 1.4rem; text-align: center; }
-  .rd-rede-sel-label { color: var(--text-secondary); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-  .rd-rede-sel .platform-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-width: 150px; cursor: default; padding: 0.55rem 1.2rem; border-radius: 999px; font-weight: 700; }
-  /* Sem caixa: o nome da rede fica direto sobre o fundo da página (sem fundo branco, borda nem sombra). */
-  body .rd-rede-sel .platform-btn, body .rd-rede-sel .platform-btn:hover, body .rd-rede-sel .platform-btn:focus, body .rd-rede-sel .platform-btn[aria-pressed],
-  body .rd-rede-sel .platform-btn.facebook, body .rd-rede-sel .platform-btn.tiktok, body .rd-rede-sel .platform-btn.instagram { transform: none; outline: none; border: none; box-shadow: none; background: transparent; color: var(--text-primary); }
+  .rd-rede-sw { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; width: 100%; margin: 0.1rem auto 1.4rem; text-align: center; scroll-margin-top: 84px; }
+  .rd-rede-sw-label { color: var(--text-secondary); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .rd-rede-sw .platform-toggle { margin: 0; flex-wrap: nowrap; gap: 0.5rem; width: 100%; max-width: 420px; }
+  .rd-rede-sw .platform-btn { flex: 1 1 0; min-width: 0; justify-content: center; gap: 0.4rem; padding: 0.7rem 0.5rem; font-size: 0.92rem; border-radius: 12px; text-decoration: none; }
+  .rd-rede-sw .platform-btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rd-rede-sw .platform-btn svg { flex: 0 0 auto; }
+  .rd-rede-sw .platform-btn[aria-current="page"] { cursor: default; }
+  @media (max-width: 640px) { .rd-rede-sw .platform-toggle { width: 100%; gap: 0.4rem; } .rd-rede-sw .platform-btn { font-size: 0.84rem; gap: 0.3rem; padding: 0.7rem 0.25rem; } .rd-rede-sw .platform-btn svg { width: 15px; height: 15px; } }
 </style>
-<div class="rd-rede-sel">
-  <span class="rd-rede-sel-label">Red seleccionada</span>
-  <span class="platform-btn <%= _rs %>" aria-pressed="true" aria-label="<%= _rsNome %>">
-    <% if (_rs === 'facebook') { %>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13.5 22v-8.2h2.8l.4-3.2h-3.2V8.5c0-.9.3-1.6 1.6-1.6h1.7V4.1c-.3 0-1.3-.1-2.5-.1-2.5 0-4.1 1.5-4.1 4.2v2.4H7.4v3.2h2.8V22h3.3z" fill="#1877F2"/></svg>
-    <% } else if (_rs === 'tiktok') { %>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14 3c.3 1.9 1.5 3.6 3.2 4.5 1 .6 2.1.9 3.2.9v3a8.6 8.6 0 01-3.2-.6 7.8 7.8 0 01-2.2-1.3v6.6a5.9 5.9 0 11-5.8-5.9c.4 0 .9.1 1.3.2v3a2.9 2.9 0 00-1.3-.3 2.9 2.9 0 102.9 2.9V3h2z" fill="currentColor"/></svg>
-    <% } else { %>
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="rsIgG" cx="30%" cy="107%" r="150%"><stop offset="0" stop-color="#fdf497"/><stop offset=".05" stop-color="#fdf497"/><stop offset=".45" stop-color="#fd5949"/><stop offset=".6" stop-color="#d6249f"/><stop offset=".9" stop-color="#285AEB"/></radialGradient></defs><rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="url(#rsIgG)"/><rect x="6" y="6" width="12" height="12" rx="3.6" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="2.9" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="15.9" cy="8.1" r="1" fill="#fff"/></svg>
-    <% } %>
-    <span><%= _rsNome %></span>
-  </span>
+<div class="rd-rede-sw" id="red">
+  <span class="rd-rede-sw-label">Elige la red social</span>
+  <nav class="platform-toggle" aria-label="Red social">
+    <a href="<%= _href.instagram %>" class="platform-btn instagram<%= _rs === 'instagram' ? ' active' : '' %>"<%- _rs === 'instagram' ? ' aria-current="page" aria-pressed="true"' : ' aria-pressed="false"' %>>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm0 2a3 3 0 00-3 3v10a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H7zm5 3a5 5 0 110 10 5 5 0 010-10zm0 2a3 3 0 100 6 3 3 0 000-6zm5.5-3a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" fill="currentColor"/></svg>
+      <span>Instagram</span>
+    </a>
+    <a href="<%= _href.tiktok %>" class="platform-btn tiktok<%= _rs === 'tiktok' ? ' active' : '' %>"<%- _rs === 'tiktok' ? ' aria-current="page" aria-pressed="true"' : ' aria-pressed="false"' %>>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14 3c.3 1.9 1.5 3.6 3.2 4.5 1 .6 2.1.9 3.2.9v3a8.6 8.6 0 01-3.2-.6 7.8 7.8 0 01-2.2-1.3v6.6a5.9 5.9 0 11-5.8-5.9c.4 0 .9.1 1.3.2v3a2.9 2.9 0 00-1.3-.3 2.9 2.9 0 102.9 2.9V3h2z" fill="currentColor"/></svg>
+      <span>TikTok</span>
+    </a>
+    <a href="<%= _href.facebook %>" class="platform-btn facebook<%= _rs === 'facebook' ? ' active' : '' %>"<%- _rs === 'facebook' ? ' aria-current="page" aria-pressed="true"' : ' aria-pressed="false"' %>>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13.5 22v-8.2h2.8l.4-3.2h-3.2V8.5c0-.9.3-1.6 1.6-1.6h1.7V4.1c-.3 0-1.3-.1-2.5-.1-2.5 0-4.1 1.5-4.1 4.2v2.4H7.4v3.2h2.8V22h3.3z" fill="#1877F2"/></svg>
+      <span>Facebook</span>
+    </a>
+  </nav>
 </div>
+<script>
+  // Leva junto os parâmetros da visita (utm_*, fbclid etc.) ao trocar de rede; a rede atual não recarrega.
+  (function () {
+    var box = document.getElementById('red'); if (!box) return;
+    box.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a.platform-btn'); if (!a) return;
+      if (a.getAttribute('aria-current') === 'page') { e.preventDefault(); return; }
+      try {
+        var atual = new URLSearchParams(location.search), u = new URL(a.href, location.origin);
+        atual.forEach(function (v, k) { if (k !== 'servicio' && !u.searchParams.has(k)) u.searchParams.set(k, v); });
+        a.href = u.pathname + (u.searchParams.toString() ? '?' + u.searchParams.toString() : '') + '#red';
+      } catch (_) {}
+    }, true);
+  })();
+</script>

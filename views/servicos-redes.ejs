@@ -88,7 +88,8 @@
         </div>
       </div>
 
-      <%- include('partials/rede_selecionada', { rede: _rede }) %>
+      <% var _svq = String((typeof queryParams !== 'undefined' && queryParams && queryParams.servicio) || '').toLowerCase(); var _rsSv = /coment|comment/.test(_svq) ? 'comentarios' : (/curtid|gusta|like/.test(_svq) ? 'curtidas' : (/visualiz|view|vista/.test(_svq) ? 'visualizacoes' : 'seguidores')); %>
+      <%- include('partials/rede_selecionada', { rede: _rede, servico: _rsSv }) %>
 
       <section class="section-block">
         <div id="step1Container" class="cards-grid checkout-grid">

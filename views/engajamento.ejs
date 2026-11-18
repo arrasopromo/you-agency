@@ -1518,7 +1518,34 @@
         Array.prototype.forEach.call(grid.querySelectorAll('[data-plat]'), function (c) { c.style.display = c.getAttribute('data-plat') === plat ? '' : 'none'; });
         Array.prototype.forEach.call(document.querySelectorAll('.platform-btn'), function (b) { b.setAttribute('aria-pressed', b.classList.contains(plat) ? 'true' : 'false'); });
         var tip = document.getElementById('tutorialPlatform'); if (tip) tip.style.setProperty('display', 'none', 'important');
-        setTimeout(function () { try { grid.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {} }, 80);
+        setTimeout(function () { try { rolarSuave(); } catch (_) {} }, 120);
+      }
+      // Rolagem leve até os cards: anima devagar (ease-in-out) e para com os botões das redes no
+      // topo, logo abaixo do menu fixo — sem o "puxão" do scrollIntoView nativo.
+      function rolarSuave() {
+        var ref = document.querySelector('#plataformaCard .platform-toggle') || document.getElementById('engajamentoServiceCards');
+        if (!ref) return;
+        var menu = document.querySelector('.fixed-menu');
+        var folga = (menu ? menu.getBoundingClientRect().height : 60) + 56;
+        var inicio = window.pageYOffset || document.documentElement.scrollTop || 0;
+        var alvo = Math.max(0, ref.getBoundingClientRect().top + inicio - folga);
+        var dist = alvo - inicio;
+        if (Math.abs(dist) < 40) return;
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { window.scrollTo(0, alvo); return; }
+        var dur = Math.min(1300, Math.max(850, Math.abs(dist) * 1.1));
+        var t0 = null;
+        var ease = function (p) { return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; };
+        var parar = false;
+        var cancelar = function () { parar = true; };
+        window.addEventListener('wheel', cancelar, { passive: true, once: true });
+        window.addEventListener('touchstart', cancelar, { passive: true, once: true });
+        (function passo(ts) {
+          if (parar) return;
+          if (t0 === null) t0 = ts;
+          var p = Math.min(1, (ts - t0) / dur);
+          window.scrollTo(0, inicio + dist * ease(p));
+          if (p < 1) requestAnimationFrame(passo);
+        })(performance.now());
       }
       document.addEventListener('click', function (e) {
         var b = e.target.closest && e.target.closest('.platform-btn');
