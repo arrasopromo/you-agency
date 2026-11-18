@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <title>Detalles del pedido | You Agency</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <link href="/css/style.css?v=20261111" rel="stylesheet" />
+  <link href="/css/style.css?v=20261118b" rel="stylesheet" />
   <link href="/css/perfil.css?v=2" rel="stylesheet" />
   <link href="/css/badges.css" rel="stylesheet" />
   <link rel="icon" type="image/png" href="/images/y%20branco.png" />
@@ -406,7 +406,7 @@
                 
                 <div class="info-item">
                     <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Servicio</div>
-                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary); text-transform: capitalize;" id="orderTipo"><%= (function(){ var map=order.additionalInfoMapPaid||{}; var t=String(map['tipo_servico']||order.tipo||order.tipoServico||'-').toLowerCase(); var c=String(map['categoria_servico']||'').toLowerCase(); var lbl=t; if(c==='curtidas'){ if(t==='mistos') lbl='Me gusta mixtos'; else if(t==='brasileiros'||t==='curtidas_brasileiras') lbl='Me gusta'; else if(t==='organicos'||t==='curtidas_reais'||t==='curtidas_organicos') lbl='Me gusta reales'; } else if(c==='visualizacoes'){ if(t==='visualizacoes_reels'||t==='views'||t==='reels') lbl='Visualizaciones de Reels'; else lbl='Visualizaciones'; } else { if(t==='mistos') lbl='Seguidores mixtos'; else if(t==='brasileiros') lbl='Seguidores estándar'; else if(t==='organicos') lbl='Seguidores reales'; else if(t==='curtidas_brasileiras') lbl='Me gusta'; else if(t==='curtidas_organicos'||t==='curtidas_reais') lbl='Me gusta reales'; } return lbl; })() %></div>
+                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary); text-transform: capitalize;" id="orderTipo"><%= (function(){ var map=order.additionalInfoMapPaid||{}; var t=String(map['tipo_servico']||order.tipo||order.tipoServico||'-').toLowerCase(); var c=String(map['categoria_servico']||'').toLowerCase(); var lbl=t; if(c==='curtidas'){ if(t==='mistos') lbl='Me gusta mixtos'; else if(t==='brasileiros'||t==='curtidas_brasileiras') lbl='Me gusta'; else if(t==='organicos'||t==='curtidas_reais'||t==='curtidas_organicos') lbl='Me gusta reales'; } else if(c==='visualizacoes'){ if(t==='visualizacoes_reels'||t==='views'||t==='reels') lbl='Vistas de Reels'; else lbl='Vistas'; } else { if(t==='mistos') lbl='Seguidores mixtos'; else if(t==='brasileiros') lbl='Seguidores estándar'; else if(t==='organicos') lbl='Seguidores reales'; else if(t==='curtidas_brasileiras') lbl='Me gusta'; else if(t==='curtidas_organicos'||t==='curtidas_reais') lbl='Me gusta reales'; } return lbl; })() %></div>
                 </div>
 
                 <div class="info-item">
@@ -450,7 +450,7 @@
 
                 <div class="info-item" style="grid-column: 1 / -1; border-top: 1px dashed var(--border-color); padding-top: 1rem;">
                     <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Extras</div>
-                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);" id="orderBumpsBox"><%= (function(){ var arrPaid=Array.isArray(order.additionalInfoPaid)?order.additionalInfoPaid:[]; var arr=Array.isArray(order.additionalInfo)?order.additionalInfo:[]; var map=order.additionalInfoMapPaid||{}; var bs=(function(){ var fp=arrPaid.find(function(it){return it&&it.key==='order_bumps'}); if(fp&&typeof fp.value==='string'&&fp.value) return fp.value; var f=arr.find(function(it){return it&&it.key==='order_bumps'}); if(f&&typeof f.value==='string'&&f.value) return f.value; if(map&&typeof map['order_bumps']==='string'&&map['order_bumps']) return map['order_bumps']; return ''; })(); if(!bs) return 'No seleccionaste extras'; var parts=bs.split(';').map(function(p){return p.trim();}).filter(Boolean); var labels=parts.map(function(p){ var kv=p.split(':'); var k=kv[0]; var v=kv[1]; if(k==='views') return 'Visualizaciones ('+v+')'; if(k==='likes') return 'Me gusta ('+v+')'; if(k==='comments') return 'Comentarios ('+v+')'; return k+' ('+v+')'; }); return labels.join(', '); })() %></div>
+                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary);" id="orderBumpsBox"><%= (function(){ var arrPaid=Array.isArray(order.additionalInfoPaid)?order.additionalInfoPaid:[]; var arr=Array.isArray(order.additionalInfo)?order.additionalInfo:[]; var map=order.additionalInfoMapPaid||{}; var bs=(function(){ var fp=arrPaid.find(function(it){return it&&it.key==='order_bumps'}); if(fp&&typeof fp.value==='string'&&fp.value) return fp.value; var f=arr.find(function(it){return it&&it.key==='order_bumps'}); if(f&&typeof f.value==='string'&&f.value) return f.value; if(map&&typeof map['order_bumps']==='string'&&map['order_bumps']) return map['order_bumps']; return ''; })(); if(!bs) return 'No seleccionaste extras'; var parts=bs.split(';').map(function(p){return p.trim();}).filter(Boolean); var labels=parts.map(function(p){ var kv=p.split(':'); var k=kv[0]; var v=kv[1]; if(k==='views') return 'Vistas ('+v+')'; if(k==='likes') return 'Me gusta ('+v+')'; if(k==='comments') return 'Comentarios ('+v+')'; return k+' ('+v+')'; }); return labels.join(', '); })() %></div>
                 </div>
 
                 <div class="info-item">
@@ -623,7 +623,7 @@
     <div class="modal-dialog" style="max-width:480px; width:95%; border-radius:16px;">
       <div class="modal-header">
         <h3 class="modal-title" style="flex:1; text-align:center;">Más seguidores con 25% de descuento</h3>
-        <button id="upsellFollowersClose" class="modal-close" type="button" aria-label="Cerrar">âœ•</button>
+        <button id="upsellFollowersClose" class="modal-close" type="button" aria-label="Cerrar">✕</button>
       </div>
       <div class="modal-body">
         <div id="upsellExclusiveBanner" aria-live="polite" style="background:#22C55E; border-radius:14px; padding:0.9rem 1.25rem; margin-bottom:0.85rem; border:1px solid #15803D; color:#f9fafb; box-shadow:0 8px 16px rgba(22, 163, 74, 0.25);">
@@ -990,7 +990,7 @@
           .then(function(result){
             if (!result.ok) {
               var msg = (result.data && result.data.details && result.data.details.message) ? result.data.details.message : 'No se pudo crear el cobro';
-              upsellPixContainer.innerHTML = '<div style="color:#b91c1c; text-align:center;">No se pudo generar el PIX: ' + msg + '</div>';
+              upsellPixContainer.innerHTML = '<div style="color:#b91c1c; text-align:center;">No se pudo generar el pago: ' + msg + '</div>';
               return;
             }
             var data = result.data || {};
@@ -1005,7 +1005,7 @@
             }
             html += '<div style="font-size:1rem; font-weight:700; text-align:center; margin-bottom:0.75rem; color:#166534;">Monto a pagar: <span>' + totalFormatted + '</span></div>';
             html += '<div style="position:relative; margin-bottom:0.75rem;"><textarea id="upsellPixCodeArea" readonly style="width:100%; min-height:80px; padding:0.75rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; font-family:inherit; font-size:0.9rem; color:#022c22; resize:none;">' + brCode + '</textarea></div>';
-            html += '<button id="upsellPixCopyBtn" type="button" class="continue-button" style="width:100%; display:flex; align-items:center; justify-content:center; padding:0.9rem 1rem; margin-bottom:0.5rem;"><span class="button-text">Copiar código PIX</span></button>';
+            html += '<button id="upsellPixCopyBtn" type="button" class="continue-button" style="width:100%; display:flex; align-items:center; justify-content:center; padding:0.9rem 1rem; margin-bottom:0.5rem;"><span class="button-text">Copiar código de pago</span></button>';
             html += '<div style="font-size:0.85rem; color:#6b7280; text-align:center;">Después del pago, tu nuevo pedido se creará automáticamente.</div>';
             upsellPixContainer.innerHTML = html;
             upsellPixContainer.style.display = 'block';
@@ -1045,14 +1045,14 @@
                   }
                   var span = copyBtn.querySelector('.button-text');
                   var prev = span ? span.textContent : '';
-                  if (span) span.textContent = 'PIX copiado';
+                  if (span) span.textContent = '¡Código copiado!';
                   copyBtn.classList.add('success');
                   setTimeout(function(){
                     copyBtn.classList.remove('success');
-                    if (span) span.textContent = prev || 'Copiar código PIX';
+                    if (span) span.textContent = prev || 'Copiar código de pago';
                   }, 1600);
                 } catch(e) {
-                  alert('No se pudo copiar el código PIX.');
+                  alert('No se pudo copiar el código de pago.');
                 }
               });
             }
@@ -1097,7 +1097,7 @@
           })
           .catch(function(err){
             var msg = err && err.message ? err.message : String(err || 'Error desconocido');
-            upsellPixContainer.innerHTML = '<div style="color:#b91c1c; text-align:center;">No se pudo generar el PIX: ' + msg + '</div>';
+            upsellPixContainer.innerHTML = '<div style="color:#b91c1c; text-align:center;">No se pudo generar el pago: ' + msg + '</div>';
           });
           });
         };
@@ -1364,7 +1364,7 @@
                 var mapPaid = o && o.additionalInfoMapPaid || {};
                 var cat0 = String(mapPaid['categoria_servico'] || '').toLowerCase();
                 var t0 = String(mapPaid['tipo_servico'] || o.tipo || o.tipoServico || '-').toLowerCase();
-                var tipo = (function(){ if(cat0==='curtidas'){ if(t0==='mistos') return 'Me gusta mixtos'; if(t0==='brasileiros'||t0==='curtidas_brasileiras') return 'Me gusta'; if(t0==='organicos'||t0==='curtidas_reais'||t0==='curtidas_organicos') return 'Me gusta reales'; } else if(cat0==='visualizacoes'){ if(t0==='visualizacoes_reels'||t0==='views'||t0==='reels') return 'Visualizaciones de Reels'; return 'Visualizaciones'; } else { if(t0==='mistos') return 'Seguidores mixtos'; if(t0==='brasileiros') return 'Seguidores estándar'; if(t0==='organicos') return 'Seguidores reales'; if(t0==='curtidas_brasileiras') return 'Me gusta'; if(t0==='curtidas_organicos'||t0==='curtidas_reais') return 'Me gusta reales'; } return t0; })();
+                var tipo = (function(){ if(cat0==='curtidas'){ if(t0==='mistos') return 'Me gusta mixtos'; if(t0==='brasileiros'||t0==='curtidas_brasileiras') return 'Me gusta'; if(t0==='organicos'||t0==='curtidas_reais'||t0==='curtidas_organicos') return 'Me gusta reales'; } else if(cat0==='visualizacoes'){ if(t0==='visualizacoes_reels'||t0==='views'||t0==='reels') return 'Vistas de Reels'; return 'Vistas'; } else { if(t0==='mistos') return 'Seguidores mixtos'; if(t0==='brasileiros') return 'Seguidores estándar'; if(t0==='organicos') return 'Seguidores reales'; if(t0==='curtidas_brasileiras') return 'Me gusta'; if(t0==='curtidas_organicos'||t0==='curtidas_reais') return 'Me gusta reales'; } return t0; })();
               var qtd = String(o.qtd || o.quantidade || '0');
               var insta = String(o.instagramUsername || o.instauser || '-');
               var paidStr = formatDateTimeSP(paidRaw);
@@ -1437,7 +1437,7 @@
                       var kv = p.split(':');
                       var k = kv[0];
                       var v = kv[1];
-                      if (k === 'views') return 'Visualizaciones de Reels (' + v + ')';
+                      if (k === 'views') return 'Vistas de Reels (' + v + ')';
                       if (k === 'likes') return 'Me gusta (' + v + ')';
                       if (k === 'comments') return 'Comentarios (' + v + ')';
                       return k + ' (' + v + ')';

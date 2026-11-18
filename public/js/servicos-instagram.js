@@ -249,62 +249,61 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const tabelaCurtidas = {
     mistos: [
-      { q: 150, p: '$ 20' },
-      { q: 300, p: '$ 28' },
-      { q: 500, p: '$ 35' },
-      { q: 700, p: '$ 54' },
-      { q: 1000, p: '$ 72' },
-      { q: 2000, p: '$ 90' },
-      { q: 3000, p: '$ 109' },
-      { q: 4000, p: '$ 127' },
-      { q: 5000, p: '$ 145' },
-      { q: 7500, p: '$ 182' },
-      { q: 10000, p: '$ 255' },
-      { q: 15000, p: '$ 328' },
+      { q: 150, p: '$ 22' },
+      { q: 300, p: '$ 25' },
+      { q: 500, p: '$ 32' },
+      { q: 700, p: '$ 48' },
+      { q: 1000, p: '$ 65' },
+      { q: 2000, p: '$ 81' },
+      { q: 3000, p: '$ 98' },
+      { q: 4000, p: '$ 114' },
+      { q: 5000, p: '$ 131' },
+      { q: 7500, p: '$ 164' },
+      { q: 10000, p: '$ 230' },
+      { q: 15000, p: '$ 296' },
     ],
     curtidas_brasileiras: [
-      { q: 150, p: '$ 20' },
-      { q: 300, p: '$ 35' },
-      { q: 500, p: '$ 54' },
-      { q: 700, p: '$ 109' },
-      { q: 1000, p: '$ 145' },
-      { q: 2000, p: '$ 182' },
-      { q: 3000, p: '$ 218' },
-      { q: 4000, p: '$ 255' },
-      { q: 5000, p: '$ 292' },
-      { q: 7500, p: '$ 402' },
-      { q: 10000, p: '$ 511' },
-      { q: 15000, p: '$ 731' },
+      { q: 150, p: '$ 22' },
+      { q: 300, p: '$ 32' },
+      { q: 500, p: '$ 48' },
+      { q: 700, p: '$ 98' },
+      { q: 1000, p: '$ 131' },
+      { q: 2000, p: '$ 164' },
+      { q: 3000, p: '$ 197' },
+      { q: 4000, p: '$ 230' },
+      { q: 5000, p: '$ 263' },
+      { q: 7500, p: '$ 362' },
+      { q: 10000, p: '$ 461' },
+      { q: 15000, p: '$ 659' },
     ],
     organicos: [
-      { q: 150, p: '$ 43' },
-      { q: 300, p: '$ 72' },
-      { q: 500, p: '$ 127' },
-      { q: 1000, p: '$ 178' },
-      { q: 2000, p: '$ 270' },
-      { q: 3000, p: '$ 358' },
-      { q: 4000, p: '$ 449' },
-      { q: 5000, p: '$ 577' },
-      { q: 7500, p: '$ 716' },
-      { q: 10000, p: '$ 921' },
-      { q: 15000, p: '$ 1229' },
+      { q: 150, p: '$ 39' },
+      { q: 300, p: '$ 65' },
+      { q: 500, p: '$ 114' },
+      { q: 700, p: '$ 134' },
+      { q: 1000, p: '$ 161' },
+      { q: 2000, p: '$ 243' },
+      { q: 3000, p: '$ 322' },
+      { q: 4000, p: '$ 405' },
+      { q: 5000, p: '$ 520' },
+      { q: 7500, p: '$ 646' },
     ],
   };
 
   const tabelaVisualizacoes = {
     visualizacoes_reels: [
-      { q: 1000, p: '$ 20' },
-      { q: 2500, p: '$ 35' },
-      { q: 5000, p: '$ 54' },
-      { q: 10000, p: '$ 72' },
-      { q: 25000, p: '$ 90' },
-      { q: 50000, p: '$ 127' },
-      { q: 100000, p: '$ 182' },
-      { q: 150000, p: '$ 218' },
-      { q: 200000, p: '$ 255' },
-      { q: 250000, p: '$ 328' },
-      { q: 500000, p: '$ 402' },
-      { q: 1000000, p: '$ 585' }
+      { q: 1000, p: '$ 22' },
+      { q: 2500, p: '$ 32' },
+      { q: 5000, p: '$ 48' },
+      { q: 10000, p: '$ 65' },
+      { q: 25000, p: '$ 81' },
+      { q: 50000, p: '$ 114' },
+      { q: 100000, p: '$ 164' },
+      { q: 150000, p: '$ 197' },
+      { q: 200000, p: '$ 230' },
+      { q: 250000, p: '$ 296' },
+      { q: 500000, p: '$ 362' },
+      { q: 1000000, p: '$ 527' }
     ]
   };
 
@@ -448,6 +447,12 @@ document.addEventListener('DOMContentLoaded', function() {
     return isNaN(value) ? 0 : value;
   }
 
+  // "$120 MXN" — formato usado no México (sem espaço depois do $, código da moeda no fim).
+  function fmtMxn(cents) {
+    const v = Math.max(0, Number(cents) || 0) / 100;
+    const d = Math.abs(v - Math.round(v)) < 0.005 ? 0 : 2;
+    return '$' + (d ? v : Math.round(v)).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }) + ' MXN';
+  }
   function formatCentsToBRL(cents) {
     const valor = Math.max(0, Number(cents) || 0);
     const v = valor / 100;
@@ -1181,7 +1186,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const normalizeDigits = (v) => String(v || '').replace(/\D/g, '');
       const cpfDigits = normalizeDigits(cardHolderCpf);
-    if (!isStripeCheckout && cpfDigits.length !== 11) throw new Error('CPF no válido.');
+    if (!isStripeCheckout && cpfDigits.length !== 11) throw new Error('Documento no válido.');
 
       const installmentsEl = document.getElementById('cardInstallments');
       let installments = String(installmentsEl?.value || '').trim();
@@ -1372,7 +1377,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (sckValue) payload.additionalInfo.push({ key: 'sck', value: sckValue });
       } catch(_) {}
 
-      // Posts escolhidos (me gusta / visualizaciones / comentarios e ofertas): mesmo bloco do fluxo PIX.
+      // Posts escolhidos (me gusta / vistas / comentarios e ofertas): mesmo bloco do fluxo PIX.
       let splitErrMsg = '';
       try {
         let sfor = {};
@@ -1879,7 +1884,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (isViewsContext) {
       const mapViews = {
-        visualizacoes_reels: 'Visualizaciones de Reels'
+        visualizacoes_reels: 'Vistas de Reels'
       };
       return mapViews[tipo] || tipo;
     }
@@ -1909,7 +1914,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Unidade exibida ao cliente (es-MX).
   function getDisplayUnitForTipo(tipo) {
     if (isCommentsContext || tipo === 'comentarios') return 'comentarios';
-    if (isViewsContext || tipo === 'visualizacoes_reels') return 'visualizaciones';
+    if (isViewsContext || tipo === 'visualizacoes_reels') return 'vistas';
     return isCurtidasContext ? 'me gusta' : 'seguidores';
   }
 
@@ -2136,7 +2141,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (tipo === 'mistos' || tipo === 'brasileiros' || tipo === 'curtidas_brasileiras' || tipo === 'organicos' || tipo === 'seguidores_tiktok') {
       if (isCurtidasContext) {
         if (tipo === 'curtidas_brasileiras') return [50, 150, 500, 1000, 3000, 5000, 10000];
-        if (tipo === 'organicos') return [20].concat(base.filter(function(q){ return q >= 150 && q !== 700; }));
+        if (tipo === 'organicos') return [20].concat(base.filter(function(q){ return q >= 150 && q <= 7500; }));
         return [50].concat(base.filter(function(q){ return q >= 150; }));
       }
       return base;
@@ -2168,9 +2173,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (isFollowersTipo(tipo)) {
       const allowed = getAllowedQuantities(tipo);
       if (isCurtidasContext) {
+        // Me gusta reales: o pacote de 700 aparece mesmo sem selo (os demais seguem só os com selo).
+        const extra700 = (tipo === 'organicos') ? [700] : [];
         arr = arr
           .filter(x => allowed.includes(Number(x.q)))
-          .filter(x => quantityBadges.hasOwnProperty(Number(x.q)));
+          .filter(x => quantityBadges.hasOwnProperty(Number(x.q)) || extra700.includes(Number(x.q)));
       } else {
         arr = arr
           .filter(x => allowed.includes(Number(x.q)))
@@ -2251,7 +2258,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Atualizar resumo
         if (resTipo) resTipo.textContent = getLabelForTipo(tipo);
         if (resQtd) resQtd.textContent = `${item.q} ${unit}`;
-        if (resPreco) resPreco.textContent = baseText;
+        if (resPreco) resPreco.textContent = fmtMxn(parsePrecoToCents(baseText));
         basePriceCents = baseCents;
         try { funilEvento('pacote_escolhido', { tipo: String(tipo || ''), qtd: Number(item.q) || null, preco: String(baseText || '') }); } catch (_) {}
 
@@ -2283,10 +2290,10 @@ document.addEventListener('DOMContentLoaded', function() {
     switch (tipo) {
       case 'visualizacoes_reels':
         html = `
-          <p>Visualizaciones con entrega rápida y estable para tus Reels y videos.</p>
+          <p>Vistas con entrega rápida y estable para tus Reels y videos.</p>
           <ul>
             <li>✅ 100% seguro y confidencial, sin necesidad de tu contraseña.</li>
-            <li>🎬 Visualizaciones para dar un impulso inicial a tus Reels y videos.</li>
+            <li>🎬 Vistas para dar un impulso inicial a tus Reels y videos.</li>
             <li>📈 Ideal para reforzar la prueba social de tus contenidos.</li>
           </ul>
         `;
@@ -2387,21 +2394,49 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // Garantia de 3 meses com preço DINÂMICO (igual à Oppus): 2 reposições completas pelo custo
+  // atual do tipo. Só seguidores mixtos e "seguidores" (brasileiros); o valor vem do servidor.
   function applyWarrantyMode() {
-    const isLife = true;
+    const w = (window.__warranty3m && typeof window.__warranty3m === 'object') ? window.__warranty3m : {};
+    const priceLabel = w.price || '';
     const wLabel = document.getElementById('warrantyModeLabel');
     const wHighlight = document.getElementById('warrantyHighlight');
     const wOld = document.getElementById('warrantyOldPrice');
     const wNew = document.getElementById('warrantyNewPrice');
     const wDisc = document.getElementById('warrantyDiscount');
 
-    if (wLabel) wLabel.textContent = '6 meses';
-    if (wHighlight) wHighlight.textContent = 'REPOSICIÓN POR 6 MESES';
-    if (wOld) wOld.textContent = '$ 144';
-    if (wNew) wNew.textContent = '$ 35';
-    if (wDisc) wDisc.textContent = '75% OFF';
+    if (wLabel) wLabel.textContent = '3 meses';
+    if (wHighlight) wHighlight.textContent = 'REPOSICIÓN POR 3 MESES';
+    if (wNew) wNew.textContent = priceLabel;
+    // Preço dinâmico — sem "de"/desconto fixo.
+    if (wOld) { wOld.textContent = ''; wOld.style.display = 'none'; }
+    if (wDisc) { wDisc.textContent = ''; wDisc.style.display = 'none'; }
     updatePromosSummary();
   }
+
+  // Busca o preço da garantia de 3 meses no MESMO cálculo que o servidor valida (/api/warranty/price).
+  let __warranty3mReq = 0;
+  async function refreshWarranty3m(tipo, qtd) {
+    try {
+      const t = String(tipo || '').trim();
+      const q = Math.max(0, parseInt(qtd, 10) || 0);
+      if (!q || !(t === 'mistos' || t === 'brasileiros')) {
+        window.__warranty3m = { available: false, price: '', priceCents: 0 };
+        try { applyWarrantyMode(); } catch (_) {}
+        return;
+      }
+      const seq = ++__warranty3mReq;
+      const r = await fetch(`/api/warranty/price?tipo=${encodeURIComponent(t)}&qty=${q}`);
+      const d = await r.json();
+      if (seq !== __warranty3mReq) return; // resposta velha (trocou de pacote rápido)
+      window.__warranty3m = (d && d.available)
+        ? { available: true, price: d.price, priceCents: d.priceCents }
+        : { available: false, price: '', priceCents: 0 };
+      try { applyWarrantyMode(); } catch (_) {}
+      try { updateWarrantyVisibility(t); } catch (_) {}
+    } catch (_) {}
+  }
+  try { window.refreshWarranty3m = refreshWarranty3m; } catch (_) {}
 
   function stepWarranty(delta) {
     const next = (warrantyMode === '30' && delta > 0) ? 'life' : (warrantyMode === 'life' && delta < 0) ? '30' : warrantyMode;
@@ -2417,8 +2452,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const warrantyItem = document.querySelector('.promo-item.warranty60');
     if (!warrantyItem) return;
     
-    // Mostrar apenas para seguidores mistos (mundiais) e brasileiros
-    if (tipo === 'mistos' || tipo === 'brasileiros' || tipo === 'curtidas_brasileiras') {
+    // Se o @ JÁ tem extensão de reposição ativa, esconde a oferta (evita recomprar). Vem da validação do @.
+    if (window.__hasActiveWarranty === true) {
+        warrantyItem.style.display = 'none';
+        const cbW = document.getElementById('promoWarranty60');
+        if (cbW && cbW.checked) { cbW.checked = false; try { updatePromosSummary(); } catch (_) {} }
+        return;
+    }
+    // Só seguidores mixtos e "seguidores" (brasileiros), e só quando o servidor deu um preço.
+    const w3 = (window.__warranty3m && typeof window.__warranty3m === 'object') ? window.__warranty3m : null;
+    const temPreco = !w3 || w3.available !== false;
+    if ((tipo === 'mistos' || tipo === 'brasileiros') && temPreco) {
         warrantyItem.style.display = '';
     } else {
         warrantyItem.style.display = 'none';
@@ -2432,6 +2476,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function updateOrderBump(tipo, baseQtd) {
     updateWarrantyVisibility(tipo);
+    try { refreshWarranty3m(tipo, baseQtd); } catch (_) {}
     if (!orderInline) return;
     const unit = getDisplayUnitForTipo(tipo);
     const labelSpan = document.getElementById('orderBumpText');
@@ -2493,7 +2538,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // Comentários: mostra o card de ofertas (me gusta reales + visualizaciones), mas esconde o
+    // Comentários: mostra o card de ofertas (me gusta reales + vistas), mas esconde o
     // UPGRADE (o incremento de qtd de comentário não é tratado no despacho — evita cobrar sem entregar).
     if (isCommentsContext && tipo === 'comentarios' && baseQtd) {
       orderInline.style.display = 'block';
@@ -2542,6 +2587,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     const basePrice = findPrice(tipo, baseQtd);
     const targetPrice = findPrice(tipo, targetQtd);
+    // Faixa-alvo sem preço (ex.: me gusta reales acima de 7.500, que não existem) → sem mejora.
+    if (!basePrice || !targetPrice) {
+      if (labelSpan) labelSpan.textContent = 'No hay mejora disponible para este paquete.';
+      if (upOld) upOld.textContent = '—';
+      if (upNew) upNew.textContent = '—';
+      if (upDisc) upDisc.textContent = 'OFERTA';
+      return;
+    }
     const diffCents = parsePrecoToCents(targetPrice) - parsePrecoToCents(basePrice);
     const addQtd = targetQtd - baseQtd;
     const diffStr = formatCentsToBRL(diffCents);
@@ -2581,18 +2634,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (!Array.isArray(likesTable) || likesTable.length === 0) {
       likesTable = [
-        { q: 150, price: '$ 20' },
-        { q: 300, price: '$ 28' },
-        { q: 500, price: '$ 35' },
-        { q: 700, price: '$ 54' },
-        { q: 1000, price: '$ 72' },
-        { q: 2000, price: '$ 90' },
-        { q: 3000, price: '$ 109' },
-        { q: 4000, price: '$ 127' },
-        { q: 5000, price: '$ 145' },
-        { q: 7500, price: '$ 182' },
-        { q: 10000, price: '$ 255' },
-        { q: 15000, price: '$ 328' }
+        { q: 150, price: '$ 22' },
+        { q: 300, price: '$ 25' },
+        { q: 500, price: '$ 32' },
+        { q: 700, price: '$ 48' },
+        { q: 1000, price: '$ 65' },
+        { q: 2000, price: '$ 81' },
+        { q: 3000, price: '$ 98' },
+        { q: 4000, price: '$ 114' },
+        { q: 5000, price: '$ 131' },
+        { q: 7500, price: '$ 164' },
+        { q: 10000, price: '$ 230' },
+        { q: 15000, price: '$ 296' }
       ];
     }
     try {
@@ -2655,18 +2708,18 @@ document.addEventListener('DOMContentLoaded', function() {
   if (likesQtyEl) updateLikesPrice(Number(likesQtyEl.textContent || 150));
 
   const viewsTable = [
-    { q: 1000, price: '$ 20' },
-    { q: 2500, price: '$ 35' },
-    { q: 5000, price: '$ 54' },
-    { q: 10000, price: '$ 72' },
-    { q: 25000, price: '$ 90' },
-    { q: 50000, price: '$ 127' },
-    { q: 100000, price: '$ 182' },
-    { q: 150000, price: '$ 218' },
-    { q: 200000, price: '$ 255' },
-    { q: 250000, price: '$ 328' },
-    { q: 500000, price: '$ 402' },
-    { q: 1000000, price: '$ 585' }
+    { q: 1000, price: '$ 22' },
+    { q: 2500, price: '$ 32' },
+    { q: 5000, price: '$ 48' },
+    { q: 10000, price: '$ 65' },
+    { q: 25000, price: '$ 81' },
+    { q: 50000, price: '$ 114' },
+    { q: 100000, price: '$ 164' },
+    { q: 150000, price: '$ 197' },
+    { q: 200000, price: '$ 230' },
+    { q: 250000, price: '$ 296' },
+    { q: 500000, price: '$ 362' },
+    { q: 1000000, price: '$ 527' }
   ];
   const viewsQtyEl = document.getElementById('viewsQty');
   const viewsDec = document.getElementById('viewsDec');
@@ -2683,7 +2736,7 @@ document.addEventListener('DOMContentLoaded', function() {
       oldEl.textContent = formatCentsToBRL(oldCents);
     }
     const hl = document.querySelector('.promo-item.views .promo-highlight');
-    if (hl) hl.textContent = `+ ${q} VISUALIZACIONES`;
+    if (hl) hl.textContent = `+ ${q} VISTAS`;
   }
   function stepViews(dir) {
     const current = Number(viewsQtyEl?.textContent || 1000);
@@ -2755,7 +2808,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const qty = Number(document.getElementById('viewsQty')?.textContent || 1000);
         let priceStr = document.querySelector('.promo-prices[data-promo="views"] .new-price')?.textContent || '';
         if (!priceStr) priceStr = promoPricing.views?.price || '';
-        promos.push({ key: 'views', qty, label: `Visualizaciones de Reels (${qty})`, priceCents: parsePrecoToCents(priceStr) });
+        promos.push({ key: 'views', qty, label: `Vistas de Reels (${qty})`, priceCents: parsePrecoToCents(priceStr) });
       }
       if (commentsChecked) {
         const qty = Number(document.getElementById('commentsQty')?.textContent || 1);
@@ -2763,11 +2816,11 @@ document.addEventListener('DOMContentLoaded', function() {
         promos.push({ key: 'comments', qty, label: `Comentarios (${qty})`, priceCents });
       }
       if (warrantyChecked) {
-        const mode = (typeof window.warrantyMode === 'string') ? window.warrantyMode : '30';
-        let priceStr = (document.getElementById('warrantyNewPrice')?.textContent || '').trim();
-        if (!priceStr) priceStr = promoPricing.warranty60?.price || '$ 35';
-        const label = 'Reposición por 6 meses';
-        promos.push({ key: 'warranty_6m', qty: 1, label, priceCents: parsePrecoToCents(priceStr) });
+        // Garantia dinâmica de 3 meses: priceCents do /api/warranty/price (o mesmo que o servidor valida).
+        const w3 = (window.__warranty3m && typeof window.__warranty3m === 'object') ? window.__warranty3m : {};
+        let priceCents = Number(w3.priceCents) || 0;
+        if (!priceCents) priceCents = parsePrecoToCents((document.getElementById('warrantyNewPrice')?.textContent || '').trim());
+        if (priceCents > 0) promos.push({ key: 'warranty_3m', qty: 1, label: 'Reposición por 3 meses', priceCents });
       }
       if (upgradeChecked) {
         let priceStr = document.querySelector('.promo-prices[data-promo="upgrade"] .new-price')?.textContent || '';
@@ -2813,7 +2866,7 @@ document.addEventListener('DOMContentLoaded', function() {
             resPromosContainer.style.display = 'block';
             
             // Header "Extras seleccionados:"
-            let html = '<div style="font-weight:600; margin-bottom:-4px; padding-bottom:0; color:var(--text-primary); line-height:1.2; margin-top:0.5rem;">Extras seleccionados:</div>';
+            let html = '<div class="resumo-extras-title">Extras</div>';
             
             html += promos.map((p, index) => {
                 // Tenta achar preço original do promo
@@ -2826,8 +2879,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (p.key === 'comments') {
                    // Comments old = current * 1.7
                    oldPriceCents = Math.round(p.priceCents * 1.7 / 100) * 100;
+                } else if (p.key === 'likes' || p.key === 'views') {
+                   // Preço "de" da própria oferta (acompanha a quantidade escolhida)
+                   const oldEl = document.querySelector('.promo-prices[data-promo="' + p.key + '"] .old-price');
+                   oldPriceCents = oldEl ? parsePrecoToCents(oldEl.textContent) : 0;
+                   if (oldPriceCents < p.priceCents) oldPriceCents = p.priceCents;
                 } else {
-                   // Likes, Views, Warranty
+                   // Warranty
                    const conf = promoPricing[p.key === 'warranty30' ? 'warranty' : (p.key === 'warranty_lifetime' ? 'warranty' : (p.key === 'warranty_6m' ? 'warranty' : p.key))];
                    if (conf) oldPriceCents = parsePrecoToCents(conf.old);
                    else if (p.key === 'warranty_lifetime') oldPriceCents = 47000; // MXN
@@ -2837,12 +2895,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Adiciona ao total original
                 baseOriginalCents += (oldPriceCents || p.priceCents);
                 
-                const marginTop = index === 0 ? '0' : '0.1rem';
-                return `
-                <div class="resumo-row" style="margin-top:${marginTop}; margin-bottom:0.1rem; line-height:1.4; display: flex; justify-content: space-between; align-items: center;">
-                    <span>• ${p.label}</span>
-                    <span>${formatCentsToBRL(p.priceCents)}</span>
-                </div>`;
+                return '<div class="resumo-promo-row"><span>' + p.label + '</span><span>' + fmtMxn(p.priceCents) + '</span></div>';
             }).join('');
             
             resPromos.innerHTML = html;
@@ -2888,13 +2941,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // HTML Rico
         const isMobile = window.innerWidth <= 640;
-        const totalOriginalBrl = formatCentsToBRL(totalOriginal);
-        const totalCurrentBrl = formatCentsToBRL(totalCurrent);
+        const totalOriginalBrl = formatCentsToBRL(totalOriginal).replace('$ ', '$');
+        const totalCurrentBrl = fmtMxn(totalCurrent);
         
         if (isMobile) {
             // Mobile: Alinhado à esquerda, em duas linhas
             resTotalFinal.innerHTML = `
-                <div class="promo-prices" style="flex-direction: column; align-items: flex-start; gap: 0;">
+                <div class="promo-prices" style="flex-direction: column; align-items: flex-end; gap: 0;">
                     <div style="display:flex; gap: 0.5rem; align-items: center;">
                         <span class="old-price" style="text-decoration: line-through; color: #9ca3af;">${totalOriginalBrl}</span>
                         <span class="discount-badge">${discountPct}% OFF</span>
@@ -3072,7 +3125,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (isCurtidasContext && kind === 'likes') {
         headerHtml = '<div style="grid-column:1/-1; text-align:center; padding:0.5rem 0 1rem; font-weight:600; color:var(--text-primary);">Selecciona la publicación que quieres que reciba los ' + (isCommentsContext ? 'comentarios' : 'me gusta') + '</div>';
       } else if (isViewsContext && kind === 'views') {
-        headerHtml = '<div style="grid-column:1/-1; text-align:center; padding:0.5rem 0 1rem; font-weight:600; color:var(--text-primary);">Selecciona el Reel que quieres que reciba las visualizaciones</div>';
+        headerHtml = '<div style="grid-column:1/-1; text-align:center; padding:0.5rem 0 1rem; font-weight:600; color:var(--text-primary);">Selecciona el Reel que quieres que reciba las vistas</div>';
       }
 
       const html = items.map(function(p){
@@ -3090,7 +3143,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const btnText = alreadySelected ? 'Seleccionada' : 'Seleccionar';
         const btnStyle = alreadySelected ? 'width:100%; text-align:center; opacity:0.65; cursor:not-allowed;' : 'width:100%; text-align:center;';
         const btnDisabled = alreadySelected ? ' disabled' : '';
-        return '<div class="service-card"><div class="card-content pick-post-card'+pickedClass+'" data-kind="'+kind+'" data-shortcode="'+p.shortcode+'">'+media+'<div class="inline-msg" style="margin-top:6px">'+(p.takenAt? new Date(Number(p.takenAt)*1000).toLocaleString('es-MX') : '-')+'</div><div style="margin-top:8px;display:flex;justify-content:center;align-items:center;"><button type="button" class="continue-button select-post-btn" style="'+btnStyle+'" data-shortcode="'+p.shortcode+'" data-kind="'+kind+'"'+btnDisabled+'>'+btnText+'</button></div></div></div>';
+        return '<div class="service-card"><div class="card-content pick-post-card'+pickedClass+'" data-kind="'+kind+'" data-shortcode="'+p.shortcode+'">'+media+'<div class="inline-msg" style="margin-top:6px">'+(p.takenAt? new Date(Number(p.takenAt)*1000).toLocaleString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '-')+'</div><div style="margin-top:8px;display:flex;justify-content:center;align-items:center;"><button type="button" class="continue-button select-post-btn" style="'+btnStyle+'" data-shortcode="'+p.shortcode+'" data-kind="'+kind+'"'+btnDisabled+'>'+btnText+'</button></div></div></div>';
       }).join('');
       
       if (!html) {
@@ -3361,7 +3414,7 @@ document.addEventListener('DOMContentLoaded', function() {
           ? '<img src="'+dsrc+'" style="width:100%;height:100%;border-radius:12px;object-fit:cover;" loading="lazy" decoding="async"/>'
           : '<iframe src="https://www.instagram.com/p/'+p.shortcode+'/embed" allowtransparency="true" allow="encrypted-media; picture-in-picture" scrolling="no" style="width:100%;height:100%;border-radius:12px;"></iframe>';
         const frame = '<div style="width:100%;height:'+fixedH+'px;overflow:hidden;border-radius:12px;background:var(--bg-primary);">'+media+'</div>';
-        const dateText = p.takenAt ? new Date(Number(p.takenAt) * 1000).toLocaleString('es-MX') : '';
+        const dateText = p.takenAt ? new Date(Number(p.takenAt) * 1000).toLocaleString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
         const extra = dateText ? '<div style="font-size:0.8rem;color:var(--text-secondary);text-align:center;margin-top:6px;">'+dateText+'</div>' : '';
         return '<div style="scroll-snap-align:start;flex:0 0 240px;max-width:240px;background:var(--bg-secondary);border-radius:12px;padding:0.6rem;"><div style="position:relative;">'+frame+removeBtn+'</div>'+extra+'</div>';
       }).join('');
@@ -4128,19 +4181,19 @@ document.addEventListener('DOMContentLoaded', function() {
       const inputId = 'pixBrCodeInputDynamic';
 
       const imgHtml = qrImage
-        ? `<img src="${qrImage}" alt="Código QR de Pix" style="width: 180px; height: 180px; border-radius: 8px; display: block; margin: 0 auto 0.75rem; background: #fff;" />`
+        ? `<img src="${qrImage}" alt="Código QR de pago" style="width: 180px; height: 180px; border-radius: 8px; display: block; margin: 0 auto 0.75rem; background: #fff;" />`
         : '';
 
       const codeFieldHtml = brCode
         ? `<div style="margin-bottom: 0.5rem; text-align: center;">
              <input id="${inputId}" type="text" readonly value="${brCode}" style="width: 100%; padding: 0.5rem; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.85); color: #111827; text-align: center;" />
            </div>`
-        : '<div style="color:#fff;">No se pudo mostrar el código Pix.</div>';
+        : '<div style="color:#fff;">No se pudo mostrar el código de pago.</div>';
 
       const copyBtnHtml = brCode
         ? `<div class="button-container" style="margin-bottom: 0.5rem;">
              <button id="${copyButtonId}" class="continue-button">
-               <span class="button-text">Copiar código Pix</span>
+               <span class="button-text">Copiar código de pago</span>
              </button>
            </div>`
         : '';
@@ -4187,15 +4240,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 const span = copyBtn.querySelector('.button-text');
                 const prev = span ? span.textContent : '';
-                if (span) span.textContent = 'Pix copiado';
-                try { showStatusMessageCheckout('Código Pix copiado', 'success'); } catch(_) {}
+                if (span) span.textContent = '¡Código copiado!';
+                try { showStatusMessageCheckout('Código de pago copiado', 'success'); } catch(_) {}
                 copyBtn.disabled = true;
                 setTimeout(() => {
                   copyBtn.disabled = false;
-                  if (span) span.textContent = prev || 'Copiar código Pix';
+                  if (span) span.textContent = prev || 'Copiar código de pago';
                 }, 1200);
               } catch (e) {
-                alert('No se pudo copiar el código Pix.');
+                alert('No se pudo copiar el código de pago.');
               }
             });
           }
@@ -4288,7 +4341,7 @@ document.addEventListener('DOMContentLoaded', function() {
        }
 
     } catch (err) {
-      alert('Error al generar el Pix: ' + (err?.message || err));
+      alert('Error al generar el pago: ' + (err?.message || err));
     } finally {
       if (btnPedido) {
         btnPedido.classList.remove('loading');
@@ -4551,7 +4604,7 @@ document.addEventListener('DOMContentLoaded', function() {
           const priceText = card ? card.getAttribute('data-preco') : findPrice(tipo, q);
           if (resTipo) resTipo.textContent = getLabelForTipo(tipo);
           if (resQtd) resQtd.textContent = `${q} ${unit}`;
-          if (resPreco && priceText) resPreco.textContent = priceText;
+          if (resPreco && priceText) resPreco.textContent = fmtMxn(parsePrecoToCents(priceText));
           try { basePriceCents = parsePrecoToCents(priceText || ''); } catch(_) { basePriceCents = 0; }
           if (planCards) {
             const cards = planCards.querySelectorAll('.service-card[data-role="plano"]');

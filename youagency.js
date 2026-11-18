@@ -24,12 +24,12 @@ const nowpaymentsKeepAliveAgent = new https.Agent({ keepAlive: true, maxSockets:
 const REDES_CATALOGO_TIPOS = {
   tiktok_seguidores:          { rede: 'tiktok',   titulo: 'Seguidores',             unidade: 'seguidores',      alvo: 'perfil', desc: 'Seguidores para tu perfil de TikTok. Solo necesitas el enlace de tu perfil.' },
   tiktok_curtidas:            { rede: 'tiktok',   titulo: 'Me gusta',               unidade: 'me gusta',        alvo: 'post',   desc: 'Me gusta para un video de TikTok. Pega el enlace del video.' },
-  tiktok_visualizacoes:       { rede: 'tiktok',   titulo: 'Visualizaciones',        unidade: 'visualizaciones', alvo: 'post',   desc: 'Visualizaciones para un video de TikTok. Pega el enlace del video.' },
+  tiktok_visualizacoes:       { rede: 'tiktok',   titulo: 'Vistas',        unidade: 'vistas', alvo: 'post',   desc: 'Vistas para un video de TikTok. Pega el enlace del video.' },
   tiktok_comentarios:         { rede: 'tiktok',   titulo: 'Comentarios',            unidade: 'comentarios',     alvo: 'post',   desc: 'Comentarios para un video de TikTok. Pega el enlace del video.' },
   facebook_seguidores_perfil: { rede: 'facebook', titulo: 'Seguidores de perfil',   unidade: 'seguidores',      alvo: 'perfil', desc: 'Seguidores para tu perfil personal de Facebook. Pega el enlace de tu perfil.' },
   facebook_seguidores_pagina: { rede: 'facebook', titulo: 'Seguidores de página',   unidade: 'seguidores',      alvo: 'perfil', desc: 'Seguidores para tu página (fanpage) de Facebook. Pega el enlace de la página.' },
   facebook_curtidas:          { rede: 'facebook', titulo: 'Me gusta',               unidade: 'me gusta',        alvo: 'post',   desc: 'Me gusta para una publicación de Facebook. Pega el enlace de la publicación.' },
-  facebook_visualizacoes:     { rede: 'facebook', titulo: 'Visualizaciones',        unidade: 'visualizaciones', alvo: 'post',   desc: 'Visualizaciones para un video o reel de Facebook. Pega el enlace del video.' },
+  facebook_visualizacoes:     { rede: 'facebook', titulo: 'Vistas',        unidade: 'vistas', alvo: 'post',   desc: 'Vistas para un video o reel de Facebook. Pega el enlace del video.' },
   facebook_comentarios:       { rede: 'facebook', titulo: 'Comentarios',            unidade: 'comentarios',     alvo: 'post',   desc: 'Comentarios para una publicación o video de Facebook. Pega el enlace.' },
 };
 function linkRedeOk(rede, url) {
@@ -173,6 +173,39 @@ module.exports.register = function register(app, deps) {
     next();
   });
 
+  // Web Tag da TrackCombo (container youagency-mx) em todas as páginas do cliente (fora painel/API).
+  // Ela grava o clique do anúncio (_fbc/_fbp, gclid, UTMs) e manda PageView etc. A compra do SITE vai
+  // pela TrackCombo (webhook da Xpag repassado + evento add_payment_info na tela /pago).
+  const TC_TAG = String(process.env.YA_TRACKCOMBO_TAG_URL || 'https://track.youagency.site/tag/TC-OISDR3RC.js').trim();
+  if (TC_TAG) {
+    const snippet = '<script>(function(){var s=document.createElement("script");s.async=true;s.src=' + JSON.stringify(TC_TAG) + ';var f=document.getElementsByTagName("script")[0];if(f&&f.parentNode)f.parentNode.insertBefore(s,f);else document.head.appendChild(s);})();</script>';
+    app.use((req, res, next) => {
+      if (req.method !== 'GET' || /^\/(api|painel|admin|css|js|images|fonts|uploads)(\/|$)/i.test(req.path) || /\.[a-z0-9]{2,5}$/i.test(req.path)) return next();
+      const send = res.send;
+      res.send = function (body) {
+        try {
+          if (typeof body === 'string' && body.indexOf('</head>') >= 0 && body.indexOf(TC_TAG) < 0 && /text\/html/i.test(String(res.get('Content-Type') || 'text/html'))) {
+            body = body.replace('</head>', snippet + '</head>');
+          }
+        } catch (_) {}
+        return send.call(this, body);
+      };
+      next();
+    });
+  }
+  // Botão do WhatsApp do site: guarda o código "(#XXXXX)" com a origem da visita.
+  const __waRefHits = new Map();
+  app.post('/api/wa-ref', async (req, res) => {
+    try {
+      const ip = String(req.realIP || req.ip || ''); const agora = Date.now();
+      const h = (__waRefHits.get(ip) || []).filter((t) => agora - t < 600000);
+      if (h.length >= 30) return res.status(429).end();
+      h.push(agora); __waRefHits.set(ip, h); if (__waRefHits.size > 5000) __waRefHits.clear();
+      await require('./metaCapi.js').salvarRefSite(req);
+    } catch (_) {}
+    return res.status(204).end();
+  });
+
   app.get('/__health', (req, res) => res.json({ ok: true, app: 'you-agency', pid: process.pid, now: new Date().toISOString() }));
 
   app.get('/images/logo.png', (req, res) => res.sendFile(path.join(deps.rootDir, 'public', 'images', 'y preto.png')));
@@ -291,8 +324,22 @@ module.exports.register = function register(app, deps) {
   app.get('/engagement', (req, res) => {
     console.log('📈 Acessando rota /engagement');
     try { deps.trackPageView(req, '/interaccion'); } catch (_) {} // entrada do anúncio: 1º passo do funil por visitante
-    res.render('engajamento', { 
-      queryParams: req.query 
+    // "Paquetes desde": menor preço de cada tabela do pricing.js (não fica desatualizado quando o preço muda).
+    let precosInicio = null;
+    try {
+      const P = require('./pricing');
+      const desde = (...tabs) => { const v = tabs.flat().filter(Boolean).map((x) => P.parsePrecoToCents(x.p)).filter((c) => c > 0); return v.length ? '$ ' + Math.round(Math.min(...v) / 100) : null; };
+      precosInicio = {
+        seg: desde(P.tabelaSeguidores.mistos, P.tabelaSeguidores.brasileiros),
+        curt: desde(P.tabelaCurtidas.mistos, P.tabelaCurtidas.organicos),
+        views: desde(P.tabelaVisualizacoes.visualizacoes_reels),
+        comIg: '$ 20', // comentário do Instagram: $20 cada (pricing.js)
+        comRedes: desde(P.tabelaRedes && P.tabelaRedes.tiktok_comentarios),
+      };
+    } catch (_) {}
+    res.render('engajamento', {
+      queryParams: req.query,
+      precosInicio
     }, (err, html) => {
       if (err) {
         console.error('❌ Erro ao renderizar engajamento:', err.message);
@@ -551,7 +598,7 @@ module.exports.register = function register(app, deps) {
     res.set('Cache-Control', 'public, max-age=300');
     // Ofertas da etapa 3 (mesmos preços que o calculateOrderBumps do pricing.js soma no servidor).
     const pac = (arr) => (arr || []).map((x) => ({ q: x.q, cents: parsePrecoToCents(x.p) }));
-    const ofertas = { likes: pac(tabelaCurtidas.mistos), views: pac(tabelaVisualizacoes.visualizacoes_reels), comments: { unitCents: 549, max: 250 } };
+    const ofertas = { likes: pac(tabelaCurtidas.mistos), views: pac(tabelaVisualizacoes.visualizacoes_reels), comments: { unitCents: 2000, max: 250 } };
     res.json({ ok: true, servicos, ofertas });
   });
 
@@ -705,7 +752,10 @@ module.exports.register = function register(app, deps) {
         }
       }
   
-      let verification = await deps.verifyPrice(tipoVal, qtdVal, addInfoArr, Number(total_cents));
+      // Garantia de 3 meses / extensão: preço dinâmico recalculado pelo custo atual (igual à Oppus).
+      let precoOpts = {};
+      try { if (typeof deps.pricingOptsForCharge === 'function') precoOpts = (await deps.pricingOptsForCharge(tipoVal, qtdVal, addInfoArr)) || {}; } catch (_) {}
+      let verification = await deps.verifyPrice(tipoVal, qtdVal, addInfoArr, Number(total_cents), precoOpts);
       if (!verification.isValid) {
         try {
           const couponCodeRaw = addInfoMap['cupom'] || addInfoMap['coupon'] || '';
@@ -1090,8 +1140,14 @@ module.exports.register = function register(app, deps) {
       try { await deps.processOrderFulfillment(fresh, col, null); } catch (e) { try { console.error('❌ Xpag fulfillment', e?.message || String(e)); } catch (_) {} }
       // Pedido feito pelo bot do WhatsApp: avisa o cliente na conversa (idempotente, só source=wpp_agent).
       try { if (typeof deps.notifyWppAgentPaidWhatsapp === 'function') await deps.notifyWppAgentPaidWhatsapp(fresh); } catch (_) {}
-      // Pixel de mensagens: se o telefone veio de um anúncio de WhatsApp, manda o Purchase com o ctwa_clid.
-      try { await require('./wppCapi.js').enviarCompra(fresh); } catch (_) {}
+      // Compra para a Meta, UMA vez: anúncio de conversa (ctwa_clid) vai pelo pixel de mensagens (wppCapi);
+      // o resto (site, site → WhatsApp com código, orgânico) vai pelo metaCapi. Se o evento de mensagem
+      // for recusado, o próprio wppCapi cai no metaCapi como "chat".
+      try {
+        const w = await require('./wppCapi.js').enviarCompra(fresh);
+        const semCtwa = !w || ['nao_e_do_bot', 'sem_clique', 'nao_configurado', 'sem_telefone', 'pagamento_antigo', 'excecao'].includes(w.motivo);
+        if (semCtwa) await require('./metaCapi.js').enviarCompra(fresh);
+      } catch (_) {}
     } else if (!virouPago && xp.status === 'parcial' && xp.recebidoCents > 0) {
       // Pagou só uma parte: pedido do bot recebe no WhatsApp o restante e a MESMA CLABE.
       try { await avisarPagoParcialWpp(col, fresh); } catch (_) {}
@@ -1139,6 +1195,7 @@ module.exports.register = function register(app, deps) {
 
   // Reenvio automático do pixel de mensagens quando a Meta falha de forma temporária.
   try { require('./wppCapi.js').iniciarReenvio(); } catch (_) {}
+  try { require('./metaCapi.js').iniciarReenvio(); } catch (_) {}
 
   // Usado pelo lembrete de pagamento do bot (app.js) para conferir o status antes de cobrar o cliente.
   try { app.locals.yaSincronizarXpag = sincronizarXpag; } catch (_) {}
@@ -1189,6 +1246,17 @@ module.exports.register = function register(app, deps) {
         const col = await deps.getCollection('checkout_orders');
         const record = await col.findOne({ $or: conds, paymentMethod: 'xpag' }, { sort: { createdAt: -1 } });
         if (!record) { try { console.warn('⚠️ Xpag webhook sem pedido', p.transaction_id, p.external_id); } catch (_) {} return; }
+        // TrackCombo (integração XPag): recebe o MESMO corpo do webhook, intacto. Só pedido do site —
+        // venda do bot já vai à Meta pelo wppCapi/metaCapi (mandar aqui também duplicaria a compra).
+        try {
+          const tcUrl = String(process.env.YA_TRACKCOMBO_XPAG_URL || '').trim();
+          const doBot = /^WppAgent_/.test(String(record.correlationID || '')) || String((record.additionalInfoMap && record.additionalInfoMap.source) || ((Array.isArray(record.additionalInfo) ? record.additionalInfo : []).find((i) => i && i.key === 'source') || {}).value || '') === 'wpp_agent';
+          if (tcUrl && !doBot) {
+            axios.post(tcUrl, req.body, { headers: { 'Content-Type': 'application/json' }, timeout: 15000, validateStatus: () => true })
+              .then((r) => col.updateOne({ _id: record._id }, { $set: { 'trackcombo.repassadoEm': new Date().toISOString(), 'trackcombo.http': r.status } }).catch(() => {}))
+              .catch((e) => { try { console.error('❌ TrackCombo repasse', e && e.message); } catch (_) {} });
+          }
+        } catch (_) {}
         await sincronizarXpag(col, record);
       } catch (e) { try { console.error('❌ Xpag webhook', e?.message || String(e)); } catch (_) {} }
     });
@@ -1216,7 +1284,37 @@ module.exports.register = function register(app, deps) {
       const record = cid ? await col.findOne({ correlationID: cid, paymentMethod: 'xpag' }) : null;
       if (!record) return res.redirect('/customer');
       if (String(record.status) === 'pago') return res.redirect(`/pedido?correlationID=${encodeURIComponent(cid)}`);
-      return res.render('pago', { correlationID: cid, xpag: record.xpag || {}, valueCents: record.expectedValueCents || record.valueCents || 0, recebidoCents: Number((record.xpag && record.xpag.recebidoCents) || 0), clabeAberta: xpagEhClabeAberta(record.xpag), qtd: record.qtd, tipo: record.tipo, instagram: record.instagramUsername || record.instauser || '' });
+      // Extras (order bumps) do pedido, para o cliente ver o que compõe o total.
+      const extras = [];
+      try {
+        const m = record.additionalInfoMap || {};
+        let bumps = String(m.order_bumps || '');
+        if (!bumps && Array.isArray(record.additionalInfo)) { const it = record.additionalInfo.find((x) => x && x.key === 'order_bumps'); bumps = String((it && it.value) || ''); }
+        const n = (v) => Number(v || 0).toLocaleString('en-US');
+        for (const parte of bumps.split(/[;,]/)) {
+          const [k0, v0] = parte.split(':'); const k = String(k0 || '').trim().toLowerCase(); const q = parseInt(v0, 10) || 0;
+          if (k === 'likes' && q) extras.push(n(q) + ' me gusta');
+          else if (k === 'views' && q) extras.push(n(q) + ' vistas');
+          else if (k === 'comments' && q) extras.push(n(q) + (q === 1 ? ' comentario' : ' comentarios'));
+          else if (k === 'upgrade') extras.push('Mejora de paquete');
+          else if (/^warranty/.test(k)) extras.push(/3m|3/.test(k) ? 'Reposición por 3 meses' : 'Reposición extendida');
+        }
+      } catch (_) {}
+      // TrackCombo: liga a venda à visita pelo número do pedido (= external_id da cobrança Xpag). Só pedido do site.
+      let tcEvento = '';
+      try {
+        const doBot = /^WppAgent_/.test(String(record.correlationID || '')) || String(((Array.isArray(record.additionalInfo) ? record.additionalInfo : []).find((i) => i && i.key === 'source') || {}).value || '') === 'wpp_agent';
+        const ext = String((record.xpag && record.xpag.external_id) || '');
+        if (!doBot && ext) {
+          const ev = { event: 'add_payment_info', transaction_id: ext, value: Math.round(Number(record.expectedValueCents || record.valueCents || 0)) / 100, currency: 'MXN',
+            user_data: { email: String((record.customer && record.customer.email) || ''), phone: String((record.customer && (record.customer.phone_number || record.customer.phone)) || '') } };
+          tcEvento = '<script>(function(){var ev=' + JSON.stringify(ev).replace(/</g, '\\u003c') + ';var n=0;(function t(){try{if(window.tcData&&typeof window.tcData.executeEvent==="function"){window.tcData.executeEvent(ev);return;}}catch(_){}if(++n<40)setTimeout(t,250);})();})();</script>';
+        }
+      } catch (_) {}
+      return res.render('pago', { correlationID: cid, xpag: record.xpag || {}, valueCents: record.expectedValueCents || record.valueCents || 0, recebidoCents: Number((record.xpag && record.xpag.recebidoCents) || 0), clabeAberta: xpagEhClabeAberta(record.xpag), qtd: record.qtd, tipo: record.tipo, instagram: record.instagramUsername || record.instauser || '', extras }, (err, html) => {
+        if (err) { try { console.error('❌ /pago render', err.message); } catch (_) {} return res.status(500).send('Error al cargar la página de pago'); }
+        return res.send(tcEvento ? String(html).replace('</body>', tcEvento + '</body>') : html);
+      });
     } catch (e) {
       try { console.error('❌ /pago', e?.message || String(e)); } catch (_) {}
       return res.status(500).send('Error al cargar la página de pago');

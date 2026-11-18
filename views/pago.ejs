@@ -5,7 +5,7 @@
   <title>Completa tu pago | You Agency</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex" />
-  <link href="/css/style.css?v=20261111" rel="stylesheet" />
+  <link href="/css/style.css?v=20261118b" rel="stylesheet" />
   <style>
     .pago-wrap { max-width: 560px; margin: 0 auto; padding: 96px 16px 48px; }
     .pago-card { background: var(--bg-secondary, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 16px; padding: 22px 20px; }
@@ -14,6 +14,9 @@
     .pago-total { text-align: center; font-size: 2rem; font-weight: 800; color: var(--text-primary, #111827); margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
     .pago-total small { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary, #6b7280); }
     .pago-item { font-size: 0.9rem; color: var(--text-secondary, #6b7280); text-align: center; margin-bottom: 18px; }
+    .pago-item.com-extras { margin-bottom: 8px; }
+    .pago-extras { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0 0 18px; }
+    .pago-extras span { font-size: 0.8rem; font-weight: 600; color: #5b3aa8; background: #f3effd; border-radius: 999px; padding: 3px 10px; }
     .pago-campo { border: 1px solid var(--border-color, #e5e7eb); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .pago-campo .rot { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary, #6b7280); }
     .pago-campo .val { font-size: 1.05rem; font-weight: 700; color: var(--text-primary, #111827); word-break: break-all; font-variant-numeric: tabular-nums; }
@@ -33,7 +36,8 @@
   <%
     const metodo = String(xpag.method || 'SPEI').toUpperCase();
     const total = (function (x) { var d = x % 100 === 0 ? 0 : 2; return (x / 100).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); })(Math.round(Number(valueCents || 0)));
-    const unidade = /curtid|likes/i.test(String(tipo || '')) ? 'me gusta' : (/visualiz|views/i.test(String(tipo || '')) ? 'visualizaciones' : 'seguidores');
+    const unidade = /coment/i.test(String(tipo || '')) ? 'comentarios' : (/curtid|likes/i.test(String(tipo || '')) ? 'me gusta' : (/visualiz|views/i.test(String(tipo || '')) ? 'vistas' : 'seguidores'));
+    const listaExtras = (typeof extras !== 'undefined' && Array.isArray(extras)) ? extras : [];
     const expira = xpag.expiresAt ? new Date(xpag.expiresAt) : null;
     const aberta = typeof clabeAberta !== 'undefined' && clabeAberta;
     const recebidoC = typeof recebidoCents !== 'undefined' ? Number(recebidoCents || 0) : 0;
@@ -50,7 +54,12 @@
       <% if (aberta) { %>
         <div class="pago-parcial" id="pagoParcial"<%= parcial ? '' : ' hidden' %>>Recibimos <strong>$ <span id="vRecebido"><%= fmtM(recebidoC) %></span></strong> de <strong>$ <%= total %></strong>. Transfiere el restante a la misma CLABE para liberar tu pedido.</div>
       <% } %>
-      <div class="pago-item"><%= qtd ? Number(qtd).toLocaleString('en-US') + ' ' + unidade : '' %><%= instagram ? ' para @' + instagram : '' %></div>
+      <div class="pago-item<%= listaExtras.length ? ' com-extras' : '' %>"><%= qtd ? Number(qtd).toLocaleString('en-US') + ' ' + unidade : '' %><%= instagram ? ' para @' + instagram : '' %></div>
+      <% if (listaExtras.length) { %>
+        <div class="pago-extras" aria-label="Extras incluidos">
+          <% listaExtras.forEach(function (e) { %><span>+ <%= e %></span><% }) %>
+        </div>
+      <% } %>
 
       <% if (metodo === 'SPEI') { %>
         <div class="pago-campo"><div><div class="rot">CLABE</div><div class="val" id="vClabe"><%= xpag.clabe %></div></div><button class="pago-copiar" data-copiar="vClabe" type="button">Copiar</button></div>

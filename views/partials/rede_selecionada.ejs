@@ -7,9 +7,10 @@
 <style>
   .rd-rede-sel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.45rem; width: 100%; margin: 0.1rem auto 1.4rem; text-align: center; }
   .rd-rede-sel-label { color: var(--text-secondary); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-  .rd-rede-sel .platform-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-width: 150px; cursor: default; padding: 0.55rem 1.2rem; border-radius: 999px; border: 1px solid var(--border-color, rgba(15, 23, 42, .1)); box-shadow: 0 1px 4px rgba(15, 23, 42, .08); font-weight: 700; }
-  body .rd-rede-sel .platform-btn, body .rd-rede-sel .platform-btn:hover, body .rd-rede-sel .platform-btn:focus, body .rd-rede-sel .platform-btn[aria-pressed] { transform: none; outline: none; border: 1px solid var(--border-color, rgba(15, 23, 42, .1)); box-shadow: 0 1px 4px rgba(15, 23, 42, .08); }
-  .rd-rede-sel .platform-btn.facebook { background: var(--bg-secondary); color: var(--text-primary); }
+  .rd-rede-sel .platform-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-width: 150px; cursor: default; padding: 0.55rem 1.2rem; border-radius: 999px; font-weight: 700; }
+  /* Sem caixa: o nome da rede fica direto sobre o fundo da página (sem fundo branco, borda nem sombra). */
+  body .rd-rede-sel .platform-btn, body .rd-rede-sel .platform-btn:hover, body .rd-rede-sel .platform-btn:focus, body .rd-rede-sel .platform-btn[aria-pressed],
+  body .rd-rede-sel .platform-btn.facebook, body .rd-rede-sel .platform-btn.tiktok, body .rd-rede-sel .platform-btn.instagram { transform: none; outline: none; border: none; box-shadow: none; background: transparent; color: var(--text-primary); }
 </style>
 <div class="rd-rede-sel">
   <span class="rd-rede-sel-label">Red seleccionada</span>

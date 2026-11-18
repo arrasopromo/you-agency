@@ -73,24 +73,24 @@
   var descricoes = {
     tiktok_seguidores: ['Seguidores para tu perfil de TikTok con entrega rápida y estable.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '🌍 Perfiles de varios países para hacer crecer tu cuenta.', '🔗 Solo necesitas el enlace de tu perfil.']],
     tiktok_curtidas: ['Me gusta para tus videos de TikTok con entrega rápida.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '❤️ Refuerza la prueba social de tus videos.', '🔗 Solo necesitas el enlace del video.']],
-    tiktok_visualizacoes: ['Visualizaciones para tus videos de TikTok.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '🎬 Da un impulso inicial a tus videos.', '🔗 Solo necesitas el enlace del video.']],
+    tiktok_visualizacoes: ['Vistas para tus videos de TikTok.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '🎬 Da un impulso inicial a tus videos.', '🔗 Solo necesitas el enlace del video.']],
     facebook_seguidores_perfil: ['Seguidores para tu perfil personal de Facebook.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '👤 Para perfiles personales (no páginas).', '🔗 Solo necesitas el enlace de tu perfil.']],
     facebook_seguidores_pagina: ['Seguidores para tu página (fanpage) de Facebook.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '🏢 Para páginas de negocio, marca o creador.', '🔗 Solo necesitas el enlace de tu página.']],
     facebook_curtidas: ['Me gusta para tus publicaciones de Facebook.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '❤️ Refuerza la prueba social de tus publicaciones.', '🔗 Solo necesitas el enlace de la publicación.']],
     tiktok_comentarios: ['Comentarios para tus videos de TikTok.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '💬 Comentarios positivos de perfiles de calidad.', '🔗 Solo necesitas el enlace del video.']],
     facebook_comentarios: ['Comentarios para tus publicaciones y videos de Facebook.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '💬 Comentarios positivos de perfiles de calidad.', '🔗 Solo necesitas el enlace de la publicación.']],
-    facebook_visualizacoes: ['Visualizaciones para tus videos y reels de Facebook.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '🎬 Da un impulso inicial a tus videos.', '🔗 Solo necesitas el enlace del video.']],
+    facebook_visualizacoes: ['Vistas para tus videos y reels de Facebook.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '🎬 Da un impulso inicial a tus videos.', '🔗 Solo necesitas el enlace del video.']],
   };
   var labelTipo = function (s) { return s.titulo + (s.tipo.indexOf('seguidores') >= 0 && rede === 'tiktok' ? '' : ''); };
 
-  // Igual ao Instagram: cada link é um serviço só (seguidores, me gusta ou visualizaciones);
+  // Igual ao Instagram: cada link é um serviço só (seguidores, me gusta ou vistas);
   // os cards de tipo são só as variações dele (no Facebook: seguidores de perfil e de página).
   var preSv = String(new URLSearchParams(location.search).get('servicio') || '').toLowerCase();
   var FOCO = /coment|comment/.test(preSv) ? 'comentarios' : (/curtid|gusta|like/.test(preSv) ? 'curtidas' : (/visualiz|view/.test(preSv) ? 'visualizacoes' : 'seguidores'));
   var LABEL_TIPO = {
-    tiktok_seguidores: 'Seguidores mixtos', tiktok_curtidas: 'Me gusta mixtos', tiktok_visualizacoes: 'Visualizaciones', tiktok_comentarios: 'Comentarios', facebook_comentarios: 'Comentarios',
+    tiktok_seguidores: 'Seguidores mixtos', tiktok_curtidas: 'Me gusta mixtos', tiktok_visualizacoes: 'Vistas', tiktok_comentarios: 'Comentarios', facebook_comentarios: 'Comentarios',
     facebook_seguidores_perfil: 'Seguidores de perfil', facebook_seguidores_pagina: 'Seguidores de página',
-    facebook_curtidas: 'Me gusta mixtos', facebook_visualizacoes: 'Visualizaciones'
+    facebook_curtidas: 'Me gusta mixtos', facebook_visualizacoes: 'Vistas'
   };
   function renderTipoCards() {
     tipoCards.innerHTML = '';
@@ -235,7 +235,7 @@
   var gradeAtiva = rede === 'tiktok';
   function fmtViews(n) { return n == null ? '' : fmtN(n); }
   // Data da postagem (mesmo formato da grade do Instagram: toLocaleString es-MX).
-  function dataVideo(v) { return v && v.ts ? new Date(v.ts * 1000).toLocaleString('es-MX') : ''; }
+  function dataVideo(v) { return v && v.ts ? new Date(v.ts * 1000).toLocaleString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''; }
   function capaSrc(u) { return u ? '/api/redes/avatar?u=' + encodeURIComponent(u) : ''; }
   function carregarVideos(cb) {
     var u = perfilOk && perfilOk.username;
@@ -258,7 +258,7 @@
     if (modal.parentNode !== document.body) document.body.appendChild(modal);
     var k = kind(servico);
     $('rdVideoModalTitle').textContent = destino === 'ofertas' ? 'Selecciona el video para las ofertas'
-      : (k === 'visualizacoes' ? 'Selecciona el video que recibirá las visualizaciones' : (k === 'comentarios' ? 'Selecciona el video que recibirá los comentarios' : 'Selecciona el video que recibirá los me gusta'));
+      : (k === 'visualizacoes' ? 'Selecciona el video que recibirá las vistas' : (k === 'comentarios' ? 'Selecciona el video que recibirá los comentarios' : 'Selecciona el video que recibirá los me gusta'));
     try { document.body.style.overflow = 'hidden'; } catch (_) {}
     modal.style.display = 'flex';
     grid.innerHTML = '<div class="rd-vid-msg">Cargando tus videos…</div>';
@@ -293,7 +293,7 @@
     box.innerHTML = '<div class="rd-vs-box">' + (v.capa ? '<img src="' + esc(capaSrc(v.capa)) + '" alt="" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'">' : '')
       + '<div class="rd-vs-txt"><strong>Video seleccionado ✓</strong><span>' + esc(v.desc || v.link.replace(/^https:\/\/(www\.)?/, '')) + '</span>'
       + (dataVideo(v) ? '<span>Publicado el ' + esc(dataVideo(v)) + '</span>' : '')
-      + (v.views != null ? '<span>▶ ' + esc(fmtViews(v.views)) + ' visualizaciones</span>' : '') + '</div></div>';
+      + (v.views != null ? '<span>▶ ' + esc(fmtViews(v.views)) + ' vistas</span>' : '') + '</div></div>';
     box.style.display = 'block';
   }
   function atualizaBotoesGrade() {
@@ -339,14 +339,14 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ── Ofertas da etapa 3 (iguais às do Instagram): me gusta, visualizaciones e comentarios ──
+  // ── Ofertas da etapa 3 (iguais às do Instagram): me gusta, vistas e comentarios ──
   // Preços vêm do /api/redes/catalogo (os mesmos que o pricing.js soma no verifyPrice).
-  var ofertas = { likes: [], views: [], comments: { unitCents: 549, max: 250 } };
+  var ofertas = { likes: [], views: [], comments: { unitCents: 2000, max: 250 } };
   var ofQ = { likes: 150, views: 1000, comments: 1 };
   var OF_IDS = { likes: 'promoLikes', views: 'promoViews', comments: 'promoComments' };
   var OF_ITEM = { likes: 'promoItemLikes', views: 'promoItemViews', comments: 'promoItemComments' };
-  var OF_NOME = { likes: 'ME GUSTA MIXTOS', views: 'VISUALIZACIONES', comments: 'COMENTARIOS' };
-  var OF_RES = { likes: 'me gusta', views: 'visualizaciones', comments: 'comentarios' };
+  var OF_NOME = { likes: 'ME GUSTA MIXTOS', views: 'VISTAS', comments: 'COMENTARIOS' };
+  var OF_RES = { likes: 'me gusta', views: 'vistas', comments: 'comentarios' };
   var ofertaDisponivel = function (k) {
     if (!servico) return false;
     var kd = kind(servico);
@@ -414,7 +414,7 @@
   function renderOfertas() {
     var alvo = rede === 'tiktok' ? 'tu video de TikTok' : 'tu publicación o video de Facebook';
     $('likesDesc').textContent = 'Agrega me gusta de perfiles mixtos a ' + alvo + '.';
-    $('viewsDesc').textContent = 'Agrega visualizaciones a ' + alvo + '.';
+    $('viewsDesc').textContent = 'Agrega vistas a ' + alvo + '.';
     renderUpgrade();
     ['likes', 'views', 'comments'].forEach(renderOferta);
     $('orderBumpInline').style.display = (upgradeAlvo() || ['likes', 'views', 'comments'].some(ofertaDisponivel)) ? '' : 'none';
@@ -425,7 +425,7 @@
     if (pedeLink) {
       $('bumpLinkLabel').textContent = rede === 'tiktok' ? 'Enlace del video de TikTok para las ofertas' : 'Enlace de la publicación o video de Facebook para las ofertas';
       $('bumpLink').placeholder = rede === 'tiktok' ? 'https://www.tiktok.com/@usuario/video/…' : 'https://www.facebook.com/…';
-      $('bumpLinkHint').textContent = 'Los me gusta, visualizaciones y comentarios van a este video. Debe ser público.';
+      $('bumpLinkHint').textContent = 'Los me gusta, vistas y comentarios van a este video. Debe ser público.';
     } else escondeErro('bumpLinkError');
   }
   function passoOferta(k, dir) {
@@ -495,7 +495,7 @@
       $('reviewTotalFollowers').textContent = (Number(p.seguidores) + Number(pe.q)).toLocaleString('en-US');
       $('reviewLinkPost').style.display = 'none';
     } else {
-      // me gusta / visualizaciones: o pacote vai para o post, não para o perfil
+      // me gusta / vistas: o pacote vai para o post, não para o perfil
       $('reviewLinhaAtual').style.display = 'none'; $('reviewLinhaTotalSep').style.display = 'none'; $('reviewLinhaTotal').style.display = 'none';
       var lk = linkDoPedido();
       $('reviewLinkPost').textContent = segs ? '' : lk;

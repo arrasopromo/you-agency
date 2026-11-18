@@ -1,5 +1,5 @@
 <%
-  // Upsell "duplica tu pedido" (mesmo card da Oppus), cobrando pela Xpag (SPEI, CLABE aberta) en MXN.
+  // Upsell "duplica tu pedido" (mesmo card da Oppus), cobrando pela Xpag (SPEI com CLABE aberta, ou OXXO) en MXN.
   // Aparece só no pedido pago, recém-comprado (não vindo da área do cliente) e que não é upsell.
   var _dupSt = String(order.status || (order.xpag && order.xpag.status) || '').toLowerCase();
   var _dupPago = (_dupSt === 'pago' || _dupSt === 'paid' || _dupSt === 'completed');
@@ -14,7 +14,8 @@
     // TikTok/Facebook não têm upsell (o "duplica" é calculado com as tabelas do Instagram).
     _dupShow = !!_dupT && !/^(tiktok|facebook)_/.test(_dupT) && _dupCat !== 'tiktok' && _dupCat !== 'facebook' && (_dupCat === 'seguidores' || _dupCat === 'curtidas' || _dupCat === 'visualizacoes' || /seguidores|curtida|visual|^mistos$|^brasileiros$|^organicos$/.test(_dupT));
   }
-  var _dupMetodo = 'SPEI'; // único método de pagamento
+  // Método do upsell: SPEI ou OXXO, já marcado com o que o cliente usou no pedido principal.
+  var _dupMetodo = (String((order.xpag && order.xpag.method) || '').toUpperCase() === 'OXXO') ? 'OXXO' : 'SPEI';
 %>
 <% if (_dupShow) { %>
 <style>
@@ -94,6 +95,10 @@
           <span id="dupPrice" class="dup-price">$ —</span>
           <span id="dupBadge" class="dup-badge"></span>
         </div>
+        <div class="dup-met" role="group" aria-label="Método de pago">
+          <button type="button" data-dup-met="SPEI" aria-pressed="<%= _dupMetodo === 'SPEI' ? 'true' : 'false' %>">SPEI</button>
+          <button type="button" data-dup-met="OXXO" aria-pressed="<%= _dupMetodo === 'OXXO' ? 'true' : 'false' %>">OXXO</button>
+        </div>
         <button id="dupAccept" type="button" class="dup-cta">
           <span id="dupAcceptLabel" style="font-size:.9rem;font-weight:800">Quiero aprovechar</span>
           <span id="dupBtnTimer" style="font-size:10.5px;font-weight:600;opacity:.9;font-variant-numeric:tabular-nums">⏳ cargando…</span>
@@ -164,17 +169,25 @@
   }
   function mostrarPago(p){
     if (!p) return;
-    $('dupPayTitle').textContent = 'Transfiere por SPEI';
-    $('dupPaySub').textContent = 'Desde la app de tu banco. Se confirma automáticamente.';
-    var rows = [['Banco', p.banco], ['Beneficiario', p.beneficiario], ['Monto', mxn(p.valueCents)]];
+    var oxxo = String(p.metodo || '').toUpperCase() === 'OXXO';
+    $('dupPayTitle').textContent = oxxo ? 'Paga en cualquier OXXO' : 'Transfiere por SPEI';
+    $('dupPaySub').textContent = oxxo ? 'Muestra la referencia en caja y paga en efectivo. Se confirma automáticamente.' : 'Desde la app de tu banco. Se confirma automáticamente.';
+    var rows = oxxo ? [['Monto', mxn(p.valueCents)]] : [['Banco', p.banco], ['Beneficiario', p.beneficiario], ['Monto', mxn(p.valueCents)]];
     $('dupSpeiRows').innerHTML = rows.filter(function(r){ return r[1]; }).map(function(r){ return '<div class="dup-row"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>'; }).join('');
-    $('dupCodeLabel').textContent = 'CLABE';
-    $('dupCode').value = p.clabe || '';
-    var link = $('dupPayLink'); link.href = p.payUrl || '#'; link.textContent = 'Ver instrucciones completas ›';
+    $('dupCodeLabel').textContent = oxxo ? 'Referencia OXXO' : 'CLABE';
+    $('dupCode').value = (oxxo ? p.referencia : p.clabe) || '';
+    var link = $('dupPayLink'); link.href = p.payUrl || '#'; link.textContent = oxxo ? 'Ver código de barras e instrucciones ›' : 'Ver instrucciones completas ›';
     clearInterval(timerIv); so(payDiv); abrir();
     if (p.identifier) poll(p.identifier);
+    // TrackCombo: liga a venda do upsell à visita pelo número do pedido (= external_id da cobrança Xpag).
+    try {
+      if (p.externalId) {
+        var evTc = { event: 'add_payment_info', transaction_id: p.externalId, value: Number(p.valueCents || 0) / 100, currency: 'MXN' };
+        var nTc = 0; (function t(){ try { if (window.tcData && typeof window.tcData.executeEvent === 'function') { window.tcData.executeEvent(evTc); return; } } catch (_) {} if (++nTc < 40) setTimeout(t, 250); })();
+      }
+    } catch (_) {}
   }
-  // (sem seletor de método: só SPEI)
+  // Seletor SPEI / OXXO
   Array.prototype.forEach.call(document.querySelectorAll('[data-dup-met]'), function(b){
     b.addEventListener('click', function(){
       metodo = b.getAttribute('data-dup-met');

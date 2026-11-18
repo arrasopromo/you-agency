@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link href="/css/style.css?v=20261111" rel="stylesheet" />
+  <link href="/css/style.css?v=20261118b" rel="stylesheet" />
   <link href="/css/perfil.css" rel="stylesheet" />
   <style>
     body, button, input, select, textarea { font-family: var(--font-family) !important; }
@@ -170,7 +170,7 @@
         'brasileiros': 'Estándar',
         'brasileiras': 'Estándar',
         'curtidas': 'Me gusta',
-        'visualizacoes': 'Visualizaciones',
+        'visualizacoes': 'Vistas',
         'comentarios': 'Comentarios',
         'curtidas_organicos': 'Me gusta reales',
         'curtidas_mistos': 'Me gusta mixtos',
@@ -554,7 +554,7 @@
                         </div>
                         <div class="client-order-head-text">
                           <div class="client-order-title">
-                            <%= esc(o.quantidade || '-') %> <%= esc((function(){ const k=inferCategoriaKey(o); return (k==='curtidas')?'Me gusta':(k==='visualizacoes'?'Visualizaciones':(k==='comentarios'?'Comentarios':'Seguidores')); })()) %>
+                            <%= esc(o.quantidade || '-') %> <%= esc((function(){ const k=inferCategoriaKey(o); return (k==='curtidas')?'Me gusta':(k==='visualizacoes'?'Vistas':(k==='comentarios'?'Comentarios':'Seguidores')); })()) %>
                           </div>
                           <% if (instaU) { %>
                             <div class="client-order-ig">@<%= esc(instaU) %></div>
@@ -921,7 +921,7 @@
         function catLabel(k){
           if (k === 'seguidores') return 'Seguidores';
           if (k === 'curtidas') return 'Me gusta';
-          if (k === 'visualizacoes') return 'Visualizaciones';
+          if (k === 'visualizacoes') return 'Vistas';
           if (k === 'comentarios') return 'Comentarios';
           return k;
         }

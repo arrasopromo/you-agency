@@ -19,7 +19,7 @@ const brl = mxn; // compatibilidade com quem importava brl()
 const CATALOG = {
   seguidores:    { key: 'seguidores',    categoria: 'seguidores',    unit: 'seguidores',     needsPost: false, tipos: true,  table: (t) => tabelaSeguidores[t] },
   curtidas:      { key: 'curtidas',      categoria: 'curtidas',      unit: 'me gusta',       needsPost: true,  tipos: true,  table: (t) => tabelaCurtidas[t] },
-  visualizacoes: { key: 'visualizacoes', categoria: 'visualizacoes', unit: 'visualizaciones', needsPost: true, tipos: false, tipoFixo: 'visualizacoes_reels', table: () => tabelaVisualizacoes.visualizacoes_reels },
+  visualizacoes: { key: 'visualizacoes', categoria: 'visualizacoes', unit: 'vistas', needsPost: true, tipos: false, tipoFixo: 'visualizacoes_reels', table: () => tabelaVisualizacoes.visualizacoes_reels },
 };
 // ── TikTok e Facebook (mesmos pacotes/preços das páginas /servicios-tiktok e /servicios-facebook,
 // tabela pricing.tabelaRedes). Só tipo mixtos. O bot oferece SÓ se o cliente pedir essas redes.
@@ -30,7 +30,7 @@ const REDES = {
     servicos: {
       seguidores: { tipo: 'tiktok_seguidores', unit: 'seguidores', alvo: 'perfil' },
       curtidas: { tipo: 'tiktok_curtidas', unit: 'me gusta', alvo: 'post' },
-      visualizacoes: { tipo: 'tiktok_visualizacoes', unit: 'visualizaciones', alvo: 'post' },
+      visualizacoes: { tipo: 'tiktok_visualizacoes', unit: 'vistas', alvo: 'post' },
       comentarios: { tipo: 'tiktok_comentarios', unit: 'comentarios', alvo: 'post' },
     },
   },
@@ -40,7 +40,7 @@ const REDES = {
       seguidores: { tipo: 'facebook_seguidores_perfil', unit: 'seguidores', alvo: 'perfil' },
       seguidores_pagina: { tipo: 'facebook_seguidores_pagina', unit: 'seguidores', alvo: 'perfil' },
       curtidas: { tipo: 'facebook_curtidas', unit: 'me gusta', alvo: 'post' },
-      visualizacoes: { tipo: 'facebook_visualizacoes', unit: 'visualizaciones', alvo: 'post' },
+      visualizacoes: { tipo: 'facebook_visualizacoes', unit: 'vistas', alvo: 'post' },
       comentarios: { tipo: 'facebook_comentarios', unit: 'comentarios', alvo: 'post' },
     },
   },
@@ -145,6 +145,8 @@ async function createRedeOrder({ rede, servico, quantidade, usuario, perfil_link
     const clique = await require('./wppCapi.js').cliqueRecente(phone);
     if (clique && clique.ctwaClid) { additionalInfo.push({ key: 'ctwa_clid', value: String(clique.ctwaClid) }); if (clique.sourceId) additionalInfo.push({ key: 'ctwa_anuncio', value: String(clique.sourceId) }); }
   } catch (_) {}
+  // Veio do botão do WhatsApp do site: grava o código, o pedido herda o clique do anúncio (metaCapi.js).
+  try { const ref = await require('./metaCapi.js').refRecente(phone); if (ref && ref.code) additionalInfo.push({ key: 'wa_ref', value: String(ref.code) }); } catch (_) {}
   const body = { correlationID, total_cents: cot.priceCents, xpag_method: met, customer: { name: nomeOk, email: String(email || '').trim(), phone: String(phone || '').trim() }, additionalInfo, profile_is_private: false, source: 'wpp_agent' };
   try {
     // UMA chamada só (nunca repetir sozinho: evita cobrança duplicada).
@@ -228,7 +230,7 @@ async function quote({ servico, tipo, quantidade, rede }) {
   const _r = normalizeRede(rede); if (_r !== 'instagram') return _quoteRede(_r, servico, quantidade);
   const key = normalizeServico(servico);
   const svc = CATALOG[key];
-  if (!svc) return { ok: false, error: 'servico_invalido', message: 'Servicio inválido. Vendemos seguidores, me gusta y visualizaciones.' };
+  if (!svc) return { ok: false, error: 'servico_invalido', message: 'Servicio inválido. Vendemos seguidores, me gusta y vistas.' };
   if (svc.tipos) {
     const tipoKey = normalizeTipo(tipo);
     const hidden = await loadHiddenTypes();
@@ -475,6 +477,8 @@ async function createPixOrder({ servico, quantidade, tipo, usuario, nome, email,
       if (clique.sourceId) additionalInfo.push({ key: 'ctwa_anuncio', value: String(clique.sourceId) });
     }
   } catch (_) {}
+  // Veio do botão do WhatsApp do site: grava o código, o pedido herda o clique do anúncio (metaCapi.js).
+  try { const ref = await require('./metaCapi.js').refRecente(phone); if (ref && ref.code) additionalInfo.push({ key: 'wa_ref', value: String(ref.code) }); } catch (_) {}
   const body = {
     correlationID,
     total_cents: cot.priceCents,

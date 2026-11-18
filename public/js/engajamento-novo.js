@@ -183,54 +183,53 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const tabelaCurtidas = {
     mistos: [
-      { q: 150, p: '$ 20' },
-      { q: 300, p: '$ 28' },
-      { q: 500, p: '$ 35' },
-      { q: 700, p: '$ 54' },
-      { q: 1000, p: '$ 72' },
-      { q: 2000, p: '$ 90' },
-      { q: 3000, p: '$ 109' },
-      { q: 4000, p: '$ 127' },
-      { q: 5000, p: '$ 145' },
-      { q: 7500, p: '$ 182' },
-      { q: 10000, p: '$ 255' },
-      { q: 15000, p: '$ 328' }
+      { q: 150, p: '$ 22' },
+      { q: 300, p: '$ 25' },
+      { q: 500, p: '$ 32' },
+      { q: 700, p: '$ 48' },
+      { q: 1000, p: '$ 65' },
+      { q: 2000, p: '$ 81' },
+      { q: 3000, p: '$ 98' },
+      { q: 4000, p: '$ 114' },
+      { q: 5000, p: '$ 131' },
+      { q: 7500, p: '$ 164' },
+      { q: 10000, p: '$ 230' },
+      { q: 15000, p: '$ 296' }
     ],
     curtidas_brasileiras: [
-      { q: 150, p: '$ 20' },
-      { q: 300, p: '$ 35' },
-      { q: 500, p: '$ 54' },
-      { q: 700, p: '$ 109' },
-      { q: 1000, p: '$ 145' },
-      { q: 2000, p: '$ 182' },
-      { q: 3000, p: '$ 218' },
-      { q: 4000, p: '$ 255' },
-      { q: 5000, p: '$ 292' },
-      { q: 7500, p: '$ 402' },
-      { q: 10000, p: '$ 511' },
-      { q: 15000, p: '$ 731' }
+      { q: 150, p: '$ 22' },
+      { q: 300, p: '$ 32' },
+      { q: 500, p: '$ 48' },
+      { q: 700, p: '$ 98' },
+      { q: 1000, p: '$ 131' },
+      { q: 2000, p: '$ 164' },
+      { q: 3000, p: '$ 197' },
+      { q: 4000, p: '$ 230' },
+      { q: 5000, p: '$ 263' },
+      { q: 7500, p: '$ 362' },
+      { q: 10000, p: '$ 461' },
+      { q: 15000, p: '$ 659' }
     ],
     organicos: [
-      { q: 150, p: '$ 43' },
-      { q: 300, p: '$ 72' },
-      { q: 500, p: '$ 127' },
-      { q: 1000, p: '$ 178' },
-      { q: 2000, p: '$ 270' },
-      { q: 3000, p: '$ 358' },
-      { q: 4000, p: '$ 449' },
-      { q: 5000, p: '$ 577' },
-      { q: 7500, p: '$ 716' },
-      { q: 10000, p: '$ 921' },
-      { q: 15000, p: '$ 1229' }
+      { q: 150, p: '$ 39' },
+      { q: 300, p: '$ 65' },
+      { q: 500, p: '$ 114' },
+      { q: 700, p: '$ 134' },
+      { q: 1000, p: '$ 161' },
+      { q: 2000, p: '$ 243' },
+      { q: 3000, p: '$ 322' },
+      { q: 4000, p: '$ 405' },
+      { q: 5000, p: '$ 520' },
+      { q: 7500, p: '$ 646' },
     ]
   };
 
   const tabelaVisualizacoes = {
     visualizacoes_reels: [
-      { q: 1000, p: '$ 20' }, { q: 2500, p: '$ 35' }, { q: 5000, p: '$ 54' },
-      { q: 10000, p: '$ 72' }, { q: 25000, p: '$ 90' }, { q: 50000, p: '$ 127' },
-      { q: 100000, p: '$ 182' }, { q: 150000, p: '$ 218' }, { q: 200000, p: '$ 255' },
-      { q: 250000, p: '$ 328' }, { q: 500000, p: '$ 402' }, { q: 1000000, p: '$ 585' }
+      { q: 1000, p: '$ 22' }, { q: 2500, p: '$ 32' }, { q: 5000, p: '$ 48' },
+      { q: 10000, p: '$ 65' }, { q: 25000, p: '$ 81' }, { q: 50000, p: '$ 114' },
+      { q: 100000, p: '$ 164' }, { q: 150000, p: '$ 197' }, { q: 200000, p: '$ 230' },
+      { q: 250000, p: '$ 296' }, { q: 500000, p: '$ 362' }, { q: 1000000, p: '$ 527' }
     ]
   };
   
@@ -246,8 +245,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Promo Pricing (Igual servicos-instagram)
   const promoPricing = {
-    likes: { old: '$ 180', price: '$ 35', discount: 80 },
-    views: { old: '$ 325', price: '$ 71', discount: 78 },
+    likes: { old: '$ 37', price: '$ 22', discount: 41 },
+    views: { old: '$ 31', price: '$ 22', discount: 29 },
     comments: { old: '$ 34', price: '$ 20', discount: 41 },
     warranty: { old: '$ 144', price: '$ 53', discount: 63 },
     warranty60: { old: '$ 144', price: '$ 35', discount: 75 },
@@ -266,22 +265,21 @@ document.addEventListener('DOMContentLoaded', function() {
   function refreshLikesTable() {
     const byVariant = {
       mistos: [
-        { q: 150, price: '$ 20' }, { q: 300, price: '$ 28' }, { q: 500, price: '$ 35' },
-        { q: 700, price: '$ 54' }, { q: 1000, price: '$ 72' }, { q: 2000, price: '$ 90' },
-        { q: 3000, price: '$ 109' }, { q: 4000, price: '$ 127' }, { q: 5000, price: '$ 145' },
-        { q: 7500, price: '$ 182' }, { q: 10000, price: '$ 255' }, { q: 15000, price: '$ 328' }
+        { q: 150, price: '$ 22' }, { q: 300, price: '$ 25' }, { q: 500, price: '$ 32' },
+        { q: 700, price: '$ 48' }, { q: 1000, price: '$ 65' }, { q: 2000, price: '$ 81' },
+        { q: 3000, price: '$ 98' }, { q: 4000, price: '$ 114' }, { q: 5000, price: '$ 131' },
+        { q: 7500, price: '$ 164' }, { q: 10000, price: '$ 230' }, { q: 15000, price: '$ 296' }
       ],
       brasileiros: [
-        { q: 150, price: '$ 20' }, { q: 300, price: '$ 35' }, { q: 500, price: '$ 54' },
-        { q: 700, price: '$ 109' }, { q: 1000, price: '$ 145' }, { q: 2000, price: '$ 182' },
-        { q: 3000, price: '$ 218' }, { q: 4000, price: '$ 255' }, { q: 5000, price: '$ 292' },
-        { q: 7500, price: '$ 402' }, { q: 10000, price: '$ 511' }, { q: 15000, price: '$ 731' }
+        { q: 150, price: '$ 22' }, { q: 300, price: '$ 32' }, { q: 500, price: '$ 48' },
+        { q: 700, price: '$ 98' }, { q: 1000, price: '$ 131' }, { q: 2000, price: '$ 164' },
+        { q: 3000, price: '$ 197' }, { q: 4000, price: '$ 230' }, { q: 5000, price: '$ 263' },
+        { q: 7500, price: '$ 362' }, { q: 10000, price: '$ 461' }, { q: 15000, price: '$ 659' }
       ],
       organicos: [
-        { q: 150, price: '$ 43' }, { q: 300, price: '$ 72' }, { q: 500, price: '$ 127' },
-        { q: 1000, price: '$ 178' }, { q: 2000, price: '$ 270' }, { q: 3000, price: '$ 358' },
-        { q: 4000, price: '$ 449' }, { q: 5000, price: '$ 577' }, { q: 7500, price: '$ 716' },
-        { q: 10000, price: '$ 921' }, { q: 15000, price: '$ 1229' }
+        { q: 150, price: '$ 39' }, { q: 300, price: '$ 65' }, { q: 500, price: '$ 114' }, { q: 700, price: '$ 134' },
+        { q: 1000, price: '$ 161' }, { q: 2000, price: '$ 243' }, { q: 3000, price: '$ 322' },
+        { q: 4000, price: '$ 405' }, { q: 5000, price: '$ 520' }, { q: 7500, price: '$ 646' },
       ]
     };
     const key = getLikesPromoVariantKey();
@@ -296,10 +294,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   const viewsTable = [
-    { q: 1000, price: '$ 20' }, { q: 2500, price: '$ 35' }, { q: 5000, price: '$ 54' },
-    { q: 10000, price: '$ 72' }, { q: 25000, price: '$ 90' }, { q: 50000, price: '$ 127' },
-    { q: 100000, price: '$ 182' }, { q: 150000, price: '$ 218' }, { q: 200000, price: '$ 255' },
-    { q: 250000, price: '$ 328' }, { q: 500000, price: '$ 402' }, { q: 1000000, price: '$ 585' }
+    { q: 1000, price: '$ 22' }, { q: 2500, price: '$ 32' }, { q: 5000, price: '$ 48' },
+    { q: 10000, price: '$ 65' }, { q: 25000, price: '$ 81' }, { q: 50000, price: '$ 114' },
+    { q: 100000, price: '$ 164' }, { q: 150000, price: '$ 197' }, { q: 200000, price: '$ 230' },
+    { q: 250000, price: '$ 296' }, { q: 500000, price: '$ 362' }, { q: 1000000, price: '$ 527' }
   ];
 
   function formatCurrencyBR(n) { return yaFmtPreco(n); }
@@ -361,7 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (newEl && entry) newEl.textContent = entry.price;
     if (oldEl && entry) { const newVal = parseCurrencyBR(entry.price); const oldVal = Math.round(newVal / 0.7); oldEl.textContent = formatCurrencyBR(oldVal); }
     const hl = document.querySelector('.promo-item.views .promo-highlight');
-    if (hl) hl.textContent = `+ ${q} VISUALIZACIONES`;
+    if (hl) hl.textContent = `+ ${q} VISTAS`;
   }
 
   window.stepViews = function(dir) {
@@ -647,7 +645,7 @@ document.addEventListener('DOMContentLoaded', function() {
         id: 'section-views',
         service: 'views', 
         type: 'visualizacoes_reels', 
-        title: 'Visualizaciones de Reels',
+        title: 'Vistas de Reels',
         desc: 'Aumenta el alcance de tus videos y hazte viral en Reels.',
         tabela: tabelaVisualizacoes.visualizacoes_reels,
         badgeType: 'visualizacoes_reels'
@@ -686,7 +684,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Unidade correta (minuciosa)
             let unit = 'seguidores';
-            if (config.service === 'views' || config.type === 'visualizacoes_reels') unit = 'visualizaciones';
+            if (config.service === 'views' || config.type === 'visualizacoes_reels') unit = 'vistas';
             else if (config.service === 'likes') unit = 'me gusta';
 
             // --- Badge Logic (Fixed & Robust) ---
@@ -1120,7 +1118,7 @@ document.addEventListener('DOMContentLoaded', function() {
       'mistos': 'Seguidores mixtos',
       'brasileiros': 'Seguidores',
       'organicos': 'Seguidores reales',
-      'visualizacoes_reels': 'Visualizaciones de Reels'
+      'visualizacoes_reels': 'Vistas de Reels'
     };
     return labels[tipo] || tipo;
   }
@@ -1212,7 +1210,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   // If Service is Likes or Views, Fetch Posts
                   if (window.currentService === 'likes' || window.currentService === 'views') {
                       if (data.isPrivate) {
-                          alert('Este perfil es privado. Para me gusta o visualizaciones, el perfil debe ser público.');
+                          alert('Este perfil es privado. Para me gusta o vistas, el perfil debe ser público.');
                       } else {
                           fetchPosts(data.username);
                       }
@@ -1343,7 +1341,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           
           if ((window.currentService === 'likes' || window.currentService === 'views' || window.currentService === 'salvar_posts') && !window.selectedPost) {
-              alert('Por favor, elige una publicación para recibir ' + (window.currentService === 'views' ? 'las visualizaciones' : (window.currentService === 'salvar_posts' ? 'los guardados' : 'los me gusta')) + '.');
+              alert('Por favor, elige una publicación para recibir ' + (window.currentService === 'views' ? 'las vistas' : (window.currentService === 'salvar_posts' ? 'los guardados' : 'los me gusta')) + '.');
               // Mantém no passo 2 (onde a seleção ocorre) se já estiver lá, mas aqui estamos tentando ir pro 3.
               // Como o usuário precisa selecionar, vamos garantir que ele veja a seleção.
               // O alert é útil aqui para explicar POR QUE ele não avançou, mas no reload pode ser chato.
@@ -1703,7 +1701,7 @@ document.addEventListener('DOMContentLoaded', function() {
        const qty = Number(document.getElementById('viewsQty')?.textContent || 1000);
        let priceStr = document.querySelector('.promo-prices[data-promo="views"] .new-price')?.textContent || '';
        if (!priceStr && window.promoPricing && window.promoPricing.views) priceStr = window.promoPricing.views.price;
-       promos.push({ key: 'views', qty: qty, label: `Visualizaciones de Reels (${qty})`, priceCents: parsePrecoToCents(priceStr) });
+       promos.push({ key: 'views', qty: qty, label: `Vistas de Reels (${qty})`, priceCents: parsePrecoToCents(priceStr) });
     }
     if (promoComments && promoComments.checked) {
        const qty = Number(document.getElementById('commentsQty')?.textContent || 1);
@@ -2068,19 +2066,19 @@ document.addEventListener('DOMContentLoaded', function() {
       const inputId = 'pixBrCodeInputDynamic';
 
       const imgHtml = qrImage
-        ? `<img src="${qrImage}" alt="Código QR Pix" style="width: 180px; height: 180px; border-radius: 8px; display: block; margin: 0 auto 0.75rem; background: #fff;" />`
+        ? `<img src="${qrImage}" alt="Código QR de pago" style="width: 180px; height: 180px; border-radius: 8px; display: block; margin: 0 auto 0.75rem; background: #fff;" />`
         : '';
 
       const codeFieldHtml = brCode
         ? `<div style="margin-bottom: 0.5rem; text-align: center;">
              <input id="${inputId}" type="text" readonly value="${brCode}" style="width: 100%; padding: 0.5rem; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.85); color: #111827; text-align: center;" />
            </div>`
-        : '<div style="color:#fff;">No se pudo mostrar el código Pix.</div>';
+        : '<div style="color:#fff;">No se pudo mostrar el código de pago.</div>';
 
       const copyBtnHtml = brCode
         ? `<div class="button-container" style="margin-bottom: 0.5rem;">
              <button id="${copyButtonId}" class="continue-button">
-               <span class="button-text">Copiar código Pix</span>
+               <span class="button-text">Copiar código de pago</span>
              </button>
            </div>`
         : '';
@@ -2127,15 +2125,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 const span = copyBtn.querySelector('.button-text');
                 const prev = span ? span.textContent : '';
-                if (span) span.textContent = 'Pix copiado';
-                try { showStatusMessageCheckout('Código Pix copiado', 'success'); } catch(_) {}
+                if (span) span.textContent = '¡Código copiado!';
+                try { showStatusMessageCheckout('Código de pago copiado', 'success'); } catch(_) {}
                 copyBtn.disabled = true;
                 setTimeout(() => {
                   copyBtn.disabled = false;
-                  if (span) span.textContent = prev || 'Copiar código Pix';
+                  if (span) span.textContent = prev || 'Copiar código de pago';
                 }, 1200);
               } catch (e) {
-                alert('No se pudo copiar el código Pix.');
+                alert('No se pudo copiar el código de pago.');
               }
             });
           }

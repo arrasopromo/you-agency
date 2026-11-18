@@ -13,9 +13,9 @@
   }
 %>
   <meta charset="utf-8" />
-  <title>Seguidores, me gusta y visualizaciones para Instagram | You Agency</title>
+  <title>Seguidores, me gusta y vistas para Instagram | You Agency</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <link href="/css/style.css?v=20261111" rel="stylesheet" />
+  <link href="/css/style.css?v=20261118b" rel="stylesheet" />
   <link href="/css/perfil.css" rel="stylesheet" />
   <!-- Testimonials CSS -->
   <link href="/css/testimonials.css" rel="stylesheet" />
@@ -345,7 +345,7 @@
                         <div class="card-subtitle">
                           <span class="badge-seguidores-br">Seguidores reales</span>
                         </div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value">$ 39</span></div>
+                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.seg) || '$ 39' %></span></div>
                         <div class="card-security">
                           No pedimos contraseña
                         </div>
@@ -367,7 +367,7 @@
                         <img src="/images/curtidas-icone.png" alt="Me gusta" class="card-icon-3d" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-curtidas">Me gusta</div>
                         <div class="card-subtitle">Mixtos y reales</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value">$ 20</span></div>
+                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.curt) || '$ 20' %></span></div>
                         <div class="card-security">
                           No pedimos contraseña
                         </div>
@@ -386,10 +386,10 @@
                     <!-- Card Visualizações -->
                     <div data-plat="instagram" class="service-card premium-card card-visualizacoes" onclick="window.location.href = (function(){ try { const qs = (function(){ const p=new URLSearchParams(window.location.search); const s=new URLSearchParams(window.SERVER_UTMS_QUERY||''); s.forEach((v,k)=>{ if(!p.has(k)) p.set(k,v); }); const st=sessionStorage.getItem('ya_utms'); if(st){ try{ const o=JSON.parse(st); Object.keys(o).forEach(k=>{ if(!p.has(k)) p.set(k,o[k]); }); }catch(_){}} const str=p.toString(); return str ? ('?'+str) : ''; })(); return '/servicios-visualizaciones'+qs; } catch(_){ return '/servicios-visualizaciones'; } })()">
                       <div class="card-content">
-                        <img src="/images/visualizacao-icon.png" alt="Visualizaciones" class="card-icon-3d" onerror="this.style.display='none'">
-                        <div class="card-title text-gradient-visualizacoes">Visualizaciones</div>
-                        <div class="card-subtitle">Visualizaciones de Reels</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value">$ 20</span></div>
+                        <img src="/images/visualizacao-icon.png" alt="Vistas" class="card-icon-3d" onerror="this.style.display='none'">
+                        <div class="card-title text-gradient-visualizacoes">Vistas</div>
+                        <div class="card-subtitle">Vistas de Reels</div>
+                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.views) || '$ 20' %></span></div>
                         <div class="card-security">
                           No pedimos contraseña
                         </div>
@@ -428,7 +428,7 @@
                           </svg>
                           <div class="card-title text-gradient-curtidas">Comentarios</div>
                           <div class="card-subtitle">En publicaciones y Reels</div>
-                          <div class="card-price"><span>Paquetes desde</span> <span class="price-value">$ 54</span></div>
+                          <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.comIg) || '$ 20' %></span></div>
                           <div class="card-security">
                             No pedimos contraseña
                           </div>
@@ -448,7 +448,7 @@
                         <img src="/images/icone-seguidores.png" alt="Seguidores" class="card-icon-3d rd-tint-tiktok" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-seguidores">Seguidores</div>
                         <div class="card-subtitle">Perfil de TikTok</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value">$ 39</span></div>
+                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.seg) || '$ 39' %></span></div>
                         <div class="card-security">
                           No pedimos contraseña
                         </div>
@@ -464,7 +464,7 @@
                         <img src="/images/curtidas-icone.png" alt="Me gusta" class="card-icon-3d rd-tint-tiktok" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-curtidas">Me gusta</div>
                         <div class="card-subtitle">En tus videos</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value">$ 20</span></div>
+                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.curt) || '$ 20' %></span></div>
                         <div class="card-security">
                           No pedimos contraseña
                         </div>
@@ -477,10 +477,10 @@
                     </a>
                     <a data-plat="tiktok" class="service-card premium-card card-visualizacoes" style="display:none; text-decoration:none; color:inherit;" href="/servicios-tiktok?servicio=visualizacoes">
                       <div class="card-content">
-                        <img src="/images/visualizacao-icon.png" alt="Visualizaciones" class="card-icon-3d rd-tint-tiktok" onerror="this.style.display='none'">
-                        <div class="card-title text-gradient-visualizacoes">Visualizaciones</div>
+                        <img src="/images/visualizacao-icon.png" alt="Vistas" class="card-icon-3d rd-tint-tiktok" onerror="this.style.display='none'">
+                        <div class="card-title text-gradient-visualizacoes">Vistas</div>
                         <div class="card-subtitle">En tus videos</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value">$ 20</span></div>
+                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.views) || '$ 20' %></span></div>
                         <div class="card-security">
                           No pedimos contraseña
                         </div>
@@ -504,7 +504,7 @@
                         </svg>
                         <div class="card-title text-gradient-curtidas">Comentarios</div>
                         <div class="card-subtitle">En tus videos</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value">$ 54</span></div>
+                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.comRedes) || '$ 54' %></span></div>
                         <div class="card-security">
                           No pedimos contraseña
                         </div>
@@ -520,7 +520,7 @@
                         <img src="/images/icone-seguidores.png" alt="Seguidores" class="card-icon-3d rd-tint-facebook" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-seguidores">Seguidores</div>
                         <div class="card-subtitle">Perfil o página</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value">$ 39</span></div>
+                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.seg) || '$ 39' %></span></div>
                         <div class="card-security">
                           No pedimos contraseña
                         </div>
@@ -536,7 +536,7 @@
                         <img src="/images/curtidas-icone.png" alt="Me gusta" class="card-icon-3d rd-tint-facebook" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-curtidas">Me gusta</div>
                         <div class="card-subtitle">En publicaciones</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value">$ 20</span></div>
+                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.curt) || '$ 20' %></span></div>
                         <div class="card-security">
                           No pedimos contraseña
                         </div>
@@ -549,10 +549,10 @@
                     </a>
                     <a data-plat="facebook" class="service-card premium-card card-visualizacoes" style="display:none; text-decoration:none; color:inherit;" href="/servicios-facebook?servicio=visualizacoes">
                       <div class="card-content">
-                        <img src="/images/visualizacao-icon.png" alt="Visualizaciones" class="card-icon-3d rd-tint-facebook" onerror="this.style.display='none'">
-                        <div class="card-title text-gradient-visualizacoes">Visualizaciones</div>
+                        <img src="/images/visualizacao-icon.png" alt="Vistas" class="card-icon-3d rd-tint-facebook" onerror="this.style.display='none'">
+                        <div class="card-title text-gradient-visualizacoes">Vistas</div>
                         <div class="card-subtitle">Videos y reels</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value">$ 20</span></div>
+                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.views) || '$ 20' %></span></div>
                         <div class="card-security">
                           No pedimos contraseña
                         </div>
@@ -576,7 +576,7 @@
                         </svg>
                         <div class="card-title text-gradient-curtidas">Comentarios</div>
                         <div class="card-subtitle">En publicaciones y videos</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value">$ 54</span></div>
+                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.comRedes) || '$ 54' %></span></div>
                         <div class="card-security">
                           No pedimos contraseña
                         </div>
@@ -631,9 +631,9 @@
                     <div class="promo-title">Mejora de paquete</div>
                     <div id="orderBumpText" class="promo-desc">Elige un paquete para ver las mejoras disponibles.</div>
                     <div class="promo-prices" data-promo="upgrade">
-                      <span class="old-price">â€”</span>
+                      <span class="old-price">—</span>
                       <span class="discount-badge">OFERTA</span>
-                      <span class="new-price">â€”</span>
+                      <span class="new-price">—</span>
                     </div>
                   </div>
                 </label>
@@ -645,14 +645,14 @@
                     <div class="promo-title">Me gusta en promoción</div>
                     <div class="promo-desc">Agrega me gusta a una publicación.</div>
                     <div class="promo-prices" data-promo="likes">
-                      <span class="old-price">$ 180</span>
-                      <span class="discount-badge">80% OFF</span>
-                      <span class="new-price">$ 35</span>
+                      <span class="old-price">$ 37</span>
+                      <span class="discount-badge">41% OFF</span>
+                      <span class="new-price">$ 22</span>
                     </div>
                     <div class="likes-control" id="likesControl" aria-label="Cantidad de me gusta">
-                      <button type="button" id="likesDec" class="likes-arrow" aria-label="Disminuir">â€¹</button>
+                      <button type="button" id="likesDec" class="likes-arrow" aria-label="Disminuir">−</button>
                       <span id="likesQty" class="likes-qty">150</span>
-                      <button type="button" id="likesInc" class="likes-arrow" aria-label="Aumentar">â€º</button>
+                      <button type="button" id="likesInc" class="likes-arrow" aria-label="Aumentar">+</button>
                       <div id="likesPromoTip" class="tutorial-pop tutorial-pop-check" style="display:none;"><div class="tutorial-pop-text">Puedes aumentar la cantidad haciendo clic en la flecha</div></div>
                     </div>
                     
@@ -661,18 +661,18 @@
                 <label class="promo-item views">
                   <input type="checkbox" id="promoViews" data-promo="views" />
                   <div class="promo-content">
-                    <div class="promo-highlight">+ visualizaciones</div>
-                    <div class="promo-title">Visualizaciones en promoción</div>
-                    <div class="promo-desc">Agrega visualizaciones a tus Reels.</div>
+                    <div class="promo-highlight">+ vistas</div>
+                    <div class="promo-title">Vistas en promoción</div>
+                    <div class="promo-desc">Agrega vistas a tus Reels.</div>
                     <div class="promo-prices" data-promo="views">
-                      <span class="old-price">$ 325</span>
-                      <span class="discount-badge">78% OFF</span>
-                      <span class="new-price">$ 71</span>
+                      <span class="old-price">$ 31</span>
+                      <span class="discount-badge">29% OFF</span>
+                      <span class="new-price">$ 22</span>
                     </div>
-                    <div class="likes-control" aria-label="Cantidad de visualizaciones">
-                      <button type="button" id="viewsDec" class="likes-arrow" aria-label="Disminuir">â€¹</button>
+                    <div class="likes-control" aria-label="Cantidad de vistas">
+                      <button type="button" id="viewsDec" class="likes-arrow" aria-label="Disminuir">−</button>
                       <span id="viewsQty" class="likes-qty">1000</span>
-                      <button type="button" id="viewsInc" class="likes-arrow" aria-label="Aumentar">â€º</button>
+                      <button type="button" id="viewsInc" class="likes-arrow" aria-label="Aumentar">+</button>
                       
                     </div>
                     
@@ -686,16 +686,16 @@
                       <span>Comentarios en promoción</span>
                       <button id="commentsExampleBtn" class="continue-button" type="button" style="padding:0.15rem 0.5rem; font-size:12px; line-height:1;">Ver ejemplos</button>
                     </div>
-                    <div class="promo-desc">1 comentario = $ 5.49 cada uno.</div>
+                    <div class="promo-desc">1 comentario = $ 20 cada uno.</div>
                     <div class="promo-prices" data-promo="comments">
-                      <span class="old-price">$ 108</span>
-                      <span class="discount-badge">67% OFF</span>
-                      <span class="new-price">$ 35</span>
+                      <span class="old-price">$ 34</span>
+                      <span class="discount-badge">41% OFF</span>
+                      <span class="new-price">$ 20</span>
                     </div>
                     <div class="likes-control" aria-label="Cantidad de comentarios">
-                      <button type="button" id="commentsDec" class="likes-arrow" aria-label="Disminuir">â€¹</button>
+                      <button type="button" id="commentsDec" class="likes-arrow" aria-label="Disminuir">−</button>
                       <span id="commentsQty" class="likes-qty">1</span>
-                      <button type="button" id="commentsInc" class="likes-arrow" aria-label="Aumentar">â€º</button>
+                      <button type="button" id="commentsInc" class="likes-arrow" aria-label="Aumentar">+</button>
                     </div>
                     
                   </div>
@@ -704,21 +704,21 @@
                 <label class="promo-item warranty60">
                   <input type="checkbox" id="promoWarranty60" data-promo="warranty60" checked />
                   <div class="promo-content">
-                    <div id="warrantyHighlight" class="promo-highlight">+ 30 DÍAS DE REPOSICIÓN</div>
+                    <div id="warrantyHighlight" class="promo-highlight">REPOSICIÓN POR 3 MESES</div>
                     <div class="promo-title" style="display:flex; align-items:center; gap:0.5rem;">
                       <span>Garantía extendida</span>
                       <button id="warranty60InfoBtn" class="continue-button" type="button" style="padding:0.15rem 0.5rem; font-size:12px; line-height:1;">Más información</button>
                     </div>
                     <div id="warrantyDesc" class="promo-desc">No vuelvas a perder seguidores</div>
                     <div class="promo-prices" data-promo="warranty60">
-                      <span id="warrantyOldPrice" class="old-price">$ 144</span>
-                      <span id="warrantyDiscount" class="discount-badge">75% OFF</span>
-                      <span id="warrantyNewPrice" class="new-price">$ 35</span>
+                      <span id="warrantyOldPrice" class="old-price" style="display:none;"></span>
+                      <span id="warrantyDiscount" class="discount-badge" style="display:none;"></span>
+                      <span id="warrantyNewPrice" class="new-price"></span>
                     </div>
                     <div class="likes-control" aria-label="Garantía extendida">
-                      <button type="button" id="warrantyModeDec" class="likes-arrow" aria-label="Anterior">â€¹</button>
-                      <span id="warrantyModeLabel" class="likes-qty">30 días</span>
-                      <button type="button" id="warrantyModeInc" class="likes-arrow" aria-label="Siguiente">â€º</button>
+                      <button type="button" id="warrantyModeDec" class="likes-arrow" aria-label="Anterior">−</button>
+                      <span id="warrantyModeLabel" class="likes-qty">3 meses</span>
+                      <button type="button" id="warrantyModeInc" class="likes-arrow" aria-label="Siguiente">+</button>
                     </div>
                   </div>
                 </label>
@@ -817,7 +817,7 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom:1rem;">
-                      <label for="cardHolderCpf" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">CPF del titular</label>
+                      <label for="cardHolderCpf" style="display:block; font-weight:600; margin-bottom:0.25rem; color:#374151;">Documento del titular</label>
                       <input type="text" id="cardHolderCpf" class="select-input" placeholder="000.000.000-00" maxlength="14" required style="height:44px; border:1px solid #d1d5db; border-radius:10px; padding:0 14px; font-size:1rem; outline:none;">
                       <div style="margin-top:6px; font-size:0.85rem; color:#6b7280;">Obligatorio para transacciones nacionales (antifraude del emisor).</div>
                     </div>
@@ -929,7 +929,7 @@
         <div class="modal-dialog">
           <div class="modal-header">
             <h3 class="modal-title">Garantía extendida</h3>
-            <button id="warranty60CloseBtn" class="modal-close" type="button" aria-label="Cerrar">âœ•</button>
+            <button id="warranty60CloseBtn" class="modal-close" type="button" aria-label="Cerrar">✕</button>
           </div>
           <div class="modal-body">
             <p style="margin-top:0.75rem; color: var(--text-secondary);">En 4 clics y en menos de 30 segundos, ingresa el ID de tu pedido en nuestro sistema y solicita una reposición para recuperar los seguidores que perdiste por caídas.</p>
@@ -945,7 +945,7 @@
         <div class="modal-dialog" style="max-width:400px; width:90%; background: #1e1e1e; border-radius: 16px; padding: 1.5rem; position:relative; display:flex; flex-direction:column;">
           <div class="modal-header" style="border:none; padding-bottom:0;">
             <h3 class="modal-title" style="margin:0 auto;">Ejemplos de comentarios</h3>
-            <button id="commentsExampleCloseBtn" class="modal-close" type="button" aria-label="Cerrar" style="position:absolute; right:1rem; top:1rem;">âœ•</button>
+            <button id="commentsExampleCloseBtn" class="modal-close" type="button" aria-label="Cerrar" style="position:absolute; right:1rem; top:1rem;">✕</button>
           </div>
           <div class="modal-body" style="text-align:center;">
             <div style="position:relative; aspect-ratio: 9 / 16; height: clamp(320px, 60vh, 560px); max-width: 100%; margin: 0.75rem auto 0; border-radius:12px; overflow:hidden; box-shadow: var(--shadow); background: #000;">
@@ -1341,12 +1341,15 @@
       border-color: rgba(255, 255, 255, 0.08);
       box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.55);
     }
+    /* !important: no celular há uma regra que força o texto preto (#000 !important); sem isto o texto
+       ficava preto sobre o card escuro. Este seletor é mais específico, então vence nos dois tamanhos. */
     body:not(.theme-light) #engajamentoServiceCards .card-subtitle,
     body:not(.theme-light) #engajamentoServiceCards .card-security,
     body:not(.theme-light) #engajamentoServiceCards .card-hint,
     body:not(.theme-light) #engajamentoServiceCards .card-price span:first-child {
-      color: #cbd5e1;
+      color: #e2e8f0 !important;
     }
+    body:not(.theme-light) #engajamentoServiceCards .card-title:not([class*="text-gradient"]) { color: #f8fafc !important; }
 
     /* Ajustes Mobile */
     @media (max-width: 1023px) and (min-width: 640px) {

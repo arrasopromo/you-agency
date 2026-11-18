@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acceso restringido | You Agency</title>
-    <link rel="stylesheet" href="/css/style.css?v=20261111">
+    <link rel="stylesheet" href="/css/style.css?v=20261118b">
     <link rel="stylesheet" href="/css/perfil.css">
     <link rel="stylesheet" href="/css/used.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -54,10 +54,10 @@
                   <label class="promo-item upgrade">\
                     <div class="promo-content">\
                       <div class="promo-highlight" id="orderBumpHighlight">Extensión de reposición</div>\
-                      <div class="promo-title">por 6 meses</div>\
-                      <div id="orderBumpText" class="promo-desc">Extiende tu acceso a la reposición por 6 meses más.</div>\
+                      <div class="promo-title" id="refilExtTitle">por 3 meses</div>\
+                      <div id="orderBumpText" class="promo-desc">Extiende tu acceso a la reposición por 3 meses más.</div>\
                       <div class="promo-prices" data-promo="upgrade">\
-                        <span class="new-price">$ 35</span>\
+                        <span class="new-price" id="refilExtPrice">$ 35</span>\
                       </div>\
                     </div>\
                   </label>\
@@ -68,6 +68,21 @@
               </div>\
             </div>';
             var genBtn = document.getElementById('generateRefilPaymentBtn');
+            // Extensão de 3 meses com preço RECALCULADO pelo custo atual do pedido (2 reposições), igual à
+            // Oppus: o servidor acha o pedido pelo token. Sem pedido elegível, fica o fixo de $ 35.
+            var refilExtCents = 3500;
+            (function(){
+              try {
+                var _tk = new URLSearchParams(window.location.search || '').get('token') || '';
+                if (!_tk) return;
+                fetch('/api/warranty/price?refil_link_id=' + encodeURIComponent(_tk)).then(function(r){ return r.json(); }).then(function(d){
+                  if (d && d.available && d.priceCents > 0) {
+                    refilExtCents = Number(d.priceCents);
+                    var pe = document.getElementById('refilExtPrice'); if (pe) pe.textContent = d.price;
+                  }
+                }).catch(function(){});
+              } catch(_){}
+            })();
             function setPaymentStatus(html){
               var paymentCardEl = document.getElementById('paymentCard');
               if (!paymentCardEl) return;
@@ -102,14 +117,14 @@
                     body: JSON.stringify({
                       installments: 1,
                       xpag_method: 'SPEI',
-                      total_cents: 3590,
+                      total_cents: refilExtCents,
                       customer: { name: name, phone_number: phone, email: email },
                       additionalInfo: [
                         { key: 'tipo_servico', value: 'refil_extensao' },
                         { key: 'refil_link_id', value: token },
-                        { key: 'refil_mode', value: '6m' },
+                        { key: 'refil_mode', value: '3m' },
                         { key: 'quantidade', value: '1' },
-                        { key: 'pacote', value: 'Extensión de reposición (6 meses)' },
+                        { key: 'pacote', value: 'Extensión de reposición (3 meses)' },
                         { key: 'card_provider', value: 'xpag' }
                       ]
                     })

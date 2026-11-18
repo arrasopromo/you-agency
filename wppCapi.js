@@ -5,7 +5,8 @@
 // 2) Ao gerar o pagamento, o bot (whatsappSales.js) grava no pedido o ctwa_clid do clique mais
 //    recente do número (até 7 dias). Quando a Xpag confirma o pagamento (youagency.js →
 //    applyXpagStatus), enviarCompra() manda um Purchase para o dataset com esse ctwa_clid.
-//    SÓ pedidos do bot (WppAgent_): compra no site é rastreada pelo TrackCombo.
+//    SÓ pedidos do bot que vieram de anúncio de conversa. O resto (site, site → WhatsApp, orgânico) vai
+//    pelo metaCapi.js; se a Meta recusar o evento de mensagem, ele também cai no metaCapi como "chat".
 //
 // A Meta NÃO deduplica eventos de mensagens: a trava é nossa (wppCapi.purchaseSentAt no pedido,
 // gravada de forma atômica antes do envio) e o event_id é fixo por pedido.
@@ -82,8 +83,8 @@ function nomeServico(o) {
   const cat = String(get('categoria_servico') || '').toLowerCase();
   const tipo = String(o.tipo || o.tipoServico || get('tipo_servico') || '').toLowerCase();
   const q = Number(o.quantidade || o.qtd || get('quantidade') || 0) || 0;
-  const un = /curtid/.test(cat + tipo) ? 'me gusta' : (/visualiz|views|reels/.test(cat + tipo) ? 'visualizaciones' : 'seguidores');
-  const t = /organic|reais|real/.test(tipo) ? 'reales' : (/brasileir/.test(tipo) ? 'brasileños' : (un === 'visualizaciones' ? '' : 'mixtos'));
+  const un = /curtid/.test(cat + tipo) ? 'me gusta' : (/visualiz|views|reels/.test(cat + tipo) ? 'vistas' : 'seguidores');
+  const t = /organic|reais|real/.test(tipo) ? 'reales' : (/brasileir/.test(tipo) ? 'brasileños' : (un === 'vistas' ? '' : 'mixtos'));
   return `${q ? q.toLocaleString('en-US') + ' ' : ''}${un}${t ? ' ' + t : ''}`.trim();
 }
 
@@ -103,8 +104,8 @@ const infoDoPedido = (o, k) => {
   const ai = Array.isArray(o.additionalInfoPaid) ? o.additionalInfoPaid : (Array.isArray(o.additionalInfo) ? o.additionalInfo : []);
   const x = ai.find((i) => i && i.key === k); return x ? String(x.value || '') : '';
 };
-// Só vendas fechadas pelo bot do WhatsApp. Compra no site (inclusive upsell) é rastreada pelo
-// TrackCombo — mandar aqui também contaria a mesma venda duas vezes.
+// Só vendas fechadas pelo bot do WhatsApp. Compra no site (inclusive upsell) vai pelo metaCapi.js —
+// mandar aqui também contaria a mesma venda duas vezes.
 const ehPedidoDoBot = (o) => /^WppAgent_/.test(String(o.correlationID || '')) || infoDoPedido(o, 'source') === 'wpp_agent';
 
 // Envia o Purchase de um pedido pago do bot que veio de um clique em anúncio de WhatsApp.
@@ -174,8 +175,13 @@ async function enviarCompra(order) {
     const upd = { $set: set, $inc: { 'wppCapi.tentativas': 1 } };
     if (transitoria) upd.$unset = { 'wppCapi.purchaseSentAt': '' };
     await pedidos.updateOne({ _id: order._id }, upd);
+    // Recusa definitiva do evento de mensagem (região, página diferente da do anúncio etc.): manda a
+    // mesma venda como "chat" pelo metaCapi (telefone + nome, sem ctwa_clid) para não perder a compra.
+    if (!ok && !transitoria) {
+      try { const fresh = await pedidos.findOne({ _id: order._id }); await require('./metaCapi.js').enviarCompra(fresh, { motivo: 'ctwa_recusado' }); } catch (_) {}
+    }
     try { console.log(`📨 [wpp-capi] Purchase ${ident} $${valor} MXN ${ok ? 'ok' : 'ERRO ' + r.status}`); } catch (_) {}
-    return { ok, http: r.status };
+    return { ok, http: r.status, transitoria };
   } catch (e) {
     try { console.error('[wpp-capi] enviarCompra', e && e.message); } catch (_) {}
     return { ok: false, motivo: 'excecao' };

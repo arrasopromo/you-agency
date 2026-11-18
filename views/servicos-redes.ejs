@@ -1,7 +1,7 @@
 <% const _rede = (typeof rede !== 'undefined' && rede === 'facebook') ? 'facebook' : 'tiktok'; const _nome = _rede === 'facebook' ? 'Facebook' : 'TikTok';
    const _sv = String((typeof queryParams !== 'undefined' && queryParams && queryParams.servicio) || '').toLowerCase();
    const _foco = /coment|comment/.test(_sv) ? 'comentarios' : (/curtid|gusta|like/.test(_sv) ? 'curtidas' : (/visualiz|view/.test(_sv) ? 'visualizacoes' : 'seguidores'));
-   const _focoNome = _foco === 'curtidas' ? 'me gusta' : (_foco === 'visualizacoes' ? 'visualizaciones' : (_foco === 'comentarios' ? 'comentarios' : 'seguidores')); %>
+   const _focoNome = _foco === 'curtidas' ? 'me gusta' : (_foco === 'visualizacoes' ? 'vistas' : (_foco === 'comentarios' ? 'comentarios' : 'seguidores')); %>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -18,7 +18,7 @@
       } catch (_) {}
     })();
   </script>
-  <link href="/css/style.css?v=20261111" rel="stylesheet" />
+  <link href="/css/style.css?v=20261118b" rel="stylesheet" />
   <link href="/css/badges.css" rel="stylesheet" />
   <link href="/css/perfil.css" rel="stylesheet" />
   <link href="/css/why-us.css?v=20261111" rel="stylesheet" />
@@ -233,7 +233,7 @@
                </div>
             </div>
 
-            <!-- Ofertas (mesmos cards do Instagram): me gusta, visualizaciones e comentarios -->
+            <!-- Ofertas (mesmos cards do Instagram): me gusta, vistas e comentarios -->
             <div class="service-card" id="orderBumpInline">
               <div class="card-content">
                 <h3 class="card-title" style="background: linear-gradient(90deg, #8B5CF6 0%, #3B82F6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; display: block; text-align: center; width: 100%;">Ofertas exclusivas para ti</h3>
@@ -263,27 +263,27 @@
                         <span class="new-price">-</span>
                       </div>
                       <div class="likes-control" aria-label="Cantidad de me gusta">
-                        <button type="button" id="likesDec" class="likes-arrow" aria-label="Disminuir">‹</button>
+                        <button type="button" id="likesDec" class="likes-arrow" aria-label="Disminuir">−</button>
                         <span id="likesQty" class="likes-qty">150</span>
-                        <button type="button" id="likesInc" class="likes-arrow" aria-label="Aumentar">›</button>
+                        <button type="button" id="likesInc" class="likes-arrow" aria-label="Aumentar">+</button>
                       </div>
                     </div>
                   </label>
                   <label class="promo-item views" id="promoItemViews">
                     <input type="checkbox" id="promoViews" data-promo="views" />
                     <div class="promo-content">
-                      <div class="promo-highlight" id="viewsHighlight">+ 1000 VISUALIZACIONES</div>
-                      <div class="promo-title">Visualizaciones promocionales</div>
-                      <div class="promo-desc" id="viewsDesc">Agrega visualizaciones a tu video.</div>
+                      <div class="promo-highlight" id="viewsHighlight">+ 1000 VISTAS</div>
+                      <div class="promo-title">Vistas en promoción</div>
+                      <div class="promo-desc" id="viewsDesc">Agrega vistas a tu video.</div>
                       <div class="promo-prices" data-promo="views">
                         <span class="old-price">-</span>
                         <span class="discount-badge">41% OFF</span>
                         <span class="new-price">-</span>
                       </div>
-                      <div class="likes-control" aria-label="Cantidad de visualizaciones">
-                        <button type="button" id="viewsDec" class="likes-arrow" aria-label="Disminuir">‹</button>
+                      <div class="likes-control" aria-label="Cantidad de vistas">
+                        <button type="button" id="viewsDec" class="likes-arrow" aria-label="Disminuir">−</button>
                         <span id="viewsQty" class="likes-qty">1000</span>
-                        <button type="button" id="viewsInc" class="likes-arrow" aria-label="Aumentar">›</button>
+                        <button type="button" id="viewsInc" class="likes-arrow" aria-label="Aumentar">+</button>
                       </div>
                     </div>
                   </label>
@@ -292,19 +292,19 @@
                     <div class="promo-content">
                       <div class="promo-highlight" id="commentsHighlight">+ 1 COMENTARIOS</div>
                       <div class="promo-title" style="display:flex; align-items:center; gap:0.5rem;">
-                        <span>Comentario promocional</span>
+                        <span>Comentarios en promoción</span>
                         <button id="commentsExampleBtn" class="continue-button" type="button" style="padding:0.15rem 0.5rem; font-size:12px; line-height:1;">Ejemplos de comentarios</button>
                       </div>
-                      <div class="promo-desc">1 comentario = $ 5.49 c/u.</div>
+                      <div class="promo-desc">1 comentario = $ 20 c/u.</div>
                       <div class="promo-prices" data-promo="comments">
                         <span class="old-price">-</span>
                         <span class="discount-badge">41% OFF</span>
                         <span class="new-price">-</span>
                       </div>
                       <div class="likes-control" aria-label="Cantidad de comentarios">
-                        <button type="button" id="commentsDec" class="likes-arrow" aria-label="Disminuir">‹</button>
+                        <button type="button" id="commentsDec" class="likes-arrow" aria-label="Disminuir">−</button>
                         <span id="commentsQty" class="likes-qty">1</span>
-                        <button type="button" id="commentsInc" class="likes-arrow" aria-label="Aumentar">›</button>
+                        <button type="button" id="commentsInc" class="likes-arrow" aria-label="Aumentar">+</button>
                       </div>
                     </div>
                   </label>

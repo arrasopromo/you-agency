@@ -186,8 +186,8 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
         }
       }
       
-      if (labelEl) labelEl.textContent = (gw === 'paghiper') ? 'CPF (para Pix PagHiper)' : (gw === 'expay') ? 'CPF (para Pix ExPay)' : 'CPF (para Pix)';
-      if (hintEl) hintEl.textContent = (gw === 'paghiper') ? 'A PagHiper exige CPF do pagador.' : (gw === 'expay') ? 'A ExPay exige CPF do pagador.' : 'Alguns gateways de Pix exigem CPF do pagador.';
+      if (labelEl) labelEl.textContent = (gw === 'paghiper') ? 'CPF (para pagar con Pix vía PagHiper)' : (gw === 'expay') ? 'CPF (para pagar con Pix vía ExPay)' : 'CPF (para pagar con Pix)';
+      if (hintEl) hintEl.textContent = (gw === 'paghiper') ? 'PagHiper pide el CPF de quien paga.' : (gw === 'expay') ? 'ExPay pide el CPF de quien paga.' : 'Algunos procesadores de Pix piden el CPF de quien paga.';
     } catch (_) {}
   };
   try {
@@ -832,65 +832,64 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
       { q: 15000, p: '$ 4759' },
     ],
     curtidas_brasileiras: [
-      { q: 150, p: '$ 20' },
-      { q: 300, p: '$ 35' },
-      { q: 500, p: '$ 54' },
-      { q: 700, p: '$ 109' },
-      { q: 1000, p: '$ 145' },
-      { q: 2000, p: '$ 182' },
-      { q: 3000, p: '$ 218' },
-      { q: 4000, p: '$ 255' },
-      { q: 5000, p: '$ 292' },
-      { q: 7500, p: '$ 402' },
-      { q: 10000, p: '$ 511' },
-      { q: 15000, p: '$ 731' },
+      { q: 150, p: '$ 22' },
+      { q: 300, p: '$ 32' },
+      { q: 500, p: '$ 48' },
+      { q: 700, p: '$ 98' },
+      { q: 1000, p: '$ 131' },
+      { q: 2000, p: '$ 164' },
+      { q: 3000, p: '$ 197' },
+      { q: 4000, p: '$ 230' },
+      { q: 5000, p: '$ 263' },
+      { q: 7500, p: '$ 362' },
+      { q: 10000, p: '$ 461' },
+      { q: 15000, p: '$ 659' },
     ],
     curtidas_mistos: [
-      { q: 150, p: '$ 20' },
-      { q: 300, p: '$ 28' },
-      { q: 500, p: '$ 35' },
-      { q: 700, p: '$ 54' },
-      { q: 1000, p: '$ 72' },
-      { q: 2000, p: '$ 90' },
-      { q: 3000, p: '$ 109' },
-      { q: 4000, p: '$ 127' },
-      { q: 5000, p: '$ 145' },
-      { q: 7500, p: '$ 182' },
-      { q: 10000, p: '$ 255' },
-      { q: 15000, p: '$ 328' },
+      { q: 150, p: '$ 22' },
+      { q: 300, p: '$ 25' },
+      { q: 500, p: '$ 32' },
+      { q: 700, p: '$ 48' },
+      { q: 1000, p: '$ 65' },
+      { q: 2000, p: '$ 81' },
+      { q: 3000, p: '$ 98' },
+      { q: 4000, p: '$ 114' },
+      { q: 5000, p: '$ 131' },
+      { q: 7500, p: '$ 164' },
+      { q: 10000, p: '$ 230' },
+      { q: 15000, p: '$ 296' },
     ],
     curtidas_organicos: [
-      { q: 150, p: '$ 43' },
-      { q: 300, p: '$ 72' },
-      { q: 500, p: '$ 127' },
-      { q: 1000, p: '$ 178' },
-      { q: 2000, p: '$ 270' },
-      { q: 3000, p: '$ 358' },
-      { q: 4000, p: '$ 449' },
-      { q: 5000, p: '$ 577' },
-      { q: 7500, p: '$ 716' },
-      { q: 10000, p: '$ 921' },
-      { q: 15000, p: '$ 1229' },
+      { q: 150, p: '$ 39' },
+      { q: 300, p: '$ 65' },
+      { q: 500, p: '$ 114' },
+      { q: 700, p: '$ 134' },
+      { q: 1000, p: '$ 161' },
+      { q: 2000, p: '$ 243' },
+      { q: 3000, p: '$ 322' },
+      { q: 4000, p: '$ 405' },
+      { q: 5000, p: '$ 520' },
+      { q: 7500, p: '$ 646' },
     ],
     visualizacoes_reels: [
-      { q: 1000, p: '$ 20' },
-      { q: 2500, p: '$ 35' },
-      { q: 5000, p: '$ 54' },
-      { q: 10000, p: '$ 72' },
-      { q: 25000, p: '$ 90' },
-      { q: 50000, p: '$ 127' },
-      { q: 100000, p: '$ 182' },
-      { q: 150000, p: '$ 218' },
-      { q: 200000, p: '$ 255' },
-      { q: 250000, p: '$ 328' },
-      { q: 500000, p: '$ 402' },
-      { q: 1000000, p: '$ 585' },
+      { q: 1000, p: '$ 22' },
+      { q: 2500, p: '$ 32' },
+      { q: 5000, p: '$ 48' },
+      { q: 10000, p: '$ 65' },
+      { q: 25000, p: '$ 81' },
+      { q: 50000, p: '$ 114' },
+      { q: 100000, p: '$ 164' },
+      { q: 150000, p: '$ 197' },
+      { q: 200000, p: '$ 230' },
+      { q: 250000, p: '$ 296' },
+      { q: 500000, p: '$ 362' },
+      { q: 1000000, p: '$ 527' },
     ],
   };
 
   const promoPricing = {
-    likes: { old: '$ 180', price: '$ 35', discount: 80 },
-    views: { old: '$ 325', price: '$ 71', discount: 78 },
+    likes: { old: '$ 37', price: '$ 22', discount: 41 },
+    views: { old: '$ 31', price: '$ 22', discount: 29 },
     comments: { old: '$ 34', price: '$ 20', discount: 41 },
     warranty: { old: '$ 144', price: '$ 53', discount: 63 },
     warranty60: { old: '$ 144', price: '$ 35', discount: 75 },
@@ -921,16 +920,36 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
   const wOld = document.getElementById('warrantyOldPrice');
   const wNew = document.getElementById('warrantyNewPrice');
   const wDisc = document.getElementById('warrantyDiscount');
+  // Garantia de 3 meses com preço DINÂMICO (igual à Oppus): 2 reposições completas pelo custo atual.
   function applyWarrantyMode(){
-    const isLife = true;
-    if (wLabel) wLabel.textContent = '6 meses';
-    if (wHighlight) wHighlight.textContent = 'REPOSICIÓN POR 6 MESES';
-    if (wOld) wOld.textContent = '$ 144';
-    if (wNew) wNew.textContent = '$ 35';
-    if (wDisc) wDisc.textContent = '75% OFF';
+    const w = (window.__warranty3m && typeof window.__warranty3m === 'object') ? window.__warranty3m : {};
+    if (wLabel) wLabel.textContent = '3 meses';
+    if (wHighlight) wHighlight.textContent = 'REPOSICIÓN POR 3 MESES';
+    if (wNew) wNew.textContent = w.price || '';
+    if (wOld) { wOld.textContent = ''; wOld.style.display = 'none'; }
+    if (wDisc) { wDisc.textContent = ''; wDisc.style.display = 'none'; }
     try { updatePromosSummary(); } catch(_) {}
   }
   applyWarrantyMode();
+  // Preço da garantia pelo MESMO cálculo que o servidor valida (/api/warranty/price).
+  let __warranty3mReq = 0;
+  async function refreshWarranty3m(tipo, qtd) {
+    try {
+      const t = String(tipo || '').trim();
+      const q = Math.max(0, parseInt(qtd, 10) || 0);
+      if (!q || !(t === 'mistos' || t === 'brasileiros')) { window.__warranty3m = { available: false, price: '', priceCents: 0 }; applyWarrantyMode(); return; }
+      const seq = ++__warranty3mReq;
+      const r = await fetch('/api/warranty/price?tipo=' + encodeURIComponent(t) + '&qty=' + q);
+      const d = await r.json();
+      if (seq !== __warranty3mReq) return;
+      window.__warranty3m = (d && d.available) ? { available: true, price: d.price, priceCents: d.priceCents } : { available: false, price: '', priceCents: 0 };
+      applyWarrantyMode();
+      const inp = document.getElementById('promoWarranty60');
+      const item = inp ? inp.closest('.promo-item') : null;
+      if (item && !window.__warranty3m.available) { item.style.display = 'none'; if (inp) inp.checked = false; try { updatePromosSummary(); } catch(_) {} }
+    } catch (_) {}
+  }
+  try { window.refreshWarranty3m = refreshWarranty3m; } catch(_) {}
 
   tabela.seguidores_tiktok = tabela.mistos;
   function getAllowedQuantities(tipo) {
@@ -1005,7 +1024,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
       const targetPrice = findPrice(tipo, 2000);
       const diffCents = parsePrecoToCents(targetPrice) - parsePrecoToCents(basePrice);
       const diffStr = formatCentsToBRL(diffCents);
-      const extras = '(+400 me gusta y 15,000 visualizaciones)';
+      const extras = '(+400 me gusta y 15,000 vistas)';
       if (labelSpan) labelSpan.textContent = `Por solo ${diffStr} más, sube a ${targetQtd} ${getDisplayUnitForTipo(tipo)} ${extras}.`;
       if (upHighlight) upHighlight.textContent = `+ ${targetQtd - 1000} seguidores`;
       if (upOld) upOld.textContent = targetPrice || '—';
@@ -1297,7 +1316,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
       case 'seguidores_tiktok': return 'Seguidores';
       case 'curtidas_brasileiras': return 'Me gusta';
       case 'curtidas_organicos': return 'Me gusta reales';
-      case 'visualizacoes_reels': return 'Visualizaciones de Reels';
+      case 'visualizacoes_reels': return 'Vistas de Reels';
       default: return String(t).replace(/_/g, ' ');
     }
   }
@@ -1406,7 +1425,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
   function getDisplayUnitForTipo(tipo) {
     const u = getUnitForTipo(tipo);
     if (u === 'curtidas') return 'me gusta';
-    if (u === 'visualizações') return 'visualizaciones';
+    if (u === 'visualizações') return 'vistas';
     if (u === 'itens') return 'artículos';
     return u;
   }
@@ -1975,7 +1994,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
 
   function isPostSelected() {
     const selectedOption = tipoSelect.options[tipoSelect.selectedIndex];
-    return !!(selectedOption && /(curtidas|visualiza\u00e7oes|visualizações|me gusta|visualizaciones)/i.test(selectedOption.textContent));
+    return !!(selectedOption && /(curtidas|visualiza\u00e7oes|visualizações|me gusta|visualizaciones|vistas)/i.test(selectedOption.textContent));
   }
 
   function updateWarrantyVisibility() {
@@ -1987,6 +2006,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
     item.style.display = show ? '' : 'none';
     if (!show && inp) { inp.checked = false; }
     try { updatePromosSummary(); } catch(_) {}
+    try { const qEl = document.getElementById('quantidadeSelect'); refreshWarranty3m(tipo, qEl ? qEl.value : 0); } catch(_) {}
   }
 
   function computePostFieldsCount(tipo, qtd) {
@@ -2206,45 +2226,44 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
 
   const likesPromoTables = {
     mistos: [
-      { q: 150, price: '$ 20' },
-      { q: 300, price: '$ 28' },
-      { q: 500, price: '$ 35' },
-      { q: 700, price: '$ 54' },
-      { q: 1000, price: '$ 72' },
-      { q: 2000, price: '$ 90' },
-      { q: 3000, price: '$ 109' },
-      { q: 4000, price: '$ 127' },
-      { q: 5000, price: '$ 145' },
-      { q: 7500, price: '$ 182' },
-      { q: 10000, price: '$ 255' },
-      { q: 15000, price: '$ 328' }
+      { q: 150, price: '$ 22' },
+      { q: 300, price: '$ 25' },
+      { q: 500, price: '$ 32' },
+      { q: 700, price: '$ 48' },
+      { q: 1000, price: '$ 65' },
+      { q: 2000, price: '$ 81' },
+      { q: 3000, price: '$ 98' },
+      { q: 4000, price: '$ 114' },
+      { q: 5000, price: '$ 131' },
+      { q: 7500, price: '$ 164' },
+      { q: 10000, price: '$ 230' },
+      { q: 15000, price: '$ 296' }
     ],
     brasileiros: [
-      { q: 150, price: '$ 20' },
-      { q: 300, price: '$ 35' },
-      { q: 500, price: '$ 54' },
-      { q: 700, price: '$ 109' },
-      { q: 1000, price: '$ 145' },
-      { q: 2000, price: '$ 182' },
-      { q: 3000, price: '$ 218' },
-      { q: 4000, price: '$ 255' },
-      { q: 5000, price: '$ 292' },
-      { q: 7500, price: '$ 402' },
-      { q: 10000, price: '$ 511' },
-      { q: 15000, price: '$ 731' }
+      { q: 150, price: '$ 22' },
+      { q: 300, price: '$ 32' },
+      { q: 500, price: '$ 48' },
+      { q: 700, price: '$ 98' },
+      { q: 1000, price: '$ 131' },
+      { q: 2000, price: '$ 164' },
+      { q: 3000, price: '$ 197' },
+      { q: 4000, price: '$ 230' },
+      { q: 5000, price: '$ 263' },
+      { q: 7500, price: '$ 362' },
+      { q: 10000, price: '$ 461' },
+      { q: 15000, price: '$ 659' }
     ],
     organicos: [
-      { q: 150, price: '$ 43' },
-      { q: 300, price: '$ 72' },
-      { q: 500, price: '$ 127' },
-      { q: 1000, price: '$ 178' },
-      { q: 2000, price: '$ 270' },
-      { q: 3000, price: '$ 358' },
-      { q: 4000, price: '$ 449' },
-      { q: 5000, price: '$ 577' },
-      { q: 7500, price: '$ 716' },
-      { q: 10000, price: '$ 921' },
-      { q: 15000, price: '$ 1229' }
+      { q: 150, price: '$ 39' },
+      { q: 300, price: '$ 65' },
+      { q: 500, price: '$ 114' },
+      { q: 700, price: '$ 134' },
+      { q: 1000, price: '$ 161' },
+      { q: 2000, price: '$ 243' },
+      { q: 3000, price: '$ 322' },
+      { q: 4000, price: '$ 405' },
+      { q: 5000, price: '$ 520' },
+      { q: 7500, price: '$ 646' },
     ]
   };
   const likesQtyEl = document.getElementById('likesQty');
@@ -2334,18 +2353,18 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
 
   // Slider de Visualizações (Order Bump)
   const viewsTable = [
-    { q: 1000, price: '$ 20' },
-    { q: 2500, price: '$ 35' },
-    { q: 5000, price: '$ 54' },
-    { q: 10000, price: '$ 72' },
-    { q: 25000, price: '$ 90' },
-    { q: 50000, price: '$ 127' },
-    { q: 100000, price: '$ 182' },
-    { q: 150000, price: '$ 218' },
-    { q: 200000, price: '$ 255' },
-    { q: 250000, price: '$ 328' },
-    { q: 500000, price: '$ 402' },
-    { q: 1000000, price: '$ 585' }
+    { q: 1000, price: '$ 22' },
+    { q: 2500, price: '$ 32' },
+    { q: 5000, price: '$ 48' },
+    { q: 10000, price: '$ 65' },
+    { q: 25000, price: '$ 81' },
+    { q: 50000, price: '$ 114' },
+    { q: 100000, price: '$ 164' },
+    { q: 150000, price: '$ 197' },
+    { q: 200000, price: '$ 230' },
+    { q: 250000, price: '$ 296' },
+    { q: 500000, price: '$ 362' },
+    { q: 1000000, price: '$ 527' }
   ];
   const viewsQtyEl = document.getElementById('viewsQty');
   const viewsDec = document.getElementById('viewsDec');
@@ -2369,7 +2388,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
       oldEl.textContent = formatCurrencyBR(oldVal);
     }
     const hl = document.querySelector('.promo-item.views .promo-highlight');
-    if (hl) hl.textContent = `+ ${q} VISUALIZACIONES`;
+    if (hl) hl.textContent = `+ ${q} VISTAS`;
   }
   function stepViews(dir) {
     const current = Number(viewsQtyEl?.textContent || 1000);
@@ -2444,7 +2463,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
           : (p.isVideo && vsrc
             ? ('<div class="media-frame"><video data-src="'+vsrc+'" muted playsinline preload="none"></video></div>')
             : ('<div class="media-frame"><iframe src="https://www.instagram.com/p/'+p.shortcode+'/embed" loading="lazy" allowtransparency="true" allow="encrypted-media; picture-in-picture" scrolling="no"></iframe></div>'));
-        return '<div class="service-card"><div class="card-content pick-post-card" data-kind="'+kind+'" data-shortcode="'+p.shortcode+'">'+media+'<div class="inline-msg" style="margin-top:6px">'+(p.takenAt? new Date(Number(p.takenAt)*1000).toLocaleString('es-MX') : '-')+'</div><div style="margin-top:8px;display:flex;justify-content:center;align-items:center;"><button type="button" class="continue-button select-post-btn" style="width:100%; text-align:center;" data-shortcode="'+p.shortcode+'" data-kind="'+kind+'">Seleccionar</button></div></div></div>';
+        return '<div class="service-card"><div class="card-content pick-post-card" data-kind="'+kind+'" data-shortcode="'+p.shortcode+'">'+media+'<div class="inline-msg" style="margin-top:6px">'+(p.takenAt? new Date(Number(p.takenAt)*1000).toLocaleString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '-')+'</div><div style="margin-top:8px;display:flex;justify-content:center;align-items:center;"><button type="button" class="continue-button select-post-btn" style="width:100%; text-align:center;" data-shortcode="'+p.shortcode+'" data-kind="'+kind+'">Seleccionar</button></div></div></div>';
       }).join('');
       if (!html) {
           const manualHtml = `
@@ -2614,7 +2633,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
         const qty = Number(document.getElementById('viewsQty')?.textContent || 1000);
         let priceStr = document.querySelector('.promo-prices[data-promo="views"] .new-price')?.textContent || '';
         if (!priceStr) priceStr = promoPricing.views?.price || '';
-        promos.push({ key: 'views', qty, label: `Visualizaciones de Reels (${qty})`, priceCents: parsePrecoToCents(priceStr) });
+        promos.push({ key: 'views', qty, label: `Vistas de Reels (${qty})`, priceCents: parsePrecoToCents(priceStr) });
       }
       if (commentsChecked) {
         const qty = Number(document.getElementById('commentsQty')?.textContent || 1);
@@ -2622,10 +2641,11 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
         promos.push({ key: 'comments', qty, label: `Comentarios (${qty})`, priceCents });
       }
     if (warrantyChecked) {
-        let priceStr = document.querySelector('.promo-prices[data-promo="warranty60"] .new-price')?.textContent || '';
-        if (!priceStr) priceStr = (window.promoPricing && window.promoPricing.warranty60 ? window.promoPricing.warranty60.price : '') || '$ 35';
-        const label = 'Reposición por 6 meses';
-        promos.push({ key: 'warranty_6m', qty: 1, label, priceCents: parsePrecoToCents(priceStr) });
+        // Garantia dinâmica de 3 meses (o mesmo valor que o servidor valida).
+        const w3 = (window.__warranty3m && typeof window.__warranty3m === 'object') ? window.__warranty3m : {};
+        let priceCents = Number(w3.priceCents) || 0;
+        if (!priceCents) priceCents = parsePrecoToCents(document.querySelector('.promo-prices[data-promo="warranty60"] .new-price')?.textContent || '');
+        if (priceCents > 0) promos.push({ key: 'warranty_3m', qty: 1, label: 'Reposición por 3 meses', priceCents });
       }
       if (upgradeChecked) {
         let priceStr = document.querySelector('.promo-prices[data-promo="upgrade"] .new-price')?.textContent || '';
@@ -3149,7 +3169,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
               try { cpfEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
             }
           } catch (_) {}
-          throw new Error('Informe seu CPF para pagar via Pix (ExPay).');
+          throw new Error('Ingresa tu CPF para pagar con Pix (ExPay).');
         }
       }
       if (currentPixGateway === 'paghiper') {
@@ -3164,7 +3184,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
               try { cpfEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
             }
           } catch (_) {}
-          throw new Error('Informe seu CPF para pagar via Pix (PagHiper).');
+          throw new Error('Ingresa tu CPF para pagar con Pix (PagHiper).');
         }
         const email = String(payload.customer && payload.customer.email ? payload.customer.email : '').trim().toLowerCase();
         const okEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -3178,7 +3198,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
               try { emailEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
             }
           } catch (_) {}
-          throw new Error('Informe seu e-mail para pagar via Pix (PagHiper).');
+          throw new Error('Ingresa tu correo electrónico para pagar con Pix (PagHiper).');
         }
       }
       try {
@@ -3281,7 +3301,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
       let { data } = await parseFetchResponse(resp);
       if (!resp.ok) {
         const status = Number(resp && resp.status) || 0;
-        const msg = data?.message || data?.details?.message || data?.error || (data?.raw ? String(data.raw).slice(0, 200) : '') || 'Falha ao criar cobrança';
+        const msg = data?.message || data?.details?.message || data?.error || (data?.raw ? String(data.raw).slice(0, 200) : '') || 'No se pudo generar el cobro';
         const allowFallback = (typeof window !== 'undefined' && window && window.__ALLOW_PIX_GATEWAY_FALLBACK !== false);
         const shouldFallbackToWoovi = allowFallback && (currentPixGateway === 'expay' || currentPixGateway === 'paghiper') && (status >= 500 || status === 502);
         if (shouldFallbackToWoovi) {
@@ -3296,7 +3316,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
             });
             const parsed = await parseFetchResponse(wooviResp);
             if (!wooviResp.ok) {
-              const msg2 = parsed?.data?.message || parsed?.data?.details?.message || parsed?.data?.error || (parsed?.data?.raw ? String(parsed.data.raw).slice(0, 200) : '') || 'Falha ao criar cobrança';
+              const msg2 = parsed?.data?.message || parsed?.data?.details?.message || parsed?.data?.error || (parsed?.data?.raw ? String(parsed.data.raw).slice(0, 200) : '') || 'No se pudo generar el cobro';
               throw new Error(msg2);
             }
             try {
@@ -3309,9 +3329,9 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
               const detailsMsg = String(msg || '').trim();
               const detailsShort = detailsMsg ? ` (${detailsMsg.slice(0, 140)})` : '';
               if (typeof showToast === 'function') {
-                showToast({ title: 'Pix', desc: `${gwLabel} indisponível${detailsShort}. Geramos seu Pix via Woovi.`, platform: 'instagram' });
+                showToast({ title: 'Pix', desc: `${gwLabel} no disponible${detailsShort}. Generamos tu Pix con Woovi.`, platform: 'instagram' });
               } else {
-                alert(`${gwLabel} indisponível${detailsShort}. Geramos seu Pix via Woovi.`);
+                alert(`${gwLabel} no disponible${detailsShort}. Generamos tu Pix con Woovi.`);
               }
             } catch (_) {}
             data = parsed.data;
@@ -3324,7 +3344,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
         }
       }
       if (!data || typeof data !== 'object') {
-        throw new Error('Resposta inválida ao criar cobrança');
+        throw new Error('Respuesta no válida al generar el cobro');
       }
 
       // Renderização amigável: QR Code e botão de copiar código Pix
@@ -3433,7 +3453,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
           if (sName) {
              const tipoLabel = (tipo === 'seguidores_tiktok') ? 'Seguidores TikTok' : 
                               (tipo === 'curtidas_brasileiras' ? 'Me gusta' :
-                               (tipo === 'visualizacoes_reels' ? 'Visualizaciones de Reels' : 'Seguidores de Instagram'));
+                               (tipo === 'visualizacoes_reels' ? 'Vistas de Reels' : 'Seguidores de Instagram'));
              sName.textContent = tipoLabel;
           }
 
@@ -3562,7 +3582,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
         } catch(_) {}
       }
     } catch (err) {
-      alert('Erro ao criar PIX: ' + (err?.message || err));
+      alert('Error al generar el pago: ' + (err?.message || err));
     } finally {
       btnPedido.disabled = false;
       btnPedido.classList.remove('loading');
@@ -5298,7 +5318,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
         curtidas_organicos: 'Me gusta reales',
         curtidas_reais: 'Me gusta reales',
         curtidas_mistos: 'Me gusta mixtos',
-        visualizacoes_reels: 'Visualizaciones de Reels'
+        visualizacoes_reels: 'Vistas de Reels'
       };
       return map[t] || t;
     }
@@ -5688,7 +5708,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
           const qty = Number(document.getElementById('viewsQty')?.textContent || 1000);
           let priceStr = document.querySelector('.promo-prices[data-promo="views"] .new-price')?.textContent || '';
           if (!priceStr) priceStr = (window.promoPricing && window.promoPricing.views ? window.promoPricing.views.price : '') || '';
-          promos.push({ key: 'views', qty, label: `Visualizaciones (${qty})`, priceCents: window.parsePrecoToCents(priceStr) });
+          promos.push({ key: 'views', qty, label: `Vistas (${qty})`, priceCents: window.parsePrecoToCents(priceStr) });
         }
         if (commentsChecked) {
           const qty = Number(document.getElementById('commentsQty')?.textContent || 1);
@@ -5696,9 +5716,9 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
           promos.push({ key: 'comments', qty, label: `Comentarios (${qty})`, priceCents });
         }
         if (warrantyChecked) {
-          const priceStr = '$ 35';
-          const label = 'Reposición por 6 meses';
-          promos.push({ key: 'warranty_6m', qty: 1, label, priceCents: window.parsePrecoToCents(priceStr) });
+          const w3 = (window.__warranty3m && typeof window.__warranty3m === 'object') ? window.__warranty3m : {};
+          const priceCents = Number(w3.priceCents) || 0;
+          if (priceCents > 0) promos.push({ key: 'warranty_3m', qty: 1, label: 'Reposición por 3 meses', priceCents });
         }
         if (upgradeChecked) {
           let priceStr = document.querySelector('.promo-prices[data-promo="upgrade"] .new-price')?.textContent || '';

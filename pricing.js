@@ -66,101 +66,101 @@ const tabelaSeguidores = {
 
 const tabelaCurtidas = {
     mistos: [
-        { q: 150, p: '$ 20' },
-        { q: 300, p: '$ 28' },
-        { q: 500, p: '$ 35' },
-        { q: 700, p: '$ 54' },
-        { q: 1000, p: '$ 72' },
-        { q: 2000, p: '$ 90' },
-        { q: 3000, p: '$ 109' },
-        { q: 4000, p: '$ 127' },
-        { q: 5000, p: '$ 145' },
-        { q: 7500, p: '$ 182' },
-        { q: 10000, p: '$ 255' },
-        { q: 15000, p: '$ 328' },
+        { q: 150, p: '$ 22' },
+        { q: 300, p: '$ 25' },
+        { q: 500, p: '$ 32' },
+        { q: 700, p: '$ 48' },
+        { q: 1000, p: '$ 65' },
+        { q: 2000, p: '$ 81' },
+        { q: 3000, p: '$ 98' },
+        { q: 4000, p: '$ 114' },
+        { q: 5000, p: '$ 131' },
+        { q: 7500, p: '$ 164' },
+        { q: 10000, p: '$ 230' },
+        { q: 15000, p: '$ 296' },
     ],
     brasileiros: [
-        { q: 150, p: '$ 20' },
-        { q: 300, p: '$ 35' },
-        { q: 500, p: '$ 54' },
-        { q: 700, p: '$ 109' },
-        { q: 1000, p: '$ 145' },
-        { q: 2000, p: '$ 182' },
-        { q: 3000, p: '$ 218' },
-        { q: 4000, p: '$ 255' },
-        { q: 5000, p: '$ 292' },
-        { q: 7500, p: '$ 402' },
-        { q: 10000, p: '$ 511' },
-        { q: 15000, p: '$ 731' },
+        { q: 150, p: '$ 22' },
+        { q: 300, p: '$ 32' },
+        { q: 500, p: '$ 48' },
+        { q: 700, p: '$ 98' },
+        { q: 1000, p: '$ 131' },
+        { q: 2000, p: '$ 164' },
+        { q: 3000, p: '$ 197' },
+        { q: 4000, p: '$ 230' },
+        { q: 5000, p: '$ 263' },
+        { q: 7500, p: '$ 362' },
+        { q: 10000, p: '$ 461' },
+        { q: 15000, p: '$ 659' },
     ],
     curtidas_brasileiras: [
-        { q: 150, p: '$ 20' },
-        { q: 300, p: '$ 35' },
-        { q: 500, p: '$ 54' },
-        { q: 700, p: '$ 109' },
-        { q: 1000, p: '$ 145' },
-        { q: 2000, p: '$ 182' },
-        { q: 3000, p: '$ 218' },
-        { q: 4000, p: '$ 255' },
-        { q: 5000, p: '$ 292' },
-        { q: 7500, p: '$ 402' },
-        { q: 10000, p: '$ 511' },
-        { q: 15000, p: '$ 731' },
+        { q: 150, p: '$ 22' },
+        { q: 300, p: '$ 32' },
+        { q: 500, p: '$ 48' },
+        { q: 700, p: '$ 98' },
+        { q: 1000, p: '$ 131' },
+        { q: 2000, p: '$ 164' },
+        { q: 3000, p: '$ 197' },
+        { q: 4000, p: '$ 230' },
+        { q: 5000, p: '$ 263' },
+        { q: 7500, p: '$ 362' },
+        { q: 10000, p: '$ 461' },
+        { q: 15000, p: '$ 659' },
     ],
     organicos: [
-        { q: 150, p: '$ 43' },
-        { q: 300, p: '$ 72' },
-        { q: 500, p: '$ 127' },
-        { q: 1000, p: '$ 178' },
-        { q: 2000, p: '$ 270' },
-        { q: 3000, p: '$ 358' },
-        { q: 4000, p: '$ 449' },
-        { q: 5000, p: '$ 577' },
-        { q: 7500, p: '$ 716' },
-        { q: 10000, p: '$ 921' },
-        { q: 15000, p: '$ 1229' },
+        { q: 150, p: '$ 39' },
+        { q: 300, p: '$ 65' },
+        { q: 500, p: '$ 114' },
+        { q: 700, p: '$ 134' },
+        { q: 1000, p: '$ 161' },
+        { q: 2000, p: '$ 243' },
+        { q: 3000, p: '$ 322' },
+        { q: 4000, p: '$ 405' },
+        { q: 5000, p: '$ 520' },
+        { q: 7500, p: '$ 646' },
     ],
     curtidas_reais: [
-        { q: 150, p: '$ 43' },
-        { q: 300, p: '$ 72' },
-        { q: 500, p: '$ 127' },
-        { q: 1000, p: '$ 178' },
-        { q: 2000, p: '$ 270' },
-        { q: 3000, p: '$ 358' },
-        { q: 4000, p: '$ 449' },
-        { q: 5000, p: '$ 577' },
-        { q: 7500, p: '$ 716' },
-        { q: 10000, p: '$ 921' },
-        { q: 15000, p: '$ 1229' },
+        { q: 150, p: '$ 39' },
+        { q: 300, p: '$ 65' },
+        { q: 500, p: '$ 114' },
+        { q: 700, p: '$ 134' },
+        { q: 1000, p: '$ 161' },
+        { q: 2000, p: '$ 243' },
+        { q: 3000, p: '$ 322' },
+        { q: 4000, p: '$ 405' },
+        { q: 5000, p: '$ 520' },
+        { q: 7500, p: '$ 646' },
     ],
 };
 
 const tabelaVisualizacoes = {
     visualizacoes_reels: [
-        { q: 1000, p: '$ 20' },
-        { q: 2500, p: '$ 35' },
-        { q: 5000, p: '$ 54' },
-        { q: 10000, p: '$ 72' },
-        { q: 25000, p: '$ 90' },
-        { q: 50000, p: '$ 127' },
-        { q: 100000, p: '$ 182' },
-        { q: 150000, p: '$ 218' },
-        { q: 200000, p: '$ 255' },
-        { q: 250000, p: '$ 328' },
-        { q: 500000, p: '$ 402' },
-        { q: 1000000, p: '$ 585' },
+        { q: 1000, p: '$ 22' },
+        { q: 2500, p: '$ 32' },
+        { q: 5000, p: '$ 48' },
+        { q: 10000, p: '$ 65' },
+        { q: 25000, p: '$ 81' },
+        { q: 50000, p: '$ 114' },
+        { q: 100000, p: '$ 164' },
+        { q: 150000, p: '$ 197' },
+        { q: 200000, p: '$ 230' },
+        { q: 250000, p: '$ 296' },
+        { q: 500000, p: '$ 362' },
+        { q: 1000000, p: '$ 527' },
     ],
 };
 
 // TikTok e Facebook: mesmos pacotes e preços do Instagram (seguidores mistos, curtidas mistas
 // e visualizações). O tipo_servico já diz a rede (tiktok_* / facebook_*), então não colide
 // com as tabelas do Instagram. O front (servicos-redes.js) lê esta tabela por /api/redes/catalogo.
+// Comentários de TikTok/Facebook: MXN 20 cada, igual ao Instagram (1 comentário = o mínimo da Xpag).
 const tabelaComentariosRedes = [
-    { q: 10, p: '$ 54' },
-    { q: 25, p: '$ 137' },
-    { q: 50, p: '$ 274' },
-    { q: 100, p: '$ 549' },
-    { q: 250, p: '$ 1372' },
+    { q: 1, p: '$ 20' },
+    { q: 10, p: '$ 200' },
+    { q: 25, p: '$ 500' },
+    { q: 50, p: '$ 1000' },
+    { q: 100, p: '$ 2000' },
+    { q: 250, p: '$ 5000' },
 ];
 const tabelaRedes = {
     tiktok_seguidores: tabelaSeguidores.mistos,
@@ -177,43 +177,44 @@ const tabelaRedes = {
 // Order Bumps / Upsells logic
 const tabelaCurtidasPromo = {
     mistos: [
-        { q: 150, p: '$ 20' },
-        { q: 300, p: '$ 35' },
-        { q: 500, p: '$ 54' },
-        { q: 700, p: '$ 72' },
-        { q: 1000, p: '$ 90' },
-        { q: 2000, p: '$ 127' },
-        { q: 3000, p: '$ 182' },
-        { q: 4000, p: '$ 218' },
-        { q: 5000, p: '$ 255' },
-        { q: 7500, p: '$ 328' },
-        { q: 10000, p: '$ 402' },
-        { q: 15000, p: '$ 585' },
+        { q: 150, p: '$ 22' },
+        { q: 300, p: '$ 25' },
+        { q: 500, p: '$ 32' },
+        { q: 700, p: '$ 48' },
+        { q: 1000, p: '$ 65' },
+        { q: 2000, p: '$ 81' },
+        { q: 3000, p: '$ 98' },
+        { q: 4000, p: '$ 114' },
+        { q: 5000, p: '$ 131' },
+        { q: 7500, p: '$ 164' },
+        { q: 10000, p: '$ 230' },
+        { q: 15000, p: '$ 296' },
     ],
     brasileiros: [
-        { q: 150, p: '$ 21' },
-        { q: 300, p: '$ 35' },
-        { q: 500, p: '$ 54' },
-        { q: 700, p: '$ 109' },
-        { q: 1000, p: '$ 145' },
-        { q: 2000, p: '$ 182' },
-        { q: 3000, p: '$ 218' },
-        { q: 4000, p: '$ 255' },
-        { q: 5000, p: '$ 292' },
-        { q: 7500, p: '$ 402' },
-        { q: 10000, p: '$ 511' },
-        { q: 15000, p: '$ 731' },
+        { q: 150, p: '$ 22' },
+        { q: 300, p: '$ 32' },
+        { q: 500, p: '$ 48' },
+        { q: 700, p: '$ 98' },
+        { q: 1000, p: '$ 131' },
+        { q: 2000, p: '$ 164' },
+        { q: 3000, p: '$ 197' },
+        { q: 4000, p: '$ 230' },
+        { q: 5000, p: '$ 263' },
+        { q: 7500, p: '$ 362' },
+        { q: 10000, p: '$ 461' },
+        { q: 15000, p: '$ 659' },
     ],
     organicos: [
-        { q: 150, p: '$ 43' },
-        { q: 300, p: '$ 72' },
-        { q: 500, p: '$ 127' },
-        { q: 1000, p: '$ 178' },
-        { q: 2000, p: '$ 270' },
-        { q: 3000, p: '$ 358' },
-        { q: 4000, p: '$ 449' },
-        { q: 5000, p: '$ 577' },
-        { q: 7500, p: '$ 716' },
+        { q: 150, p: '$ 39' },
+        { q: 300, p: '$ 65' },
+        { q: 500, p: '$ 114' },
+        { q: 700, p: '$ 134' },
+        { q: 1000, p: '$ 161' },
+        { q: 2000, p: '$ 243' },
+        { q: 3000, p: '$ 322' },
+        { q: 4000, p: '$ 405' },
+        { q: 5000, p: '$ 520' },
+        { q: 7500, p: '$ 646' },
     ],
 };
 
@@ -241,27 +242,34 @@ const calculateOrderBumps = (bumpsStr, baseType, opts = {}) => {
             if (item) total += parsePrecoToCents(item.p);
             
         } else if (key === 'comments') {
-            // Instagram: MXN 20 por comentário. TikTok/Facebook (opts.comentariosRedes): MXN 5.49/un em pesos inteiros.
-            total += opts.comentariosRedes ? Math.floor(q * 549 / 100) * 100 : q * 2000;
+            // MXN 20 por comentário (Instagram, TikTok e Facebook).
+            total += q * 2000;
             
+        } else if (key === 'warranty_3m' || key === 'warranty3m') {
+             // Garantia DINÂMICA (3 meses), igual à Oppus: 2 reposições completas pelo custo atual do
+             // tipo. O valor (em cents de MXN) é calculado no app.js (lê cost_settings) e vem em opts.
+             total += Math.max(0, Math.round(Number(opts.warranty3mCents) || 0));
         } else if (key === 'warranty' || key === 'warranty30' || key === 'warranty_life' || key === 'warranty_lifetime' || key === 'warranty60' || key === 'warranty_6m' || key === 'warranty6m') {
-             total += 3500; // MXN 35
+             total += 3500; // MXN 35 — garantia antiga (6 meses), mantida p/ a página inicial e pedidos já feitos
         }
     });
     
     return total;
 };
 
-// Compatibilidade com o app.js da base original (garantia dinâmica). O You Agency usa as chaves
-// de garantia fixas em US$ acima; estas funções só existem para o app.js importar.
 // You Agency: preços em pesos inteiros (sem ".90"): arredonda PARA BAIXO até o peso (mínimo $1).
 // O nome ficou por compatibilidade com o app.js.
 const round90Cents = (cents) => Math.max(100, Math.floor((Number(cents) || 0) / 100) * 100);
+// Garantia DINÂMICA de 3 meses (mesma lógica da Oppus) = 2 reposições completas pelo custo atual.
+// O custo do cost_settings é em REAIS por mil (o mesmo da Oppus, auto-calibrado); vira pesos pelo
+// mesmo ×3 da tabela de preços (WARRANTY_BRL_MXN). Ex.: custo R$ 11,83/mil, 1000 seg → 2 × 11,83 × 3 = $ 70.
+const WARRANTY_BRL_MXN = Number(process.env.WARRANTY_BRL_MXN || 3) || 3;
 const warranty3mCents = (costPerMilCents, quantity) => {
     const q = Math.max(0, parseInt(quantity, 10) || 0);
     const c = Math.max(0, Number(costPerMilCents) || 0);
     if (!q || !c) return 0;
-    return round90Cents(2 * Math.round(c * q / 1000));
+    const custoCents = Math.round(c * q / 1000);              // custo de entregar a quantidade (R$)
+    return round90Cents(2 * custoCents * WARRANTY_BRL_MXN);   // 2 reposições completas, em pesos inteiros
 };
 
 const calculatePrice = async (type, quantity, additionalInfo = [], opts = {}) => {
@@ -270,6 +278,11 @@ const calculatePrice = async (type, quantity, additionalInfo = [], opts = {}) =>
     if (tipo === 'refil_extensao') {
         const modeItem = additionalInfo.find(x => x && x.key === 'refil_mode');
         const mode = String(modeItem?.value || '').trim().toLowerCase();
+        // Extensão DINÂMICA de 3 meses (igual à Oppus): recalcula pelo custo ATUAL do pedido de
+        // seguidores (2 reposições completas). O valor vem do app.js em opts.refilExt3mCents.
+        if ((mode === '3m' || mode === '3') && Number(opts.refilExt3mCents) > 0) {
+            return Math.round(Number(opts.refilExt3mCents));
+        }
         if (mode === 'life') return 3500;
         return 3500; // MXN 35
     }
@@ -313,7 +326,7 @@ const calculatePrice = async (type, quantity, additionalInfo = [], opts = {}) =>
         if (!itemRede) return 0;
         let totalRede = parsePrecoToCents(itemRede.p);
         // Ofertas (bumps) de TikTok/Facebook: só me gusta, visualizaciones e comentarios, com os
-        // mesmos preços das ofertas do Instagram (me gusta mixtos, tabela de views, $5.49/comentário).
+        // mesmos preços das ofertas do Instagram (me gusta mixtos, tabela de views, $20/comentário).
         const bumpsRede = String((additionalInfo.find(x => x && x.key === 'order_bumps') || {}).value || '')
             .split(';').filter((b) => /^(likes|views|comments):\d+$/.test(b.trim())).join(';');
         if (bumpsRede) totalRede += calculateOrderBumps(bumpsRede, 'mistos', { ...opts, comentariosRedes: true });
@@ -395,12 +408,19 @@ const calculatePrice = async (type, quantity, additionalInfo = [], opts = {}) =>
                 targetQ = 2000;
             } else {
                 // Keep upgrade mapping in sync with checkout.js (updateOrderBump -> upsellTargets)
+                // Igual ao front (servicos-instagram.js upsellTargets) e à Oppus: cada pacote sobe para o seguinte.
                 const map = {
                     150: 300,
+                    300: 500,
                     500: 700,
+                    700: 1000,
                     1000: 2000,
+                    1200: 2000,
+                    2000: 3000,
                     3000: 4000,
+                    4000: 5000,
                     5000: 7500,
+                    7500: 10000,
                     10000: 15000
                 };
                 targetQ = map[q];

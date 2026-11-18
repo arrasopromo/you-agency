@@ -365,11 +365,27 @@ html, body { overflow-x: hidden; }
     margin-right: auto;
 }
 
-/* Resumo: permitir quebra de linha para bullets das promoções */
-.checkout-page #resumo #resPromos {
-  white-space: pre-line;
-  display: block;
+/* Resumo do pedido: rótulo à esquerda, valor à direita, linhas compactas.
+   (Antes o #resPromos tinha white-space: pre-line e cada quebra de linha do HTML virava uma linha vazia.) */
+#resumo #resPromos { white-space: normal; display: block; }
+#resumo .resumo-row,
+#resumo .resumo-promo-row {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding: 4px 0; margin: 0; line-height: 1.35; font-size: 0.95rem;
 }
+#resumo .resumo-row > span:first-child { color: var(--text-secondary); }
+#resumo .resumo-row > span:last-child,
+#resumo .resumo-promo-row > span:last-child { color: var(--text-primary); font-weight: 600; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+#resumo .resumo-promo-row > span:first-child { color: var(--text-primary); min-width: 0; }
+#resumo #resPromosContainer { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-color); }
+#resumo .resumo-extras-title { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 2px; }
+#resumo .resumo-total {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color);
+  font-weight: 700; font-size: 1rem;
+}
+#resumo .resumo-total .promo-prices { margin: 0; }
+#resumo .resumo-row, #resumo #resPromosContainer, #resumo .resumo-total { width: 100%; align-self: stretch; }
 
 .service-card {
     display: block;
@@ -1855,3 +1871,23 @@ body:not(.theme-light) #clientForgotLink { color: #c4b5fd !important; }
 .mx-phone-wrap { display: flex; align-items: stretch; width: 100%; max-width: 100%; }
 .mx-phone-wrap .mx-phone-ddi { display: flex; align-items: center; padding: 0 0.75rem; border: 1px solid rgba(148, 163, 184, 0.55); border-right: none; border-radius: 8px 0 0 8px; background: rgba(148, 163, 184, 0.12); color: var(--text-primary); font-weight: 600; white-space: nowrap; user-select: none; }
 .mx-phone-wrap .select-input, .checkout-page #paymentCard .phone-field .mx-phone-wrap .select-input { flex: 1 1 auto; min-width: 0; max-width: none; border-radius: 0 8px 8px 0 !important; }
+
+/* Botões de rede (Instagram / TikTok / Facebook): a rede SELECIONADA ganha a cor da marca. */
+.platform-btn.instagram[aria-pressed="true"], .platform-btn.instagram.active {
+  background: linear-gradient(90deg, #f58529 0%, #dd2a7b 50%, #8134af 100%) !important;
+  color: #fff !important; border-color: transparent !important;
+  box-shadow: 0 6px 18px rgba(221, 42, 123, .32) !important;
+}
+.platform-btn.tiktok[aria-pressed="true"], .platform-btn.tiktok.active {
+  background: #111 !important; color: #fff !important; border-color: transparent !important;
+  box-shadow: -3px 3px 0 #25f4ee, 3px -3px 0 #fe2c55, 0 6px 16px rgba(0, 0, 0, .22) !important;
+}
+.platform-btn.facebook[aria-pressed="true"], .platform-btn.facebook.active {
+  background: #1877f2 !important; color: #fff !important; border-color: transparent !important;
+  box-shadow: 0 6px 18px rgba(24, 119, 242, .35) !important;
+}
+.platform-btn[aria-pressed="true"] svg, .platform-btn.active svg { color: #fff; }
+/* O chip "Red seleccionada" fica sem caixa (pedido do responsável) */
+body .rd-rede-sel .platform-btn.instagram, body .rd-rede-sel .platform-btn.tiktok, body .rd-rede-sel .platform-btn.facebook { background: transparent !important; color: var(--text-primary) !important; box-shadow: none !important; }
+body .rd-rede-sel .platform-btn svg { color: currentColor; }
+.platform-btn.facebook[aria-pressed="true"] svg path, .platform-btn.facebook.active svg path { fill: #fff !important; }

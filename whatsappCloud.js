@@ -333,7 +333,9 @@ async function handleInboundMessage(m, contactName) {
   if (m.referral && m.referral.ctwa_clid) { try { require('./wppCapi.js').registrarClique(from, m.referral).catch(() => {}); } catch (_) {} }
 
   // Texto normal OU clique de botão interativo (button_reply / list_reply).
-  const bodyRaw = (m.type === 'text' && m.text && m.text.body) ? String(m.text.body).trim() : '';
+  let bodyRaw = (m.type === 'text' && m.text && m.text.body) ? String(m.text.body).trim() : '';
+  // Veio do botão do WhatsApp do site: "(#XXXXX)" liga a conversa à visita (clique do anúncio) e sai do texto.
+  if (bodyRaw && /\(#[A-Z0-9]{5}\)/.test(bodyRaw)) { try { bodyRaw = await require('./metaCapi.js').lerCodigoDaMensagem(from, bodyRaw); } catch (_) {} }
   const btn = (m.type === 'interactive' && m.interactive) ? (m.interactive.button_reply || m.interactive.list_reply) : null;
   const btnId = btn ? String(btn.id || '') : '';
   const btnTitle = btn ? String(btn.title || '') : '';

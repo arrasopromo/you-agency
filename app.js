@@ -399,6 +399,8 @@ function __comUtmYa(record, req) {
     if (!record) return record;
     // Visitante (cookie ya_cid) que gerou o pedido: liga page views → pedido. Só o cookie do navegador (pedido do bot/servidor não tem).
     try { if (!record.visitorId) { const vid = String(getCookieValue(req, YA_CLIENT_ID_COOKIE) || '').trim(); if (vid) record.visitorId = vid; } } catch (_) {}
+    // Clique do anúncio (fbc/fbp), IP e navegador: a compra vai à Meta com eles (metaCapi.js).
+    try { if (!record.tracking) { const tr = require('./metaCapi.js').rastreioDoNavegador(req); if (tr) record.tracking = tr; } } catch (_) {}
     const u = (record.utms && typeof record.utms === 'object') ? record.utms : {};
     const temUrl = !!(String(u.source || '').trim() || String(u.content || '').trim() || String(u.fbclid || '').trim());
     const ck = __lerOpUt(req, 'op_ut');
@@ -536,6 +538,7 @@ require('./youagency.js').register(app, {
   get trackPageView() { return trackPageView; },
   get comUtm() { return __comUtmYa; },
   get verifyPrice() { return verifyPrice; },
+  get pricingOptsForCharge() { return pricingOptsForCharge; },
   get normalizeCouponCode() { return normalizeCouponCode; },
   get getCouponEligibility() { return getCouponEligibility; },
   get normalizeProfileKey() { return normalizeProfileKey; },
@@ -1791,8 +1794,8 @@ const sendPixOrderEmailToCustomer = async ({ record }) => {
             return 'Me gusta';
         }
         if (categoria === 'visualizacoes' || categoria === 'views') {
-            if (tipo === 'visualizacoes_reels' || tipo === 'reels') return 'Visualizaciones de Reels';
-            return 'Visualizaciones';
+            if (tipo === 'visualizacoes_reels' || tipo === 'reels') return 'Vistas de Reels';
+            return 'Vistas';
         }
         if (categoria === 'comentarios' || categoria === 'comments') {
             return 'Comentarios';
@@ -1841,7 +1844,7 @@ const sendPixOrderEmailToCustomer = async ({ record }) => {
             })();
             lines.push(`${bumps0.likes} ${likesLabel}`);
         }
-        if (bumps0.views > 0) lines.push(`${bumps0.views} visualizaciones`);
+        if (bumps0.views > 0) lines.push(`${bumps0.views} vistas`);
         if (bumps0.comments > 0) lines.push(`${bumps0.comments} comentarios`);
         return lines;
     })();
@@ -2110,8 +2113,8 @@ const sendPixRecoveryEmailToCustomer = async ({ record, couponCode, couponPct, s
             return 'Me gusta';
         }
         if (categoriaKey === 'visualizacoes' || categoriaKey === 'views') {
-            if (tipoKey === 'visualizacoes_reels' || tipoKey === 'reels') return 'Visualizaciones de Reels';
-            return 'Visualizaciones';
+            if (tipoKey === 'visualizacoes_reels' || tipoKey === 'reels') return 'Vistas de Reels';
+            return 'Vistas';
         }
         if (categoriaKey === 'comentarios' || categoriaKey === 'comments') {
             return 'Comentarios';
@@ -2478,7 +2481,7 @@ const sendPaymentApprovedEmailToCustomer = async ({ record, toOverride, serviceL
                 if (tipoKey === 'organicos') return 'seguidores reales';
                 if (tipoKey === 'curtidas_brasileiras') return 'me gusta';
                 if (tipoKey === 'curtidas_organicos') return 'me gusta reales';
-                if (tipoKey === 'visualizacoes_reels') return 'visualizaciones de Reels';
+                if (tipoKey === 'visualizacoes_reels') return 'vistas de Reels';
                 return safe(rawTipo).replace(/_/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
             })();
             const qtyRaw = getAdd('quantidade') || getAdd('qtd') || (record && (record.quantidade || record.qtd)) || '';
@@ -2514,7 +2517,7 @@ const sendPaymentApprovedEmailToCustomer = async ({ record, toOverride, serviceL
             else if (tipoLabel) lines.push(tipoLabel);
 
             if (bumps.likes > 0) lines.push(`${bumps.likes} me gusta`);
-            if (bumps.views > 0) lines.push(`${bumps.views} visualizaciones`);
+            if (bumps.views > 0) lines.push(`${bumps.views} vistas`);
             if (bumps.comments > 0) lines.push(`${bumps.comments} comentarios`);
 
             return lines.filter(Boolean);
@@ -5371,7 +5374,7 @@ const crmPedidosHandler = (fonte) => async (req, res) => {
     }
     // Pedido de CARTÃO grava o telefone em customer.phone_number/telefone (não em customer.phone).
     const filtro = { $or: [{ 'customer.phone': { $in: cands } }, { 'customer.phone_number': { $in: cands } }, { telefone: { $in: cands } }, { 'additionalInfoMapPaid.phone': { $in: cands } }, { 'additionalInfoMap.phone': { $in: cands } }] };
-    const proj = { identifier: 1, status: 1, createdAt: 1, paidAt: 1, 'woovi.paidAt': 1, 'paghiper.paidAt': 1, valueCents: 1, instagramUsername: 1, instauser: 1, qtd: 1, quantidade: 1, tipo: 1, tipoServico: 1, categoriaServico: 1, additionalInfoMap: 1, additionalInfoMapPaid: 1, 'customer.name': 1 };
+    const proj = { 'customer.email': 1, identifier: 1, status: 1, createdAt: 1, paidAt: 1, 'woovi.paidAt': 1, 'paghiper.paidAt': 1, valueCents: 1, instagramUsername: 1, instauser: 1, qtd: 1, quantidade: 1, tipo: 1, tipoServico: 1, categoriaServico: 1, additionalInfoMap: 1, additionalInfoMapPaid: 1, 'customer.name': 1 };
     let filtroUsado = filtro;   // filtro que achou os pedidos (telefone, 8 dígitos ou @) — usado p/ o link de reposição
     let docs = await col.find(filtro, { projection: proj }).sort({ createdAt: -1, _id: -1 }).limit(resumo ? 1 : 40).toArray();
     let total = resumo ? await col.countDocuments(filtro, { limit: 200 }) : docs.length;
@@ -5391,6 +5394,7 @@ const crmPedidosHandler = (fonte) => async (req, res) => {
     // compra. Então procura pelo @ do Instagram citado NA CONVERSA (foi assim que o pedido do
     // @harasveracruz apareceu). Só entra quando a busca por telefone falhou.
     let achadoPor = docs.length ? 'telefone' : '';
+    const emailsConversa = [];   // e-mails que o cliente escreveu na conversa (fallback depois do @)
     if (!total) {
       const handles = [];
       try {
@@ -5400,6 +5404,7 @@ const crmPedidosHandler = (fonte) => async (req, res) => {
         for (const m of msgs) {
           if (m.ig) handles.push(String(m.ig).replace(/^@+/, '').toLowerCase());   // LTV: @ do contato gravado na mensagem
           const t = String((m && m.text) || '');
+          for (const mt of t.matchAll(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g)) emailsConversa.push(mt[0].toLowerCase());
           for (const mt of t.matchAll(/@([a-zA-Z0-9._]{2,30})/g)) handles.push(mt[1].toLowerCase());
           for (const mt of t.matchAll(/instagram\.com\/([a-zA-Z0-9._]{2,30})/gi)) handles.push(mt[1].toLowerCase());
           // cliente que manda só o usuário, sem @ (ex.: "sshey_lla94")
@@ -5425,6 +5430,18 @@ const crmPedidosHandler = (fonte) => async (req, res) => {
         }
         if (total) break;
       }
+      // Ainda nada: procura pelo E-MAIL que o cliente escreveu na conversa (cliente que fala por um
+      // número e compra com outro telefone e outro @).
+      const emailsUnicos = [...new Set(emailsConversa)].slice(0, 5);
+      if (!total && emailsUnicos.length) {
+        const condEmail = { 'customer.email': { $in: emailsUnicos } };
+        const achados = await col.find(condEmail, { projection: proj }).sort({ createdAt: -1, _id: -1 }).limit(resumo ? 1 : 40).toArray();
+        if (achados.length) {
+          docs = achados; filtroUsado = condEmail;
+          total = resumo ? await col.countDocuments(condEmail, { limit: 200 }) : achados.length;
+          achadoPor = 'email:' + emailsUnicos[0];
+        }
+      }
     }
     const info = (o, k) => {
       for (const m of [o.additionalInfoMapPaid, o.additionalInfoMap]) if (m && m[k] != null && String(m[k]).trim()) return String(m[k]).trim();
@@ -5446,6 +5463,9 @@ const crmPedidosHandler = (fonte) => async (req, res) => {
           const rx = new RegExp('^@?' + h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i');
           orCond.push({ instagramUsername: rx }, { instauser: rx }, { 'additionalInfoMapPaid.instagram_username': rx }, { 'additionalInfoMap.instagram_username': rx });
         }
+        // Mesmo e-mail também conta (cliente que trocou de @ mas compra com o mesmo e-mail).
+        const emailsMerge = [...new Set(docs.map((d) => String((d.customer && d.customer.email) || '').trim().toLowerCase()).filter((e) => /@/.test(e)))].slice(0, 5);
+        if (emailsMerge.length) orCond.push({ 'customer.email': { $in: emailsMerge } });
         const porArroba = await col.find({ $or: orCond }, { projection: proj }).sort({ createdAt: -1, _id: -1 }).limit(60).toArray();
         for (const e of porArroba) if (!jaTem.has(e.identifier)) { docs.push(e); jaTem.add(e.identifier); }
         docs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
@@ -6178,7 +6198,7 @@ app.get('/api/instagram/info', async (req, res) => {
         }
         const username = req.query.username;
         if (!username) {
-            return res.status(400).json({ success: false, error: 'Username é obrigatório' });
+            return res.status(400).json({ success: false, error: 'Escribe el usuario de Instagram.' });
         }
 
         const userAgent = req.get('User-Agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -6205,7 +6225,7 @@ app.get('/api/instagram/info', async (req, res) => {
         }
     } catch (error) {
         console.error('Erro na rota /api/instagram/info:', error);
-        res.status(500).json({ success: false, error: 'Erro interno ao buscar perfil' });
+        res.status(500).json({ success: false, error: 'Error interno al buscar el perfil.' });
     }
 });
 
@@ -6257,7 +6277,7 @@ app.get('/api/warranty/price', async (req, res) => {
       if (qty) cents = await warrantyPrice3mCentsForOrder(tipo, qty);
     }
     if (!cents) return res.json({ ok: true, available: false, months });
-    const label = 'R$ ' + (cents / 100).toFixed(2).replace('.', ',');
+    const label = '$ ' + Math.round(cents / 100); // You Agency: pesos inteiros
     return res.json({ ok: true, available: true, months, priceCents: cents, price: label });
   } catch (e) { return res.json({ ok: true, available: false, months: 3 }); }
 });
@@ -7232,7 +7252,7 @@ async function notifyWppAgentPaidWhatsapp(doc) {
     const ehOrganico = /organic|orgânic|reais|real|de verdade/.test(tipo);
     const tipoLabel = ehOrganico ? 'reales' : (/misto/.test(tipo) ? 'mixtos' : '');
     const catRaw = String(getAdd('categoria_servico') || '').toLowerCase();
-    const catLabel = /curtida/.test(catRaw) ? 'me gusta' : (/visualiza/.test(catRaw) ? 'visualizaciones' : (catRaw ? 'seguidores' : ''));
+    const catLabel = /curtida/.test(catRaw) ? 'me gusta' : (/visualiza/.test(catRaw) ? 'vistas' : (catRaw ? 'seguidores' : ''));
     const qtdNum = Number(getAdd('quantidade') || 0);
     const desc = [qtdNum ? qtdNum.toLocaleString('en-US') : '', catLabel, tipoLabel].filter(Boolean).join(' ') || getAdd('pacote') || 'tu pedido';
 
@@ -8286,7 +8306,7 @@ app.post('/api/instagram/select-post-for', async (req, res) => {
                 jaReel = !!(d && Array.isArray(d.latestReels) && d.latestReels.some(p => p && p.shortcode === sc));
             } catch (_) {}
             if (!jaReel && (await isInstagramVideoPost(sc)) === false) {
-                return res.status(400).json({ success: false, error: 'not_video', message: 'Esse post não é um reel/vídeo. Visualizações só podem ser enviadas para reels ou vídeos.' });
+                return res.status(400).json({ success: false, error: 'not_video', message: 'Esta publicación no es un Reel ni un video. Las vistas solo se pueden enviar a Reels o videos.' });
             }
         }
 
@@ -8488,7 +8508,7 @@ app.get('/termos', (req, res) => {
   res.render('termos', {}, (err, html) => {
     if (err) {
       console.error('Erro ao renderizar termos:', err.message);
-      return res.status(500).send('Erro ao abrir Termos de Uso');
+      return res.status(500).send('Error al abrir los Términos de uso');
     }
     res.type('text/html');
     res.send(html);
@@ -8499,7 +8519,7 @@ app.get('/ya', (req, res) => {
   res.render('ya', {}, (err, html) => {
     if (err) {
       console.error('Erro ao renderizar ya:', err.message);
-      return res.status(500).send('Erro ao abrir página You Agency');
+      return res.status(500).send('Error al abrir la página de You Agency');
     }
     res.type('text/html');
     res.send(html);
@@ -10092,7 +10112,7 @@ app.get('/engajamento', async (req, res) => {
   }, (err, html) => {
     if (err) {
       console.error('❌ Erro ao renderizar engajamento:', err.message);
-      return res.status(500).send('Erro ao renderizar engajamento');
+      return res.status(500).send('Error al cargar la página');
     }
     res.type('text/html');
     res.send(html);
@@ -12899,7 +12919,7 @@ app.get('/servicos', (req, res) => {
   res.render('servicos', { queryParams: req.query }, (err, html) => {
     if (err) {
       console.error('❌ Erro ao renderizar servicos:', err.message);
-      return res.status(500).send('Erro ao renderizar serviços');
+      return res.status(500).send('Error al cargar la página');
     }
     res.type('text/html');
     res.send(html);
@@ -12925,7 +12945,7 @@ app.get('/servicos-instagram', async (req, res) => {
   }, (err, html) => {
     if (err) {
       console.error('❌ Erro ao renderizar servicos-instagram:', err.message);
-      return res.status(500).send('Erro ao renderizar servicos-instagram');
+      return res.status(500).send('Error al cargar la página');
     }
     res.type('text/html');
     res.send(html);
@@ -12945,7 +12965,7 @@ app.get('/servicos-visualizacoes', async (req, res) => {
   }, (err, html) => {
     if (err) {
       console.error('❌ Erro ao renderizar servicos-visualizacoes:', err.message);
-      return res.status(500).send('Erro ao renderizar servicos-visualizacoes');
+      return res.status(500).send('Error al cargar la página');
     }
     res.type('text/html');
     res.send(html);
@@ -12965,7 +12985,7 @@ app.get('/servicos-curtidas', async (req, res) => {
   }, (err, html) => {
     if (err) {
       console.error('❌ Erro ao renderizar servicos-curtidas:', err.message);
-      return res.status(500).send('Erro ao renderizar servicos-curtidas');
+      return res.status(500).send('Error al cargar la página');
     }
     res.type('text/html');
     res.send(html);
@@ -12984,7 +13004,7 @@ app.get('/servicos-comentarios', async (req, res) => {
   }, (err, html) => {
     if (err) {
       console.error('❌ Erro ao renderizar servicos-comentarios:', err.message);
-      return res.status(500).send('Erro ao renderizar servicos-comentarios');
+      return res.status(500).send('Error al cargar la página');
     }
     res.type('text/html');
     res.send(html);
@@ -17796,7 +17816,9 @@ app.post('/api/paghiper/notification', async (req, res) => {
         const forwardToTrackCombo = (ctx = {}) => {
             if (tcForwarded) return;
             tcForwarded = true;
-            const tcUrl = String(process.env.TRACKCOMBO_NOTIFICATION_URL || 'https://server.trackcombo.com/integration/MXERC7WMHA/mNa2IGe5qj7gaPyO67Ip/').trim();
+            // You Agency: sem URL padrão (a de antes era o container da OPPUS — venda do México cairia no pixel errado).
+            const tcUrl = String(process.env.TRACKCOMBO_NOTIFICATION_URL || '').trim();
+            if (!tcUrl) return;
             if (!tcUrl) return;
             const sleep = (ms) => new Promise(r => setTimeout(r, ms));
             (async () => {
@@ -19383,12 +19405,12 @@ function resolveServiceLabelForSms(record) {
         };
         const raw = (safe(getAdd('categoria_servico')) + ' ' + safe(getAdd('tipo_servico')) + ' ' + safe(record?.tipoServico) + ' ' + safe(record?.tipo)).toLowerCase();
         if (/seguidor/.test(raw)) return 'Seguidores';
-        if (/curtida|like/.test(raw)) return 'Curtidas';
-        if (/visualiza|view/.test(raw)) return 'Visualizações';
-        if (/coment/.test(raw)) return 'Comentários';
-        return 'Seu pedido';
+        if (/curtida|like/.test(raw)) return 'Me gusta';
+        if (/visualiza|view/.test(raw)) return 'Vistas';
+        if (/coment/.test(raw)) return 'Comentarios';
+        return 'Tu pedido';
     } catch (_) {
-        return 'Seu pedido';
+        return 'Tu pedido';
     }
 }
 
@@ -19465,7 +19487,7 @@ async function maybeSendOrderRecoveryCouponSms({ record, stage, couponCode, coup
         const code = safe(couponCode || '');
         // Descrição do serviço selecionado (Seguidores / Curtidas / Visualizações).
         const servicoLabel = resolveServiceLabelForSms(record);
-        const msg = `You Agency: ${servicoLabel} com ${pct}% de desconto. Conclua seu pedido: ${url}`;
+        const msg = `You Agency: ${servicoLabel} con ${pct}% de descuento. Completa tu pedido: ${url}`;
 
         const smsRes = await sendMex10Sms(phoneDigits, msg);
         try {
@@ -20855,7 +20877,7 @@ async function despacharPedidoRedeSocial(record, col) {
     }
     await enviarItemRedeSocial(record, col, { slot: 'redes', tipo, rede: def.rede, link, qtd });
 
-    // Ofertas da etapa 3 (me gusta / visualizaciones / comentarios) vão para o vídeo de `bump_link`.
+    // Ofertas da etapa 3 (me gusta / vistas / comentarios) vão para o vídeo de `bump_link`.
     const bumps = String(m['order_bumps'] || '').split(';').map((b) => b.trim()).filter((b) => /^(likes|views|comments):\d+$/.test(b));
     if (!bumps.length) return;
     const bumpLink = String(m['bump_link'] || '').trim();
@@ -23024,7 +23046,7 @@ app.get('/:slug', async (req, res, next) => {
                 try { console.error('❌ Erro ao renderizar termos via slug:', err.message); } catch(_) {}
                 const p = require('path');
                 try { return res.sendFile(p.join(__dirname, 'public', 'termos.html')); } catch(_) {}
-                return res.status(500).send('Erro ao abrir Termos de Uso');
+                return res.status(500).send('Error al abrir los Términos de uso');
             }
             res.type('text/html');
             res.send(html);
@@ -23160,7 +23182,7 @@ app.post("/generate", adminOnly, (req, res) => {
         console.error("Erro ao gerar link:", error);
         res.status(500).json({
             success: false,
-            error: "Erro interno do servidor"
+            error: "Error interno del servidor"
         });
     }
 });
@@ -23215,7 +23237,7 @@ app.post("/api/check-privacy", async (req, res) => {
     if (!username || username.length < 1) {
         return res.status(400).json({
             success: false,
-            error: "Nome de usuário é obrigatório"
+            error: "Escribe el nombre de usuario."
         });
     }
 
@@ -23320,7 +23342,7 @@ app.post("/api/check-privacy", async (req, res) => {
         console.error("Erro na verificação de privacidade:", error.message);
         return res.status(500).json({
             success: false,
-            error: "Erro ao verificar privacidade. Tente novamente."
+            error: "Error al verificar la privacidad. Inténtalo de nuevo."
         });
     }
 });
@@ -23344,7 +23366,7 @@ app.post("/api/check-instagram-profile", async (req, res) => {
     if (!username || username.length < 1) {
         return res.status(400).json({
             success: false,
-            error: "Nome de usuário é obrigatório"
+            error: "Escribe el nombre de usuario."
         });
     }
 
@@ -23352,7 +23374,7 @@ app.post("/api/check-instagram-profile", async (req, res) => {
     if (/^@?(p|reel|reels|tv|stories|explore|accounts|direct)$/i.test(String(username).trim())) {
         return res.status(400).json({
             success: false,
-            error: "Cole o @ do perfil, não o link do post."
+            error: "Pega el @ del perfil, no el enlace de la publicación."
         });
     }
 
@@ -23364,7 +23386,7 @@ app.post("/api/check-instagram-profile", async (req, res) => {
             return res.status(403).json({
                 success: false,
                 error: "blocked_user",
-                message: "Este usuário está bloqueado no sistema."
+                message: "Este usuario está bloqueado en el sistema."
             });
         }
     } catch (e) {
@@ -23457,7 +23479,7 @@ app.post("/api/check-instagram-profile", async (req, res) => {
         console.error("❌ Erro no handler check-instagram-profile:", error.message);
         return res.status(500).json({
             success: false,
-            error: "Erro interno ao verificar perfil."
+            error: "Error interno al verificar el perfil."
         });
     }
 });
@@ -23579,7 +23601,7 @@ app.post('/api/check-usage', async (req, res) => {
       // Verificar se o teste está como 'OK' - só bloquear se teste for OK
       const testeValue = found[CONTROLE_FIELDS.TESTE];
       if (testeValue === 'OK') {
-        return res.json({ used: true, message: 'Já há registro de utilização para este IP e navegador.' });
+        return res.json({ used: true, message: 'Ya hay un registro de uso para esta IP y este navegador.' });
       }
     }
     return res.json({ used: false });
@@ -23612,7 +23634,7 @@ app.post('/api/check-link-status', async (req, res) => {
     
     if (found) {
       console.log(`🔒 Link ${id} já foi usado para um pedido`);
-      return res.json({ blocked: true, message: 'Este link temporário já foi usado para um pedido.' });
+      return res.json({ blocked: true, message: 'Este enlace temporal ya se usó para un pedido.' });
     }
     
     return res.json({ blocked: false });
@@ -26302,7 +26324,7 @@ app.get('/pedido', async (req, res) => {
     const _orderForView = (req.session && req.session.adminUser) ? order : sanitizeOrderForClient(order);
     return res.render('pedido', { order: _orderForView, refilDaysLeft, PIXEL_ID: process.env.PIXEL_ID || '', logoLink: '/engajamento', esc: escFn, fromCliente, upsellOfferActive });
   } catch (e) {
-    return res.status(500).type('text/plain').send('Erro ao carregar pedido');
+    return res.status(500).type('text/plain').send('Error al cargar el pedido');
   }
 });
 
@@ -26313,7 +26335,7 @@ app.get('/posts', async (req, res) => {
     const username = (usernameParam || usernameSession || '').toLowerCase();
     return res.render('posts', { username });
   } catch (e) {
-    return res.status(500).send('Erro ao renderizar posts');
+    return res.status(500).send('Error al cargar la página');
   }
 });
 
@@ -27968,7 +27990,7 @@ app.post('/api/refil/simple', publicIpLimit('refil_simple', 20, 10), async (req,
       } catch (_) { return ''; }
     };
     const username = normalizeUsername(usernameRaw);
-    if (!username) return res.status(400).json({ ok: false, error: 'missing_username', message: 'Informe o @ do Instagram.' });
+    if (!username) return res.status(400).json({ ok: false, error: 'missing_username', message: 'Escribe tu @ de Instagram.' });
     const viaTag = (function () { const v = String((req.body && (req.body.via || req.body.source)) || '').trim(); return /^[a-z0-9_]{1,40}$/i.test(v) ? v : 'refil1_simple'; })();
 
     // Loga TODA reposição do refil1 em `refil2_requests` para aparecer no Gerenciamento de Refil
@@ -28059,7 +28081,7 @@ app.post('/api/refil/simple', publicIpLimit('refil_simple', 20, 10), async (req,
     ];
     const arr = await col.find({ $or: usernameOr }).sort({ 'woovi.paidAt': -1, paidAt: -1, createdAt: -1, _id: -1 }).limit(50).toArray();
     const paidArr = (arr || []).filter(pickPaid);
-    if (!paidArr.length) { await logRefilFalha({ username, motivo: 'no_orders' }); return res.status(404).json({ ok: false, error: 'no_orders', message: 'Nenhum pedido pago encontrado para esse @.' }); }
+    if (!paidArr.length) { await logRefilFalha({ username, motivo: 'no_orders' }); return res.status(404).json({ ok: false, error: 'no_orders', message: 'No encontramos ningún pedido pagado para ese @.' }); }
     // Reordena pela recência REAL. Vendas via WhatsApp (manuais) têm `paidAt`/`createdAt` mas NÃO
     // têm `woovi.paidAt`; o sort do Mongo (que prioriza woovi.paidAt) jogava elas pro fim, fazendo
     // o refil pegar um Pix antigo em vez da compra de WhatsApp mais recente. Aqui usamos a MAIOR data.
@@ -28112,9 +28134,9 @@ app.post('/api/refil/simple', publicIpLimit('refil_simple', 20, 10), async (req,
     }
     if (!order) {
       const anySimple = paidArr.some(o => { const t = getTipo(o); return (t === 'mistos' || t === 'brasileiros') && isSeguidoresOrder(o); });
-      if (!anySimple) { await logRefilFalha({ username, motivo: 'not_supported' }); return res.status(400).json({ ok: false, error: 'not_supported', message: 'Reposição disponível apenas para seguidores mistos e brasileiros.' }); }
+      if (!anySimple) { await logRefilFalha({ username, motivo: 'not_supported' }); return res.status(400).json({ ok: false, error: 'not_supported', message: 'La reposición solo está disponible para seguidores mixtos.' }); }
       await logRefilFalha({ username, motivo: 'no_provider_order' });
-      return res.status(400).json({ ok: false, error: 'no_provider_order', message: 'Seu pedido ainda está em processamento. Tente novamente mais tarde.' });
+      return res.status(400).json({ ok: false, error: 'no_provider_order', message: 'Tu pedido todavía está en proceso. Inténtalo de nuevo más tarde.' });
     }
 
     // ── ÂNCORA DE REPOSIÇÃO (force-refil) ────────────────────────────────────
@@ -28180,7 +28202,7 @@ app.post('/api/refil/simple', publicIpLimit('refil_simple', 20, 10), async (req,
     const brtDayKey = (ms) => { const d = new Date(Number(ms || 0) - (3 * 60 * 60 * 1000)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`; };
     const paidAtMs = getPaidAtMs(order);
     if (paidAtMs && brtDayKey(paidAtMs) === brtDayKey(Date.now())) {
-      return res.status(400).json({ ok: false, error: 'paid_today', message: 'Seu pedido foi pago hoje. A reposição serve para repor a queda de seguidores ao longo do tempo — solicite alguns dias após a entrega.' });
+      return res.status(400).json({ ok: false, error: 'paid_today', message: 'Tu pedido se pagó hoy. La reposición sirve para recuperar los seguidores que se caen con el tiempo; solicítala unos días después de la entrega.' });
     }
 
     // Throttle 24h por pedido — CLAIM ATÔMICO: reserva o slot de 24h ANTES de chamar o
@@ -28207,7 +28229,7 @@ app.post('/api/refil/simple', publicIpLimit('refil_simple', 20, 10), async (req,
         const rec = await throttleCol.findOne({ key: throttleKey }, { projection: { nextAllowedAt: 1 } });
         const nextMs = rec && rec.nextAllowedAt ? new Date(String(rec.nextAllowedAt)).getTime() : 0;
         const h = Math.max(0, (nextMs - nowMs) / (60 * 60 * 1000)).toFixed(1);
-        return res.status(400).json({ ok: false, error: 'refill_unavailable', message: `Aguarde ${h}h para solicitar uma nova reposição.` });
+        return res.status(400).json({ ok: false, error: 'refill_unavailable', message: `Espera ${h} h para solicitar una nueva reposición.` });
       }
       __throttleClaimed = true;
     } catch (_) {}
@@ -28228,7 +28250,7 @@ app.post('/api/refil/simple', publicIpLimit('refil_simple', 20, 10), async (req,
           if (__refilLiveCurrent > finalContratado) {
             const fmt = (n) => { try { return Number(n).toLocaleString('pt-BR'); } catch (_) { return String(n); } };
             await __releaseThrottle();
-            return res.status(400).json({ ok: false, error: 'above_contracted', message: `Quantidade atual (${fmt(__refilLiveCurrent)}) é maior que a contratada (${fmt(finalContratado)}). Não é necessária reposição.` });
+            return res.status(400).json({ ok: false, error: 'above_contracted', message: `La cantidad actual (${fmt(__refilLiveCurrent)}) es mayor que la contratada (${fmt(finalContratado)}). No hace falta una reposición.` });
           }
         }
       } catch (_) {}
@@ -28252,7 +28274,7 @@ app.post('/api/refil/simple', publicIpLimit('refil_simple', 20, 10), async (req,
       // Sem fornecedor identificado (nenhum reconheceu o pedido) ≠ chave faltando no servidor.
       const __semProv = !__refillApi.provider;
       await logRefilFalha({ username, motivo: __semProv ? 'provider_not_found' : 'missing_key', provider: __refillApi.provider || null, orderId: famaOrderId });
-      return res.status(__semProv ? 400 : 500).json({ ok: false, error: __semProv ? 'provider_not_found' : 'missing_key', message: __semProv ? 'Favor contatar o suporte.' : 'Configuração indisponível.' });
+      return res.status(__semProv ? 400 : 500).json({ ok: false, error: __semProv ? 'provider_not_found' : 'missing_key', message: __semProv ? 'Por favor, contacta a soporte.' : 'Configuración no disponible.' });
     }
 
     const params = new URLSearchParams();
@@ -28267,7 +28289,7 @@ app.post('/api/refil/simple', publicIpLimit('refil_simple', 20, 10), async (req,
     } catch (e) {
       await __releaseThrottle();
       await logRefilFalha({ username, motivo: 'provider_error', provider: __refillApi.provider, orderId: famaOrderId, detalhe: String((e && e.message) || e).slice(0, 300) });
-      return res.status(502).json({ ok: false, error: 'provider_error', provider: __refillApi.provider, providerUrl: apiUrl, message: 'Erro ao solicitar reposição. Tente novamente.' });
+      return res.status(502).json({ ok: false, error: 'provider_error', provider: __refillApi.provider, providerUrl: apiUrl, message: 'Error al solicitar la reposición. Inténtalo de nuevo.' });
     }
 
     // Sucesso = resposta com número (campo refill, ex: { "refill": "1" })
@@ -28287,8 +28309,8 @@ app.post('/api/refil/simple', publicIpLimit('refil_simple', 20, 10), async (req,
       const el = errMsg.toLowerCase();
       const jaEmAndamento = /n[ãa]o\s+conclu[íi]da|already|in\s*progress|em\s*andamento|pending|aguard/.test(el);
       const friendly = jaEmAndamento
-        ? 'Você já tem uma reposição em andamento para este pedido. Aguarde ela concluir (pode levar algumas horas) antes de solicitar outra.'
-        : (errMsg || 'Não foi possível solicitar a reposição agora.');
+        ? 'Ya tienes una reposición en curso para este pedido. Espera a que termine (puede tardar algunas horas) antes de solicitar otra.'
+        : (errMsg || 'No se pudo solicitar la reposición en este momento.');
       // Se JÁ tem reposição em andamento no fornecedor, mantém o bloqueio (existe refil
       // ativo). Se foi erro genuíno, libera o slot para o cliente poder tentar de novo.
       if (!jaEmAndamento) await __releaseThrottle();
@@ -28303,10 +28325,10 @@ app.post('/api/refil/simple', publicIpLimit('refil_simple', 20, 10), async (req,
       await throttleCol.updateOne({ key: throttleKey }, { $set: { key: throttleKey, order_id: famaOrderId, username, lastRequestedAt: nowIso, nextAllowedAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), updatedAt: nowIso }, $setOnInsert: { createdAt: nowIso } }, { upsert: true });
     } catch (_) {}
 
-    return res.json({ ok: true, refill: refillId, provider: __refillApi.provider, providerUrl: apiUrl, message: 'Reposição solicitada' });
+    return res.json({ ok: true, refill: refillId, provider: __refillApi.provider, providerUrl: apiUrl, message: 'Reposición solicitada' });
   } catch (e) {
     await logRefilFalha({ motivo: 'server_error', detalhe: String((e && e.message) || e).slice(0, 300) });
-    return res.status(500).json({ ok: false, error: 'server_error', message: 'Erro ao solicitar reposição.' });
+    return res.status(500).json({ ok: false, error: 'server_error', message: 'Error al solicitar la reposición.' });
   }
 });
 
@@ -28846,7 +28868,7 @@ app.post('/api/refil/create', refilCreateAuth, publicIpLimit('refil_create', 60,
     };
     const usernameInput = normalizeUsername(usernameRaw);
     if (!orderIdInput && !usernameInput && !refilTokenInput) {
-      return res.status(400).json({ ok: false, error: 'missing_username_or_order_id', message: 'Informe o @ do Instagram para solicitar reposição.' });
+      return res.status(400).json({ ok: false, error: 'missing_username_or_order_id', message: 'Escribe tu @ de Instagram para solicitar la reposición.' });
     }
 
     const col = await getCollection('checkout_orders');
@@ -28958,7 +28980,7 @@ app.post('/api/refil/create', refilCreateAuth, publicIpLimit('refil_create', 60,
           if (nextMs && Number.isFinite(nextMs) && now < nextMs) {
             const remainingH = Math.max(0, (nextMs - now) / (60 * 60 * 1000));
             const remainingStr = Number.isFinite(remainingH) ? remainingH.toFixed(1) : '6.0';
-            return res.status(400).json({ ok: false, error: 'refill_unavailable', message: `Reposicao indisponivel. Aguarde ${remainingStr}h para liberar a reposicao.` });
+            return res.status(400).json({ ok: false, error: 'refill_unavailable', message: `Reposición no disponible. Espera ${remainingStr} h para que se habilite la reposición.` });
           }
         } catch (_) {}
       }
@@ -28975,7 +28997,7 @@ app.post('/api/refil/create', refilCreateAuth, publicIpLimit('refil_create', 60,
           if (lastMs && (now - lastMs) < ms6h) {
             const remainingH = Math.max(0, (ms6h - (now - lastMs)) / (60 * 60 * 1000));
             const remainingStr = Number.isFinite(remainingH) ? remainingH.toFixed(1) : '6.0';
-            return res.status(400).json({ ok: false, error: 'refill_unavailable', message: `Reposicao indisponivel. Aguarde ${remainingStr}h para liberar a reposicao.` });
+            return res.status(400).json({ ok: false, error: 'refill_unavailable', message: `Reposición no disponible. Espera ${remainingStr} h para que se habilite la reposición.` });
           }
         }
       } catch (_) {}
@@ -29057,20 +29079,20 @@ app.post('/api/refil/create', refilCreateAuth, publicIpLimit('refil_create', 60,
             }
             return res.json({
               ok: true,
-              message: 'Reposição solicitada com sucesso',
+              message: 'Reposición solicitada con éxito',
               data: { refill_id: refillId, status: 'initiated', provider_response: refillData }
             });
           }
-          return res.status(400).json({ ok: false, error: 'refill_failed', message: refillMsg || 'Falha ao solicitar reposição' });
+          return res.status(400).json({ ok: false, error: 'refill_failed', message: refillMsg || 'No se pudo solicitar la reposición' });
         } catch (e) {
           const errMsg = e?.response?.data?.error || e?.message || String(e);
-          return res.status(500).json({ ok: false, error: 'refill_failed', message: `Erro ao comunicar com fornecedor: ${errMsg}` });
+          return res.status(500).json({ ok: false, error: 'refill_failed', message: `Error al comunicarse con el proveedor: ${errMsg}` });
         }
       }
-      return res.status(400).json({ ok: false, error: 'invalid_order_id', message: 'order_id inválido' });
+      return res.status(400).json({ ok: false, error: 'invalid_order_id', message: 'order_id no válido' });
     }
 
-    if (!order) return res.status(404).json({ ok: false, error: 'order_not_found', message: 'Pedido não encontrado' });
+    if (!order) return res.status(404).json({ ok: false, error: 'order_not_found', message: 'Pedido no encontrado' });
 
     const getProviderCandidates = (o) => {
       const out = [];
@@ -29128,10 +29150,10 @@ app.post('/api/refil/create', refilCreateAuth, publicIpLimit('refil_create', 60,
     let linkToSend = picked ? picked.link : null;
 
     if (!provider || !apiUrl || !baseExternalOrderId) {
-      return res.status(400).json({ ok: false, error: 'no_provider_payload', message: 'Este pedido não possui dados suficientes para solicitar reposição.' });
+      return res.status(400).json({ ok: false, error: 'no_provider_payload', message: 'Este pedido no tiene datos suficientes para solicitar la reposición.' });
     }
     if (!apiKey) {
-        return res.status(500).json({ ok: false, error: 'missing_api_key', message: 'Configuração de API ausente no servidor.' });
+        return res.status(500).json({ ok: false, error: 'missing_api_key', message: 'Falta la configuración de la API en el servidor.' });
     }
 
     try {
@@ -29156,7 +29178,7 @@ app.post('/api/refil/create', refilCreateAuth, publicIpLimit('refil_create', 60,
         if (nextMs && Number.isFinite(nextMs) && now < nextMs) {
           const remainingH = Math.max(0, (nextMs - now) / (60 * 60 * 1000));
           const remainingStr = Number.isFinite(remainingH) ? remainingH.toFixed(1) : '6.0';
-          return res.status(400).json({ ok: false, error: 'refill_unavailable', message: `Reposicao indisponivel. Aguarde ${remainingStr}h para liberar a reposicao.` });
+          return res.status(400).json({ ok: false, error: 'refill_unavailable', message: `Reposición no disponible. Espera ${remainingStr} h para que se habilite la reposición.` });
         }
       } catch (_) {}
     }
@@ -29218,7 +29240,7 @@ app.post('/api/refil/create', refilCreateAuth, publicIpLimit('refil_create', 60,
           return res.status(400).json({ ok: false, error: String(data.error), message: `Resposta do Fornecedor: ${String(data.error)}` });
         }
         if (!(refillId || data.success === true || data.status === 'success')) {
-          return res.status(400).json({ ok: false, error: 'refill_failed', message: msg || 'Falha ao solicitar reposição' });
+          return res.status(400).json({ ok: false, error: 'refill_failed', message: msg || 'No se pudo solicitar la reposición' });
         }
         if (throttleKey) {
           try {
@@ -29235,7 +29257,7 @@ app.post('/api/refil/create', refilCreateAuth, publicIpLimit('refil_create', 60,
 
         return res.json({
             ok: true,
-            message: 'Reposição solicitada com sucesso',
+            message: 'Reposición solicitada con éxito',
             data: {
                 refill_id: refillId,
                 status: 'initiated',
@@ -29254,7 +29276,7 @@ app.post('/api/refil/create', refilCreateAuth, publicIpLimit('refil_create', 60,
             error: errMsg,
             status: 'failed'
         }}});
-        return res.status(500).json({ ok: false, error: 'provider_error', message: `Erro ao comunicar com fornecedor: ${errMsg}` });
+        return res.status(500).json({ ok: false, error: 'provider_error', message: `Error al comunicarse con el proveedor: ${errMsg}` });
     }
 
   } catch (e) {
@@ -29321,9 +29343,9 @@ app.post('/api/refil/history', publicIpLimit('refil_history', 60, 10), async (re
       if (!followersOrders.length) {
         const anyOrder = await col.find({ $and: [{ $or: paidOr }, { $or: byUserOr }] }).limit(1).toArray();
         if (!anyOrder.length) {
-          return res.status(404).json({ ok: false, error: 'no_orders', message: 'Nenhum pedido pago encontrado para este usuário.' });
+          return res.status(404).json({ ok: false, error: 'no_orders', message: 'No encontramos ningún pedido pagado para este usuario.' });
         }
-        return res.json({ ok: true, status: 'no_followers_purchase', message: 'Nenhuma compra de seguidores encontrada para este usuário.', data: { username: usernameInput } });
+        return res.json({ ok: true, status: 'no_followers_purchase', message: 'No encontramos ninguna compra de seguidores para este usuario.', data: { username: usernameInput } });
       }
       const order = followersOrders[0];
       const resolveQty = (o) => {
@@ -29407,7 +29429,7 @@ app.post('/api/refil/history', publicIpLimit('refil_history', 60, 10), async (re
       const ip = req.realIP || req.ip || '';
       const check = await verifyInstagramProfile(usernameInput, userAgent, ip, req, res, true, { purpose: 'refil', skipPosts: true });
       if (!check || !check.success || !check.profile) {
-        return res.status(502).json({ ok: false, error: 'profile_lookup_failed', message: 'Falha ao consultar perfil no Instagram.' });
+        return res.status(502).json({ ok: false, error: 'profile_lookup_failed', message: 'No se pudo consultar el perfil en Instagram.' });
       }
       const currentFollowers = Number(check.profile.followersCount || 0);
       if (baseFollowers == null) {
@@ -29415,7 +29437,7 @@ app.post('/api/refil/history', publicIpLimit('refil_history', 60, 10), async (re
         return res.json({
           ok: true,
           status: 'no_base',
-          message: 'Base de seguidores da compra não encontrada. Usando valores atuais.',
+          message: 'No encontramos la base de seguidores de la compra. Usamos los valores actuales.',
           data: {
             username: usernameInput,
             last_order_id: String(order._id || ''),
@@ -29434,7 +29456,7 @@ app.post('/api/refil/history', publicIpLimit('refil_history', 60, 10), async (re
         return res.json({
           ok: true,
           status: 'below_threshold',
-          message: `Queda de seguidores abaixo do mínimo para reposição (${MIN_DROP}).`,
+          message: `La caída de seguidores está por debajo del mínimo para reposición (${MIN_DROP}).`,
           data: {
             username: usernameInput,
             last_order_id: String(order._id || ''),
@@ -29451,7 +29473,7 @@ app.post('/api/refil/history', publicIpLimit('refil_history', 60, 10), async (re
         return res.json({
           ok: true,
           status: 'above_target',
-          message: 'Perfil está acima da meta da última compra. Reposição indisponível.',
+          message: 'El perfil está por encima de la meta de la última compra. Reposición no disponible.',
           data: {
             username: usernameInput,
             last_order_id: String(order._id || ''),
@@ -29528,7 +29550,7 @@ app.post('/api/refil/history', publicIpLimit('refil_history', 60, 10), async (re
       };
       order = arr.find(pickPaid) || (arr.length ? arr[0] : null);
     }
-    if (!order) return res.status(404).json({ ok: false, error: 'order_not_found', message: 'Pedido não encontrado' });
+    if (!order) return res.status(404).json({ ok: false, error: 'order_not_found', message: 'Pedido no encontrado' });
 
     const historyRaw = Array.isArray(order.refillHistory) ? order.refillHistory : [];
     const history = historyRaw
@@ -30259,7 +30281,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
     };
     const username = normalizeUsername(raw);
     if (!username) {
-      return res.status(400).json({ ok: false, error: 'missing_username', message: 'Informe o @ do Instagram' });
+      return res.status(400).json({ ok: false, error: 'missing_username', message: 'Escribe tu @ de Instagram.' });
     }
     const srcRaw = String((req.body && (req.body.source || req.body.from || req.body.origin || req.body.page)) || '').trim();
     const src = srcRaw.toLowerCase().replace(/^\/+/, '');
@@ -30377,7 +30399,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
       const respondErr = (statusCode, payload) => {
         try { if (hardTimer) clearTimeout(hardTimer); } catch (_) {}
         if (res.headersSent) return;
-        const p = (payload && typeof payload === 'object') ? payload : { ok: false, error: 'internal_error', message: 'Falha ao processar reposição.' };
+        const p = (payload && typeof payload === 'object') ? payload : { ok: false, error: 'internal_error', message: 'No se pudo procesar la reposición.' };
         if (debugMode) {
           const hasOwn = (k) => Object.prototype.hasOwnProperty.call(p, k);
           if (!hasOwn('debugId')) p.debugId = debugId;
@@ -30385,7 +30407,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
           if (!hasOwn('upstream')) p.upstream = lastUpstream;
         } else {
           if (p && p.error === 'timeout') {
-            p.message = `${String(p.message || 'Erro, tente novamente.')} (etapa: ${lastStep})`;
+            p.message = `${String(p.message || 'Error, inténtalo de nuevo.')} (etapa: ${lastStep})`;
           }
         }
         return res.status(statusCode).json(p);
@@ -30508,7 +30530,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
       const waitMs = (ms) => new Promise((r) => setTimeout(r, ms));
       try {
         hardTimer = setTimeout(() => {
-          respondErr(504, { ok: false, error: 'timeout', message: 'Erro, tente novamente.' });
+          respondErr(504, { ok: false, error: 'timeout', message: 'Error, inténtalo de nuevo.' });
         }, hardTimeoutMs);
         res.once('finish', () => { try { if (hardTimer) clearTimeout(hardTimer); } catch (_) {} });
         res.once('close', () => { try { if (hardTimer) clearTimeout(hardTimer); } catch (_) {} });
@@ -30693,7 +30715,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
               meta: { step: 'paid_today_db_check', tookMs: Date.now() - startedAt },
               matchedOrder: { id: String(paidTodayOrder._id || ''), status: String(paidTodayOrder.status || ''), paidAt: paidTodayOrder.paidAt || paidTodayOrder?.woovi?.paidAt || paidTodayOrder?.paghiper?.paidAt || paidTodayOrder?.payment?.paidAt || paidTodayOrder?.expay?.paidAt || null }
             });
-            return res.status(409).json({ ok: false, error: 'paid_today', message: 'Esse serviço é para repor quedas de seguidores. Como seu pedido foi pago hoje, ainda não é possível solicitar reposição. Tente novamente amanhã.' });
+            return res.status(409).json({ ok: false, error: 'paid_today', message: 'Este servicio es para reponer caídas de seguidores. Como tu pedido se pagó hoy, todavía no puedes solicitar una reposición. Inténtalo de nuevo mañana.' });
           }
         } catch (e) {
           dbg('paid_today_db_check_failed', { message: e?.message || String(e) });
@@ -30743,7 +30765,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
             errorMessage: 'Pedido não encontrado no api_proxy',
             meta: { step: 'api_proxy', httpStatus: orderResp && orderResp.status ? orderResp.status : null, tookMs: Date.now() - startedAt }
           });
-          return respondErr(502, { ok: false, error: 'order_not_found', message: 'Pedido não encontrado para este usuário.' });
+          return respondErr(502, { ok: false, error: 'order_not_found', message: 'No encontramos el pedido de este usuario.' });
         }
 
         let startCount = safeInt(pedido.start_count);
@@ -30838,7 +30860,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
             meta: { step: 'api_proxy_validate', tookMs: Date.now() - startedAt },
             pedido: { id: orderId || null, service_id: serviceId || null, start_count: startCount, quantity: qty, created_at: orderCreatedAt || null, link: orderLink || null }
           });
-          return respondErr(502, { ok: false, error: 'invalid_order_data', message: 'Não foi possível validar o pedido para reposição.' });
+          return respondErr(502, { ok: false, error: 'invalid_order_data', message: 'No se pudo validar el pedido para la reposición.' });
         }
 
         let followerCount = null;
@@ -30921,7 +30943,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
               },
               pedido: { id: orderId, service_id: serviceId, start_count: startCount, quantity: qty, created_at: orderCreatedAt || null, link: orderLink || null }
             });
-            return respondErr(502, { ok: false, error: 'profile_lookup_failed', message: 'Falha ao consultar perfil no Instagram.' });
+            return respondErr(502, { ok: false, error: 'profile_lookup_failed', message: 'No se pudo consultar el perfil en Instagram.' });
           }
         }
 
@@ -30964,7 +30986,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
             pedido: { id: orderId, service_id: serviceId, start_count: startCount, quantity: qty, created_at: orderCreatedAt || null, link: orderLink || null },
             computed: { initial: (manualInitial != null) ? manualInitial : (startCount + qty), current: followerCountUsed, followersSources }
           });
-          return respondErr(502, { ok: false, error: 'current_followers_zero', message: 'Quantidade atual inválida (zero). Não é possível calcular a reposição com segurança.' });
+          return respondErr(502, { ok: false, error: 'current_followers_zero', message: 'La cantidad actual no es válida (cero). No es posible calcular la reposición con seguridad.' });
         }
 
         const deficitRaw = initial - followerCountUsed;
@@ -30984,7 +31006,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
           return res.json({
             ok: true,
             status: 'initiated',
-            message: `Queda atual: ${deficit} seguidores (mínimo: ${MIN_DROP}). Seguidores consultados: ${followerCountUsed}. A reposição fica disponível quando o perfil estiver com até ${thresholdFollowers} seguidores.`,
+            message: `Caída actual: ${deficit} seguidores (mínimo: ${MIN_DROP}). Seguidores consultados: ${followerCountUsed}. La reposición se habilita cuando el perfil tenga ${thresholdFollowers} seguidores o menos.`,
             data: { quantidade_inicial: initial, quantidade_atual: followerCountUsed, quantidade_de_queda: deficit, min_drop: MIN_DROP, threshold_followers: thresholdFollowers, followers_sources: followersSources, manual_initial: manualInitial != null ? manualInitial : null }
           });
         }
@@ -30998,7 +31020,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
             pedido: { id: orderId, service_id: serviceId, start_count: startCount, quantity: qty, created_at: orderCreatedAt || null, link: orderLink || null },
             computed: { initial, manualInitial: manualInitial != null ? manualInitial : null, current: followerCountUsed, deficit, followersSources }
           });
-          return respondErr(500, { ok: false, error: 'missing_api_key', message: 'Configuração pendente no servidor.' });
+          return respondErr(500, { ok: false, error: 'missing_api_key', message: 'Configuración pendiente en el servidor.' });
         }
 
         const normalizeProviderLink = (rawLink, uname) => {
@@ -31316,9 +31338,9 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
               upstream: { add_reorder: addJson }
             });
             if (isExpired && !addOk) {
-              return respondErr(409, { ok: false, error: 'reorder_expired', message: 'Prazo de reposição expirado para este serviço.', raw: addJson });
+              return respondErr(409, { ok: false, error: 'reorder_expired', message: 'El plazo de reposición de este servicio ya venció.', raw: addJson });
             }
-            return respondErr(502, { ok: false, error: 'provider_error', message: providerMsg || 'Falha ao iniciar reposição.', raw: addJson });
+            return respondErr(502, { ok: false, error: 'provider_error', message: providerMsg || 'No se pudo iniciar la reposición.', raw: addJson });
           }
         }
 
@@ -31335,7 +31357,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
         return res.json({
           ok: true,
           status: 'initiated',
-          message: 'Reposição iniciada',
+          message: 'Reposición iniciada',
           data: { quantidade_inicial: initial, quantidade_atual: followerCountUsed, quantidade_de_queda: deficit, min_drop: MIN_DROP, threshold_followers: Math.max(0, Math.trunc(initial) - Math.trunc(MIN_DROP)), followers_sources: followersSources },
           raw: addJson
         });
@@ -31353,9 +31375,9 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
         }
         const isTimeout = code === 'ECONNABORTED' || code === 'ETIMEDOUT' || code === 'ECONNRESET' || /timeout/i.test(msg);
         if (isTimeout) {
-          return respondErr(504, { ok: false, error: 'timeout', message: 'Erro, tente novamente.' });
+          return respondErr(504, { ok: false, error: 'timeout', message: 'Error, inténtalo de nuevo.' });
         }
-        return respondErr(500, { ok: false, error: 'internal_error', message: 'Falha ao processar reposição.', details: { message: e?.message || String(e) } });
+        return respondErr(500, { ok: false, error: 'internal_error', message: 'No se pudo procesar la reposición.', details: { message: e?.message || String(e) } });
       }
     }
 
@@ -31435,7 +31457,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
         return {
           ok: true,
           status: 'initiated',
-          message: 'Reposição iniciada',
+          message: 'Reposición iniciada',
           data: {
             quantidade_inicial: initial,
             quantidade_atual: current,
@@ -31657,7 +31679,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
           }
         };
       }
-      return res.status(502).json({ ok: false, error: 'webhook_failed', message: webhook && webhook.message ? webhook.message : 'Falha no webhook', debug: webhook ? webhook.debug : undefined });
+      return res.status(502).json({ ok: false, error: 'webhook_failed', message: webhook && webhook.message ? webhook.message : 'Error en el webhook', debug: webhook ? webhook.debug : undefined });
     }
     const extractWebhookErrorMessage = (payload) => {
       try {
@@ -31728,9 +31750,9 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
         const lowerMsg = String(msg || '').toLowerCase();
         const isCooldown = lowerMsg.includes('já foi reposto') || lowerMsg.includes('aguarde') || lowerMsg.includes('recentemente');
         const httpStatus = isCooldown ? 409 : (status && !is2xx ? status : 502);
-        return { ok: false, status, httpStatus, message: msg || 'Falha ao iniciar reposição.' };
+        return { ok: false, status, httpStatus, message: msg || 'No se pudo iniciar la reposición.' };
       } catch (e) {
-        const msg = String(e?.message || e || '').trim() || 'Falha ao iniciar reposição.';
+        const msg = String(e?.message || e || '').trim() || 'No se pudo iniciar la reposición.';
         return { ok: false, status: 0, httpStatus: 502, message: msg };
       }
     };
@@ -31788,7 +31810,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
     };
     try {
       legacyTimer = setTimeout(() => {
-        legacyRespondErr(504, { ok: false, error: 'timeout', message: 'Erro, tente novamente.' });
+        legacyRespondErr(504, { ok: false, error: 'timeout', message: 'Error, inténtalo de nuevo.' });
       }, legacyHardTimeoutMs);
       res.once('finish', () => { try { if (legacyTimer) clearTimeout(legacyTimer); } catch (_) {} });
       res.once('close', () => { try { if (legacyTimer) clearTimeout(legacyTimer); } catch (_) {} });
@@ -31813,7 +31835,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
     const orders = await withTimeoutLegacy(col.find({ $and: [{ $or: paidOr }, { $or: byUserOr }] }).sort({ 'woovi.paidAt': -1, paidAt: -1, createdAt: -1, _id: -1 }).limit(50).toArray(), legacyDbTimeoutMs, 'DB_TIMEOUT');
     if (!orders.length) {
       logRefil2Request({ status: 'no_orders', decision: 'nao_repor', decisionReason: 'no_orders' });
-      return res.status(404).json(wrap({ ok: false, error: 'no_orders', message: 'Nenhum pedido pago encontrado para este usuário.' }));
+      return res.status(404).json(wrap({ ok: false, error: 'no_orders', message: 'No encontramos ningún pedido pagado para este usuario.' }));
     }
     const followersOr = [
       { additionalInfoPaid: { $elemMatch: { key: 'categoria_servico', value: new RegExp('^seguidores$', 'i') } } },
@@ -31828,7 +31850,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
     const followersOrders = await withTimeoutLegacy(col.find({ $and: [{ $or: paidOr }, { $or: byUserOr }, { $or: followersOr }] }).sort({ 'woovi.paidAt': -1, paidAt: -1, createdAt: -1, _id: -1 }).limit(10).toArray(), legacyDbTimeoutMs, 'DB_TIMEOUT');
     if (!followersOrders.length) {
       logRefil2Request({ status: 'no_followers_purchase', decision: 'nao_repor', decisionReason: 'no_followers_purchase' });
-      return res.json(wrap({ ok: true, status: 'no_followers_purchase', message: 'Nenhuma compra de seguidores encontrada para este usuário.', data: { username } }));
+      return res.json(wrap({ ok: true, status: 'no_followers_purchase', message: 'No encontramos ninguna compra de seguidores para este usuario.', data: { username } }));
     }
     const order = followersOrders[0];
     const resolveQty = (o) => {
@@ -31942,7 +31964,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
     const check = await verifyInstagramProfile(username, userAgent, ip, req, res, true, { purpose: 'refil2', skipPosts: true });
     if (!check || !check.success || !check.profile) {
       logRefil2Request({ status: 'profile_lookup_failed', decision: 'nao_repor', decisionReason: 'profile_lookup_failed' });
-      return res.status(502).json(wrap({ ok: false, error: 'profile_lookup_failed', message: 'Falha ao consultar perfil no Instagram.' }));
+      return res.status(502).json(wrap({ ok: false, error: 'profile_lookup_failed', message: 'No se pudo consultar el perfil en Instagram.' }));
     }
     const currentFollowers = Number(check.profile.followersCount || 0);
     if (baseFollowers == null) {
@@ -31962,7 +31984,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
       return res.json(wrap({
         ok: true,
         status: 'no_base',
-        message: 'Base de seguidores da compra não encontrada. Usando valores atuais.',
+        message: 'No encontramos la base de seguidores de la compra. Usamos los valores actuales.',
         data: {
           username,
           last_order_id: String(order._id || ''),
@@ -31995,7 +32017,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
         return res.json(wrap({
           ok: true,
           status: 'initiated',
-          message: 'Reposição iniciada',
+          message: 'Reposición iniciada',
           data: {
             quantidade_inicial: targetFollowers,
             quantidade_atual: currentFollowers,
@@ -32019,7 +32041,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
       return res.json(wrap({
           ok: true,
           status: 'below_threshold',
-          message: `Queda de seguidores abaixo do mínimo para reposição (${MIN_DROP}).`,
+          message: `La caída de seguidores está por debajo del mínimo para reposición (${MIN_DROP}).`,
           data: {
             username,
             last_order_id: String(order._id || ''),
@@ -32050,7 +32072,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
         return res.json(wrap({
           ok: true,
           status: 'initiated',
-          message: 'Reposição iniciada',
+          message: 'Reposición iniciada',
           data: {
             quantidade_inicial: targetFollowers,
             quantidade_atual: currentFollowers,
@@ -32074,7 +32096,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
       return res.json(wrap({
           ok: true,
           status: 'above_target',
-          message: 'Perfil está acima da meta da última compra. Reposição indisponível.',
+          message: 'El perfil está por encima de la meta de la última compra. Reposición no disponible.',
           data: {
             username,
             last_order_id: String(order._id || ''),
@@ -32104,7 +32126,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
           httpStatus: Number(wr && wr.httpStatus) || 0,
           webhookMessage: String(wr && wr.message ? wr.message : '')
         });
-        return res.status(Number(wr && wr.httpStatus) || 409).json(wrap({ ok: false, error: 'refil_not_allowed', message: String(wr && wr.message ? wr.message : 'Falha ao iniciar reposição.') }));
+        return res.status(Number(wr && wr.httpStatus) || 409).json(wrap({ ok: false, error: 'refil_not_allowed', message: String(wr && wr.message ? wr.message : 'No se pudo iniciar la reposición.') }));
       }
       logRefil2Request({
         status: 'initiated',
@@ -32122,7 +32144,7 @@ app.post('/api/refil/preview', publicIpLimit('refil_preview', 40, 10), async (re
       return res.json(wrap({
         ok: true,
         status: 'initiated',
-        message: 'Reposição iniciada',
+        message: 'Reposición iniciada',
         data: {
           quantidade_inicial: targetFollowers,
           quantidade_atual: currentFollowers,
@@ -36092,9 +36114,9 @@ async function followersMgmtNotifyRecoveryForOrder(req, { orderIdRaw, usernameIn
     const clientUrl = `${baseUrl}/cliente`;
     const clientUrlWithPhone = phoneDigits ? `${clientUrl}?phone=${encodeURIComponent(phoneDigits)}` : clientUrl;
     const waPhone = '553173425727';
-    const whatsappHref = `https://wa.me/${waPhone}?text=${encodeURIComponent('Olá, preciso de ajuda com reposição de seguidores')}`;
+    const whatsappHref = `https://wa.me/${waPhone}?text=${encodeURIComponent('Hola, necesito ayuda con la reposición de seguidores')}`;
 
-    const subject = 'Recupere os seguidores perdidos';
+    const subject = 'Recupera los seguidores que perdiste';
     const greetingName = orderUsername ? `@${orderUsername}` : 'Cliente';
     const escapeHtml = (s) => String(s == null ? '' : s)
       .replace(/&/g, '&amp;')
@@ -36103,21 +36125,21 @@ async function followersMgmtNotifyRecoveryForOrder(req, { orderIdRaw, usernameIn
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
     const text = [
-      `Olá, ${greetingName}`,
+      `Hola, ${greetingName}`,
       '',
-      'Identificamos que você teve queda dos seguidores, você pode repor com nossa ferramenta.',
+      'Detectamos que tu perfil tuvo una caída de seguidores. Puedes reponerlos con nuestra herramienta.',
       '',
-      'Acesse o link abaixo:',
+      'Entra al siguiente enlace:',
       clientUrlWithPhone,
       '',
-      '1) Informe o número de telefone que registrou no momento da compra.',
-      "2) Abra o detalhamento do seu pedido e clique em 'Acessar ferramenta'.",
-      "3) Após isso clique em 'Solicitar reposição'.",
+      '1) Escribe el número de teléfono que registraste al hacer la compra.',
+      "2) Abre los detalles de tu pedido y da clic en 'Acceder a la herramienta'.",
+      "3) Después da clic en 'Solicitar reposición'.",
       '',
-      'Regras de reposição: no detalhamento do pedido, clique em "Regras de reposição" (o texto expande a descrição).',
+      'Reglas de reposición: en los detalles del pedido, da clic en "Reglas de reposición" (el texto se despliega).',
       '',
-      `Suporte: ${whatsappHref}`,
-      'Email: support@youagency.site'
+      `Soporte: ${whatsappHref}`,
+      'Correo: support@youagency.site'
     ].join('\n');
     const html = `
 <div style="margin:0;padding:0;background:#f5f7fb;">
@@ -36132,38 +36154,38 @@ async function followersMgmtNotifyRecoveryForOrder(req, { orderIdRaw, usernameIn
           </tr>
           <tr>
             <td style="padding:14px 20px;font-family:Arial,Helvetica,sans-serif;color:#111827;">
-              <div style="font-size:16px;font-weight:700;margin:0 0 8px 0;">Olá, ${escapeHtml(greetingName)}, tudo bem?</div>
+              <div style="font-size:16px;font-weight:700;margin:0 0 8px 0;">Hola, ${escapeHtml(greetingName)}, ¿cómo estás?</div>
               <div style="font-size:14px;line-height:1.5;margin:0 0 12px 0;">
-                Identificamos que você teve queda dos seguidores. Você pode repor com nossa ferramenta.
+                Detectamos que tu perfil tuvo una caída de seguidores. Puedes reponerlos con nuestra herramienta.
               </div>
 
               <div style="margin:14px 0 0 0;padding:12px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb;">
-                <div style="font-size:13px;font-weight:800;margin:0 0 8px 0;color:#111827;">Como solicitar reposição</div>
+                <div style="font-size:13px;font-weight:800;margin:0 0 8px 0;color:#111827;">Cómo solicitar la reposición</div>
                 <div style="font-size:13px;line-height:1.6;color:#111827;margin:0 0 10px 0;">
-                  Acesse o link abaixo e siga o passo a passo.
+                  Entra al siguiente enlace y sigue estos pasos.
                 </div>
                 <div style="margin:0 0 10px 0;">
-                  <a href="${escapeHtml(clientUrlWithPhone)}" style="display:inline-block;padding:9px 12px;background:#111827;color:#ffffff;border-radius:10px;font-size:13px;font-weight:800;text-decoration:none;">Abrir Clientes</a>
+                  <a href="${escapeHtml(clientUrlWithPhone)}" style="display:inline-block;padding:9px 12px;background:#111827;color:#ffffff;border-radius:10px;font-size:13px;font-weight:800;text-decoration:none;">Abrir el Área de clientes</a>
                 </div>
                 <ol style="margin:0 0 0 18px;padding:0;font-size:12px;line-height:1.6;color:#111827;">
-                  <li>Informe o número de telefone que registrou no momento da compra.</li>
-                  <li>Abra o detalhamento do seu pedido e clique em <strong>Acessar ferramenta</strong>.</li>
-                  <li>Após isso clique em <strong>Solicitar reposição</strong>.</li>
+                  <li>Escribe el número de teléfono que registraste al hacer la compra.</li>
+                  <li>Abre los detalles de tu pedido y da clic en <strong>Acceder a la herramienta</strong>.</li>
+                  <li>Después da clic en <strong>Solicitar reposición</strong>.</li>
                 </ol>
 
                 <details style="margin-top:12px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#ffffff;">
-                  <summary style="cursor:pointer;font-size:13px;font-weight:800;color:#111827;">Regras de reposição (clique para expandir)</summary>
+                  <summary style="cursor:pointer;font-size:13px;font-weight:800;color:#111827;">Reglas de reposición (da clic para ver más)</summary>
                   <div style="margin-top:8px;font-size:12px;line-height:1.6;color:#111827;">
-                    As regras completas aparecem no detalhamento do pedido. Clique no texto para expandir a descrição.
+                    Las reglas completas aparecen en los detalles del pedido. Da clic en el texto para ver la descripción completa.
                   </div>
                 </details>
               </div>
 
               <div style="margin:14px 0 0 0;padding:12px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#ffffff;">
-                <div style="font-size:13px;font-weight:800;margin:0 0 6px 0;color:#111827;">Precisa de suporte?</div>
+                <div style="font-size:13px;font-weight:800;margin:0 0 6px 0;color:#111827;">¿Necesitas ayuda?</div>
                 <div style="font-size:13px;color:#111827;line-height:1.6;">
                   <div>Correo: <a href="mailto:support@youagency.site" style="color:#2563eb;text-decoration:none;">support@youagency.site</a></div>
-                  <div>Chat de suporte: <a href="${escapeHtml(whatsappHref)}" style="color:#2563eb;text-decoration:none;">Clique aqui para acessar</a></div>
+                  <div>Chat de soporte: <a href="${escapeHtml(whatsappHref)}" style="color:#2563eb;text-decoration:none;">Da clic aquí para entrar</a></div>
                 </div>
               </div>
             </td>
@@ -36356,7 +36378,7 @@ async function followersMgmtNotifyRecoveryForOrder(req, { orderIdRaw, usernameIn
         smsOut.status = 'skipped_already_sent_to_phone';
         smsOut.error = 'sms_already_sent_to_phone';
       } else {
-      const msg = 'You Agency: Voce perdeu seguidores. Enviamos no seu e-mail cadastrado na compra as orientacoes para recuperar seus seguidores.';
+      const msg = 'You Agency: Perdiste seguidores. Te enviamos al correo que registraste en la compra las instrucciones para recuperarlos.';
       const resp = await axios.get('https://mex10.com/api/shortcodev2.aspx', getMex10RequestOpts({
         params: { token: mexToken, t: 'send', n: phoneDigits, m: msg },
         timeout: 20000,
@@ -39552,7 +39574,7 @@ app.post('/api/admin/private-order-send-email', requireAdmin, async (req, res) =
         from: 'You Agency <support@youagency.site>',
         to: emailTo,
         subject,
-        text: `${text}\n\nSuporte: support@youagency.site`,
+        text: `${text}\n\nSoporte: support@youagency.site`,
         html
       });
       const accepted = Array.isArray(info && info.accepted) ? info.accepted.map(x => String(x || '').toLowerCase()) : [];
@@ -41641,12 +41663,14 @@ app.get('/api/painel/meta-ads/log', requireAdmin, async (req, res) => {
 // mas o CUSTO é por subtipo. Views, Comentários e Garantia idem. Cache 5 min.
 const __bumpPieCache = new Map();
 // Preços dos bumps em CENTAVOS (espelham pricing.js: tabelaCurtidas / tabelaVisualizacoes).
+// You Agency: lidos direto das tabelas do pricing.js (em pesos), para o gráfico não ficar com preço antigo.
+const __bpCents = (arr) => { const o = {}; for (const x of (arr || [])) o[x.q] = parsePrecoToCents(x.p); return o; };
 const _BP_CURTIDAS = {
-  mistos: { 150: 490, 300: 790, 500: 990, 700: 1490, 1000: 1990, 2000: 2490, 3000: 2990, 4000: 3490, 5000: 3990, 7500: 4990, 10000: 6990, 15000: 8990 },
-  curtidas_brasileiras: { 150: 490, 300: 990, 500: 1490, 700: 2990, 1000: 3990, 2000: 4990, 3000: 5990, 4000: 6990, 5000: 7990, 7500: 10990, 10000: 13990, 15000: 19990 },
-  organicos: { 150: 1190, 300: 1990, 500: 3490, 1000: 4890, 2000: 7390, 3000: 9790, 4000: 12290, 5000: 15790, 7500: 19590, 10000: 24490, 15000: 31490 },
+  mistos: __bpCents(tabelaCurtidas.mistos),
+  curtidas_brasileiras: __bpCents(tabelaCurtidas.curtidas_brasileiras),
+  organicos: __bpCents(tabelaCurtidas.organicos),
 };
-const _BP_VIEWS = { 1000: 490, 2500: 990, 5000: 1490, 10000: 1990, 25000: 2490, 50000: 3490, 100000: 4990, 150000: 5990, 200000: 6990, 250000: 8990, 500000: 10990, 1000000: 15990 };
+const _BP_VIEWS = __bpCents(tabelaVisualizacoes.visualizacoes_reels);
 const _BP_UPGRADE_ADD = { 50: 50, 150: 150, 300: 200, 500: 200, 700: 300, 1000: 1000, 1200: 800, 2000: 1000, 3000: 1000, 4000: 1000, 5000: 2500, 7500: 2500, 10000: 5000 };
 // (Custo removido: o gráfico de order bumps é somente de FATURAMENTO/receita.
 //  O custo real dos pedidos vem do action=status do fornecedor, não daqui.)
@@ -41677,7 +41701,7 @@ async function computeOrderBumpPie({ sinceMs, untilMs } = {}) {
         if (k === 'upgrade') { hasUpgrade = true; upgradeBaseQty = Number(getA(o, 'quantidade')) || 0; }
         else if (k === 'likes') { const rev = (_BP_CURTIDAS[variant] || _BP_CURTIDAS.mistos)[qv] || 0; othersCents += rev; if (rev || qv) { cat.curtidas.count++; cat.curtidas.revenue += rev / 100; } }
         else if (k === 'views') { const rev = _BP_VIEWS[qv] || 0; othersCents += rev; if (rev || qv) { cat.views.count++; cat.views.revenue += rev / 100; } }
-        else if (k === 'comments') { const rev = qv * 150; othersCents += rev; if (qv) { cat.comentarios.count++; cat.comentarios.revenue += rev / 100; } }
+        else if (k === 'comments') { const rev = qv * 2000; othersCents += rev; if (qv) { cat.comentarios.count++; cat.comentarios.revenue += rev / 100; } }
         else if (/^warranty/.test(k)) { const wc = /^warranty_?4m$/.test(k) ? 1490 : 990; othersCents += wc; cat.garantia.count++; cat.garantia.revenue += wc / 100; }
       }
       if (hasUpgrade) {
@@ -49091,14 +49115,14 @@ function parseOptionalDate(value) {
 
 // Catálogo de serviços para RESTRIÇÃO de cupom (chave canônica + rótulo exibido).
 const COUPON_SERVICES = [
-  { key: 'seguidores_mistos', label: 'Seguidores Mistos' },
-  { key: 'seguidores_brasileiros', label: 'Seguidores Brasileiros' },
-  { key: 'seguidores_organicos', label: 'Seguidores Reais (Orgânicos)' },
-  { key: 'curtidas_mistos', label: 'Curtidas Mistas' },
-  { key: 'curtidas_brasileiras', label: 'Curtidas Brasileiras' },
-  { key: 'curtidas_organicas', label: 'Curtidas Reais' },
-  { key: 'visualizacoes_reels', label: 'Visualizações (Reels)' },
-  { key: 'comentarios', label: 'Comentários' }
+  { key: 'seguidores_mistos', label: 'Seguidores mixtos' },
+  { key: 'seguidores_brasileiros', label: 'Seguidores brasileños' },
+  { key: 'seguidores_organicos', label: 'Seguidores reales' },
+  { key: 'curtidas_mistos', label: 'Me gusta mixtos' },
+  { key: 'curtidas_brasileiras', label: 'Me gusta brasileños' },
+  { key: 'curtidas_organicas', label: 'Me gusta reales' },
+  { key: 'visualizacoes_reels', label: 'Vistas de Reels' },
+  { key: 'comentarios', label: 'Comentarios' }
 ];
 const COUPON_SERVICE_KEYS = COUPON_SERVICES.map(s => s.key);
 const COUPON_SERVICE_LABELS = COUPON_SERVICES.reduce((acc, s) => { acc[s.key] = s.label; return acc; }, {});
@@ -49279,26 +49303,26 @@ async function getCouponEligibility(code, profileKey, serviceKey, identity = {})
   const { getCollection } = require('./mongodbClient');
   const couponsCol = await getCollection('coupons');
   const coupon = await couponsCol.findOne({ code: normalizeCouponCode(code) });
-  if (!coupon) return { ok: false, error: 'Cupom inválido ou inativo' };
+  if (!coupon) return { ok: false, error: 'Cupón no válido o inactivo.' };
   const inactive = (coupon.isActive === false) || (String(coupon.isActive || '').toLowerCase() === 'false');
-  if (inactive) return { ok: false, error: 'Cupom inválido ou inativo' };
+  if (inactive) return { ok: false, error: 'Cupón no válido o inactivo.' };
 
   const now = new Date();
   const validFrom = coupon.validFrom ? new Date(coupon.validFrom) : null;
   const validTo = coupon.validTo ? new Date(coupon.validTo) : null;
-  if (validFrom && !Number.isNaN(validFrom.getTime()) && now < validFrom) return { ok: false, error: 'Cupom ainda não está válido' };
-  if (validTo && !Number.isNaN(validTo.getTime()) && now > validTo) return { ok: false, error: 'Cupom expirado' };
+  if (validFrom && !Number.isNaN(validFrom.getTime()) && now < validFrom) return { ok: false, error: 'Este cupón todavía no está vigente.' };
+  if (validTo && !Number.isNaN(validTo.getTime()) && now > validTo) return { ok: false, error: 'Este cupón ya expiró.' };
 
   const usedCount = (typeof coupon.usedCount === 'number') ? coupon.usedCount : 0;
   const maxUsesTotal = (coupon.maxUsesTotal != null && Number(coupon.maxUsesTotal) > 0) ? Number(coupon.maxUsesTotal) : null;
-  if (maxUsesTotal && usedCount >= maxUsesTotal) return { ok: false, error: 'Cupom esgotado' };
+  if (maxUsesTotal && usedCount >= maxUsesTotal) return { ok: false, error: 'Este cupón ya se agotó.' };
 
   const maxUsesPerProfile = (coupon.maxUsesPerProfile != null && Number(coupon.maxUsesPerProfile) > 0) ? Number(coupon.maxUsesPerProfile) : null;
   if (maxUsesPerProfile) {
-    if (!profileKey) return { ok: false, error: 'Preencha o usuário do Instagram para usar este cupom' };
+    if (!profileKey) return { ok: false, error: 'Escribe tu usuario de Instagram para usar este cupón.' };
     const usesCol = await getCollection('coupon_uses');
     const count = await usesCol.countDocuments({ couponId: coupon._id, profileKey, status: 'consumed' });
-    if (count >= maxUsesPerProfile) return { ok: false, error: 'Cupom já usado neste perfil' };
+    if (count >= maxUsesPerProfile) return { ok: false, error: 'Este cupón ya se usó en este perfil.' };
   }
 
   // Restrição por serviço (selecionados = BLOQUEADOS). Só valida quando um serviço é informado.
@@ -49307,7 +49331,7 @@ async function getCouponEligibility(code, profileKey, serviceKey, identity = {})
     const sk = String(serviceKey || '').trim();
     if (sk && blockedServices.indexOf(sk) >= 0) {
       const labels = blockedServices.map(k => COUPON_SERVICE_LABELS[k] || k).join(', ');
-      return { ok: false, error: `Este cupom não é válido para: ${labels}` };
+      return { ok: false, error: `Este cupón no es válido para: ${labels}` };
     }
   }
 
@@ -49321,7 +49345,7 @@ async function getCouponEligibility(code, profileKey, serviceKey, identity = {})
     });
     // false = nunca comprou → bloqueia. null (erro) = fail-open, não bloqueia.
     if (prior === false) {
-      return { ok: false, error: 'Cupom exclusivo para quem já é cliente (já fez pelo menos uma compra).' };
+      return { ok: false, error: 'Cupón exclusivo para clientes que ya hicieron al menos una compra.' };
     }
   }
 
@@ -49331,10 +49355,10 @@ async function getCouponEligibility(code, profileKey, serviceKey, identity = {})
   if (CLIENT_LADDER_CODES.has(normalizeCouponCode(code))) {
     const lst = await computeLadderStateByEmail((identity && identity.email) || '');
     if (lst) {
-      if (lst.state === 'done') return { ok: false, error: 'Você já usou todos os seus cupons. Suba de nível para liberar novos.' };
-      if (lst.state === 'waiting') return { ok: false, error: `Seu próximo cupom libera em ${lst.daysLeft} dia(s).` };
+      if (lst.state === 'done') return { ok: false, error: 'Ya usaste todos tus cupones. Sube de nivel para desbloquear nuevos.' };
+      if (lst.state === 'waiting') return { ok: false, error: `Tu próximo cupón se desbloquea en ${lst.daysLeft} día(s).` };
       if (lst.state === 'available' && lst.coupon && normalizeCouponCode(lst.coupon.code) !== normalizeCouponCode(code)) {
-        return { ok: false, error: `Use primeiro o cupom ${lst.coupon.code}.` };
+        return { ok: false, error: `Primero usa el cupón ${lst.coupon.code}.` };
       }
     }
   }
@@ -49594,7 +49618,7 @@ app.post('/api/validate-coupon', publicIpLimit('validate_coupon', 30, 10), async
     try {
         const code = normalizeCouponCode(req.body?.code);
         const profileKey = normalizeProfileKey(req.body?.instagram_username || '');
-        if (!code) return res.status(400).json({ valid: false, error: 'Código não fornecido' });
+        if (!code) return res.status(400).json({ valid: false, error: 'Escribe un código de cupón.' });
 
         // Serviço selecionado (para a restrição de serviço do cupom): aceita `service` direto
         // ou deriva de categoria+tipo enviados pelo front.
@@ -49608,7 +49632,7 @@ app.post('/api/validate-coupon', publicIpLimit('validate_coupon', 30, 10), async
         };
         const eligibility = await getCouponEligibility(code, profileKey, serviceKey, _couponIdentity);
         if (!eligibility.ok) {
-          return res.json({ valid: false, error: eligibility.error || 'Cupom inválido' });
+          return res.json({ valid: false, error: eligibility.error || 'Cupón no válido.' });
         }
         const coupon = eligibility.coupon;
         return res.json({
@@ -49618,7 +49642,7 @@ app.post('/api/validate-coupon', publicIpLimit('validate_coupon', 30, 10), async
         });
     } catch (error) {
         console.error('Erro na validação de cupom:', error);
-        res.status(500).json({ valid: false, error: 'Erro interno' });
+        res.status(500).json({ valid: false, error: 'Error interno. Inténtalo de nuevo.' });
     }
 });
 
@@ -50230,7 +50254,7 @@ app.post('/api/cliente/create-from-order', async (req, res) => {
     const map = order?.additionalInfoMapPaid || order?.additionalInfoMap || {};
     const arr = Array.isArray(order?.additionalInfoPaid) ? order.additionalInfoPaid : (Array.isArray(order?.additionalInfo) ? order.additionalInfo : []);
     const emailRaw = String(order?.customer?.email || map['email'] || (arr.find(x => x?.key === 'email')?.value) || '').trim().toLowerCase();
-    if (!emailRaw || !emailRaw.includes('@')) return res.status(400).json({ ok: false, error: 'no_email', message: 'Este pedido não possui e-mail cadastrado.' });
+    if (!emailRaw || !emailRaw.includes('@')) return res.status(400).json({ ok: false, error: 'no_email', message: 'Este pedido no tiene un correo electrónico registrado.' });
 
     const email = normalizeEmail(emailRaw);
 
@@ -50618,12 +50642,12 @@ function getUpsellOffer(order) {
     // ── Label legível ────────────────────────────────────────────
     const tipoLabel = (() => {
       // You Agency: rótulos em espanhol (aparecem no card do upsell e na descrição da cobrança).
-      if (tipo === 'visualizacoes_reels' || tipo === 'reels') return 'visualizaciones';
+      if (tipo === 'visualizacoes_reels' || tipo === 'reels') return 'vistas';
       if (tipo.includes('brasileir'))  return isFollowers ? 'seguidores brasileños' : 'me gusta brasileños';
       if (tipo.includes('organico') || tipo === 'curtidas_reais') return isFollowers ? 'seguidores reales' : 'me gusta reales';
       if (isFollowers)    return 'seguidores mixtos';
       if (isCurtidas)     return 'me gusta mixtos';
-      if (isVisualizacao) return 'visualizaciones';
+      if (isVisualizacao) return 'vistas';
       return tipo.replace(/_/g, ' ');
     })();
 
@@ -50761,7 +50785,8 @@ function upsellXpagPayload(doc) {
   const x = (doc && doc.xpag) || {};
   return {
     identifier: doc.identifier, correlationID: doc.correlationID, metodo: x.method || 'SPEI',
-    clabe: x.clabe || '', banco: x.bank_name || '', beneficiario: x.beneficiary || '', referencia: x.reference || '',
+    clabe: x.clabe || '', banco: x.bank_name || '', beneficiario: x.beneficiary || '', referencia: x.reference || '', barcode: x.barcode || '',
+    expiraEm: x.expiresAt || null, externalId: x.external_id || '',
     valueCents: Number(doc.expectedValueCents || doc.valueCents || 0),
     recebidoCents: Number(x.recebidoCents || 0),
     payUrl: '/pago?correlationID=' + encodeURIComponent(String(doc.correlationID || '')),
@@ -50802,7 +50827,11 @@ app.post('/api/upsell/charge', publicIpLimit('upsell_charge', 10, 10), async (re
     const name = String(customerName || parent?.customer?.name || parent?.nomeUsuario || '').trim().slice(0, 80);
     const email = String(parent?.customer?.email || map['email'] || '').trim();
     // Método: o que o cliente escolheu no card; padrão = o mesmo do pedido principal (SPEI se não houver).
-    const metodoReq = 'SPEI'; // OXXO desligado (15/11/2026); criarCobrancaXpag também força SPEI
+    // SPEI ou OXXO (o cliente escolhe no card; padrão = o método do pedido principal). Com o OXXO
+    // desligado (XPAG_OXXO_ENABLED=0) o criarCobrancaXpag força SPEI de qualquer forma.
+    const metodoPai = String((parent && parent.xpag && parent.xpag.method) || '').toUpperCase();
+    const metodoBody = String((req.body && req.body.metodo) || '').toUpperCase();
+    const metodoReq = (metodoBody === 'OXXO' || metodoBody === 'SPEI') ? metodoBody : (metodoPai === 'OXXO' ? 'OXXO' : 'SPEI');
     if (name.length < 2) { try { const ec = await getCollection('upsell_errors'); await ec.insertOne({ reason: 'missing_name', parentIdentifier, at: new Date().toISOString() }); } catch (_) {} return res.status(400).json({ ok: false, error: 'missing_name' }); }
 
     // Gerar IDs únicos para o upsell
