@@ -432,13 +432,25 @@ function registerWhatsappIa(app) {
 
   // Recebe mensagens
   app.post(path, async (req, res) => {
+    // Os eventos chegam repassados pelo famaapp.site (o app da Meta tem um webhook só). Com
+    // WHATSAPP_IA_FORWARD_SECRET no .env, só aceita o repasse com o segredo no cabeçalho —
+    // sem isso qualquer um podia mandar "mensagens" falsas pro bot.
+    const fwdSecret = String(process.env.WHATSAPP_IA_FORWARD_SECRET || '').trim();
+    if (fwdSecret && String(req.headers['x-ya-forward-token'] || '') !== fwdSecret) {
+      try { console.warn('[whatsapp-ia] webhook sem token de repasse válido — ignorado'); } catch (_) {}
+      return res.sendStatus(403);
+    }
     res.sendStatus(200); // responde rápido; processa async
     try {
       const body = req.body || {};
       if (body.object !== 'whatsapp_business_account') return;
+      const meuPid = String(CFG().phoneId || '').trim();
       for (const entry of (body.entry || [])) {
         for (const change of (entry.changes || [])) {
           const value = change.value || {};
+          // Só eventos do número da You Agency (o mesmo app atende outros números).
+          const pidEvento = String((value.metadata || {}).phone_number_id || '');
+          if (meuPid && pidEvento && pidEvento !== meuPid) continue;
           const contacts = value.contacts || [];
           const nameByWa = {};
           for (const ct of contacts) { if (ct && ct.wa_id) nameByWa[String(ct.wa_id)] = (ct.profile && ct.profile.name) || ''; }
