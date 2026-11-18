@@ -1,13 +1,14 @@
-<%# Rodapé único do site (todas as páginas do cliente). Cores pelas variáveis do tema (escuro / body.theme-light). %>
+<%# Rodapé único do site (todas as páginas do cliente). De ponta a ponta, mesmo se estiver dentro do .container.
+    Cores pelas variáveis do tema (escuro padrão / body.theme-light). %>
 <footer class="ya-footer" role="contentinfo">
-  <div class="ya-footer__grid">
+  <div class="ya-footer__inner">
     <div class="ya-footer__brand">
       <a href="/" class="ya-footer__logo" aria-label="You Agency, inicio">
-        <img class="ya-footer__mark ya-footer__mark--dark" src="/images/y%20branco.png" alt="" width="34" height="34" />
-        <img class="ya-footer__mark ya-footer__mark--light" src="/images/y%20preto.png" alt="" width="34" height="34" />
-        <span>You Agency</span>
+        <img class="ya-footer__mark ya-footer__mark--dark" src="/images/y%20branco.png" alt="" width="44" height="44" />
+        <img class="ya-footer__mark ya-footer__mark--light" src="/images/y%20preto.png" alt="" width="44" height="44" />
+        <span class="ya-footer__name">You Agency</span>
       </a>
-      <p class="ya-footer__desc">Seguidores, me gusta, vistas y comentarios para Instagram, TikTok y Facebook, con entrega automática. Pago seguro por SPEI u OXXO.</p>
+      <p class="ya-footer__desc">Seguidores, me gusta y vistas para Instagram, TikTok y Facebook con entrega automática. Pago seguro por SPEI u OXXO.</p>
     </div>
     <nav class="ya-footer__col" aria-label="Servicios">
       <h2 class="ya-footer__title">Servicios</h2>
@@ -15,13 +16,11 @@
       <a href="/servicios-me-gusta">Me gusta</a>
       <a href="/servicios-visualizaciones">Vistas</a>
       <a href="/servicios-comentarios">Comentarios</a>
-      <a href="/servicios-tiktok">TikTok</a>
-      <a href="/servicios-facebook">Facebook</a>
     </nav>
     <nav class="ya-footer__col" aria-label="Ayuda">
       <h2 class="ya-footer__title">Ayuda</h2>
       <a class="ya-footer__wa" href="https://wa.me/553175664986?text=%C2%A1Hola!%20Estoy%20en%20el%20sitio%20y%20necesito%20ayuda." target="_blank" rel="noopener noreferrer">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2Zm5.78 14.03c-.24.68-1.42 1.3-1.95 1.36-.5.06-1.13.09-1.82-.11-.42-.13-.96-.31-1.65-.61-2.9-1.25-4.8-4.17-4.94-4.36-.14-.19-1.18-1.57-1.18-3 0-1.42.75-2.12 1.01-2.41.27-.29.58-.36.78-.36h.56c.18 0 .42-.07.66.5.24.58.82 2 .89 2.15.07.14.12.31.02.5-.1.19-.14.31-.29.48-.14.17-.3.38-.43.51-.14.14-.29.3-.13.59.17.29.74 1.22 1.59 1.98 1.09.97 2.01 1.27 2.3 1.41.29.14.46.12.63-.07.17-.19.72-.84.91-1.13.19-.29.38-.24.65-.14.26.1 1.68.79 1.97.94.29.14.48.22.55.34.07.12.07.69-.17 1.36Z"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2Zm5.78 14.03c-.24.68-1.42 1.3-1.95 1.36-.5.06-1.13.09-1.82-.11-.42-.13-.96-.31-1.65-.61-2.9-1.25-4.8-4.17-4.94-4.36-.14-.19-1.18-1.57-1.18-3 0-1.42.75-2.12 1.01-2.41.27-.29.58-.36.78-.36h.56c.18 0 .42-.07.66.5.24.58.82 2 .89 2.15.07.14.12.31.02.5-.1.19-.14.31-.29.48-.14.17-.3.38-.43.51-.14.14-.29.3-.13.59.17.29.74 1.22 1.59 1.98 1.09.97 2.01 1.27 2.3 1.41.29.14.46.12.63-.07.17-.19.72-.84.91-1.13.19-.29.38-.24.65-.14.26.1 1.68.79 1.97.94.29.14.48.22.55.34.07.12.07.69-.17 1.36Z"/></svg>
         Soporte por WhatsApp
       </a>
       <a href="mailto:support@youagency.site">support@youagency.site</a>
@@ -30,28 +29,44 @@
     </nav>
   </div>
   <div class="ya-footer__bottom">
-    &copy; <%= new Date().getFullYear() %> You Agency. No afiliado a Instagram, TikTok ni Meta. Nunca pedimos tu contraseña.
+    <div class="ya-footer__bottom-inner">&copy; <%= new Date().getFullYear() %> You Agency. No afiliado a Instagram, TikTok ni Meta. Nunca pedimos tu contraseña.</div>
   </div>
 </footer>
 <style>
-  .ya-footer { width: 100%; margin-top: 3rem; border-top: 1px solid var(--border-color, #374151); color: var(--text-secondary, #A1A1AA); font-family: var(--font-family, 'Inter', sans-serif); text-align: left; box-sizing: border-box; }
-  .ya-footer__grid { max-width: 1100px; margin: 0 auto; padding: 2.25rem 20px 1.75rem; display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; }
-  .ya-footer__logo { display: inline-flex; align-items: center; gap: .55rem; text-decoration: none; color: var(--text-primary, #fff); font-weight: 800; font-size: 1.15rem; }
-  .ya-footer__mark { width: 34px; height: 34px; border-radius: 9px; object-fit: contain; }
+  /* Sai da largura do .container e encosta embaixo (o body já tem overflow-x: hidden). */
+  .container:has(.ya-footer) { padding-bottom: 0; }
+  .ya-footer {
+    --yf-bg: #14142b; --yf-text: #a1a1aa; --yf-strong: #ffffff; --yf-line: rgba(255,255,255,.08); --yf-wa: #22c55e;
+    width: 100vw; margin: 3.5rem calc(50% - 50vw) 0; align-self: stretch;
+    background: var(--yf-bg); border-top: 1px solid var(--yf-line); color: var(--yf-text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: left; box-sizing: border-box; animation: none;
+  }
+  body.theme-light .ya-footer { --yf-bg: #f8fafc; --yf-text: #4b5563; --yf-strong: #0f172a; --yf-line: #e5e7eb; --yf-wa: #16a34a; }
+  .ya-footer *, .ya-footer *::before, .ya-footer *::after { box-sizing: border-box; }
+  .ya-footer__inner { max-width: 1080px; margin: 0 auto; padding: 2.5rem 24px 2.25rem; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .9fr) minmax(0, .75fr); gap: 2.5rem; }
+  /* Mesmo logo do menu de cima: o "y" do tema (branco no escuro, preto no claro) + "You Agency" em Inter 700. */
+  .ya-footer__logo { display: inline-flex; align-items: center; gap: .5rem; text-decoration: none; }
+  .ya-footer__mark { width: 44px; height: 44px; object-fit: contain; display: block; flex: none; }
   .ya-footer__mark--light { display: none; }
   body.theme-light .ya-footer__mark--dark { display: none; }
-  body.theme-light .ya-footer__mark--light { display: inline-block; }
-  .ya-footer__desc { margin: .85rem 0 0; max-width: 34ch; line-height: 1.55; font-size: .92rem; }
+  body.theme-light .ya-footer__mark--light { display: block; }
+  .ya-footer__name { font-family: var(--font-family, 'Inter', sans-serif); font-weight: 700; font-size: 1.2rem; letter-spacing: 0.01em; color: var(--text-primary, #fff); white-space: nowrap; }
+  .ya-footer__desc { margin: .9rem 0 0; max-width: 46ch; font-size: .9rem; line-height: 1.6; color: var(--yf-text); }
   .ya-footer__col { display: flex; flex-direction: column; gap: .6rem; min-width: 0; }
-  .ya-footer__title { margin: 0 0 .2rem; font-size: .95rem; font-weight: 700; color: var(--text-primary, #fff); letter-spacing: 0; }
-  .ya-footer__col a { color: var(--text-secondary, #A1A1AA); text-decoration: none; font-size: .92rem; width: fit-content; }
-  .ya-footer__col a:hover { color: var(--text-primary, #fff); }
-  .ya-footer__col a.ya-footer__wa { display: inline-flex; align-items: center; gap: .4rem; color: #22c55e; font-weight: 600; }
-  body.theme-light .ya-footer__col a.ya-footer__wa { color: #15803d; }
-  .ya-footer__col a.ya-footer__wa:hover { color: #4ade80; }
-  .ya-footer__bottom { border-top: 1px solid var(--border-color, #374151); max-width: 1100px; margin: 0 auto; padding: 1rem 20px 1.4rem; font-size: .82rem; box-sizing: border-box; }
+  .ya-footer__title { margin: 0 0 .15rem; font-size: .93rem; font-weight: 600; color: var(--yf-strong); letter-spacing: 0; line-height: 1.4; }
+  .ya-footer__col a { color: var(--yf-text); text-decoration: none; font-size: .9rem; line-height: 1.45; width: fit-content; white-space: nowrap; }
+  .ya-footer__col a:hover { color: var(--yf-strong); }
+  .ya-footer__col a.ya-footer__wa { display: inline-flex; align-items: center; gap: .35rem; color: var(--yf-wa); font-weight: 600; }
+  .ya-footer__col a.ya-footer__wa:hover { filter: brightness(1.1); color: var(--yf-wa); }
+  .ya-footer__bottom { border-top: 1px solid var(--yf-line); }
+  .ya-footer__bottom-inner { max-width: 1080px; margin: 0 auto; padding: 1rem 24px 1.15rem; font-size: .8rem; line-height: 1.5; color: var(--yf-text); }
   @media (max-width: 720px) {
-    .ya-footer__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.6rem 1.25rem; padding-top: 1.75rem; }
+    .ya-footer { margin-top: 2.5rem; }
+    .ya-footer__inner { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 1.75rem 1rem; padding: 2rem 20px 1.75rem; }
     .ya-footer__brand { grid-column: 1 / -1; }
+    .ya-footer__col a { font-size: .875rem; }
+    .ya-footer__bottom-inner { padding: 1rem 20px 1.1rem; }
+    .ya-footer__mark { width: 40px; height: 40px; }
+    .ya-footer__name { font-size: 1.05rem; }
   }
 </style>
