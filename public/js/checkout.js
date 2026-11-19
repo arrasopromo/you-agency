@@ -2588,8 +2588,9 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
   function updateCommentsPrice(q) {
     const newEl = commentsPrices ? commentsPrices.querySelector('.new-price') : null;
     const oldEl = commentsPrices ? commentsPrices.querySelector('.old-price') : null;
-    if (newEl) newEl.textContent = formatCurrencyBR(q * 20); // MXN 20 por comentario (igual ao pricing.js)
-    if (oldEl) { const oldVal = Math.round(q * 20 * 1.7); oldEl.textContent = formatCurrencyBR(oldVal); }
+    const _pc = q >= 1 ? 20 + 6 * (q - 1) : 0; // 1 = MXN 20, + MXN 6 cada um a mais (igual ao pricing.js)
+    if (newEl) newEl.textContent = formatCurrencyBR(_pc);
+    if (oldEl) { const oldVal = Math.round(_pc * 1.7); oldEl.textContent = formatCurrencyBR(oldVal); }
     const hl = document.querySelector('.promo-item.comments .promo-highlight');
     if (hl) hl.textContent = `+ ${q} COMENTARIOS`;
   }
@@ -2637,7 +2638,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
       }
       if (commentsChecked) {
         const qty = Number(document.getElementById('commentsQty')?.textContent || 1);
-        const priceCents = qty * 2000; // MXN 20 por comentario
+        const priceCents = qty >= 1 ? 2000 + 600 * (qty - 1) : 0; // 1 = MXN 20, + MXN 6 cada um a mais
         promos.push({ key: 'comments', qty, label: `Comentarios (${qty})`, priceCents });
       }
     if (warrantyChecked) {
@@ -5712,7 +5713,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
         }
         if (commentsChecked) {
           const qty = Number(document.getElementById('commentsQty')?.textContent || 1);
-          const priceCents = qty * 2000; // MXN 20 por comentario (igual ao pricing.js)
+          const priceCents = qty >= 1 ? 2000 + 600 * (qty - 1) : 0; // 1 = MXN 20, + MXN 6 cada um a mais (igual ao pricing.js)
           promos.push({ key: 'comments', qty, label: `Comentarios (${qty})`, priceCents });
         }
         if (warrantyChecked) {

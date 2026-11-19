@@ -314,15 +314,12 @@ document.addEventListener('DOMContentLoaded', function() {
     ]
   };
 
+  // Comentários: preço = 1 comentário MXN 20 + MXN 6 (≈ R$ 2) por comentário a mais — igual ao pricing.js.
+  // A página oferece só PACOTES (igual à Oppus), não 1, 2, 3...
+  const comentCents = (q) => (q >= 1 ? 2000 + 600 * (q - 1) : 0);
+  const COMENT_PACOTES = [5, 10, 25, 50, 100, 250];
   const tabelaComentarios = {
-    comentarios: [
-      { q: 1, p: '$ 20' },
-      { q: 10, p: '$ 200' },
-      { q: 25, p: '$ 500' },
-      { q: 50, p: '$ 1,000' },
-      { q: 100, p: '$ 2,000' },
-      { q: 250, p: '$ 5,000' },
-    ]
+    comentarios: COMENT_PACOTES.map((q) => ({ q, p: '$ ' + (comentCents(q) / 100) })),
   };
 
   const tabela = isCommentsContext ? tabelaComentarios : (isViewsContext ? tabelaVisualizacoes : (isCurtidasContext ? tabelaCurtidas : tabelaSeguidores));
@@ -2262,12 +2259,19 @@ document.addEventListener('DOMContentLoaded', function() {
       const qtyFormatted = qNum.toLocaleString('en-US');
       card.innerHTML = `${badgeHtml}<div class="card-content"><div class="card-title">${qtyFormatted} ${unit}</div><div class="card-desc"><span class="price-old">${increasedText}</span> <span class="price-new">${baseText}</span></div></div>`;
       
-      card.addEventListener('click', () => {
+      card.addEventListener('click', () => escolherPlano(tipo, item, card, unit, true));
+      planCards.appendChild(card);
+    });
+  }
+
+  // Escolha de um pacote (card do plano): resumo, ofertas e passo 2.
+  function escolherPlano(tipo, item, card, unit, irPasso2) {
+        const baseCents = parsePrecoToCents(item.p);
         // Atualizar estado
         const baseText = formatCentsToBRL(baseCents);
         
         // Atualizar select oculto
-        const opt = Array.from(qtdSelect.options).find(o => o.value === String(item.q));
+        const opt = qtdSelect ? Array.from(qtdSelect.options).find(o => o.value === String(item.q)) : null;
         if (opt) opt.selected = true;
         
         // Atualizar resumo
@@ -2294,10 +2298,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cards.forEach(c => c.classList.toggle('active', c === card));
         
         // Ir para Step 2
-        if (window.goToStep) window.goToStep(2);
-      });
-      planCards.appendChild(card);
-    });
+        if (irPasso2 && window.goToStep) window.goToStep(2);
   }
 
   function getTipoDescription(tipo) {
@@ -2777,8 +2778,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const newEl = commentsPrices ? commentsPrices.querySelector('.new-price') : null;
     const oldEl = commentsPrices ? commentsPrices.querySelector('.old-price') : null;
     
-    if (newEl) newEl.textContent = formatCentsToBRL(q * 2000); // MXN 20 por comentario (igual ao pricing.js)
-    if (oldEl) { const oldCents = Math.round(q * 20 * 1.7) * 100; oldEl.textContent = formatCentsToBRL(oldCents); }
+    if (newEl) newEl.textContent = formatCentsToBRL(comentCents(q)); // 1 = MXN 20, + MXN 6 cada um a mais (igual ao pricing.js)
+    if (oldEl) { const oldCents = Math.round(comentCents(q) / 100 * 1.7) * 100; oldEl.textContent = formatCentsToBRL(oldCents); }
     const hl = document.querySelector('.promo-item.comments .promo-highlight');
     if (hl) hl.textContent = `+ ${q} COMENTARIOS`;
   }
@@ -2827,7 +2828,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       if (commentsChecked) {
         const qty = Number(document.getElementById('commentsQty')?.textContent || 1);
-        const priceCents = qty * 2000; // MXN 20 por comentario (igual ao pricing.js)
+        const priceCents = comentCents(qty); // 1 = MXN 20, + MXN 6 cada um a mais (igual ao pricing.js)
         promos.push({ key: 'comments', qty, label: `Comentarios (${qty})`, priceCents });
       }
       if (warrantyChecked) {

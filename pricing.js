@@ -220,6 +220,8 @@ const tabelaCurtidasPromo = {
     ],
 };
 
+// Comentários do Instagram: 1 = MXN 20; cada comentário a mais soma MXN 6 (≈ R$ 2). 2 = 26, 10 = 74, 250 = 1.514.
+const comentariosIgCents = (q) => (q >= 1 ? 2000 + 600 * (q - 1) : 0);
 const calculateOrderBumps = (bumpsStr, baseType, opts = {}) => {
     if (!bumpsStr) return 0;
     let total = 0;
@@ -244,8 +246,8 @@ const calculateOrderBumps = (bumpsStr, baseType, opts = {}) => {
             if (item) total += parsePrecoToCents(item.p);
             
         } else if (key === 'comments') {
-            // MXN 20 por comentário (Instagram, TikTok e Facebook).
-            total += q * 2000;
+            // Instagram: 1 comentário MXN 20 + MXN 6 (≈ R$ 2) por comentário a mais. TikTok/Facebook: MXN 20 cada.
+            total += (opts && opts.comentariosRedes) ? q * 2000 : comentariosIgCents(q);
             
         } else if (key === 'warranty_3m' || key === 'warranty3m') {
              // Garantia DINÂMICA (3 meses), igual à Oppus: 2 reposições completas pelo custo atual do
@@ -353,13 +355,12 @@ const calculatePrice = async (type, quantity, additionalInfo = [], opts = {}) =>
         }
     }
     
-    // Comentários do Instagram: MXN 20 por unidade, até 250 por pedido.
+    // Comentários do Instagram: 1 = MXN 20 (mínimo da Xpag); cada um a mais + MXN 6 (≈ R$ 2). De 1 a 250.
     const isComentarios = category === 'comentarios' || category === 'comentario' || tipo === 'comentarios' || tipo === 'comentario';
     // Try to find exact quantity match
     const item = isComentarios ? null : table.find(x => x.q === q);
     if (isComentarios) {
-        // MXN 20 cada (1 comentário = MXN 20, o mínimo da Xpag).
-        if (q > 0 && q <= 250) totalCents = q * 2000;
+        if (q >= 1 && q <= 250) totalCents = comentariosIgCents(q);
     } else if (item) {
         let priceCents = parsePrecoToCents(item.p);
         
@@ -527,4 +528,4 @@ const verifyPrice = async (type, quantity, additionalInfo, valuePaid, opts = {})
     return { isValid, matchedPrice: isValid ? calculatedPrice : null, expectedPrice: calculatedPrice, mismatchDetails };
 };
 
-module.exports = { calculatePrice, validatePrice, verifyPrice, parsePrecoToCents, warranty3mCents, round90Cents, tabelaSeguidores, tabelaCurtidas, tabelaVisualizacoes, tabelaRedes };
+module.exports = { comentariosIgCents, calculatePrice, validatePrice, verifyPrice, parsePrecoToCents, warranty3mCents, round90Cents, tabelaSeguidores, tabelaCurtidas, tabelaVisualizacoes, tabelaRedes };

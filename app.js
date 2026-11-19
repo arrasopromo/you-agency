@@ -42514,7 +42514,7 @@ async function computeOrderBumpPie({ sinceMs, untilMs } = {}) {
         if (k === 'upgrade') { hasUpgrade = true; upgradeBaseQty = Number(getA(o, 'quantidade')) || 0; }
         else if (k === 'likes') { const rev = (_BP_CURTIDAS[variant] || _BP_CURTIDAS.mistos)[qv] || 0; othersCents += rev; if (rev || qv) { cat.curtidas.count++; cat.curtidas.revenue += rev / 100; } }
         else if (k === 'views') { const rev = _BP_VIEWS[qv] || 0; othersCents += rev; if (rev || qv) { cat.views.count++; cat.views.revenue += rev / 100; } }
-        else if (k === 'comments') { const rev = qv * 2000; othersCents += rev; if (qv) { cat.comentarios.count++; cat.comentarios.revenue += rev / 100; } }
+        else if (k === 'comments') { const rev = /tiktok|facebook/i.test(String(getA(o, 'categoria_servico') || '')) ? qv * 2000 : (qv >= 1 ? 2000 + 600 * (qv - 1) : 0); othersCents += rev; if (qv) { cat.comentarios.count++; cat.comentarios.revenue += rev / 100; } }
         else if (/^warranty/.test(k)) { const wc = /^warranty_?4m$/.test(k) ? 1490 : 990; othersCents += wc; cat.garantia.count++; cat.garantia.revenue += wc / 100; }
       }
       if (hasUpgrade) {

@@ -381,8 +381,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const newEl = commentsPrices ? commentsPrices.querySelector('.new-price') : null;
     const oldEl = commentsPrices ? commentsPrices.querySelector('.old-price') : null;
     const format = (cents) => { const val = cents / 100; return yaFmtPreco(val); };
-    if (newEl) newEl.textContent = format(q * 2000); // MXN 20 por comentario (igual ao pricing.js)
-    if (oldEl) { const oldCents = Math.round(q * 20 * 1.7) * 100; oldEl.textContent = format(oldCents); }
+    const _pc = q >= 1 ? 2000 + 600 * (q - 1) : 0; // 1 = MXN 20, + MXN 6 cada um a mais (igual ao pricing.js)
+    if (newEl) newEl.textContent = format(_pc);
+    if (oldEl) { const oldCents = Math.round(_pc / 100 * 1.7) * 100; oldEl.textContent = format(oldCents); }
     const hl = document.querySelector('.promo-item.comments .promo-highlight');
     if (hl) hl.textContent = `+ ${q} COMENTARIOS`;
   }
@@ -1706,7 +1707,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (promoComments && promoComments.checked) {
        const qty = Number(document.getElementById('commentsQty')?.textContent || 1);
        // Price is dynamic: 150 cents per comment
-       const priceCents = qty * 2000; // MXN 20 por comentario (igual ao pricing.js)
+       const priceCents = qty >= 1 ? 2000 + 600 * (qty - 1) : 0; // 1 = MXN 20, + MXN 6 cada um a mais (igual ao pricing.js)
        promos.push({ key: 'comments', qty: qty, label: `Comentarios (${qty})`, priceCents: priceCents });
     }
     if (promoWarranty && promoWarranty.checked) {

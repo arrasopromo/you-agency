@@ -20,8 +20,8 @@ const CATALOG = {
   seguidores:    { key: 'seguidores',    categoria: 'seguidores',    unit: 'seguidores',     needsPost: false, tipos: true,  table: (t) => tabelaSeguidores[t] },
   curtidas:      { key: 'curtidas',      categoria: 'curtidas',      unit: 'me gusta',       needsPost: true,  tipos: true,  table: (t) => tabelaCurtidas[t] },
   visualizacoes: { key: 'visualizacoes', categoria: 'visualizacoes', unit: 'vistas', needsPost: true, tipos: false, tipoFixo: 'visualizacoes_reels', table: () => tabelaVisualizacoes.visualizacoes_reels },
-  // Mesmo preço do site (/servicios-comentarios e pricing.js): $ 20 MXN por comentário, de 1 a 250, numa publicação só.
-  comentarios:   { key: 'comentarios',   categoria: 'comentarios',   unit: 'comentarios',    needsPost: true,  tipos: false, tipoFixo: 'comentarios', porUnidadeCents: 2000, max: 250, umPost: true, table: () => [1, 5, 10, 20, 50, 100, 250].map((q) => ({ q, p: '$ ' + (q * 20) })) },
+  // Mesmos PACOTES e preços do site (/servicios-comentarios e pricing.js): 5, 10, 25, 50, 100 e 250, numa publicação só.
+  comentarios:   { key: 'comentarios',   categoria: 'comentarios',   unit: 'comentarios',    needsPost: true,  tipos: false, tipoFixo: 'comentarios', porUnidadeCents: 2000, pacotes: [5, 10, 25, 50, 100, 250], umPost: true, table: () => [5, 10, 25, 50, 100, 250].map((q) => ({ q, p: '$ ' + (require('./pricing.js').comentariosIgCents(q) / 100) })) },
 };
 // ── TikTok e Facebook (mesmos pacotes/preços das páginas /servicios-tiktok e /servicios-facebook,
 // tabela pricing.tabelaRedes). Só tipo mixtos. O bot oferece SÓ se o cliente pedir essas redes.
@@ -267,9 +267,9 @@ async function quote({ servico, tipo, quantidade, rede }) {
   else if (key === 'comentarios' && _comentariosOcultos(await loadHiddenTypes())) return _COMENT_INDISP;
   const q = parseInt(quantidade, 10);
   if (svc.porUnidadeCents) {
-    if (!(q >= 1 && q <= svc.max)) return { ok: false, error: 'quantidade_indisponivel', message: `Los comentarios van de 1 a ${svc.max} por pedido ($ ${svc.porUnidadeCents / 100} MXN cada uno).` };
-    const pc = q * svc.porUnidadeCents;
-    return { ok: true, servico: svc.key, categoria: svc.categoria, tipo: svc.tipoFixo, tipoNombre: '', quantidade: q, priceCents: pc, priceLabel: mxn(pc), unit: svc.unit, needsPost: true, umPost: true, precioUnidad: mxn(svc.porUnidadeCents) };
+    if (!svc.pacotes.includes(q)) return { ok: false, error: 'quantidade_indisponivel', available: svc.pacotes, message: `En comentarios solo hay paquetes de ${svc.pacotes.join(', ')}. Ofrece esos paquetes.` };
+    const pc = require('./pricing.js').comentariosIgCents(q);
+    return { ok: true, servico: svc.key, categoria: svc.categoria, tipo: svc.tipoFixo, tipoNombre: '', quantidade: q, priceCents: pc, priceLabel: mxn(pc), unit: svc.unit, needsPost: true, umPost: true };
   }
   const table = tableFor(svc, tipo);
   if (!(q > 0)) return { ok: false, error: 'quantidade_invalida', available: table.map((x) => x.q) };
@@ -297,7 +297,7 @@ async function priceTable({ servico, tipo, rede }) {
   } else if (key === 'visualizacoes' && _vistasOcultas(await loadHiddenTypes())) return _VISTAS_INDISP;
   else if (key === 'comentarios' && _comentariosOcultos(await loadHiddenTypes())) return _COMENT_INDISP;
   if (svc.porUnidadeCents) {
-    return { ok: true, servico: svc.key, tipo: svc.tipoFixo, tipoNombre: '', unit: svc.unit, needsPost: true, moneda: 'MXN', precioUnidad: mxn(svc.porUnidadeCents), cantidadLibre: `cualquier cantidad de 1 a ${svc.max} (${mxn(svc.porUnidadeCents)} cada comentario); los de abajo son ejemplos`, itens: svc.table().map((x) => ({ quantidade: x.q, preco: _label(x.p), precoCents: parsePrecoToCents(x.p) })) };
+    return { ok: true, servico: svc.key, tipo: svc.tipoFixo, tipoNombre: '', unit: svc.unit, needsPost: true, moneda: 'MXN', itens: svc.table().map((x) => ({ quantidade: x.q, preco: _label(x.p), precoCents: parsePrecoToCents(x.p) })) };
   }
   const table = tableFor(svc, tipo);
   const tipoK = svc.tipos ? normalizeTipo(tipo) : svc.tipoFixo;
