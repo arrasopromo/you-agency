@@ -1519,6 +1519,10 @@
             var m = String(c.getAttribute('href') || '').match(/servicio=([a-z]+)/); var k = m ? m[1] : '';
             if (k && !tem[c.getAttribute('data-plat') + '|' + k]) { c.setAttribute('data-oculto', '1'); c.style.display = 'none'; }
           });
+          // Instagram: comentários ocultos no Gerenciamento de Tipo → some o card de comentários.
+          if (d.instagramOcultos && d.instagramOcultos.comentarios) {
+            Array.prototype.forEach.call(document.querySelectorAll('[data-plat="instagram"][onclick*="servicios-comentarios"]'), function (c) { c.setAttribute('data-oculto', '1'); c.style.display = 'none'; });
+          }
         }).catch(function () {});
       } catch (_) {}
     })();

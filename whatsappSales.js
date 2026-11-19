@@ -20,6 +20,8 @@ const CATALOG = {
   seguidores:    { key: 'seguidores',    categoria: 'seguidores',    unit: 'seguidores',     needsPost: false, tipos: true,  table: (t) => tabelaSeguidores[t] },
   curtidas:      { key: 'curtidas',      categoria: 'curtidas',      unit: 'me gusta',       needsPost: true,  tipos: true,  table: (t) => tabelaCurtidas[t] },
   visualizacoes: { key: 'visualizacoes', categoria: 'visualizacoes', unit: 'vistas', needsPost: true, tipos: false, tipoFixo: 'visualizacoes_reels', table: () => tabelaVisualizacoes.visualizacoes_reels },
+  // Mesmo preço do site (/servicios-comentarios e pricing.js): $ 20 MXN por comentário, de 1 a 250, numa publicação só.
+  comentarios:   { key: 'comentarios',   categoria: 'comentarios',   unit: 'comentarios',    needsPost: true,  tipos: false, tipoFixo: 'comentarios', porUnidadeCents: 2000, max: 250, umPost: true, table: () => [1, 5, 10, 20, 50, 100, 250].map((q) => ({ q, p: '$ ' + (q * 20) })) },
 };
 // ── TikTok e Facebook (mesmos pacotes/preços das páginas /servicios-tiktok e /servicios-facebook,
 // tabela pricing.tabelaRedes). Só tipo mixtos. O bot oferece SÓ se o cliente pedir essas redes.
@@ -30,6 +32,7 @@ const REDES = {
     servicos: {
       seguidores: { tipo: 'tiktok_seguidores', unit: 'seguidores', alvo: 'perfil' },
       curtidas: { tipo: 'tiktok_curtidas', unit: 'me gusta', alvo: 'post' },
+      curtidas_reais: { tipo: 'tiktok_curtidas_reais', unit: 'me gusta', alvo: 'post', tipoNombre: 'reales' },
       visualizacoes: { tipo: 'tiktok_visualizacoes', unit: 'vistas', alvo: 'post' },
       comentarios: { tipo: 'tiktok_comentarios', unit: 'comentarios', alvo: 'post' },
     },
@@ -50,12 +53,14 @@ function normalizeRede(r) {
   if (/face|^fb$/.test(t)) return 'facebook';
   return 'instagram';
 }
-function _servicoRede(rede, servico) {
+function _servicoRede(rede, servico, tipo) {
   const t = String(servico || '').trim().toLowerCase();
   const R = REDES[rede]; if (!R) return null;
   if (/coment|comment/.test(t)) return R.servicos.comentarios || null;
   if (/p[aá]gina|fanpage|page/.test(t) && R.servicos.seguidores_pagina) return R.servicos.seguidores_pagina;
   const k = normalizeServico(t);
+  // "me gusta reales" (tipo organicos ou servico curtidas_reais) → serviço próprio, se a rede tiver.
+  if (k === 'curtidas' && R.servicos.curtidas_reais && (/real|organic|orgánic/.test(t) || (String(tipo || '').trim() && normalizeTipo(tipo) === 'organicos'))) return R.servicos.curtidas_reais;
   return (k && R.servicos[k]) || null;
 }
 const _linkRedeOk = (rede, u) => {
@@ -69,8 +74,8 @@ const _linkPostRedeOk = (rede, u) => {
   if (rede === 'tiktok') return /\/(video|photo)\/\d+/i.test(s) || /\/\/(vm|vt)\.tiktok\.com\//i.test(s);
   return /\/(posts|videos|reel|watch|photo|story\.php|permalink|share)\b|fbid=|\/p\/|fb\.watch\//i.test(s);
 };
-function _quoteRede(rede, servico, quantidade, hidden) {
-  const sv = _servicoRede(rede, servico);
+function _quoteRede(rede, servico, quantidade, hidden, tipo) {
+  const sv = _servicoRede(rede, servico, tipo);
   if (sv && hidden && Array.isArray(hidden[rede]) && hidden[rede].includes(String(sv.tipo).toLowerCase())) return { ok: false, error: 'servico_indisponivel', message: 'Ese servicio no está disponible por ahora.' };
   if (!sv) return { ok: false, error: 'servico_invalido', message: `En ${REDES[rede].nome} vendemos: ${Object.values(REDES[rede].servicos).map((x) => x.unit).filter((v, i, a) => a.indexOf(v) === i).join(', ')}.` };
   const tab = (tabelaRedes[sv.tipo] || []);
@@ -79,13 +84,13 @@ function _quoteRede(rede, servico, quantidade, hidden) {
   const it = tab.find((x) => x.q === q);
   if (!it) return { ok: false, error: 'quantidade_indisponivel', available: tab.map((x) => x.q), message: 'Esa cantidad no está en la tabla.' };
   const priceCents = parsePrecoToCents(it.p);
-  return { ok: true, rede, redeNombre: REDES[rede].nome, servico: sv.tipo, tipo: sv.tipo, tipoNombre: 'mixtos', quantidade: q, priceCents, priceLabel: mxn(priceCents), unit: sv.unit, needsPost: sv.alvo === 'post', alvo: sv.alvo };
+  return { ok: true, rede, redeNombre: REDES[rede].nome, servico: sv.tipo, tipo: sv.tipo, tipoNombre: sv.tipoNombre || 'mixtos', quantidade: q, priceCents, priceLabel: mxn(priceCents), unit: sv.unit, needsPost: sv.alvo === 'post', alvo: sv.alvo };
 }
-function _tableRede(rede, servico, hidden) {
-  const sv = _servicoRede(rede, servico);
+function _tableRede(rede, servico, hidden, tipo) {
+  const sv = _servicoRede(rede, servico, tipo);
   if (sv && hidden && Array.isArray(hidden[rede]) && hidden[rede].includes(String(sv.tipo).toLowerCase())) return { ok: false, error: 'servico_indisponivel', message: 'Ese servicio no está disponible por ahora.' };
   if (!sv) return { ok: false, error: 'servico_invalido' };
-  return { ok: true, rede, redeNombre: REDES[rede].nome, servico: sv.tipo, tipoNombre: 'mixtos', unit: sv.unit, needsPost: sv.alvo === 'post', moneda: 'MXN', itens: (tabelaRedes[sv.tipo] || []).map((x) => ({ quantidade: x.q, preco: _label(x.p), precoCents: parsePrecoToCents(x.p) })) };
+  return { ok: true, rede, redeNombre: REDES[rede].nome, servico: sv.tipo, tipoNombre: sv.tipoNombre || 'mixtos', unit: sv.unit, needsPost: sv.alvo === 'post', moneda: 'MXN', itens: (tabelaRedes[sv.tipo] || []).map((x) => ({ quantidade: x.q, preco: _label(x.p), precoCents: parsePrecoToCents(x.p) })) };
 }
 // Valida o perfil de TikTok (@) ou Facebook (link do perfil/página) pela MESMA busca do site.
 async function validateRedeProfile(rede, usuario) {
@@ -99,8 +104,8 @@ async function validateRedeProfile(rede, usuario) {
   } catch (e) { return { ok: false, error: 'erro_validacao', message: (e && e.message) || 'erro' }; }
 }
 // Pedido de TikTok/Facebook pelo MESMO endpoint e formato da página do site (/servicios-tiktok|facebook).
-async function createRedeOrder({ rede, servico, quantidade, usuario, perfil_link, nome, email, phone, post_link, comprar_mais, metodo }) {
-  const cot = _quoteRede(rede, servico, quantidade, await loadHiddenTypes());
+async function createRedeOrder({ rede, servico, tipo, quantidade, usuario, perfil_link, nome, email, phone, post_link, comprar_mais, metodo }) {
+  const cot = _quoteRede(rede, servico, quantidade, await loadHiddenTypes(), tipo);
   if (!cot.ok) return cot;
   const nomeOk = String(nome || '').trim();
   if (nomeOk.length < 2) return { ok: false, error: 'falta_nombre', message: 'Falta el nombre del cliente. Pídeselo antes de generar el pago.' };
@@ -131,14 +136,14 @@ async function createRedeOrder({ rede, servico, quantidade, usuario, perfil_link
       const aberto = iguais.find((o) => !(String(o.status || '').toLowerCase() === 'pago' || o.paidAt) && o.xpag && String(o.xpag.method || 'SPEI').toUpperCase() === met && (o.xpag.clabe || o.xpag.reference) && ((o.xpag.open_value === true && !o.xpag.expiresAt) || (o.xpag.expiresAt && new Date(o.xpag.expiresAt).getTime() > Date.now() + 30 * 60e3)));
       if (aberto) {
         const dp = _dadosPagamento(aberto);
-        return { ok: true, reaproveitado: true, correlationID: aberto.correlationID, valorCents: cot.priceCents, valorLabel: cot.priceLabel, pago: dp, codigoPago: _codigoPago(dp), identifier: String(aberto.identifier || ''), resumo: `${cot.quantidade} ${cot.unit} de ${cot.redeNombre} para ${userTag ? '@' + userTag : 'el perfil'} — ${cot.priceLabel} (${dp.metodo})` };
+        return { ok: true, reaproveitado: true, correlationID: aberto.correlationID, valorCents: cot.priceCents, valorLabel: cot.priceLabel, pago: dp, codigoPago: _codigoPago(dp), identifier: String(aberto.identifier || ''), resumo: `${cot.quantidade} ${cot.unit}${cot.tipoNombre === 'reales' ? ' reales' : ''} de ${cot.redeNombre} para ${userTag ? '@' + userTag : 'el perfil'} — ${cot.priceLabel} (${dp.metodo})` };
       }
     }
   } catch (_) {}
   const correlationID = 'WppAgent_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
   const additionalInfo = [
     { key: 'tipo_servico', value: cot.tipo }, { key: 'categoria_servico', value: rede }, { key: 'plataforma', value: rede },
-    { key: 'quantidade', value: String(cot.quantidade) }, { key: 'pacote', value: `${cot.quantidade} ${cot.unit} ${cot.redeNombre} - ${cot.priceLabel}` },
+    { key: 'quantidade', value: String(cot.quantidade) }, { key: 'pacote', value: `${cot.quantidade} ${cot.unit}${cot.tipoNombre === 'reales' ? ' reales' : ''} ${cot.redeNombre} - ${cot.priceLabel}` },
     { key: 'link_alvo', value: link }, { key: 'perfil_rede', value: userTag }, { key: 'perfil_rede_link', value: perfilLink }, { key: 'perfil', value: userTag },
     { key: 'phone', value: String(phone || '') }, { key: 'customer_name', value: nomeOk }, { key: 'payment_method', value: met.toLowerCase() }, { key: 'source', value: 'wpp_agent' },
   ];
@@ -157,7 +162,7 @@ async function createRedeOrder({ rede, servico, quantidade, usuario, perfil_link
     const col = await getCollection('checkout_orders');
     const rec = await col.findOne({ correlationID: d.correlationID || correlationID }, { projection: { xpag: 1, correlationID: 1, identifier: 1 } });
     const dp = _dadosPagamento(rec || { correlationID });
-    return { ok: true, correlationID, valorCents: cot.priceCents, valorLabel: cot.priceLabel, pago: dp, codigoPago: _codigoPago(dp), identifier: String(d.identifier || (rec && rec.identifier) || ''), resumo: `${cot.quantidade} ${cot.unit} de ${cot.redeNombre} para ${userTag ? '@' + userTag : 'el perfil'} — ${cot.priceLabel} (${dp.metodo})` };
+    return { ok: true, correlationID, valorCents: cot.priceCents, valorLabel: cot.priceLabel, pago: dp, codigoPago: _codigoPago(dp), identifier: String(d.identifier || (rec && rec.identifier) || ''), resumo: `${cot.quantidade} ${cot.unit}${cot.tipoNombre === 'reales' ? ' reales' : ''} de ${cot.redeNombre} para ${userTag ? '@' + userTag : 'el perfil'} — ${cot.priceLabel} (${dp.metodo})` };
   } catch (e) { return { ok: false, error: 'charge_error', message: (e && e.message) || 'erro' }; }
 }
 
@@ -170,6 +175,7 @@ function normalizeServico(s) {
   if (/seguidor|follow/.test(t)) return 'seguidores';
   if (/curtida|like|me\s*gusta|megusta/.test(t)) return 'curtidas';
   if (/visual|view|vista|reel|reproduc/.test(t)) return 'visualizacoes';
+  if (/coment|comment/.test(t)) return 'comentarios';
   return '';
 }
 
@@ -188,13 +194,13 @@ let __hiddenTypesCache = { at: 0, data: null };
 async function loadHiddenTypes() {
   const now = Date.now();
   if (__hiddenTypesCache.data && (now - __hiddenTypesCache.at) < 60000) return __hiddenTypesCache.data;
-  const out = { seguidores: [], curtidas: [], visualizacoes: [], tiktok: [], facebook: [] };
+  const out = { seguidores: [], curtidas: [], visualizacoes: [], comentarios: [], tiktok: [], facebook: [] };
   try {
     const col = await getCollection('settings');
     const doc = col ? await col.findOne({ _id: 'service_visibility' }, { projection: { _id: 0, values: 1 } }) : null;
     const values = (doc && doc.values && typeof doc.values === 'object') ? doc.values : {};
     const hidden = (values && values.hidden && typeof values.hidden === 'object') ? values.hidden : ((values && typeof values === 'object') ? values : {});
-    for (const k of ['seguidores', 'curtidas', 'visualizacoes', 'tiktok', 'facebook']) {
+    for (const k of ['seguidores', 'curtidas', 'visualizacoes', 'comentarios', 'tiktok', 'facebook']) {
       out[k] = Array.isArray(hidden[k]) ? hidden[k].map((x) => String(x || '').trim().toLowerCase()).filter(Boolean) : [];
     }
   } catch (_) {}
@@ -210,10 +216,31 @@ function _tipoOculto(hidden, servicoKey, tipoKey) {
   const arr = (hidden && hidden[servicoKey]) || [];
   return arr.includes(_configTipoKey(servicoKey, tipoKey));
 }
+// Vistas de Reels (Instagram) ocultas no Gerenciamento de Tipo?
+function _vistasOcultas(hidden) {
+  return ((hidden && hidden.visualizacoes) || []).map(String).includes('visualizacoes_reels');
+}
+// Serviços de TikTok/Facebook que NÃO estão ocultos (chaves: seguidores/curtidas/visualizacoes/comentarios).
+function _servicosRedeVisiveis(hidden, rede) {
+  const R = REDES[rede]; if (!R) return [];
+  const oc = ((hidden && hidden[rede]) || []).map((x) => String(x).toLowerCase());
+  return Object.keys(R.servicos).filter((k) => !oc.includes(String(R.servicos[k].tipo).toLowerCase()));
+}
+// O que o bot pode oferecer agora (segue a coluna Oculto do Gerenciamento de Tipo).
 async function tiposDisponiveis() {
   const hidden = await loadHiddenTypes();
-  return { seguidores: TIPOS_MX.filter((t) => !_tipoOculto(hidden, 'seguidores', t)), curtidas: TIPOS_MX.filter((t) => !_tipoOculto(hidden, 'curtidas', t)) };
+  return {
+    seguidores: TIPOS_MX.filter((t) => !_tipoOculto(hidden, 'seguidores', t)),
+    curtidas: TIPOS_MX.filter((t) => !_tipoOculto(hidden, 'curtidas', t)),
+    vistas: !_vistasOcultas(hidden),
+    comentarios: !_comentariosOcultos(hidden),
+    tiktok: _servicosRedeVisiveis(hidden, 'tiktok'),
+    facebook: _servicosRedeVisiveis(hidden, 'facebook'),
+  };
 }
+const _VISTAS_INDISP = { ok: false, error: 'servico_indisponivel', message: 'Las vistas no están disponibles por ahora.' };
+function _comentariosOcultos(hidden) { return ((hidden && hidden.comentarios) || []).map(String).includes('comentarios'); }
+const _COMENT_INDISP = { ok: false, error: 'servico_indisponivel', message: 'Los comentarios no están disponibles por ahora.' };
 
 function tableFor(svc, tipo) {
   const t = svc.tipos ? (svc.table(normalizeTipo(tipo)) || svc.table('mistos')) : svc.table();
@@ -228,7 +255,7 @@ function _indisponivel(key, tipoKey, hidden) {
 }
 
 async function quote({ servico, tipo, quantidade, rede }) {
-  const _r = normalizeRede(rede); if (_r !== 'instagram') return _quoteRede(_r, servico, quantidade, await loadHiddenTypes());
+  const _r = normalizeRede(rede); if (_r !== 'instagram') return _quoteRede(_r, servico, quantidade, await loadHiddenTypes(), tipo);
   const key = normalizeServico(servico);
   const svc = CATALOG[key];
   if (!svc) return { ok: false, error: 'servico_invalido', message: 'Servicio inválido. Vendemos seguidores, me gusta y vistas.' };
@@ -236,8 +263,14 @@ async function quote({ servico, tipo, quantidade, rede }) {
     const tipoKey = normalizeTipo(tipo);
     const hidden = await loadHiddenTypes();
     if (_tipoOculto(hidden, key, tipoKey)) return _indisponivel(key, tipoKey, hidden);
-  }
+  } else if (key === 'visualizacoes' && _vistasOcultas(await loadHiddenTypes())) return _VISTAS_INDISP;
+  else if (key === 'comentarios' && _comentariosOcultos(await loadHiddenTypes())) return _COMENT_INDISP;
   const q = parseInt(quantidade, 10);
+  if (svc.porUnidadeCents) {
+    if (!(q >= 1 && q <= svc.max)) return { ok: false, error: 'quantidade_indisponivel', message: `Los comentarios van de 1 a ${svc.max} por pedido ($ ${svc.porUnidadeCents / 100} MXN cada uno).` };
+    const pc = q * svc.porUnidadeCents;
+    return { ok: true, servico: svc.key, categoria: svc.categoria, tipo: svc.tipoFixo, tipoNombre: '', quantidade: q, priceCents: pc, priceLabel: mxn(pc), unit: svc.unit, needsPost: true, umPost: true, precioUnidad: mxn(svc.porUnidadeCents) };
+  }
   const table = tableFor(svc, tipo);
   if (!(q > 0)) return { ok: false, error: 'quantidade_invalida', available: table.map((x) => x.q) };
   const item = table.find((x) => x.q === q);
@@ -253,7 +286,7 @@ async function quote({ servico, tipo, quantidade, rede }) {
 }
 
 async function priceTable({ servico, tipo, rede }) {
-  const _r = normalizeRede(rede); if (_r !== 'instagram') return _tableRede(_r, servico, await loadHiddenTypes());
+  const _r = normalizeRede(rede); if (_r !== 'instagram') return _tableRede(_r, servico, await loadHiddenTypes(), tipo);
   const key = normalizeServico(servico);
   const svc = CATALOG[key];
   if (!svc) return { ok: false, error: 'servico_invalido' };
@@ -261,6 +294,10 @@ async function priceTable({ servico, tipo, rede }) {
     const tipoKey = normalizeTipo(tipo);
     const hidden = await loadHiddenTypes();
     if (_tipoOculto(hidden, key, tipoKey)) return _indisponivel(key, tipoKey, hidden);
+  } else if (key === 'visualizacoes' && _vistasOcultas(await loadHiddenTypes())) return _VISTAS_INDISP;
+  else if (key === 'comentarios' && _comentariosOcultos(await loadHiddenTypes())) return _COMENT_INDISP;
+  if (svc.porUnidadeCents) {
+    return { ok: true, servico: svc.key, tipo: svc.tipoFixo, tipoNombre: '', unit: svc.unit, needsPost: true, moneda: 'MXN', precioUnidad: mxn(svc.porUnidadeCents), cantidadLibre: `cualquier cantidad de 1 a ${svc.max} (${mxn(svc.porUnidadeCents)} cada comentario); los de abajo son ejemplos`, itens: svc.table().map((x) => ({ quantidade: x.q, preco: _label(x.p), precoCents: parsePrecoToCents(x.p) })) };
   }
   const table = tableFor(svc, tipo);
   const tipoK = svc.tipos ? normalizeTipo(tipo) : svc.tipoFixo;
@@ -389,6 +426,7 @@ async function createPixOrder({ servico, quantidade, tipo, usuario, nome, email,
     const brutos = _juntaLinks(Array.isArray(post_links) ? post_links.filter(Boolean) : String(post_links || '').split(',').map((s) => s.trim()).filter(Boolean));
     const links = brutos.filter(_isRealPostUrl);
     if (!links.length) return { ok: false, error: 'faltou_post', message: 'Este servicio necesita el LINK REAL de la publicación/reel (ej.: https://www.instagram.com/p/XXXXXXXXXXX/ o /reel/...). NO inventes un link, NO uses un ejemplo y NO uses el link del perfil — pide al cliente que pegue el link de la publicación.' };
+    if (cot.umPost && links.length > 1) return { ok: false, error: 'um_post_por_pedido', message: 'Los comentarios van a UNA publicación por pedido. Pregunta al cliente en cuál publicación quiere los comentarios (o haz un pedido por publicación, cada uno con su cantidad).' };
     post_links = links;
   }
   // Mesmo pedido (teléfono + servicio + tipo + cantidad + @):

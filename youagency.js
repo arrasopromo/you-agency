@@ -605,11 +605,13 @@ module.exports.register = function register(app, deps) {
         tipo, rede: d.rede, titulo: d.titulo, unidade: d.unidade, alvo: d.alvo, desc: d.desc,
         pacotes: (tabelaRedes[tipo] || []).map((x) => ({ q: x.q, cents: parsePrecoToCents(x.p), label: x.p }))
       }));
-    res.set('Cache-Control', 'public, max-age=60');
+    res.set('Cache-Control', 'no-cache');
     // Ofertas da etapa 3 (mesmos preços que o calculateOrderBumps do pricing.js soma no servidor).
     const pac = (arr) => (arr || []).map((x) => ({ q: x.q, cents: parsePrecoToCents(x.p) }));
     const ofertas = { likes: pac(tabelaCurtidas.mistos), views: pac(tabelaVisualizacoes.visualizacoes_reels), comments: { unitCents: 2000, max: 250 } };
-    res.json({ ok: true, servicos, ofertas });
+    // Instagram: comentários ocultos no Gerenciamento de Tipo → a página inicial esconde o card.
+    const instagramOcultos = { comentarios: (Array.isArray(ocultos.comentarios) ? ocultos.comentarios : []).includes('comentarios') };
+    res.json({ ok: true, servicos, ofertas, instagramOcultos });
   });
 
   app.get('/instagram-services', async (req, res) => {

@@ -3452,6 +3452,7 @@
         const hiddenSeguidores = Array.isArray(hidden0.seguidores) ? hidden0.seguidores.map(String) : [];
         const hiddenCurtidas = Array.isArray(hidden0.curtidas) ? hidden0.curtidas.map(String) : [];
         const hiddenVisualizacoes = Array.isArray(hidden0.visualizacoes) ? hidden0.visualizacoes.map(String) : [];
+        const hiddenComentarios = Array.isArray(hidden0.comentarios) ? hidden0.comentarios.map(String) : [];
         const providers0 = (typeof serviceTypeProviders !== 'undefined' && serviceTypeProviders && typeof serviceTypeProviders === 'object') ? serviceTypeProviders : {};
         const getSvcId = (ctx, key, provider) => {
           try {
@@ -3571,6 +3572,27 @@
                   </td>
                   <td style="padding:8px; border-bottom:1px solid #f3f4f6; text-align:center;">
                     <input type="checkbox" class="serviceTypeHiddenChk" data-ctx="visualizacoes" data-key="<%= String(it.key || '') %>" <%= hiddenVisualizacoes.includes(String(it.key || '')) ? 'checked' : '' %> />
+                  </td>
+                </tr>
+              <% }) %>
+              <% (Array.isArray(defs.comentarios) ? defs.comentarios : []).forEach(it => { %>
+                <% const provCList = allowedProviders('comentarios', String(it.key || '')); %>
+                <% const provC = getProvider('comentarios', String(it.key || ''), 'justanotherpanel'); %>
+                <tr>
+                  <td style="padding:8px; border-bottom:1px solid #f3f4f6; color:#111827;">Comentários</td>
+                  <td style="padding:8px; border-bottom:1px solid #f3f4f6; color:#111827;"><%= String(it.label || it.key || '') %></td>
+                  <td style="padding:8px; border-bottom:1px solid #f3f4f6;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <select class="serviceTypeProviderSel" data-ctx="comentarios" data-key="<%= String(it.key || '') %>" style="min-width:140px; padding:6px 10px; border:1px solid #e5e7eb; border-radius:8px;">
+                        <% provCList.forEach(p => { %>
+                          <option value="<%= p %>" <%= String(p) === String(provC) ? 'selected' : '' %>><%= p %></option>
+                        <% }) %>
+                      </select>
+                      <input type="number" class="serviceTypeServiceIdInp" data-ctx="comentarios" data-key="<%= String(it.key || '') %>" data-provider="<%= provC %>" value="<%= getSvcId('comentarios', String(it.key || ''), provC) %>" placeholder="padrão" style="width:140px; padding:6px 10px; border:1px solid #e5e7eb; border-radius:8px;" />
+                    </div>
+                  </td>
+                  <td style="padding:8px; border-bottom:1px solid #f3f4f6; text-align:center;">
+                    <input type="checkbox" class="serviceTypeHiddenChk" data-ctx="comentarios" data-key="<%= String(it.key || '') %>" <%= hiddenComentarios.includes(String(it.key || '')) ? 'checked' : '' %> />
                   </td>
                 </tr>
               <% }) %>

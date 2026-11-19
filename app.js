@@ -12769,6 +12769,7 @@ const loadServiceVisibility = async () => {
       seguidores: pick('seguidores'),
       curtidas: pick('curtidas'),
       visualizacoes: pick('visualizacoes'),
+      comentarios: pick('comentarios'),
       tiktok: pick('tiktok'),
       facebook: pick('facebook')
     };
@@ -42581,7 +42582,6 @@ app.get('/painel', requireAdmin, async (req, res) => {
       const defs = {
         seguidores: [
           { key: 'mistos', label: 'Seguidores Mistos' },
-          { key: 'brasileiros', label: 'Seguidores Brasileiros' },
           { key: 'organicos', label: 'Seguidores brasileiros e reais' }
         ],
         curtidas: [
@@ -42591,6 +42591,9 @@ app.get('/painel', requireAdmin, async (req, res) => {
         ],
         visualizacoes: [
           { key: 'visualizacoes_reels', label: 'Visualizações Reels' }
+        ],
+        comentarios: [
+          { key: 'comentarios', label: 'Comentários' }
         ],
         // TikTok/Facebook: sem fornecedor/ID padrão — enquanto não configurar, o pedido pago NÃO é despachado.
         tiktok: [
@@ -46675,6 +46678,7 @@ app.post('/api/painel/service-visibility', requireAdmin, async (req, res) => {
         seguidores: normalizeArr(nextHidden.seguidores),
         curtidas: normalizeArr(nextHidden.curtidas),
         visualizacoes: normalizeArr(nextHidden.visualizacoes),
+        comentarios: normalizeArr(nextHidden.comentarios),
         tiktok: normalizeArr(nextHidden.tiktok),
         facebook: normalizeArr(nextHidden.facebook)
       },

@@ -2121,7 +2121,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!isCurtidasContext && !isViewsContext && !tipos.includes('organicos') && tabela.organicos && hiddenTipos.indexOf('organicos') < 0) {
        tipos.push('organicos');
     }
-    
+    // Tudo oculto (ex.: comentários marcados como Oculto): avisa em vez de deixar a área vazia.
+    if (!tipos.length) { tipoCards.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#6b7280; padding:18px 8px;">Este servicio no está disponible por ahora.</p>'; return; }
+
     tipos.forEach(tipo => {
       const card = document.createElement('div');
       card.className = 'service-card option-card';
