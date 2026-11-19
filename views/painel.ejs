@@ -183,10 +183,12 @@
   <% const isVendasView = (typeof view !== 'undefined' && view === 'vendas'); %>
   <%# Vendas e Dashboard em REAIS: os valores chegam em pesos (vendas em MXN) e são convertidos pela cotação BRL→MXN de hoje; o valor em pesos fica na legenda. %>
   <% var __fx = (typeof fxBrlMxn !== 'undefined' && Number(fxBrlMxn) > 0) ? Number(fxBrlMxn) : 1;
-     var __R = function(v){ return 'R$ ' + (Number(v || 0) / __fx).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+     // Sem cotação (servidor antigo/sem rede): mostra em pesos em vez de pôr "R$" num valor em MXN.
+     var __semFx = !(typeof fxBrlMxn !== 'undefined' && Number(fxBrlMxn) > 0);
+     var __R = function(v){ if (__semFx) return '$ ' + Number(v || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN'; return 'R$ ' + (Number(v || 0) / __fx).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
      var __Rb = function(v){ return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
      var __MX = function(v){ return '$ ' + Number(v || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN'; }; %>
-  <script>window.__FX_BRL_MXN = <%= __fx %>; window.__MXN = function(v){ return '$ ' + Number(v || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN'; };</script>
+  <script>window.__FX_BRL_MXN = <%= __fx %>; window.__SEM_FX = <%= __semFx ? 'true' : 'false' %>; window.__MXN = function(v){ return '$ ' + Number(v || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN'; };</script>
   <% const isRefil2View = (typeof view !== 'undefined' && view === 'refil2'); %>
   <% const isServiceTypesView = (typeof view !== 'undefined' && view === 'service_types'); %>
   <%
@@ -4347,7 +4349,7 @@
             if (!card || !modal) return;
             var data = [];
             try { data = JSON.parse((document.getElementById('ltvPurchasesJson') || {}).textContent || '[]') || []; } catch(_) { data = []; }
-            function brl(v){ try { return 'R$ ' + (Number(v||0) / (window.__FX_BRL_MXN || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch(_) { return '$ ' + Number(v||0).toFixed(2); } }
+            function brl(v){ try { return (window.__SEM_FX ? ('$ ' + Number(v||0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN') : ('R$ ' + (Number(v||0) / (window.__FX_BRL_MXN || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))); } catch(_) { return '$ ' + Number(v||0).toFixed(2); } }
             function fmtDate(ms){ if (!ms) return '-'; try { return new Date(Number(ms)).toLocaleString('pt-BR'); } catch(_) { return '-'; } }
             function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
             function render(){
@@ -4683,7 +4685,7 @@
             try { includeAjuste = (localStorage.getItem(KEY_AJUSTE) === '1'); } catch(_){}
             var includeCustoFixo = false; // por padrão o custo fixo NÃO entra no lucro
             try { includeCustoFixo = (localStorage.getItem(KEY_CUSTOFIXO) === '1'); } catch(_){}
-            function fmt(n){ return 'R$ ' + ((Number(n) || 0) / (window.__FX_BRL_MXN || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+            function fmt(n){ if (window.__SEM_FX) return window.__MXN(n); return 'R$ ' + ((Number(n) || 0) / (window.__FX_BRL_MXN || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
             function capMx(el, n){ try { var c = el && el.nextElementSibling; if (c && c.classList.contains('mx-cap')) c.textContent = window.__MXN(n); } catch(_){} }
             function apply(){
               var rate = Number(slider.value); if (!(rate >= 6 && rate <= 13)) rate = 13;
@@ -4897,7 +4899,7 @@
             function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
             function fmtDate(v){ try { var d = new Date(v); return isFinite(d.getTime()) ? d.toLocaleString('pt-BR') : '-'; } catch (_) { return '-'; } }
             function fmtNum(n){ return (typeof n === 'number' && isFinite(n)) ? n.toLocaleString('pt-BR') : '-'; }
-            function brl(v){ try { return 'R$ ' + (Number(v||0) / (window.__FX_BRL_MXN || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch(_){ return '$ ' + Number(v||0).toFixed(2); } }
+            function brl(v){ try { return (window.__SEM_FX ? ('$ ' + Number(v||0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN') : ('R$ ' + (Number(v||0) / (window.__FX_BRL_MXN || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))); } catch(_){ return '$ ' + Number(v||0).toFixed(2); } }
             function render(){
               var q = String(search && search.value || '').trim().replace(/^@+/, '').toLowerCase();
               var bo = !!(boughtOnly && boughtOnly.checked);
@@ -8633,7 +8635,7 @@
                         var n = Number(v);
                         return isFinite(n) ? n : 0;
                       }
-                      function brlNum(v){ try { return 'R$ ' + (Number(v||0) / (window.__FX_BRL_MXN || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch(_){ return '$ ' + Number(v||0).toFixed(2); } }
+                      function brlNum(v){ try { return (window.__SEM_FX ? ('$ ' + Number(v||0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN') : ('R$ ' + (Number(v||0) / (window.__FX_BRL_MXN || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))); } catch(_){ return '$ ' + Number(v||0).toFixed(2); } }
                       // Mobile: legenda embaixo (não corta na largura estreita).
                       var legendPos = (typeof window !== 'undefined' && window.innerWidth && window.innerWidth < 680) ? 'bottom' : 'right';
                       // Tabela de faturamento/gasto/margem por tipo de produto.
