@@ -42535,6 +42535,8 @@ async function computeOrderBumpPie({ sinceMs, untilMs } = {}) {
 
 app.get('/painel', requireAdmin, async (req, res) => {
   try {
+    // Vendas e Dashboard mostram em REAIS: a view divide os valores (em pesos) por esta cotação BRL→MXN de hoje.
+    try { res.locals.fxBrlMxn = Number(await require('./fxMxn.js').getBrlMxnRate()) || null; } catch (_) {}
     const { getCollection } = require('./mongodbClient');
     const col = await getCollection('checkout_orders');
     const settingsCol = await getCollection('settings');

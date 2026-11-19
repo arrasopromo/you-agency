@@ -181,6 +181,12 @@
   <% const isWhatsappSalesView = false; %>
   <% const isLtvView = (typeof view !== 'undefined' && view === 'ltv'); %>
   <% const isVendasView = (typeof view !== 'undefined' && view === 'vendas'); %>
+  <%# Vendas e Dashboard em REAIS: os valores chegam em pesos (vendas em MXN) e são convertidos pela cotação BRL→MXN de hoje; o valor em pesos fica na legenda. %>
+  <% var __fx = (typeof fxBrlMxn !== 'undefined' && Number(fxBrlMxn) > 0) ? Number(fxBrlMxn) : 1;
+     var __R = function(v){ return 'R$ ' + (Number(v || 0) / __fx).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+     var __Rb = function(v){ return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+     var __MX = function(v){ return '$ ' + Number(v || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN'; }; %>
+  <script>window.__FX_BRL_MXN = <%= __fx %>; window.__MXN = function(v){ return '$ ' + Number(v || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN'; };</script>
   <% const isRefil2View = (typeof view !== 'undefined' && view === 'refil2'); %>
   <% const isServiceTypesView = (typeof view !== 'undefined' && view === 'service_types'); %>
   <%
@@ -4303,17 +4309,17 @@
       <div class="summary-grid summary-grid-dashboard">
         <div class="summary-card">
           <div class="summary-label">Total de pedidos gerados</div>
-          <div class="summary-value">$ <%= Number((typeof totalOrdersGeneratedValue !== 'undefined' ? Number(totalOrdersGeneratedValue || 0) : 0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
+          <div class="summary-value"><%= __R((typeof totalOrdersGeneratedValue !== 'undefined' ? Number(totalOrdersGeneratedValue || 0) : 0)) %></div><div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"><%= __MX((typeof totalOrdersGeneratedValue !== 'undefined' ? Number(totalOrdersGeneratedValue || 0) : 0)) %></div>
           <div class="summary-sub" style="margin-top:6px;"><%= (typeof totalOrdersGenerated !== 'undefined' ? Number(totalOrdersGenerated || 0) : 0).toLocaleString('pt-BR') %> pedido(s)</div>
         </div>
         <div class="summary-card">
           <div class="summary-label">Total de Vendas</div>
-          <div class="summary-value">$ <%= Number((typeof revenueShown !== 'undefined' ? Number(revenueShown || 0) : Number(totalRevenue || 0))).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
+          <div class="summary-value"><%= __R((typeof revenueShown !== 'undefined' ? Number(revenueShown || 0) : Number(totalRevenue || 0))) %></div><div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"><%= __MX((typeof revenueShown !== 'undefined' ? Number(revenueShown || 0) : Number(totalRevenue || 0))) %></div>
         </div>
         <% var _totVendas = (typeof revenueShown !== 'undefined' ? Number(revenueShown || 0) : Number(totalRevenue || 0)); var _ltvRev = (typeof ltvRevenue !== 'undefined' ? Number(ltvRevenue || 0) : 0); var _ltvPct = _totVendas > 0 ? (_ltvRev / _totVendas * 100) : 0; %>
         <div class="summary-card" id="ltvRecompraCard" style="cursor:pointer;" title="Ver compras de recompra">
           <div class="summary-label">Faturamento LTV (recompra) <span style="color:#7c3aed; font-size:0.78rem; font-weight:700;">ver ›</span></div>
-          <div class="summary-value" style="color:#7c3aed;">$ <%= Number(_ltvRev).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
+          <div class="summary-value" style="color:#7c3aed;"><%= __R(_ltvRev) %></div><div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"><%= __MX(_ltvRev) %></div>
           <% var _lpN = (typeof ltvPurchases !== 'undefined' && Array.isArray(ltvPurchases) ? ltvPurchases.length : 0); var _ttN = (typeof totalTransactions !== 'undefined' ? Number(totalTransactions || 0) : 0); var _lpPct = _ttN > 0 ? (_lpN / _ttN * 100) : 0; %>
           <div class="summary-sub" style="margin-top:6px;"><%= _ltvPct.toFixed(1).replace('.', ',') %>% das vendas · <%= _lpN %> pedido(s) recorrente(s) (<%= _lpPct.toFixed(1).replace('.', ',') %>%)</div>
         </div>
@@ -4341,7 +4347,7 @@
             if (!card || !modal) return;
             var data = [];
             try { data = JSON.parse((document.getElementById('ltvPurchasesJson') || {}).textContent || '[]') || []; } catch(_) { data = []; }
-            function brl(v){ try { return Number(v || 0).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }); } catch(_) { return '$ ' + Number(v||0).toFixed(2); } }
+            function brl(v){ try { return 'R$ ' + (Number(v||0) / (window.__FX_BRL_MXN || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch(_) { return '$ ' + Number(v||0).toFixed(2); } }
             function fmtDate(ms){ if (!ms) return '-'; try { return new Date(Number(ms)).toLocaleString('pt-BR'); } catch(_) { return '-'; } }
             function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
             function render(){
@@ -4373,17 +4379,17 @@
         </script>
         <div class="summary-card">
           <div class="summary-label">Ticket Médio</div>
-          <div class="summary-value">$ <%= Number((typeof avgTicket !== 'undefined' ? Number(avgTicket || 0) : 0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
+          <div class="summary-value"><%= __R((typeof avgTicket !== 'undefined' ? Number(avgTicket || 0) : 0)) %></div><div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"><%= __MX((typeof avgTicket !== 'undefined' ? Number(avgTicket || 0) : 0)) %></div>
         </div>
         <div class="summary-card">
           <div class="summary-label">Custo Total no Período</div>
-          <div class="summary-value">$ <%= Number(totalCost).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
+          <div class="summary-value"><%= __R(totalCost) %></div><div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"><%= __MX(totalCost) %></div>
         </div>
         <% var _vendasOper = (typeof revenueShown !== 'undefined' ? Number(revenueShown || 0) : Number(totalRevenue || 0)); var _lucroOper = _vendasOper - Number(totalCost || 0);
            var _aj = (typeof ajustesLucro !== 'undefined' && ajustesLucro) ? ajustesLucro : { total: 0, itens: [], comAsterisco: false };
-           var _ajTotal = Number(_aj.total || 0);
+           var _ajTotal = Number(_aj.total || 0) * __fx; // lançado em R$
            var _cf = (typeof custosFixos !== 'undefined' && custosFixos) ? custosFixos : { itens: [], mensal: 0, periodo: 0, dias: 30 };
-           var _cfMensal = Number(_cf.mensal || 0); var _cfPeriodo = Number(_cf.periodo || 0); var _cfDias = Number(_cf.dias || 30);
+           var _cfMensal = Number(_cf.mensal || 0) * __fx; var _cfPeriodo = Number(_cf.periodo || 0) * __fx; var _cfDias = Number(_cf.dias || 30); // lançados em R$
            var _cfItens = Array.isArray(_cf.itens) ? _cf.itens : [];
            var _cfMesesTrav = (_cf.meses && typeof _cf.meses === 'object') ? _cf.meses : {};
            var _cfPorMes = Array.isArray(_cf.porMes) ? _cf.porMes : [];
@@ -4391,13 +4397,14 @@
            var _cfNomesMes = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
            var _cfMesNome = function(k){ var a = String(k||'').split('-'); return a.length === 2 ? (_cfNomesMes[Number(a[1])-1] + '/' + a[0]) : k; };
            var _cfRefTravado = !!_cfMesesTrav[_cfMesRef];
-           var _cfValorRef = _cfRefTravado ? Number(_cfMesesTrav[_cfMesRef].mensal || 0) : _cfMensal;
+           var _cfValorRef = _cfRefTravado ? Number(_cfMesesTrav[_cfMesRef].mensal || 0) * __fx : _cfMensal;
            var _cfItensRef = _cfRefTravado ? (_cfMesesTrav[_cfMesRef].itens || []) : _cfItens;
            var _cfTravadosNoPeriodo = _cfPorMes.filter(function(x){ return x && x.travado; });
-           var _cfPeriodoTxt = '$ ' + _cfPeriodo.toFixed(2) + ' no período (' + _cfDias + 'd)'; %>
+           var _cfPeriodoTxt = __R(_cfPeriodo) + ' no período (' + _cfDias + 'd)'; %>
         <div class="summary-card">
           <div class="summary-label">Lucro Líquido (período)</div>
-          <div class="summary-value" id="dashLucroOperValue" style="color: <%= _lucroOper >= 0 ? '#16a34a' : '#dc2626' %>;">$ <%= Number(_lucroOper).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
+          <div class="summary-value" id="dashLucroOperValue" style="color: <%= _lucroOper >= 0 ? '#16a34a' : '#dc2626' %>;"><%= __R(_lucroOper) %></div>
+          <div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"><%= __MX(_lucroOper) %></div>
           <div id="dashLucroMargem" style="margin-top:4px; font-size:0.85rem; font-weight:700; color:#6b7280;"></div>
           <button type="button" id="dashMetaTaxToggle" style="margin-top:8px; font-size:0.72rem; padding:4px 10px; border:1px solid #e0e0ea; border-radius:999px; background:#fff; cursor:pointer; color:#374151; font-weight:600;">c/ imposto Meta (13,8%)</button>
           <% if (_ajTotal > 0) { %>
@@ -4410,16 +4417,16 @@
         <% if (_ajTotal > 0) { %>
         <div class="summary-card">
           <div class="summary-label">Custo Adicional (período)</div>
-          <div class="summary-value" style="color:#dc2626;">$ <%= Number(_ajTotal).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
+          <div class="summary-value" style="color:#dc2626;"><%= __R(_ajTotal) %></div><div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"><%= __MX(_ajTotal) %></div>
           <div class="summary-sub" id="dashAjusteSub" data-base="<%= _aj.itens.length %> lançamento<%= _aj.itens.length > 1 ? 's' : '' %> fora da operação" style="margin-top:6px;"><%= _aj.itens.length %> lançamento<%= _aj.itens.length > 1 ? 's' : '' %> fora da operação</div>
           <button type="button" id="dashAjusteDetalhe" style="margin-top:8px; font-size:0.72rem; padding:4px 10px; border:1px solid #fecaca; border-radius:999px; background:#fff5f5; cursor:pointer; color:#b91c1c; font-weight:600;">Detalhamento</button>
         </div>
         <% } %>
         <div class="summary-card">
           <div class="summary-label">Custos Fixos (<%= _cfMesNome(_cfMesRef) %>)<% if (_cfRefTravado) { %> <span title="Mês travado: usa a lista própria deste mês, não o padrão" style="color:#b91c1c;">🔒</span><% } %></div>
-          <div class="summary-value" style="color:#dc2626;">$ <%= Number(_cfValorRef).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
+          <div class="summary-value" style="color:#dc2626;"><%= __R(_cfValorRef) %></div><div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"><%= __MX(_cfValorRef) %></div>
           <div class="summary-sub" id="dashCustoFixoSub" data-base="<%= _cfItensRef.length %> assinatura<%= _cfItensRef.length !== 1 ? 's' : '' %> · <%= _cfPeriodoTxt %>" style="margin-top:6px;"><%= _cfItensRef.length %> assinatura<%= _cfItensRef.length !== 1 ? 's' : '' %> · <%= _cfPeriodoTxt %></div>
-          <% if (_cfRefTravado) { %><div style="margin-top:4px; font-size:0.72rem; color:#b91c1c;">🔒 <%= _cfMesNome(_cfMesRef) %> travado · padrão $ <%= Number(_cfMensal).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div><% } else if (_cfTravadosNoPeriodo.length) { %><div style="margin-top:4px; font-size:0.72rem; color:#b91c1c;">🔒 travado<%= _cfTravadosNoPeriodo.length > 1 ? 's' : '' %>: <%= _cfTravadosNoPeriodo.map(function(x){ return _cfMesNome(x.mes) + ' $ ' + Number(x.valor).toFixed(2); }).join(' · ') %></div><% } %>
+          <% if (_cfRefTravado) { %><div style="margin-top:4px; font-size:0.72rem; color:#b91c1c;">🔒 <%= _cfMesNome(_cfMesRef) %> travado · padrão <%= __R(_cfMensal) %></div><% } else if (_cfTravadosNoPeriodo.length) { %><div style="margin-top:4px; font-size:0.72rem; color:#b91c1c;">🔒 travado<%= _cfTravadosNoPeriodo.length > 1 ? 's' : '' %>: <%= _cfTravadosNoPeriodo.map(function(x){ return _cfMesNome(x.mes) + ' $ ' + Number(x.valor).toFixed(2); }).join(' · ') %></div><% } %>
           <button type="button" id="dashCustoFixoEditar" style="margin-top:8px; font-size:0.72rem; padding:4px 10px; border:1px solid #fecaca; border-radius:999px; background:#fff5f5; cursor:pointer; color:#b91c1c; font-weight:600;">Editar / Detalhar</button>
         </div>
         <div id="dashCustoFixoModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); z-index:9999; align-items:center; justify-content:center; padding:16px;">
@@ -4478,12 +4485,12 @@
               for (var i = -12; i <= 1; i++) { var x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + i, 1)); ks[x.getUTCFullYear() + '-' + String(x.getUTCMonth()+1).padStart(2,'0')] = 1; }
               Object.keys(travados).forEach(function(k){ ks[k] = 1; }); if (mesRef) ks[mesRef] = 1;
               var html = '<option value="">Padrão (todo mês sem trava)</option>';
-              Object.keys(ks).sort().reverse().forEach(function(k){ html += '<option value="' + k + '">' + nomeMes(k) + (travados[k] ? ' 🔒 $ ' + (Number(travados[k].mensal)||0).toFixed(2) : '') + '</option>'; });
+              Object.keys(ks).sort().reverse().forEach(function(k){ html += '<option value="' + k + '">' + nomeMes(k) + (travados[k] ? ' 🔒 R$ ' + (Number(travados[k].mensal)||0).toFixed(2).replace('.', ',') : '') + '</option>'; });
               mesSel.innerHTML = html;
             }
             function setEditavel(on){ rowsEl.querySelectorAll('input,button').forEach(function(el){ el.disabled = !on; }); rowsEl.style.opacity = on ? '1' : '.55'; if (addBtn) { addBtn.disabled = !on; addBtn.style.opacity = on ? '1' : '.55'; } }
             var itens = padrao;
-            function brl(n){ return '$ ' + (Number(n)||0).toFixed(2); }
+            function brl(n){ return 'R$ ' + (Number(n)||0).toFixed(2).replace('.', ','); }
             function recalc(){
               var t = 0;
               rowsEl.querySelectorAll('.cfRow').forEach(function(r){ var v = Number(String(r.querySelector('.cfVal').value||'').replace(',', '.'))||0; if (v>0) t+=v; });
@@ -4549,7 +4556,7 @@
               <% _aj.itens.forEach(function(it, _i){ %>
               <div style="border-bottom:1px solid #f1f2f6; padding:10px 0;">
                 <div style="display:flex; justify-content:space-between; gap:12px; align-items:baseline;">
-                  <div style="color:#111827;"><strong style="color:#dc2626;">$ <%= Number(Number(it.valor||0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></strong> — <%= it.titulo %></div>
+                  <div style="color:#111827;"><strong style="color:#dc2626;"><%= __Rb(Number(it.valor||0)) %></strong> — <%= it.titulo %></div>
                   <div style="font-size:.78rem; color:#9ca3af; white-space:nowrap;"><%= it.data ? String(it.data).slice(8,10) + '/' + String(it.data).slice(5,7) : it.mes %></div>
                 </div>
                 <div style="font-size:.84rem; color:#6b7280; margin-top:4px; line-height:1.45;"><%= it.motivo %></div>
@@ -4557,7 +4564,7 @@
                 <details style="margin-top:4px;">
                   <summary style="cursor:pointer; font-size:.78rem; color:#9ca3af;">dados</summary>
                   <ul style="margin:6px 0 0 16px; padding:0; font-size:.78rem; color:#6b7280; line-height:1.5; word-break:break-word;">
-                    <% it.detalhes.forEach(function(d){ %><li><% if (d && typeof d === 'object') { %><strong style="color:#374151;">@<%= d.perfil || '?' %></strong> — repôs <strong><%= d.repor != null ? Number(d.repor).toLocaleString('pt-BR') : '?' %></strong> · $ <%= d.custoBrl != null ? Number(d.custoBrl).toFixed(2) : '?' %> · <%= d.provider || '?' %><% if (d.order) { %> · #<%= d.order %><% } %><% if (d.pedidosPagos != null) { %> · <span title="pedidos pagos deste perfil conosco"><%= d.pedidosPagos %> pedido<%= d.pedidosPagos === 1 ? '' : 's' %> pago<%= d.pedidosPagos === 1 ? '' : 's' %></span><% } %><% } else { %><%= d %><% } %></li><% }); %>
+                    <% it.detalhes.forEach(function(d){ %><li><% if (d && typeof d === 'object') { %><strong style="color:#374151;">@<%= d.perfil || '?' %></strong> — repôs <strong><%= d.repor != null ? Number(d.repor).toLocaleString('pt-BR') : '?' %></strong> · R$ <%= d.custoBrl != null ? Number(d.custoBrl).toFixed(2).replace('.', ',') : '?' %> · <%= d.provider || '?' %><% if (d.order) { %> · #<%= d.order %><% } %><% if (d.pedidosPagos != null) { %> · <span title="pedidos pagos deste perfil conosco"><%= d.pedidosPagos %> pedido<%= d.pedidosPagos === 1 ? '' : 's' %> pago<%= d.pedidosPagos === 1 ? '' : 's' %></span><% } %><% } else { %><%= d %><% } %></li><% }); %>
                   </ul>
                 </details>
                 <% } %>
@@ -4565,7 +4572,7 @@
               <% }); %>
               <div style="display:flex; justify-content:space-between; font-weight:800; color:#111827; padding-top:12px;">
                 <span>Total</span>
-                <span style="color:#dc2626;">$ <%= Number(_ajTotal).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
+                <span style="color:#dc2626;"><%= __R(_ajTotal) %></span>
               </div>
               <div id="dashAjusteEstado" style="margin-top:8px; font-size:.78rem; color:#9ca3af;"></div>
             </div>
@@ -4591,7 +4598,7 @@
            var _fb = _fbBr + _fbUsd;            // gasto total (BR + USD convertido)
            var _fbTax = _fbBr * 0.138;          // imposto SÓ sobre a conta BR; a ca3 (USD) não tem
            var _fbTotal = _fb + _fbTax;
-           var _brl = function(n){ return '$ ' + Number(n || 0).toFixed(2); };
+           var _brl = __R;
            var _dol = (typeof fbSpendDolar !== 'undefined') ? Number(fbSpendDolar || 0) : 0;
            var _taxaMx = (typeof fbUsdMxn !== 'undefined' && fbUsdMxn) ? Number(fbUsdMxn) : null;
            var _soUsd = _fbOk && _fbBr === 0; // You Agency: só a ca4 (USD), sem conta BR
@@ -4607,8 +4614,9 @@
               <div class="summary-sub" style="color:#6b7280;">sem imposto</div>
             </div>
             <div style="flex:1 1 160px; min-width:150px; border-left:1px solid #eef0f4; padding-left:16px;">
-              <div style="font-size:0.72rem; color:#6b7280; text-transform:uppercase; letter-spacing:.3px;">Em pesos (entra no lucro)</div>
-              <div class="summary-value" style="color:#111827; font-size:1.15rem;"><%= _mxnFmt(_fbUsd) %></div>
+              <div style="font-size:0.72rem; color:#6b7280; text-transform:uppercase; letter-spacing:.3px;">Em reais (entra no lucro)</div>
+              <div class="summary-value" style="color:#111827; font-size:1.15rem;"><%= __R(_fbUsd) %></div>
+              <div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"><%= _mxnFmt(_fbUsd) %></div>
               <div class="summary-sub" style="color:#6b7280;">cotação de cada dia<%= _taxaMx ? (' · média ' + _taxaMx.toFixed(2)) : '' %></div>
             </div>
           </div>
@@ -4637,7 +4645,8 @@
         </div>
         <div class="summary-card" id="dashImpostoCard" data-vendas="<%= _vendasOper.toFixed(2) %>" data-lucrobruto="<%= _lucroOper.toFixed(2) %>" data-ads-base="<%= _fb.toFixed(2) %>" data-ads-tax="<%= _fbTax.toFixed(2) %>" data-ajuste="<%= _ajTotal.toFixed(2) %>" data-custofixo="<%= _cfPeriodo.toFixed(2) %>">
           <div class="summary-label">Imposto (período)</div>
-          <div class="summary-value" id="dashImpostoValue" style="color:#dc2626;">$ 0,00</div>
+          <div class="summary-value" id="dashImpostoValue" style="color:#dc2626;">R$ 0,00</div>
+          <div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"></div>
           <div class="summary-sub" style="margin-top:8px;">
             <div style="display:flex; align-items:center; gap:10px;">
               <input type="range" id="dashImpostoRate" min="6" max="13" step="0.1" value="13" style="flex:1; accent-color:#7c3aed; cursor:pointer;">
@@ -4674,7 +4683,8 @@
             try { includeAjuste = (localStorage.getItem(KEY_AJUSTE) === '1'); } catch(_){}
             var includeCustoFixo = false; // por padrão o custo fixo NÃO entra no lucro
             try { includeCustoFixo = (localStorage.getItem(KEY_CUSTOFIXO) === '1'); } catch(_){}
-            function fmt(n){ return '$ ' + (Number(n) || 0).toFixed(2); }
+            function fmt(n){ return 'R$ ' + ((Number(n) || 0) / (window.__FX_BRL_MXN || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+            function capMx(el, n){ try { var c = el && el.nextElementSibling; if (c && c.classList.contains('mx-cap')) c.textContent = window.__MXN(n); } catch(_){} }
             function apply(){
               var rate = Number(slider.value); if (!(rate >= 6 && rate <= 13)) rate = 13;
               var rateStr = (Math.round(rate * 10) / 10).toString().replace('.', ',');
@@ -4684,8 +4694,8 @@
               var ajusteAplicado = includeAjuste ? ajuste : 0;
               var custoFixoAplicado = includeCustoFixo ? custoFixo : 0;
               var lucro = lucroBruto - imposto - ads - ajusteAplicado - custoFixoAplicado;
-              if (impostoEl) impostoEl.textContent = '− ' + fmt(imposto);
-              if (lucroEl) { lucroEl.textContent = fmt(lucro); lucroEl.style.color = lucro >= 0 ? '#16a34a' : '#dc2626'; }
+              if (impostoEl) { impostoEl.textContent = '− ' + fmt(imposto); capMx(impostoEl, imposto); }
+              if (lucroEl) { lucroEl.textContent = fmt(lucro); lucroEl.style.color = lucro >= 0 ? '#16a34a' : '#dc2626'; capMx(lucroEl, lucro); }
               if (margemEl) {
                 var margem = vendas > 0 ? (lucro / vendas * 100) : 0;
                 margemEl.textContent = margem.toFixed(1).replace('.', ',') + '% das vendas';
@@ -4887,7 +4897,7 @@
             function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
             function fmtDate(v){ try { var d = new Date(v); return isFinite(d.getTime()) ? d.toLocaleString('pt-BR') : '-'; } catch (_) { return '-'; } }
             function fmtNum(n){ return (typeof n === 'number' && isFinite(n)) ? n.toLocaleString('pt-BR') : '-'; }
-            function brl(v){ try { return Number(v||0).toLocaleString('es-MX', { style:'currency', currency:'MXN' }); } catch(_){ return '$ ' + Number(v||0).toFixed(2); } }
+            function brl(v){ try { return 'R$ ' + (Number(v||0) / (window.__FX_BRL_MXN || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch(_){ return '$ ' + Number(v||0).toFixed(2); } }
             function render(){
               var q = String(search && search.value || '').trim().replace(/^@+/, '').toLowerCase();
               var bo = !!(boughtOnly && boughtOnly.checked);
@@ -4961,7 +4971,7 @@
         </script>
         <div class="summary-card">
           <div class="summary-label">Vendas sem orderbump</div>
-          <div class="summary-value">$ <%= Number((typeof revenueWithoutBumps !== 'undefined' ? Number(revenueWithoutBumps || 0) : 0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
+          <div class="summary-value"><%= __R((typeof revenueWithoutBumps !== 'undefined' ? Number(revenueWithoutBumps || 0) : 0)) %></div><div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"><%= __MX((typeof revenueWithoutBumps !== 'undefined' ? Number(revenueWithoutBumps || 0) : 0)) %></div>
           <div style="margin-top:8px;">
             <a href="<%= (typeof toggleIgnoreBumpRevenueUrl !== 'undefined' && toggleIgnoreBumpRevenueUrl) ? toggleIgnoreBumpRevenueUrl : '/painel' %>" style="display:inline-block; padding:6px 10px; background:#0d6efd; color:#fff; border-radius:6px; text-decoration:none; font-size:0.85rem;">
               <%= (typeof ignoreBumpRevenue !== 'undefined' && ignoreBumpRevenue) ? 'Considerar venda de orderbump' : 'Retirar venda de orderbump' %>
@@ -4993,7 +5003,7 @@
       </div>
       <%# ── LUCRO POR DIA — segue o filtro de período do dashboard ───────────── %>
       <% if (view === 'dashboard' && typeof dailyProfit !== 'undefined' && dailyProfit && dailyProfit.length) {
-           var _dpBrl = function(n){ return '$ ' + Number(n || 0).toFixed(2); };
+           var _dpBrl = __R;
            var _dpNum = function(n){ return Number(n || 0).toFixed(1).replace('.', ','); };
            var _dpT = dailyProfitTotals || { pedidos:0, receita:0, custoServico:0, ads:0, imposto:0, lucro:0 };
            var _dpMargem = _dpT.receita > 0 ? (_dpT.lucro / _dpT.receita * 100) : 0; %>
@@ -5183,7 +5193,7 @@
                     responsive: true,
                     plugins: { legend: { display: false } },
                     scales: {
-                      y: { ticks: { stepSize: 5, callback: function(v){ return '$ ' + Number(v || 0).toFixed(2); } } }
+                      y: { ticks: { stepSize: 5, callback: function(v){ return 'R$ ' + (Number(v || 0) / (window.__FX_BRL_MXN || 1)).toFixed(2).replace('.', ','); } } }
                     }
                   }
                 });
@@ -5208,7 +5218,7 @@
                     responsive: true,
                     plugins: { legend: { display: false } },
                     scales: {
-                      y: { ticks: { callback: function(v){ return '$ ' + Number(v || 0).toFixed(0); } } }
+                      y: { ticks: { callback: function(v){ return 'R$ ' + (Number(v || 0) / (window.__FX_BRL_MXN || 1)).toFixed(0); } } }
                     }
                   }
                 });
@@ -5329,7 +5339,7 @@
           <div style="display:flex; gap:22px; align-items:center; flex-wrap:wrap; margin-top:12px;">
             <div style="flex:0 0 auto;"><canvas id="adFormatPieChart" width="280" height="280" style="max-width:280px;"></canvas></div>
             <div style="flex:1 1 340px; min-width:0; overflow-x:auto;">
-              <% var afRow = function(f){ var rc=(f.roas>=2.5?'#166534':(f.roas>=1.5?'#b45309':'#991b1b')); return '<tr><td style="white-space:nowrap;">'+f.label+'</td><td style="text-align:right;font-weight:700;">'+(f.purchases||0).toLocaleString('pt-BR')+'</td><td style="text-align:right;">$ '+(f.revenue||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td><td style="text-align:right;color:#6b7280;">$ '+(f.spend||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td><td style="text-align:right;font-weight:700;color:'+rc+';">'+(f.roas||0).toFixed(2)+'</td></tr>'; }; %>
+              <% var afRow = function(f){ var rc=(f.roas>=2.5?'#166534':(f.roas>=1.5?'#b45309':'#991b1b')); return '<tr><td style="white-space:nowrap;">'+f.label+'</td><td style="text-align:right;font-weight:700;">'+(f.purchases||0).toLocaleString('pt-BR')+'</td><td style="text-align:right;">'+__R(f.revenue||0)+'</td><td style="text-align:right;color:#6b7280;">'+__R(f.spend||0)+'</td><td style="text-align:right;font-weight:700;color:'+rc+';">'+(f.roas||0).toFixed(2)+'</td></tr>'; }; %>
               <table class="dashboard-table" style="min-width:0; font-size:0.9rem;">
                 <thead><tr><th>Formato</th><th style="text-align:right;">Vendas</th><th style="text-align:right;">Faturamento</th><th style="text-align:right;">Gasto</th><th style="text-align:right;">ROAS</th></tr></thead>
                 <tbody>
@@ -5421,7 +5431,7 @@
                     <tr>
                       <td style="white-space:nowrap;"><%= c.label %></td>
                       <td style="text-align:right;"><%= (c.count||0).toLocaleString('pt-BR') %></td>
-                      <td style="text-align:right; font-weight:700;">$ <%= (c.revenue||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></td>
+                      <td style="text-align:right; font-weight:700;"><%= __R(c.revenue||0) %></td>
                     </tr>
                   <% }); %>
                 </tbody>
@@ -5439,7 +5449,7 @@
                   var labels=data.map(function(c){ return c.label; }); var vals=data.map(function(c){ return c.revenue; });
                   var colors=['#7c3aed','#ec4899','#2563eb','#16a34a','#f59e0b','#06b6d4','#9ca3af'];
                   var ctx=document.getElementById('bumpPieChart'); if(!ctx||(Chart.getChart&&Chart.getChart(ctx))) return;
-                  new Chart(ctx,{ type:'pie', data:{ labels:labels, datasets:[{ data:vals, backgroundColor:colors, borderColor:'#ffffff', borderWidth:2 }] }, options:{ responsive:false, animation:false, plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, padding:8, boxWidth:12 } }, tooltip:{ callbacks:{ label:function(c){ var t=c.dataset.data.reduce(function(s,v){ return s+v; },0); var p=t?Math.round(c.parsed/t*100):0; return c.label+': $ '+Number(c.parsed).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+' ('+p+'%)'; } } } } } });
+                  new Chart(ctx,{ type:'pie', data:{ labels:labels, datasets:[{ data:vals, backgroundColor:colors, borderColor:'#ffffff', borderWidth:2 }] }, options:{ responsive:false, animation:false, plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, padding:8, boxWidth:12 } }, tooltip:{ callbacks:{ label:function(c){ var t=c.dataset.data.reduce(function(s,v){ return s+v; },0); var p=t?Math.round(c.parsed/t*100):0; return c.label+': R$ '+(Number(c.parsed)/(window.__FX_BRL_MXN||1)).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ('+p+'%)'; } } } } } });
                 } catch(_){}
               }
               function ready(){ if(typeof Chart!=='undefined'){ draw(); return; } var t=0; var iv=setInterval(function(){ if(typeof Chart!=='undefined'){ clearInterval(iv); draw(); } else if(++t>50){ clearInterval(iv); } }, 100); }
@@ -8320,21 +8330,21 @@
                   <td><%= order.type %></td>
                   <td><%= order.qty %></td>
                   <td>
-                    $ <%= Number(order.costPer1000).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %>
+                    <%= __R(order.costPer1000) %>
                     <% if (order.costPer1000Real && order.costPer1000Qty && Number(order.costPer1000Qty) !== Number(order.qty)) { %>
                       <div><small style="color:#666;">base <%= order.costPer1000Qty %> enviados</small></div>
                     <% } %>
                   </td>
-                  <td>$ <%= (function(){ try { var n = Number(order && typeof order.paymentFee !== 'undefined' ? order.paymentFee : NaN); if (isFinite(n) && n > 0) return n.toFixed(2); var pm = String(order && (order.paymentMethod || order.payment_method || order.method) ? (order.paymentMethod || order.payment_method || order.method) : '').toLowerCase(); if (pm.indexOf('paghiper') >= 0) return '0,99'; return '0,85'; } catch(_) { return '0,85'; } })() %></td>
+                  <td><%= (function(){ try { var n = Number(order && typeof order.paymentFee !== 'undefined' ? order.paymentFee : NaN); if (isFinite(n) && n > 0) return __R(n); var pm = String(order && (order.paymentMethod || order.payment_method || order.method) ? (order.paymentMethod || order.payment_method || order.method) : '').toLowerCase(); if (pm.indexOf('paghiper') >= 0) return 'R$ 0,99'; return 'R$ 0,85'; } catch(_) { return 'R$ 0,85'; } })() %></td>
                   <td class="vd-bump"><% const _bl = order.orderBumps ? String(order.orderBumps).split(';').filter(Boolean) : []; %><% if (!_bl.length) { %>-<% } else { _bl.forEach(function(x){ %><span><%= x %></span><% }) } %></td>
                   <td>
-                    $ <%= Number((typeof order.bumpCost !== 'undefined' ? order.bumpCost : 0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %>
+                    <%= __R((typeof order.bumpCost !== 'undefined' ? order.bumpCost : 0)) %>
                     <% if (order.orderBumpsTotal) { %>
                       <div><small style="color:#666;"><%= order.orderBumpsTotal %></small></div>
                     <% } %>
                   </td>
-                  <td>$ <%= Number(order.cost).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></td>
-                  <td>$ <%= Number((typeof order.totalPaid !== 'undefined' ? Number(order.totalPaid || 0) : 0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></td>
+                  <td><%= __R(order.cost) %></td>
+                  <td><%= __R((typeof order.totalPaid !== 'undefined' ? Number(order.totalPaid || 0) : 0)) %></td>
                   <% const _ms = order.mainSupplier || null; %>
                   <td class="vd-st" data-st="<%= _ms ? (_ms.status || '') : 'sem_envio' %>" data-rem="<%= _ms && _ms.remains != null ? _ms.remains : '' %>" data-prov="<%= _ms ? (_ms.provider || '') : '' %>" data-ord="<%= _ms ? (_ms.orderId || '') : '' %>" data-posts="<%= _ms && _ms.subs ? _ms.subs.length : '' %>"><span class="vd-badge"><i></i><b>…</b></span></td>
                 </tr>
@@ -8623,7 +8633,7 @@
                         var n = Number(v);
                         return isFinite(n) ? n : 0;
                       }
-                      function brlNum(v){ try { return Number(v||0).toLocaleString('es-MX', { style:'currency', currency:'MXN' }); } catch(_){ return '$ ' + Number(v||0).toFixed(2); } }
+                      function brlNum(v){ try { return 'R$ ' + (Number(v||0) / (window.__FX_BRL_MXN || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch(_){ return '$ ' + Number(v||0).toFixed(2); } }
                       // Mobile: legenda embaixo (não corta na largura estreita).
                       var legendPos = (typeof window !== 'undefined' && window.innerWidth && window.innerWidth < 680) ? 'bottom' : 'right';
                       // Tabela de faturamento/gasto/margem por tipo de produto.
