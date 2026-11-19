@@ -42061,7 +42061,9 @@ function __tsProduto(o) {
     curtidas: { mistos: 'Curtidas mistas', curtidas_brasileiras: 'Curtidas brasileiras', brasileiros: 'Curtidas brasileiras', organicos: 'Curtidas reais', curtidas_reais: 'Curtidas reais' },
   };
   let nome = (nomes[cat] && nomes[cat][tipo]) || ({ visualizacoes: 'Visualizações', comentarios: 'Comentários', refil: 'Extensão de refil' })[cat] || (tipo || 'Outro');
-  if (cat === 'tiktok' || cat === 'facebook') nome = (cat === 'tiktok' ? 'TikTok ' : 'Facebook ') + tipo.replace(/^(tiktok|facebook)_/, '').replace(/_/g, ' ');
+  if (cat === 'tiktok' || cat === 'facebook') { const sv = tipo.replace(/^(tiktok|facebook)_/, ''); nome = (cat === 'tiktok' ? 'TikTok ' : 'Facebook ') + (({ seguidores: 'seguidores', seguidores_perfil: 'seguidores', seguidores_pagina: 'seguidores', curtidas: 'curtidas mistas', curtidas_reais: 'curtidas reais', visualizacoes: 'visualizações', comentarios: 'comentários' })[sv] || sv.replace(/_/g, ' ')); }
+  // You Agency vende 3 redes: o que não é TikTok/Facebook é Instagram e o nome diz isso.
+  else if (['seguidores', 'curtidas', 'visualizacoes', 'comentarios'].includes(cat)) nome = 'Instagram ' + nome.charAt(0).toLowerCase() + nome.slice(1);
   const isUpsell = !!(o.upsell && o.upsell.isUpsell) || String(m.is_upsell || '') === '1';
   const qtd = parseInt(String(o.qtd || o.quantidade || m.quantidade || '').replace(/\D/g, ''), 10) || 0;
   const canal = String(m.source || '') === 'wpp_agent' ? 'bot' : 'site';
@@ -42198,7 +42200,7 @@ async function computeTrackSite({ since, until, fresh } = {}) {
     if (k === 'pacote_escolhido') {
       const redeM = String(e.servico || '').match(/^(tiktok|facebook)_(.+)$/i);
       const nome = redeM ? ((/tiktok/i.test(redeM[1]) ? 'TikTok ' : 'Facebook ') + ({ seguidores: 'seguidores', curtidas: 'curtidas mistas', curtidas_reais: 'curtidas reais', visualizacoes: 'visualizações', comentarios: 'comentários' })[redeM[2].toLowerCase()] || redeM[2].replace(/_/g, ' '))
-        : (({ seguidores: 'Seguidores', curtidas: 'Curtidas', visualizacoes: 'Visualizações', comentarios: 'Comentários' })[e.servico] || e.servico || '');
+        : ((({ seguidores: 'Instagram seguidores', curtidas: 'Instagram curtidas', visualizacoes: 'Instagram visualizações', comentarios: 'Instagram comentários' })[e.servico]) || e.servico || '');
       const tipoE = redeM ? '' : (e.tipo || '');
       const kk = nome + '|' + tipoE + '|' + (e.qtd || '');
       const x = escolhidos[kk] || (escolhidos[kk] = { servico: nome, tipo: tipoE, qtd: e.qtd || 0, preco: e.preco || '', vis: new Set() });
