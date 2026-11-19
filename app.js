@@ -5477,6 +5477,32 @@ app.get('/api/painel/ia-crm/conversations', requireAdmin, async (req, res) => {
   } catch (e) { return res.status(500).json({ ok: false, error: (e && e.message) || 'internal' }); }
 });
 // Mensagens de uma conversa (marca como lida)
+// De onde veio a conversa (barra do topo do CRM): anúncio de WhatsApp (clique com ctwa_clid gravado pelo
+// webhook em wpp_ctwa_clicks), botão do WhatsApp do SITE (código #XXXXX → wa_refs_telefone, ou a mensagem
+// pronta "Estoy en el sitio…") ou direto (o cliente chamou sem anúncio nem site). Nome do anúncio pelo Graph (cache).
+const __crmAdNome = new Map();
+async function crmNomeAnuncio(adId) {
+  const id = String(adId || '').replace(/\D/g, ''); if (!id) return '';
+  const c = __crmAdNome.get(id); if (c && Date.now() - c.at < 6 * 3600e3) return c.nome;
+  let nome = '';
+  try {
+    const token = String(process.env.FB_ADS_TOKEN || '').trim();
+    if (token) { const r = await axios.get('https://graph.facebook.com/v21.0/' + id, { params: { fields: 'name,campaign{name}', access_token: token }, timeout: 4000, validateStatus: () => true }); if (r.status === 200 && r.data) nome = String((r.data.campaign && r.data.campaign.name) ? r.data.campaign.name + ' › ' + (r.data.name || '') : (r.data.name || '')); }
+  } catch (_) {}
+  __crmAdNome.set(id, { at: Date.now(), nome });
+  return nome;
+}
+async function crmOrigemConversa(phone, msgs) {
+  const tail = String(phone || '').replace(/\D/g, '').slice(-10); if (tail.length !== 10) return null;
+  const clique = await (await getCollection('wpp_ctwa_clicks')).find({ tail }).sort({ at: -1 }).limit(1).next().catch(() => null);
+  const ref = await (await getCollection('wa_refs_telefone')).find({ tail }).sort({ em: -1 }).limit(1).next().catch(() => null);
+  const tClique = clique ? new Date(clique.at).getTime() : 0, tRef = ref ? new Date(ref.em).getTime() : 0;
+  if (clique && tClique >= tRef) return { tipo: 'anuncio_whatsapp', anuncio: String(clique.sourceId || ''), titulo: String(clique.headline || ''), nomeAnuncio: await crmNomeAnuncio(clique.sourceId), em: clique.at };
+  if (ref) return { tipo: 'site', codigo: String(ref.code || ''), em: ref.em };
+  const primeira = (Array.isArray(msgs) ? msgs : []).find((m) => m && m.direction === 'in');
+  if (primeira && /estoy en el sitio|estou no site|\(#[A-Z0-9]{4,6}\)/i.test(String(primeira.text || ''))) return { tipo: 'site', codigo: '', em: primeira.createdAt };
+  return { tipo: 'direto' };
+}
 app.get('/api/painel/ia-crm/messages', requireAdmin, async (req, res) => {
   try {
     const phone = String(req.query.phone || '').trim();
@@ -5486,7 +5512,8 @@ app.get('/api/painel/ia-crm/messages', requireAdmin, async (req, res) => {
     const cc = await getCollection('whatsapp_contacts');
     try { await cc.updateOne({ _id: phone }, { $set: { unread: false } }); } catch (_) {}
     const contact = await cc.findOne({ _id: phone }, { projection: { botPaused: 1, name: 1, bloqueado: 1 } });
-    return res.json({ ok: true, phone, name: (contact && contact.name) || '', botPaused: !!(contact && contact.botPaused), bloqueado: !!(contact && contact.bloqueado), messages: msgs });
+    let origem = null; try { origem = await crmOrigemConversa(phone, msgs); } catch (_) {}
+    return res.json({ ok: true, phone, name: (contact && contact.name) || '', botPaused: !!(contact && contact.botPaused), bloqueado: !!(contact && contact.bloqueado), messages: msgs, origem });
   } catch (e) { return res.status(500).json({ ok: false, error: (e && e.message) || 'internal' }); }
 });
 // Busca de conversa pelo @ do Instagram (campo de busca do CRM começando com "@").

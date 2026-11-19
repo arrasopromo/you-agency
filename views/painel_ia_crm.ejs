@@ -268,6 +268,7 @@
                 <span class="t-ig" id="tIg" style="display:none;"></span>
                 <button type="button" class="btn-pedidos" id="pedidosBtn" style="display:none;">🧾 Ver pedidos</button>
                 <button type="button" class="btn-pedidos btn-reposicao" id="reposicaoBtn" style="display:none;">♻️ Reposição</button>
+                <span id="origemTag" style="display:none; font-size:0.72rem; font-weight:700; padding:2px 9px; border-radius:999px; border:1px solid; white-space:nowrap;"></span>
                 <button type="button" class="btn-pedidos" id="cardReaisHeaderBtn" title="Enviar card: opções de seguidores (Mistos x Brasileiros Reais)" style="display:none; border-color:#8b5cf6; color:#6d28d9;">💠 Reais</button>
               </div>
             </div>
@@ -540,11 +541,21 @@
       // Volta pra lista de conversas (celular).
       function voltarLista(){
         $('crm').classList.remove('show-thread');
-        state.current=null; state.replyTo=null; $('replyBar').style.display='none'; try{ clearPending(); }catch(_){} try{ fecharPedidos(); limparPedidos(); }catch(_){} try{ $('cardReaisHeaderBtn').style.display='none'; }catch(_){}
+        state.current=null; state.replyTo=null; $('replyBar').style.display='none'; try{ clearPending(); }catch(_){} try{ fecharPedidos(); limparPedidos(); }catch(_){} try{ $('origemTag').style.display='none'; }catch(_){} try{ $('cardReaisHeaderBtn').style.display='none'; }catch(_){}
         renderConvs();
         try{ window.scrollTo(0,0); }catch(_){}
       }
 
+      // Selo "de onde veio": anúncio de WhatsApp, site (botão do WhatsApp) ou direto.
+      function pintarOrigem(o){
+        var el=$('origemTag'); if(!el) return;
+        if(!o || !o.tipo){ el.style.display='none'; return; }
+        var cfg = o.tipo==='anuncio_whatsapp' ? ['Anúncio WhatsApp','#16a34a','#f0fdf4'] : (o.tipo==='site' ? ['Veio do site','#2563eb','#eff6ff'] : ['Direto (sem anúncio)','#6b7280','#f9fafb']);
+        el.textContent=cfg[0]; el.style.color=cfg[1]; el.style.borderColor=cfg[1]; el.style.background=cfg[2]; el.style.display='inline-block';
+        var dica = o.tipo==='anuncio_whatsapp' ? ('Clicou num anúncio que abre o WhatsApp' + (o.nomeAnuncio ? ': ' + o.nomeAnuncio : '') + (o.titulo ? ' · "' + o.titulo + '"' : '') + (o.anuncio ? ' · anúncio ' + o.anuncio : ''))
+          : (o.tipo==='site' ? ('Chamou pelo botão do WhatsApp do site' + (o.codigo ? ' (código #' + o.codigo + ')' : '')) : 'Chamou direto, sem clique em anúncio de WhatsApp nem botão do site');
+        el.title=dica;
+      }
       async function openChat(phone, name){
         var jaAberto=$('crm').classList.contains('show-thread');
         state.current=phone; state.currentName=name; try{ clearPending(); }catch(_){}
@@ -560,7 +571,7 @@
         try{ $('cardReaisHeaderBtn').style.display='inline-block'; }catch(_){}
         renderConvs();
         var d=await api(API+'/messages?phone='+encodeURIComponent(phone));
-        if(d&&d.ok){ renderMsgs(d.messages, true); setBotBtn(d.botPaused); setBlockBtn(d.bloqueado); pintarJanela(d); if(d.name){ state.currentName=d.name; $('tName').textContent=d.name; } }
+        if(d&&d.ok){ renderMsgs(d.messages, true); setBotBtn(d.botPaused); setBlockBtn(d.bloqueado); pintarJanela(d); pintarOrigem(d.origem); if(d.name){ state.currentName=d.name; $('tName').textContent=d.name; } }
         carregarResumoPedidos(phone);   // depois das mensagens: não atrasa o chat
       }
 
