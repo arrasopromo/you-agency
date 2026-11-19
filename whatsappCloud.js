@@ -518,11 +518,44 @@ const _REC_VARIANTS = {
     '¡Hola! ¿Todavía quieres crecer tu perfil? Mándame tu @ de Instagram y armo tu pedido.',
   ],
 };
-function _recMsg(stage, tipo) {
+// Etapa em que a conversa parou (pela última pergunta do bot): a retomada continua DALI, sem voltar atrás.
+const _REC_ETAPA = {
+  metodo: [
+    '¡Hola! Tu pedido ya está casi listo. ¿Prefieres pagar por *SPEI* (transferencia) u *OXXO* (efectivo)? En cuanto me digas, te paso los datos.',
+    '¡Hola! Solo me falta saber cómo prefieres pagar: *SPEI* u *OXXO*. Me dices y dejo tu pedido listo.',
+  ],
+  confirma: [
+    '¡Hola! ¿Me confirmas si el perfil que encontré es el correcto? Así dejo tu pedido listo.',
+    '¡Hola! Solo me falta que me confirmes el perfil para seguir con tu pedido.',
+  ],
+  cantidad: [
+    '¡Hola! ¿Qué cantidad te gustaría? Me dices y te dejo el pedido listo.',
+    '¡Hola! ¿Ya elegiste la cantidad? Con eso armo tu pedido en un momento.',
+  ],
+};
+function _recEtapa(lastOutText) {
+  const t = String(lastOutText || '');
+  if (/c[oó]mo prefieres pagar|spei[^\n]{0,80}oxxo|oxxo[^\n]{0,80}spei|a nombre de qui[eé]n/i.test(t)) return 'metodo';
+  if (/es correcto\?|conf[ií]rmame si/i.test(t)) return 'confirma';
+  if (/cu[aá]nt[oa]s[^\n?]{0,60}\?|qu[eé] cantidad/i.test(t)) return 'cantidad';
+  return '';
+}
+function _recRede(txt) {
+  const t = String(txt || '').toLowerCase();
+  if (/tik ?tok/.test(t)) return 'tiktok';
+  if (/facebook|\bfb\b|fanpage|p[aá]gina de face/.test(t)) return 'facebook';
+  return 'instagram';
+}
+function _recMsg(stage, tipo, ctx) {
+  const c = ctx || {};
+  if (c.etapa && _REC_ETAPA[c.etapa]) return _recPick(_REC_ETAPA[c.etapa]);
   const t = (stage === 2) ? (tipo === 'sem_arroba' ? 'sem_arroba' : 'geral')
-                          : (tipo === 'preco' ? 'preco' : (tipo === 'sem_arroba' ? 'sem_arroba' : 'geral'));
+                          : (tipo === 'preco' && c.rede !== 'facebook' ? 'preco' : (tipo === 'sem_arroba' ? 'sem_arroba' : 'geral'));
   let msg = _recPick(_REC_VARIANTS[stage + '_' + t] || _REC_VARIANTS['1_geral']);
   if (msg.includes('{PRECO}')) { const p = _precoDesde(); msg = p ? msg.split('{PRECO}').join(p) : _recPick(_REC_VARIANTS['1_geral']); }
+  // TikTok/Facebook: pede o @ do TikTok ou o link da página, não o @ do Instagram.
+  if (c.rede === 'tiktok') msg = msg.replace(/@ de Instagram/g, '@ de TikTok');
+  if (c.rede === 'facebook') msg = msg.replace(/(tu|el) @ de Instagram/g, 'el link de tu perfil o página de Facebook').replace(/@ de Instagram/g, 'link de tu perfil o página de Facebook');
   return msg;
 }
 // Limites anti-insistência (o relatório diário da IA apontava "follow-up repetitivo" como o
@@ -602,7 +635,7 @@ async function runIaRecoverySweep() {
       try { if (await isBotPaused(phone)) continue; } catch (_) {} // humano assumiu
       const txt = String((c.inTexts || []).join(' \n ')).toLowerCase();
       if (RE_REC_SUPORTE.test(txt)) continue; // suporte/pós-venda
-      const temArroba = /@[a-z0-9._]{2,}|instagram\.com\//i.test(txt);
+      const temArroba = /@[a-z0-9._]{2,}|instagram\.com\/|tiktok\.com\/|facebook\.com\/|fb\.watch\//i.test(txt);
       const preco = /precio|cu[aá]nto|cuesta|costo|tabla|caro/.test(txt);
       const tipo = !temArroba ? 'sem_arroba' : (preco ? 'preco' : 'geral');
       let rec = null; try { rec = await recCol.findOne({ _id: key }); } catch (_) {}
@@ -613,9 +646,14 @@ async function runIaRecoverySweep() {
       else if (ageMin >= IA_RECOVERY_STAGE1_MIN && ageMin < IA_RECOVERY_STAGE2_MIN && !rec.stage1At) stage = 1;
       if (!stage) continue;
       // Última resposta do bot foi o fallback de falha → o problema foi nosso, não manda modelo pronto.
+      // A mesma mensagem diz em que etapa a conversa parou e de qual rede se fala.
+      let recCtx = { rede: 'instagram', etapa: '' };
       try {
-        const lastOut = await ia.find({ phone, direction: 'out', recovery: { $exists: false } }, { projection: { text: 1 } }).sort({ createdAt: -1 }).limit(1).next();
+        const outs = await ia.find({ phone, direction: 'out', recovery: { $exists: false } }, { projection: { text: 1 } }).sort({ createdAt: -1 }).limit(4).toArray();
+        const lastOut = outs[0];
         if (lastOut && RE_REC_FALHA_BOT.test(String(lastOut.text || ''))) continue;
+        const lastTxt = outs.slice(0, 2).map((o) => String(o.text || '')).join('\n');
+        recCtx = { rede: _recRede(txt + '\n' + outs.map((o) => String(o.text || '')).join('\n')), etapa: _recEtapa(lastTxt) };
       } catch (_) {}
       // Teto por telefone: no máximo IA_RECOVERY_MAX_24H retomadas nas últimas 24h (o ciclo
       // reinicia a cada nova mensagem, e sem teto um mesmo número chegou a receber 19).
@@ -632,7 +670,7 @@ async function runIaRecoverySweep() {
         claimed = !!(cl && cl.modifiedCount > 0);
       } catch (_) {}
       if (!claimed) continue;
-      const msg = _recMsg(stage, tipo);
+      const msg = _recMsg(stage, tipo, recCtx);
       try {
         const r = await sendWhatsAppText(phone, msg, { log: false });
         if (r && r.ok) {

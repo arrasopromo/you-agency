@@ -93,14 +93,36 @@ function _tableRede(rede, servico, hidden, tipo) {
   return { ok: true, rede, redeNombre: REDES[rede].nome, servico: sv.tipo, tipoNombre: sv.tipoNombre || 'mixtos', unit: sv.unit, needsPost: sv.alvo === 'post', moneda: 'MXN', itens: (tabelaRedes[sv.tipo] || []).map((x) => ({ quantidade: x.q, preco: _label(x.p), precoCents: parsePrecoToCents(x.p) })) };
 }
 // Valida o perfil de TikTok (@) ou Facebook (link do perfil/página) pela MESMA busca do site.
+// Link de vídeo/post do Facebook (share/r, share/v, reel, story.php…) → link da página/perfil dono (id=).
+async function _fbDonoDoLink(u) {
+  try {
+    let url = String(u || '').trim(); if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    if (!/facebook\.com|fb\.watch|fb\.com/i.test(url)) return '';
+    let id = (url.match(/[?&]id=(\d{5,20})/) || [])[1] || '';
+    for (let i = 0; !id && i < 3; i++) {
+      const r = await axios.get(url, { maxRedirects: 0, timeout: 12000, validateStatus: () => true, headers: { 'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)' } });
+      const loc = String((r && r.headers && r.headers.location) || '');
+      if (!loc) break;
+      id = (loc.match(/[?&]id=(\d{5,20})/) || [])[1] || '';
+      url = loc.startsWith('http') ? loc : 'https://www.facebook.com' + loc;
+    }
+    return id ? 'https://www.facebook.com/profile.php?id=' + id : '';
+  } catch (_) { return ''; }
+}
 async function validateRedeProfile(rede, usuario) {
-  const q = String(usuario || '').trim();
+  let q = String(usuario || '').trim();
+  let postDetectado = '';
+  if (rede === 'facebook' && /(facebook\.com\/(share\/[rvp]\/|reel\/|story\.php|watch|permalink|[^/]+\/(videos|posts)\/)|fb\.watch\/)/i.test(q)) {
+    const dono = await _fbDonoDoLink(q);
+    if (!dono) return { ok: false, error: 'link_de_publicacion', message: 'Ese link es de un video o publicación y no se pudo ubicar la página dueña. Explica al cliente cómo copiar el link de su perfil o página: abrir el perfil/página → los tres puntos (...) → Copiar enlace. Guarda este link por si después compra me gusta o vistas.' };
+    postDetectado = q; q = dono;
+  }
   if (!q) return { ok: false, error: 'usuario_invalido', message: rede === 'tiktok' ? 'Pide el @ de TikTok del cliente.' : 'Pide el link del perfil o de la página de Facebook.' };
   try {
     const resp = await axios.get(INTERNAL_BASE + '/api/redes/perfil', { params: { rede, q }, timeout: 30000, validateStatus: () => true });
     const d = resp && resp.data;
     if (!d || !d.ok) return { ok: false, error: (d && d.error) || 'nao_encontrado', message: d && d.error === 'nao_encontrado' ? 'No encontramos ese perfil. Pide que revise el @ o el link.' : 'No se pudo consultar el perfil ahora; intenta de nuevo en un momento.' };
-    return { ok: true, rede, username: d.username, nombre: d.nome || '', followers: d.seguidores, isPrivate: !!d.privado, link: d.link, aviso: d.privado ? 'El perfil está PRIVADO: pide que lo deje público antes de pagar.' : undefined };
+    return { ok: true, rede, username: d.username, nombre: d.nome || '', followers: d.seguidores, isPrivate: !!d.privado, link: d.link, aviso: d.privado ? 'El perfil está PRIVADO: pide que lo deje público antes de pagar.' : undefined, link_publicacion_enviado: postDetectado || undefined, nota: postDetectado ? 'El cliente mandó el link de un video/publicación; encontré la página dueña con ese link. Confirma el nombre de la página con él. Si compra me gusta o vistas, ese link sirve como publicación.' : undefined };
   } catch (e) { return { ok: false, error: 'erro_validacao', message: (e && e.message) || 'erro' }; }
 }
 // Pedido de TikTok/Facebook pelo MESMO endpoint e formato da página do site (/servicios-tiktok|facebook).
@@ -166,9 +188,11 @@ async function createRedeOrder({ rede, servico, tipo, quantidade, usuario, perfi
   } catch (e) { return { ok: false, error: 'charge_error', message: (e && e.message) || 'erro' }; }
 }
 
-// No México só existem MIXTOS e REALES (orgânicos). "brasileiros" nunca é ofertado.
+// No México: MIXTOS e REALES (orgânicos) e, só em seguidores, LATINOS (chave interna 'brasileiros',
+// a mesma do Gerenciamento de Tipo / despacho). Curtidas brasileiras nunca são ofertadas.
 const TIPOS_MX = ['mistos', 'organicos'];
-const NOME_TIPO = { mistos: 'mixtos', organicos: 'reales' };
+const _tiposDe = (servicoKey) => (servicoKey === 'seguidores' ? ['mistos', 'brasileiros', 'organicos'] : TIPOS_MX);
+const NOME_TIPO = { mistos: 'mixtos', organicos: 'reales', brasileiros: 'latinos' };
 
 function normalizeServico(s) {
   const t = String(s || '').trim().toLowerCase();
@@ -184,7 +208,7 @@ function normalizeTipo(tipo) {
   const t = String(tipo || '').trim().toLowerCase();
   if (!t) return 'mistos';
   if (/organic|orgánic|orgânic|reales|real|de verdad|verdader/.test(t)) return 'organicos';
-  if (/brasileir|latin|mexican/.test(t)) return 'brasileiros';
+  if (/latin|brasileir|mexican/.test(t)) return 'brasileiros';
   if (/mixt|misto|mundial|internac|varios/.test(t)) return 'mistos';
   return 'mistos';
 }
@@ -212,7 +236,7 @@ function _configTipoKey(servicoKey, tipoKey) {
   return tipoKey;
 }
 function _tipoOculto(hidden, servicoKey, tipoKey) {
-  if (!TIPOS_MX.includes(tipoKey)) return true;
+  if (!_tiposDe(servicoKey).includes(tipoKey)) return true;
   const arr = (hidden && hidden[servicoKey]) || [];
   return arr.includes(_configTipoKey(servicoKey, tipoKey));
 }
@@ -230,7 +254,7 @@ function _servicosRedeVisiveis(hidden, rede) {
 async function tiposDisponiveis() {
   const hidden = await loadHiddenTypes();
   return {
-    seguidores: TIPOS_MX.filter((t) => !_tipoOculto(hidden, 'seguidores', t)),
+    seguidores: _tiposDe('seguidores').filter((t) => !_tipoOculto(hidden, 'seguidores', t)),
     curtidas: TIPOS_MX.filter((t) => !_tipoOculto(hidden, 'curtidas', t)),
     vistas: !_vistasOcultas(hidden),
     comentarios: !_comentariosOcultos(hidden),
@@ -250,7 +274,7 @@ function tableFor(svc, tipo) {
 const _label = (p) => mxn(parsePrecoToCents(p));
 
 function _indisponivel(key, tipoKey, hidden) {
-  const disp = TIPOS_MX.filter((t) => !_tipoOculto(hidden, key, t)).map((t) => NOME_TIPO[t]);
+  const disp = _tiposDe(key).filter((t) => !_tipoOculto(hidden, key, t)).map((t) => NOME_TIPO[t]);
   return { ok: false, error: 'tipo_indisponivel', tipo: tipoKey, tiposDisponiveis: disp, message: `Ese tipo no está disponible. Disponibles: ${disp.length ? disp.join(', ') : 'ninguno'}.` };
 }
 

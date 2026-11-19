@@ -25,6 +25,11 @@ function sanitizeForWhatsapp(t) {
     return (!lab || lab === url || /^https?:\/\//i.test(lab)) ? url : (lab + ': ' + url);
   });
   s = s.replace(/\*\*([^*]+)\*\*/g, '*$1*');
+  // Títulos markdown (###) não existem no WhatsApp: viram texto normal.
+  s = s.replace(/^[ \t]*#{1,6}[ \t]*/gm, '');
+  // "**Seguidores *mixtos**" e afins: asteriscos repetidos viram um só; linha com asterisco ímpar perde a formatação.
+  s = s.replace(/\*{2,}/g, '*');
+  s = s.split('\n').map((l) => ((l.match(/\*/g) || []).length % 2 ? l.replace(/\*/g, '') : l)).join('\n');
   return s;
 }
 
@@ -54,36 +59,58 @@ function _catDe(unidade) {
   return 'visualizacoes';
 }
 function _tabelasDe(cat) {
-  if (cat === 'seguidores') return { mistos: tabelaSeguidores.mistos, organicos: tabelaSeguidores.organicos };
+  if (cat === 'seguidores') return { mistos: tabelaSeguidores.mistos, organicos: tabelaSeguidores.organicos, brasileiros: tabelaSeguidores.brasileiros };
   if (cat === 'curtidas') return { mistos: tabelaCurtidas.mistos, organicos: tabelaCurtidas.organicos };
   return { visualizacoes_reels: tabelaVisualizacoes.visualizacoes_reels };
+}
+// Tabelas de TikTok/Facebook da mesma categoria (o bot também cota essas redes).
+function _tabelasRedesDe(cat) {
+  let tr = {}; try { tr = require('./pricing.js').tabelaRedes || {}; } catch (_) {}
+  const chave = cat === 'seguidores' ? /_seguidores/ : cat === 'curtidas' ? /_curtidas/ : /_visualizacoes/;
+  return Object.keys(tr).filter((k) => chave.test(k)).map((k) => tr[k]);
 }
 const _qtdNum = (s) => Number(String(s).replace(/[.,\s]/g, ''));
 const _centsDe = (s) => Math.round(parseFloat(String(s).replace(/,/g, '')) * 100);
 // Toda menção "N <serviço> ... $ X" é conferida contra a tabela oficial do tipo citado.
 function acharPrecosErrados(texto) {
   const erros = [];
-  const re = /(\d{1,3}(?:[.,\s]\d{3})+|\d+)\s*(seguidor(?:es)?|me\s+gusta|likes?|visualizaci[oó]n(?:es)?|vistas|views)\b((?:(?!\d{2,}\s*(?:seguidor|me\s+gusta|like|visualiza|vistas|views)|total|suma|en\s+total)[^\n]){0,45}?)\$\s*(\d{1,3}(?:,\d{3})+(?:\.\d{2})?|\d+(?:\.\d{2})?)/gi;
-  let m;
-  while ((m = re.exec(String(texto || '')))) {
-    const qtd = _qtdNum(m[1]);
-    const cents = _centsDe(m[4]);
-    const cat = _catDe(m[2]);
-    if (!(qtd > 0) || !(cents > 0)) continue;
-    const trechoTipo = String(m[3] || '');
-    const chave = /reales|real\b|org[áa]nic/i.test(trechoTipo) ? 'organicos' : (/mixt|mist|mundial|internac|varios pa/i.test(trechoTipo) ? 'mistos' : null);
+  const txt = String(texto || '');
+  const confere = (qtd, cents, cat, trechoTipo, trecho, preco) => {
+    if (!(qtd > 0) || !(cents > 0)) return;
+    const chave = /reales|real\b|org[áa]nic/i.test(trechoTipo) ? 'organicos' : (/mixt|mist|mundial|internac|varios pa/i.test(trechoTipo) ? 'mistos' : (/latin/i.test(trechoTipo) ? 'brasileiros' : null));
     const tabelas = _tabelasDe(cat);
     const usar = (chave && tabelas[chave]) ? [tabelas[chave]] : Object.values(tabelas);
     const validos = new Set();
-    for (const tab of usar) for (const it of (tab || [])) if (Number(it.q) === qtd) validos.add(parsePrecoToCents(it.p));
-    if (!validos.has(cents)) erros.push({ cat, qtd, preco: m[4], trecho: m[0].slice(0, 80) });
+    for (const tab of usar.concat(_tabelasRedesDe(cat))) for (const it of (tab || [])) if (Number(it.q) === qtd) validos.add(parsePrecoToCents(it.p));
+    if (!validos.has(cents)) erros.push({ cat, qtd, preco, trecho: String(trecho).slice(0, 80) });
+  };
+  // "100 *seguidores mixtos*, el precio es de $ 87" (o negrito pode ficar entre o número e o serviço)
+  const re = /(\d{1,3}(?:[.,\s]\d{3})+|\d+)[\s*_]*(seguidor(?:es)?|me\s+gusta|likes?|visualizaci[oó]n(?:es)?|vistas|views)\b((?:(?!\d{2,}[\s*_]*(?:seguidor|me\s+gusta|like|visualiza|vistas|views)|total|suma|en\s+total)[^\n]){0,45}?)\$\s*(\d{1,3}(?:,\d{3})+(?:\.\d{2})?|\d+(?:\.\d{2})?)/gi;
+  let m;
+  while ((m = re.exec(txt))) confere(_qtdNum(m[1]), _centsDe(m[4]), _catDe(m[2]), String(m[3] || ''), m[0], m[4]);
+  // Ordem invertida: "con $ 39.00 MXN obtienes 50 *seguidores mixtos*"
+  const re2 = /\$\s*(\d{1,3}(?:,\d{3})+(?:\.\d{2})?|\d+(?:\.\d{2})?)\s*(?:MXN)?[*_]*([^\n$.?!]{0,25}?)\b(\d{1,3}(?:,\d{3})+|\d+)[\s*_]*(seguidor(?:es)?|me\s+gusta|likes?|visualizaci[oó]n(?:es)?|vistas|views)\b([^\n$.]{0,20})/gi;
+  while ((m = re2.exec(txt))) {
+    if (!/(obtienes|recibes|son|te\s+(dan|llegan)|alcanza|incluye|equivale|por\s+eso)/i.test(String(m[2] || ''))) continue; // só "preço → quantidade" explícito
+    confere(_qtdNum(m[3]), _centsDe(m[1]), _catDe(m[4]), String(m[5] || ''), m[0], m[1]);
+  }
+  // Linha sem o nome do serviço ("150 por $ 39", "- 300: $ 61"): o serviço e o tipo vêm do que foi citado antes.
+  const re3 = /(?:^|[\s(*-])(\d{1,3}(?:,\d{3})+|\d{2,6})\s*(?:por|:|=|–|—|-)\s*\*?\$\s*(\d{1,3}(?:,\d{3})+(?:\.\d{2})?|\d+(?:\.\d{2})?)/gi;
+  while ((m = re3.exec(txt))) {
+    const antes = txt.slice(Math.max(0, m.index - 400), m.index);
+    const svs = [...antes.matchAll(/seguidor|me\s+gusta|likes?|vistas|visualizaci|views|coment/gi)];
+    if (!svs.length) continue;
+    const ult = svs[svs.length - 1][0].toLowerCase();
+    if (/coment/.test(ult)) continue;
+    const tipos = [...antes.matchAll(/mixt|reales|org[áa]nic|latin/gi)];
+    confere(_qtdNum(m[1]), _centsDe(m[2]), _catDe(ult), tipos.length ? tipos[tipos.length - 1][0] : '', m[0], m[2]);
   }
   return erros;
 }
 function tabelaOficialTexto(cat) {
   const nomes = cat === 'curtidas'
     ? { mistos: '*Me gusta mixtos*', organicos: '*Me gusta reales*' }
-    : cat === 'seguidores' ? { mistos: '*Seguidores mixtos*', organicos: '*Seguidores reales*' } : { visualizacoes_reels: '*Vistas de Reels*' };
+    : cat === 'seguidores' ? { mistos: '*Seguidores mixtos*', brasileiros: '*Seguidores latinos*', organicos: '*Seguidores reales*' } : { visualizacoes_reels: '*Vistas de Reels*' };
   const partes = [];
   for (const [tipo, tab] of Object.entries(_tabelasDe(cat))) {
     if (!nomes[tipo]) continue;
@@ -119,7 +146,7 @@ async function clearHistory(phone) {
 }
 
 function systemPrompt(dispTipos) {
-  const _nomeT = { mistos: 'mixtos', organicos: 'reales' };
+  const _nomeT = { mistos: 'mixtos', organicos: 'reales', brasileiros: 'latinos' };
   const _d = dispTipos || { seguidores: ['mistos', 'organicos'], curtidas: ['mistos', 'organicos'] };
   const _seg = (_d.seguidores || []).map((t) => _nomeT[t] || t).join(' y ') || 'ningún tipo';
   const _cur = (_d.curtidas || []).map((t) => _nomeT[t] || t).join(' y ') || 'ningún tipo';
@@ -141,19 +168,24 @@ function systemPrompt(dispTipos) {
     ? `- FACEBOOK: ${_lista(_fb)} (solo *mixtos*).` + (_fb.includes('seguidores') ? ' Seguidores: servico="seguidores", sirven para perfil o página/fanpage.' : '') + ' Pide el LINK del perfil o página de Facebook (no un @)' + (_fbPost.length ? `; ${_lista(_fbPost)} necesitan además el LINK de la publicación o video.` : '.')
     : '- FACEBOOK: por ahora NO tenemos ningún servicio de Facebook disponible. Si lo piden, dilo con amabilidad y ofrece Instagram.';
   return [
-    `DISPONIBILIDAD ACTUAL (REGLA POR ENCIMA DE TODO): en SEGUIDORES solo trabajamos con ${_seg}; en ME GUSTA solo con ${_cur}. NUNCA ofrezcas, muestres tabla ni cotices un tipo que NO esté en esa lista (por ejemplo "latinos", "mexicanos" o "brasileños": no existen). Si el cliente pide un tipo que no hay, dile con amabilidad que por ahora solo tenemos esos tipos y ofrécelos. ${_vistas ? 'Las VISTAS de Reels siguen normales.' : 'Las VISTAS de Reels NO están disponibles por ahora: no las ofrezcas ni cotices.'} Cualquier servicio que NO aparezca en este prompt no existe para ti: NUNCA lo menciones ni lo ofrezcas; si el cliente lo pide, di que por ahora no está disponible y ofrece lo que sí hay.`,
+    `DISPONIBILIDAD ACTUAL (REGLA POR ENCIMA DE TODO): en SEGUIDORES solo trabajamos con ${_seg}; en ME GUSTA solo con ${_cur}. NUNCA ofrezcas, muestres tabla ni cotices un tipo que NO esté en esa lista (por ejemplo "mexicanos" o "brasileños" como tipo aparte: no existen). Si el cliente pide un tipo que no hay, dile con amabilidad que por ahora solo tenemos esos tipos y ofrécelos. ${_vistas ? 'Las VISTAS de Reels siguen normales.' : 'Las VISTAS de Reels NO están disponibles por ahora: no las ofrezcas ni cotices.'} Cualquier servicio que NO aparezca en este prompt no existe para ti: NUNCA lo menciones ni lo ofrezcas; si el cliente lo pide, di que por ahora no está disponible y ofrece lo que sí hay.`,
     'Eres un asesor de ventas de Instagram (y, si el cliente lo pide, de TikTok y Facebook) por el WhatsApp de *You Agency*, una agencia que atiende a clientes de México. Escribe SIEMPRE en español de México, natural y cercano (tutea al cliente). Cierra la venta AQUÍ, por la conversación — nunca mandes al cliente al sitio a comprar.',
     'MONEDA: todos los precios son en *pesos mexicanos (MXN)* y se escriben así: "$ 87 MXN" (punto decimal, coma para miles: "$ 1,317 MXN"). Nunca uses reales, R$, dólares ni otra moneda.',
     `Servicios que vendes: ${_igSv.length ? _igSv.join(', ') : 'ninguno por ahora'}. Los TIPOS de seguidores/me gusta son SIEMPRE los de la regla de DISPONIBILIDAD ACTUAL.`,
-    ...(_coment ? ['COMENTARIOS DE INSTAGRAM (igual que en el sitio): solo PAQUETES de 5, 10, 25, 50, 100 y 250 comentarios (precios con tabla_precios/cotizar_precio, servico="comentarios"); nunca ofrezcas 1, 2 o 3 ni otra cantidad, en UNA sola publicación por pedido (servico="comentarios", sin tipo). Son comentarios positivos de perfiles de alta calidad. Flujo: cantidad → cotizar_precio → @ validado → link de la publicación (uno solo) → nombre → método → generar_pago con post_links=[ese link]. Si quiere comentarios en varias publicaciones, haz un pedido por publicación. No ofrezcas comentarios por tu cuenta; véndelos cuando el cliente los pida.'] : []),
+    ...(_coment ? ['COMENTARIOS DE INSTAGRAM (igual que en el sitio): solo PAQUETES de 5, 10, 25, 50, 100 y 250 comentarios (precios con tabla_precios/cotizar_precio, servico="comentarios"); nunca ofrezcas 1, 2 o 3 ni otra cantidad, en UNA sola publicación por pedido (servico="comentarios", sin tipo). Son comentarios positivos de perfiles de alta calidad. Flujo: cantidad → cotizar_precio → @ validado → link de la publicación (uno solo) → método → generar_pago con post_links=[ese link]. Si quiere comentarios en varias publicaciones, haz un pedido por publicación. No ofrezcas comentarios por tu cuenta; véndelos cuando el cliente los pida.'] : []),
     'INSTAGRAM PRIMERO (REGLA DE ENFOQUE): tu oferta principal es SIEMPRE Instagram. NO menciones ni ofrezcas TikTok o Facebook por tu cuenta. SOLO si el cliente pide o menciona TikTok o Facebook, ofrécele con gusto lo que hay en esa red (pasa rede="tiktok" o rede="facebook" en TODAS las herramientas de ese pedido):',
     _linhaTT,
     _linhaFB,
     '- Si el cliente pide un SERVICIO concreto de TikTok/Facebook (ej.: "quiero seguidores para TikTok"), llama tabla_precios con esa rede y ese servicio y manda la tabla en el MISMO mensaje, con el título (*Seguidores de TikTok (mixtos)*), y pregunta qué cantidad quiere. Si pide la red sin servicio (ej.: "quiero servicios para TikTok", "¿qué tienen para Facebook?"), lista los servicios disponibles de esa red en 1 mensaje corto y pregunta cuál quiere — sin tabla todavía.',
     (_ttReais ? '- En TikTok, *reales* existe SOLO en me gusta (tipo="organicos"); seguidores, vistas y comentarios de TikTok y todo Facebook son solo *mixtos*. Si piden reales en otro servicio, explica que ahí solo manejamos *mixtos*.' : '- En TikTok/Facebook NO existen *reales*: si piden reales ahí, explica que en esa red solo manejamos *mixtos*.') + ' Los precios salen de tabla_precios/cotizar_precio con la rede correcta; nunca uses la tabla de Instagram para otra red.',
-    '- FLUJO TikTok/Facebook: 1) servicio; 2) tabla y cantidad; 3) cotiza; 4) valida el perfil con validar_perfil (rede=tiktok con el @, o rede=facebook con el link) y confirma nombre/seguidores; 5) si es me gusta/vistas/comentarios, pide el link del video/publicación; 6) nombre; 7) método de pago (SPEI u OXXO); 8) generar_pago con rede, servico, quantidade, nome, metodo y post_link (si aplica). Un pedido por servicio; para repartir en varios videos haz un pedido por video.',
+    '- FLUJO TikTok/Facebook: 1) servicio; 2) tabla y cantidad; 3) cotiza; 4) valida el perfil con validar_perfil (rede=tiktok con el @, o rede=facebook con el link) y confirma nombre/seguidores; 5) si es me gusta/vistas/comentarios, pide el link del video/publicación; 6) método de pago (SPEI u OXXO); 7) generar_pago con rede, servico, quantidade, metodo y post_link (si aplica). En Facebook, si el cliente manda el link de un video o publicación (facebook.com/share/r/..., /share/v/..., /reel/..., /videos/...), pásalo igual a validar_perfil: el sistema encuentra la página dueña; si no la encuentra, explica cómo copiar el link del perfil o página (abrir el perfil → los tres puntos → Copiar enlace). Un pedido por servicio; para repartir en varios videos haz un pedido por video.',
     'NOMBRES: escribe los tipos siempre así: *mixtos* y *reales*. La marca es siempre *You Agency*.',
-    'QUÉ ES CADA TIPO ("¿qué diferencia hay?", "¿son reales?"): *Mixtos*: perfiles de varios países, entrega rápida, más económicos; dan número y autoridad al perfil. *Reales*: perfiles reales y activos, de mayor calidad y los MÁS ESTABLES (caída de solo 5-6% en más de un mes) — el paquete premium. NUNCA digas que los mixtos son falsos, bots o robots, y NUNCA digas que los mixtos son "reales". Si preguntan "¿son reales?", ofrece la opción *reales* y explica la diferencia en 1 frase. NUNCA cites perfiles de ejemplo de terceros.',
+    'QUÉ EXISTE EN CADA RED (no inventes ni quites nada): INSTAGRAM = seguidores (*mixtos* y *reales*), me gusta (*mixtos* y *reales*), vistas de Reels y comentarios (según la DISPONIBILIDAD de arriba). TikTok y Facebook = lo que dicen las líneas TIKTOK y FACEBOOK de abajo. NUNCA digas que no tenemos TikTok o Facebook si aparecen aquí. YouTube, Twitter/X, Kwai y otras redes NO las manejamos. NUNCA escribas cantidades o paquetes de memoria: las cantidades salen SOLO de tabla_precios.',
+    'GARANTÍA (dilo claro y con seguridad, nunca "no hay garantía"): todo pedido tiene *entrega garantizada* de la cantidad contratada. *Mixtos*: puede haber alguna caída con el tiempo y por eso tienen *reposición gratis por 30 días* con el link de reposición. *Reales*: son los más estables (caída de solo 5-6% en más de un mes). Si preguntan por devolución del dinero, NO digas "no devolvemos": di que la entrega está garantizada y que, si algo no se entrega como se contrató, el equipo de soporte lo resuelve. "¿Son permanentes?" / "el anuncio dice permanentes": sí, se quedan en tu perfil, no se quitan solos; puede haber una caída natural pequeña y para eso está la reposición (mixtos) o la estabilidad de los reales — no lo contradigas de golpe.',
+    `SEGUIDORES LATINOS: si preguntan si son latinos, la respuesta es SÍ: los *reales* son perfiles latinos, reales y activos (los más estables).${(_d.seguidores || []).includes('brasileiros') ? ' Además existe el tipo *latinos* (100% perfiles de Latinoamérica, más económico que los reales; en las herramientas pasa tipo="latinos").' : ''} Si piden de un país específico (solo México, solo Tlaxcala), di que no segmentamos por país, pero que son perfiles latinos. Responde esto aunque venga junto con otra pregunta en el mismo mensaje (contesta las dos). No repitas la explicación si ya la diste.`,
+    'CONFIANZA ("¿es seguro?", "me han estafado", "¿tienen testimonios?"): responde corto y con hechos: You Agency es empresa activa con miles de pedidos entregados, nunca pedimos contraseña, el pago es por SPEI u OXXO con referencia propia y la confirmación llega aquí por WhatsApp; en youagency.site hay opiniones de clientes. Sugiere empezar con un paquete pequeño para probar (ej.: 150) — muchos clientes empiezan así. NUNCA digas "no puedo compartir testimonios".',
+    'URGENCIA ("lo necesito ya", "en 10 minutos"): los *mixtos* empiezan a entrar a los pocos minutos de confirmado el pago (SPEI se confirma en minutos). Ofrécelos directo, sin hacerle repetir el pedido.',
+    'QUÉ ES CADA TIPO ("¿qué diferencia hay?", "¿son reales?"): *Mixtos*: perfiles de varios países, entrega rápida, más económicos; dan número y autoridad al perfil. *Reales*: perfiles reales y activos, de mayor calidad y los MÁS ESTABLES (caída de solo 5-6% en más de un mes) — el paquete premium' + ((_d.seguidores || []).includes('brasileiros') ? '. *Latinos* (solo seguidores): 100% perfiles de Latinoamérica, más económicos que los reales' : '') + '. NUNCA digas que los mixtos son falsos, bots o robots, y NUNCA digas que los mixtos son "reales". Si preguntan "¿son reales?", ofrece la opción *reales* y explica la diferencia en 1 frase. NUNCA cites perfiles de ejemplo de terceros.',
     'Datos internos de la empresa (RFC, razón social, dirección, contratos, documentos): NO los compartas, pero NUNCA respondas seco ("no puedo"). Responde profesional y cálido: You Agency es una empresa seria y activa, el pago es 100% seguro (transferencia SPEI o pago en OXXO, con referencia a tu nombre) y la entrega está garantizada; luego regresa al pedido. Si insiste mucho o desconfía en serio, ofrece pasar con soporte humano (llamar_soporte).',
     '"¿ES ESTAFA?" / desconfianza: NUNCA respondas vago. Responde con CONFIANZA y pruebas concretas: empresa seria con miles de clientes atendidos, pago 100% seguro por transferencia SPEI o en OXXO, entrega garantizada en el plazo del servicio, y el cliente recibe por aquí, en WhatsApp, la confirmación del pago y el link para seguir su pedido. Después retoma el pedido.',
     'RECLAMO "LLEGARON EXTRANJEROS" / "no es lo que esperaba" / "son de otros países": NO llames a soporte de inmediato y NO culpes al cliente. Primero explica con calma y empatía que el sitio tiene 2 TIPOS de seguidores — *mixtos* (perfiles de varios países) y *reales* (perfiles reales y activos) — y que cada tipo tiene su descripción en el sitio y en el resumen del pedido que se muestra ANTES del pago. Lo más probable es que haya comprado *mixtos*. Solo llama a llamar_soporte si, DESPUÉS de esa explicación, el cliente sigue inconforme o amenaza (ej.: demanda, PROFECO).',
@@ -170,7 +202,7 @@ function systemPrompt(dispTipos) {
     'POSVENTA — BUSCAR POR @: cuando el cliente te pase el @ (porque no encontraste el pedido por el teléfono), llama consultar_pedido de inmediato con usuario=<ese @>. NO uses validar_perfil para esto y no pidas otro teléfono.',
     'CAÍDA DE SEGUIDORES ("se cayeron", "bajaron", "perdí seguidores"): llama consultar_pedido DE INMEDIATO, SIN argumentos (busca por el teléfono de este contacto) — NO pidas el @ antes. Solo pide el @ y vuelve a llamar (usuario=<@>) si regresa encontrado:false. Con el resultado: (a) si ehReales=true: NO mandes link de reposición — di que vas a REVISAR su pedido e informa que los *reales* son el servicio MÁS ESTABLE, con caída de solo 5-6% en más de un mes; (b) si NO es reales: responde CORTÍSIMO, 1 frase + el link, NADA MÁS: "¡Claro! Puedes reponer los seguidores que se cayeron aquí: <refilLink>". Si no viene refilLink, di que lo vas a revisar y llama a llamar_soporte.',
     '"PAGUÉ Y NO ME LLEGÓ" / "mi pedido no llega": llama consultar_pedido DE INMEDIATO, SIN argumentos. Solo pide el @ y vuelve a llamar si regresa encontrado:false. El campo "status" solo viene como "en proceso" o "completado" — comunica SOLO eso. NUNCA digas "parcial", "incompleto", "error", "cancelado", ni cuántos faltan. (a) "en proceso" y ehReales=true: explica que los *reales* tienen plazo de HASTA 48 H y la entrega es gradual — está dentro del plazo; (b) "en proceso" y no reales: "tu pedido está *en proceso*, puedes estar tranquilo(a) que se va a completar"; (c) "completado": di que la entrega ya terminó (que revise/actualice la app); (d) perfilPrivado=true: avisa que la entrega NO avanza con el perfil privado y pide que lo deje PÚBLICO hasta terminar. Si no encuentras el pedido ni por teléfono ni por @, llama a llamar_soporte.',
-    'ESTILO WHATSAPP: NO uses emojis, ninguno. Habla como una persona, natural y directa. Negritas con UN asterisco (*así*), nunca con dos. Mensajes cortos. Links: manda la URL CRUDA, NUNCA en markdown [texto](url).',
+    'ESTILO WHATSAPP: NO uses emojis, ninguno. Habla como una persona, natural y directa. Negritas con UN asterisco (*así*), nunca con dos, y nunca uses títulos con #. Mensajes cortos: máximo 2 o 3 frases fuera de las tablas; no repitas lo que ya dijiste. Links: manda la URL CRUDA, NUNCA en markdown [texto](url).',
     'PRECIO: usa SIEMPRE lo que regresan las herramientas, en el MISMO mensaje — nunca inventes ni calcules precios, y nunca digas solo "voy a revisar" y te detengas.',
     'ME GUSTA y VISTAS necesitan el LINK de la publicación — pídelo (no listes publicaciones). REPARTIR EN VARIAS PUBLICACIONES (CRÍTICO): ANTES de generar el pago, pregunta si quiere repartir la cantidad en más de una publicación y, si sí, pide TODOS los links. Solo llama generar_pago cuando diga que ya terminó (o que es una sola). Si acaba de mandar un link y puede mandar más, pregunta "¿Es solo esa publicación o quieres repartir en más?". En generar_pago pasa en post_links TODOS los links que mandó para este pedido.',
     'REENVIAR DATOS DE PAGO: si el cliente pide otra vez la CLABE, la referencia o los datos de pago y AÚN no paga, llama generar_pago de nuevo con los MISMOS datos del pedido (servicio, tipo, cantidad, @, nombre, método): el sistema reenvía el MISMO pago, sin cobrar dos veces. MÉTODOS DE PAGO: *SPEI* (transferencia desde la app de cualquier banco, se confirma en minutos) u *OXXO* (efectivo en cualquier tienda OXXO con número de referencia; de $ 10 a $ 10,000 MXN). Si el cliente quiere cambiar de método antes de pagar, llama generar_pago con los mismos datos y el nuevo metodo. No aceptamos tarjeta. Nunca digas que no puedes reenviar los datos.',
@@ -182,11 +214,14 @@ function systemPrompt(dispTipos) {
     '@ OBLIGATORIO EN TODO PEDIDO DE INSTAGRAM (también me gusta y vistas; en TikTok/Facebook sigue el FLUJO TikTok/Facebook): pide el @ de Instagram y valídalo con validar_perfil ANTES de generar el pago. NUNCA uses el correo ni el nombre del cliente como @. Copia el @ EXACTAMENTE como lo escribió el cliente, letra por letra.',
     'IMAGEN DEL CLIENTE: mensajes "[El cliente envió una IMAGEN… Contenido: …]" traen lo que hay en la foto. Úsalo: si aparece un @, úsalo; si es captura de la página de reposición con error, trátalo como ERROR EN LA REPOSICIÓN; si es comprobante, trátalo como pago enviado. No digas que no puedes ver imágenes.',
     'LINK DE REPOSICIÓN: solo manda el refilLink que regresó consultar_pedido, y SOLO cuando el cliente hable de caída o pida reposición. NUNCA armes ni inventes un link.',
-    'FLUJO DE VENTA: 1) servicio + tipo; 2) muestra la tabla y pregunta la cantidad; 3) cotiza el valor exacto; 4) pide el @ y valida (confirma seguidores); 5) si es me gusta/vistas, pide el link y pregunta si reparte en más publicaciones; 6) pide solo el nombre ("Para terminar, ¿a nombre de quién va el pedido?") — NO pidas correo; 7) pregunta cómo prefiere pagar: *SPEI* (transferencia desde la app de su banco, se confirma en minutos) u *OXXO* (efectivo en tienda); si no elige, usa SPEI; no ofrezcas tarjeta; 8) confirma el resumen y genera el pago.',
-    'GENERAR EL PAGO — REGLA CRÍTICA: en cuanto tengas servicio, tipo, cantidad, @ validado, nombre y método (y, en me gusta/vistas, los links con la confirmación de que terminó), llama *generar_pago* DE INMEDIATO, en el MISMO turno. NUNCA digas "voy a generar el pago", "un momento" o "espera" sin llamar la herramienta. Si falta un dato, pide solo lo que falta.',
+    'FLUJO DE VENTA: 1) servicio + tipo; 2) muestra la tabla y pregunta la cantidad; 3) cotiza el valor exacto; 4) pide el @ y valida (confirma seguidores); 5) si es me gusta/vistas, pide el link y pregunta si reparte en más publicaciones; 6) pregunta cómo prefiere pagar: *SPEI* (transferencia desde la app de su banco, se confirma en minutos) u *OXXO* (efectivo en tienda); si no elige, usa SPEI; no ofrezcas tarjeta; 7) genera el pago. NO pidas el nombre ni el correo: el sistema usa el nombre del WhatsApp del cliente.',
+    'GENERAR EL PAGO — REGLA CRÍTICA: en cuanto tengas servicio, tipo, cantidad, @ validado y método (y, en me gusta/vistas, los links con la confirmación de que terminó), llama *generar_pago* DE INMEDIATO, en el MISMO turno. NUNCA digas "voy a generar el pago", "un momento" o "espera" sin llamar la herramienta. Si falta un dato, pide solo lo que falta.',
     'DESPUÉS DE GENERAR EL PAGO: NUNCA escribas en el texto la CLABE, el banco, el beneficiario ni ningún link — el sistema los manda AUTOMÁTICAMENTE en mensajes separados. Tu mensaje lleva solo la confirmación del resumen y el cierre "Quedo al pendiente de la confirmación de tu pago para liberar tu pedido." Si generar_pago regresa error, NO digas que salió bien — pide intentar de nuevo u ofrece el otro método, o llama a soporte. Nunca pidas RFC ni CURP.',
     'TIPO AL CERRAR (CRÍTICO): en generar_pago usa EXACTAMENTE el tipo que cotizaste y el cliente confirmó. "reales"/"de verdad"/"orgánicos" = organicos. El monto del pago TIENE que ser el mismo que cotizaste.',
-    'NOMBRE: pídelo simple ("Para terminar, ¿a nombre de quién va el pedido?"). NO pidas correo electrónico: no hace falta para pagar. Si el cliente lo manda por su cuenta, pásalo en generar_pago; si no, genera el pago sin correo.',
+    'NOMBRE Y CORREO: NO los pidas — el sistema usa el nombre del WhatsApp del cliente. Si el cliente da su nombre o correo por su cuenta, pásalos en generar_pago. Si en el historial ya preguntaste el nombre, no lo vuelvas a preguntar.',
+    'FRASES DE PAGO NO SON @: "para depositar en Oxxo", "por transferencia", "en efectivo", "ahorita pago" son el MÉTODO DE PAGO, nunca un usuario. Solo llama validar_perfil con un @ o link que el cliente escribió.',
+    'ANTES DEL PAGO NO HAY "EN PROCESO": mientras el cliente no pague, NUNCA digas que su pedido "está en proceso" o "ya fue liberado"; di que queda listo y empieza en cuanto se confirme el pago. NUNCA pidas captura, ticket ni comprobante (ni de OXXO): la confirmación es automática.',
+    'NO RETROCEDAS: si el cliente ya eligió servicio, cantidad y validó el @, y vuelve después (o manda el @ otra vez), sigue desde donde quedó: pide solo lo que falta (normalmente el método de pago) y genera el pago.',
     'ERROR EN LA REPOSICIÓN (pidió la reposición y le salió error, no puede, no funciona, manda captura de error): NUNCA vuelvas a mandar el link y NUNCA respondas con el estado del pedido. Di que vas a pasar con soporte para revisarlo y llama a llamar_soporte.',
     'PAGO YA CONFIRMADO: si en el historial ya está el mensaje de *Pago confirmado* de este pedido, NUNCA pidas el pago otra vez ni reenvíes los datos. Agradece y habla de la entrega. Si generar_pago responde pedido_ja_pago, igual. Si dice que ya pagó pero el sistema no lo confirmó, dile que la confirmación puede tardar unos minutos (OXXO un poco más).',
     'UN RECLAMO NO ES UN PAGO NUEVO: "no llegó", "no ha cambiado nada", "¿sí va a llegar?" son preguntas sobre un pedido YA PAGADO — usa consultar_pedido. NUNCA llames generar_pago en esos mensajes. Usa comprar_mais=true solo si pide claramente COMPRAR OTRO paquete.',
@@ -197,14 +232,33 @@ function systemPrompt(dispTipos) {
 }
 
 const TOOLS = [
-  { type: 'function', function: { name: 'cotizar_precio', description: 'Precio oficial (MXN) de UN paquete de un servicio.', parameters: { type: 'object', properties: { rede: { type: 'string', enum: ['instagram', 'tiktok', 'facebook'], description: 'Red social. Por defecto instagram. tiktok/facebook SOLO si el cliente pidió esa red.' }, servico: { type: 'string', enum: ['seguidores', 'curtidas', 'visualizacoes', 'comentarios'], description: 'seguidores | curtidas (= me gusta) | visualizacoes (= vistas) | comentarios (Instagram, TikTok o Facebook)' }, tipo: { type: 'string', enum: ['mistos', 'organicos'], description: 'mistos = mixtos | organicos = reales (seguidores/me gusta de Instagram; en TikTok solo me gusta reales)' }, quantidade: { type: 'integer' } }, required: ['servico', 'quantidade'] } } },
-  { type: 'function', function: { name: 'tabla_precios', description: 'Tabla completa de cantidades y precios (MXN) de un servicio para que el cliente elija.', parameters: { type: 'object', properties: { rede: { type: 'string', enum: ['instagram', 'tiktok', 'facebook'], description: 'Red social. Por defecto instagram. tiktok/facebook SOLO si el cliente pidió esa red.' }, servico: { type: 'string', enum: ['seguidores', 'curtidas', 'visualizacoes', 'comentarios'] }, tipo: { type: 'string', enum: ['mistos', 'organicos'] } }, required: ['servico'] } } },
+  { type: 'function', function: { name: 'cotizar_precio', description: 'Precio oficial (MXN) de UN paquete de un servicio.', parameters: { type: 'object', properties: { rede: { type: 'string', enum: ['instagram', 'tiktok', 'facebook'], description: 'Red social. Por defecto instagram. tiktok/facebook SOLO si el cliente pidió esa red.' }, servico: { type: 'string', enum: ['seguidores', 'curtidas', 'visualizacoes', 'comentarios'], description: 'seguidores | curtidas (= me gusta) | visualizacoes (= vistas) | comentarios (Instagram, TikTok o Facebook)' }, tipo: { type: 'string', enum: ['mistos', 'organicos', 'latinos'], description: 'mistos = mixtos | organicos = reales (seguidores/me gusta de Instagram; en TikTok solo me gusta reales) | latinos = seguidores latinos de Instagram' }, quantidade: { type: 'integer' } }, required: ['servico', 'quantidade'] } } },
+  { type: 'function', function: { name: 'tabla_precios', description: 'Tabla completa de cantidades y precios (MXN) de un servicio para que el cliente elija.', parameters: { type: 'object', properties: { rede: { type: 'string', enum: ['instagram', 'tiktok', 'facebook'], description: 'Red social. Por defecto instagram. tiktok/facebook SOLO si el cliente pidió esa red.' }, servico: { type: 'string', enum: ['seguidores', 'curtidas', 'visualizacoes', 'comentarios'] }, tipo: { type: 'string', enum: ['mistos', 'organicos', 'latinos'] } }, required: ['servico'] } } },
   { type: 'function', function: { name: 'validar_perfil', description: 'Valida el perfil (Instagram: @; TikTok: @; Facebook: link del perfil o página) y regresa nombre + seguidores para confirmar.', parameters: { type: 'object', properties: { rede: { type: 'string', enum: ['instagram', 'tiktok', 'facebook'], description: 'Red social. Por defecto instagram. tiktok/facebook SOLO si el cliente pidió esa red.' }, usuario: { type: 'string', description: '@ (Instagram/TikTok) o link del perfil/página (Facebook)' } }, required: ['usuario'] } } },
   { type: 'function', function: { name: 'consultar_pedido', description: 'Consulta el pedido del cliente ("pagué y no llegó", caída). Sin argumentos busca por el teléfono del contacto; pasa "usuario" (@) solo si no lo encontró por teléfono. Regresa tipo, horas desde el pago, si es reales (plazo 48 h), estado y si el perfil está privado.', parameters: { type: 'object', properties: { usuario: { type: 'string', description: '@ o link del perfil — solo si no se encontró por teléfono' } }, required: [] } } },
   { type: 'function', function: { name: 'llamar_soporte', description: 'Pasa la conversación al soporte humano y deja de vender.', parameters: { type: 'object', properties: { motivo: { type: 'string', description: 'Resumen CORTO (1 frase) de lo que el cliente necesita — llega como notificación al equipo.' } }, required: ['motivo'] } } },
-  { type: 'function', function: { name: 'generar_pago', description: 'Crea el pedido y genera el pago por SPEI u OXXO (pasa el metodo que eligió el cliente). El precio lo define el tipo — pasa SIEMPRE el tipo exacto que eligió el cliente.', parameters: { type: 'object', properties: { rede: { type: 'string', enum: ['instagram', 'tiktok', 'facebook'], description: 'Red social. Por defecto instagram. tiktok/facebook SOLO si el cliente pidió esa red.' }, post_link: { type: 'string', description: 'TikTok/Facebook: link del video/publicación (me gusta, vistas, comentarios).' }, servico: { type: 'string', enum: ['seguidores', 'curtidas', 'visualizacoes', 'comentarios'] }, tipo: { type: 'string', enum: ['mistos', 'organicos'], description: 'OBLIGATORIO para seguidores/me gusta. "reales", "de verdad", "orgánicos" = organicos. Usa EXACTAMENTE el tipo cotizado.' }, quantidade: { type: 'integer' }, usuario: { type: 'string' }, nome: { type: 'string', description: 'Nombre del cliente' }, email: { type: 'string' }, metodo: { type: 'string', enum: ['SPEI', 'OXXO'], description: 'SPEI (transferencia, por defecto) u OXXO (efectivo en tienda, de $ 10 a $ 10,000 MXN).' }, post_links: { type: 'array', items: { type: 'string' }, description: 'TODOS los links de publicación (me gusta/vistas) que mandó para ESTE pedido.' }, comprar_mais: { type: 'boolean', description: 'true SOLO si el cliente pidió claramente comprar OTRO paquete igual a uno ya pagado.' } }, required: ['servico', 'quantidade', 'usuario', 'nome'] } } },
+  { type: 'function', function: { name: 'generar_pago', description: 'Crea el pedido y genera el pago por SPEI u OXXO (pasa el metodo que eligió el cliente). El precio lo define el tipo — pasa SIEMPRE el tipo exacto que eligió el cliente.', parameters: { type: 'object', properties: { rede: { type: 'string', enum: ['instagram', 'tiktok', 'facebook'], description: 'Red social. Por defecto instagram. tiktok/facebook SOLO si el cliente pidió esa red.' }, post_link: { type: 'string', description: 'TikTok/Facebook: link del video/publicación (me gusta, vistas, comentarios).' }, servico: { type: 'string', enum: ['seguidores', 'curtidas', 'visualizacoes', 'comentarios'] }, tipo: { type: 'string', enum: ['mistos', 'organicos', 'latinos'], description: 'OBLIGATORIO para seguidores/me gusta. "reales", "de verdad", "orgánicos" = organicos; "latinos" = latinos (solo seguidores). Usa EXACTAMENTE el tipo cotizado.' }, quantidade: { type: 'integer' }, usuario: { type: 'string' }, nome: { type: 'string', description: 'Nombre del cliente SOLO si él lo dio; si no, déjalo vacío (el sistema usa el nombre del WhatsApp).' }, email: { type: 'string' }, metodo: { type: 'string', enum: ['SPEI', 'OXXO'], description: 'SPEI (transferencia, por defecto) u OXXO (efectivo en tienda, de $ 10 a $ 10,000 MXN).' }, post_links: { type: 'array', items: { type: 'string' }, description: 'TODOS los links de publicación (me gusta/vistas) que mandó para ESTE pedido.' }, comprar_mais: { type: 'boolean', description: 'true SOLO si el cliente pidió claramente comprar OTRO paquete igual a uno ya pagado.' } }, required: ['servico', 'quantidade', 'usuario'] } } },
 ];
 
+// Nome do pedido sem perguntar: o nome do perfil do WhatsApp (gravado nas mensagens recebidas).
+async function _nomeDoContato(phone, fallback) {
+  try {
+    const c = await getCollection('wa_ia_messages');
+    const m = await c.find({ phone: String(phone), direction: 'in', name: { $nin: [null, ''] } }, { projection: { name: 1 } }).sort({ createdAt: -1 }).limit(1).next();
+    const n = String((m && m.name) || '').replace(/[^\p{L}\p{N} .'-]/gu, '').trim();
+    if (n.length >= 2) return n.slice(0, 60);
+  } catch (_) {}
+  const f = String(fallback || '').replace(/^@+/, '').trim();
+  return f.length >= 2 ? f : 'Cliente';
+}
+// O @ passado ao validar_perfil tem que ter sido ESCRITO pelo cliente (evita "Para depositar en Oxxo" → @jesus).
+function _clienteEscreveu(ctx, usuario) {
+  const h = String(usuario || '').toLowerCase().replace(/^@+/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/[/?#].*$/, '').trim();
+  if (!h) return false;
+  const esc = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rx = new RegExp('(^|[^a-z0-9._])@?' + esc + '(?![a-z0-9._])', 'i');
+  return (ctx.allUserTexts || ctx.recentUserTexts || [ctx.text]).some((t) => rx.test(String(t || '').toLowerCase()));
+}
 async function runTool(name, args, ctx) {
   try {
     const avisaTipo = (r, args2) => {
@@ -232,6 +286,7 @@ async function runTool(name, args, ctx) {
       if (!val && a2.usuario) { const vr = await sales.validateRedeProfile(redeArg, a2.usuario).catch(() => null); if (vr && vr.ok) val = ctx.validatedRede = { rede: redeArg, username: vr.username, link: vr.link }; }
       if (!val) return { ok: false, error: 'perfil_nao_validado', message: 'No generes el pago todavía: pide y valida el perfil de ' + (redeArg === 'tiktok' ? 'TikTok (@)' : 'Facebook (link del perfil o página)') + ' con validar_perfil (rede=' + redeArg + ').' };
       const postLink = a2.post_link || (Array.isArray(a2.post_links) ? a2.post_links[0] : '') || '';
+      if (String(a2.nome || '').trim().length < 2) a2.nome = await _nomeDoContato(ctx.phone, val.username);
       const r = await sales.createRedeOrder({ rede: redeArg, servico: a2.servico, tipo: a2.tipo, quantidade: a2.quantidade, usuario: val.username, perfil_link: val.link, nome: a2.nome, email: a2.email, phone: ctx.phone, post_link: postLink, comprar_mais: a2.comprar_mais, metodo: a2.metodo });
       if (r.ok && r.codigoPago) { ctx.pagoToSend = r.pago; ctx.pagoCodigo = r.codigoPago; ctx.pagoValor = r.valorLabel; }
       if (r.ok && r.reaproveitado) { ctx.pagoReused = true; r.resumo = r.resumo + ' — es el MISMO pago generado antes para este pedido (no es un pedido nuevo); díselo al cliente.'; }
@@ -241,6 +296,7 @@ async function runTool(name, args, ctx) {
     }
     if (name === 'validar_perfil') {
       const pedido = String((args && args.usuario) || '').trim();
+      if (!_clienteEscreveu(ctx, pedido)) return { ok: false, error: 'usuario_no_escrito', message: 'El cliente NO escribió ese @ (' + pedido + '). No inventes ni deduzcas usuarios de otras frases: pídele su @ de Instagram tal como aparece en su perfil.' };
       let vr = await sales.validateProfile(pedido);
       // El modelo a veces reescribe el @ y se come letras: intenta con el texto crudo del cliente.
       if (!vr || !vr.ok) {
@@ -301,6 +357,7 @@ async function runTool(name, args, ctx) {
         ctx.validatedUsername = validado;
       }
       if (normU(a2.usuario) !== normU(validado)) a2.usuario = validado;
+      if (String(a2.nome || '').trim().length < 2) a2.nome = await _nomeDoContato(ctx.phone, validado);
       const r = await sales.createPaymentOrder(Object.assign({ phone: ctx.phone }, a2));
       if (r.ok && r.codigoPago) { ctx.pagoToSend = r.pago; ctx.pagoCodigo = r.codigoPago; ctx.pagoValor = r.valorLabel; }
       if (r.ok && r.reaproveitado) { ctx.pagoReused = true; r.resumo = r.resumo + ' — es el MISMO pago generado antes para este pedido (no es un pedido nuevo); díselo al cliente.'; }
@@ -589,6 +646,7 @@ function splitIntoBubbles(text) {
     const ehUltimo = i === segs.length - 1;
     if (prev && !s.list && !prev.list && (s.text.length < 60 || prev.text.length < 60) && !(ehUltimo && /\?\s*$/.test(s.text))) { prev.text += '\n\n' + s.text; continue; }
     if (prev && s.list && prev.list) { prev.text += '\n' + s.text; continue; }
+    if (prev && s.list && !prev.list && /:\s*\**\s*$/.test(prev.text)) { prev.text += '\n' + s.text; prev.list = true; continue; }
     out.push({ list: s.list, text: s.text });
   }
   const final = [];

@@ -10078,7 +10078,7 @@ app.get('/pix', async (req, res) => {
         return { title: `${qtyLabel} Comentários` };
       }
       if (tipoKey === 'organicos' || tipoKey.includes('real')) return { title: `${qtyLabel} Seguidores brasileiros e reais` };
-      if (tipoKey === 'brasileiros' || tipoKey.includes('brasil')) return { title: `${qtyLabel} Seguidores brasileiros` };
+      if (tipoKey === 'brasileiros' || tipoKey.includes('brasil')) return { title: `${qtyLabel} Seguidores latinos` };
       if (tipoKey === 'mistos') return { title: `${qtyLabel} Seguidores mistos` };
       return { title: `${qtyLabel} Seguidores` };
     })();
@@ -42641,6 +42641,7 @@ app.get('/painel', requireAdmin, async (req, res) => {
       const defs = {
         seguidores: [
           { key: 'mistos', label: 'Seguidores Mistos' },
+          { key: 'brasileiros', label: 'Seguidores Latinos' },
           { key: 'organicos', label: 'Seguidores brasileiros e reais' }
         ],
         curtidas: [
@@ -53196,6 +53197,9 @@ async function runIaPaymentRecoveryTick() {
         const desdePago = new Date(createdMs - 60 * 60 * 1000).toISOString();
         const pagoOutro = await col.findOne({ _id: { $ne: doc._id }, status: 'pago', 'customer.phone': { $regex: fim8 + '$' }, paidAt: { $gte: desdePago } }, { projection: { _id: 1 } });
         if (pagoOutro) continue;
+        // Cliente trocou de método (SPEI → OXXO) ou refez o pedido: só o pedido MAIS NOVO do bot é cobrado.
+        const maisNovo = await col.findOne({ _id: { $gt: doc._id }, correlationID: { $regex: '^WppAgent_' }, 'customer.phone': { $regex: fim8 + '$' } }, { projection: { _id: 1 } });
+        if (maisNovo) { try { await col.updateOne({ _id: doc._id }, { $set: { 'iaPayRecovery.substituidoPor': maisNovo._id } }); } catch (_) {} continue; }
       } catch (_) {}
       // Só o estágio mais avançado que venceu (se o servidor ficou parado, não manda os dois juntos).
       const st = devidos[devidos.length - 1];

@@ -1902,7 +1902,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     const map = {
       'mistos': 'Seguidores mixtos',
-      'brasileiros': 'Seguidores',
+      'brasileiros': 'Seguidores latinos',
       'organicos': 'Seguidores reales'
     };
     return map[tipo] || tipo;
@@ -2109,7 +2109,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const tipos = Object.keys(tabela).filter(t => {
       if (t === 'seguidores_tiktok') return false;
       if (isCurtidasContext && t === 'curtidas_brasileiras') return false;
-      if (!isCurtidasContext && !isViewsContext && t === 'brasileiros') return false;
+      // 'brasileiros' em seguidores = "Seguidores latinos" (México)
       if (hiddenTipos.indexOf(t) >= 0) return false;
       return true;
     });
@@ -2340,9 +2340,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <li>📈 Ideal para las publicaciones que quieres destacar.</li>
           </ul>
         ` : `
-          <p>Seguidores con entrega rápida y estable.</p>
+          <p>Seguidores 100% de perfiles de Latinoamérica, con entrega rápida.</p>
           <ul>
             <li>✅ 100% seguro y confidencial, sin pedir contraseña.</li>
+            <li>🌎 Perfiles latinos: nombres y comunidad de la región.</li>
             <li>🛠 Herramienta de reposición: no pierdas seguidores.</li>
           </ul>
         `;
@@ -2356,7 +2357,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <li>📈 Ideal para destacar tus publicaciones con más autoridad.</li>
           </ul>
         ` : `
-          <p>Perfiles reales y activos, de mayor calidad, seleccionados para darte más credibilidad.</p>
+          <p>Perfiles latinos reales y activos, de mayor calidad, seleccionados para darte más credibilidad.</p>
           <ul>
             <li>✅ 100% seguro y confidencial, sin pedir contraseña.</li>
             <li>✨ Perfiles de mayor calidad para reforzar la autoridad de tu perfil.</li>
