@@ -611,7 +611,13 @@ module.exports.register = function register(app, deps) {
     const ofertas = { likes: pac(tabelaCurtidas.mistos), views: pac(tabelaVisualizacoes.visualizacoes_reels), comments: { unitCents: 2000, max: 250 } };
     // Instagram: comentários ocultos no Gerenciamento de Tipo → a página inicial esconde o card.
     const instagramOcultos = { comentarios: (Array.isArray(ocultos.comentarios) ? ocultos.comentarios : []).includes('comentarios') };
-    res.json({ ok: true, servicos, ofertas, instagramOcultos });
+    // Ofertas (etapa 3) de TikTok/Facebook somem quando o tipo da rede está oculto.
+    const ofertasOcultas = {};
+    for (const r of ['tiktok', 'facebook']) {
+      const oc = Array.isArray(ocultos[r]) ? ocultos[r] : [];
+      ofertasOcultas[r] = { likes: oc.includes(r + '_curtidas'), views: oc.includes(r + '_visualizacoes'), comments: oc.includes(r + '_comentarios') };
+    }
+    res.json({ ok: true, servicos, ofertas, instagramOcultos, ofertasOcultas });
   });
 
   app.get('/instagram-services', async (req, res) => {

@@ -345,6 +345,7 @@
   // ── Ofertas da etapa 3 (iguais às do Instagram): me gusta, vistas e comentarios ──
   // Preços vêm do /api/redes/catalogo (os mesmos que o pricing.js soma no verifyPrice).
   var ofertas = { likes: [], views: [], comments: { unitCents: 2000, max: 250 } };
+  var ofertasOcultas = {}; // { tiktok: { likes, views, comments }, facebook: {...} } — Gerenciamento de Tipo → Oculto
   var ofQ = { likes: 150, views: 1000, comments: 1 };
   var OF_IDS = { likes: 'promoLikes', views: 'promoViews', comments: 'promoComments' };
   var OF_ITEM = { likes: 'promoItemLikes', views: 'promoItemViews', comments: 'promoItemComments' };
@@ -356,6 +357,7 @@
     if (k === 'likes' && kd === 'curtidas') return false;      // já é o serviço principal
     if (k === 'views' && kd === 'visualizacoes') return false;
     if (k === 'comments' && kd === 'comentarios') return false;
+    if (ofertasOcultas[rede] && ofertasOcultas[rede][k]) return false; // serviço oculto: a oferta some
     return k === 'comments' || (ofertas[k] && ofertas[k].length > 0);
   };
   var ofertaCents = function (k) {
@@ -605,6 +607,6 @@
 
   fetch('/api/redes/catalogo?rede=' + rede)
     .then(function (r) { return r.json(); })
-    .then(function (d) { servicos = (d && d.servicos) || []; if (d && d.ofertas) ofertas = d.ofertas; renderTipoCards(); })
+    .then(function (d) { servicos = (d && d.servicos) || []; if (d && d.ofertas) ofertas = d.ofertas; if (d && d.ofertasOcultas) ofertasOcultas = d.ofertasOcultas; renderTipoCards(); })
     .catch(function () { tipoCards.innerHTML = '<div class="rd-erro" style="display:block;">No se pudieron cargar los servicios. Recarga la página.</div>'; });
 })();

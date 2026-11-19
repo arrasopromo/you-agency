@@ -2800,6 +2800,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function getSelectedPromos() {
     const promos = [];
+    try { aplicaOfertasOcultas(); } catch (_) {}
     try {
       const likesChecked = !!document.getElementById('promoLikes')?.checked;
       const viewsChecked = !!document.getElementById('promoViews')?.checked;
@@ -2851,7 +2852,33 @@ document.addEventListener('DOMContentLoaded', function() {
     try { return (Array.isArray(promos) ? promos : []).reduce((acc, p) => acc + (Number(p.priceCents) || 0), 0); } catch (_) { return 0; }
   }
 
+  // Ofertas da etapa 3 de serviço OCULTO no Gerenciamento de Tipo: somem (e desmarcam se estavam marcadas).
+  function aplicaOfertasOcultas() {
+    try {
+      const sv = serviceVisibility || {};
+      const tem = (k, v) => (Array.isArray(sv[k]) ? sv[k] : []).map(String).indexOf(v) >= 0;
+      const oculto = {
+        likes: tem('curtidas', getLikesVariantKey()),
+        views: tem('visualizacoes', 'visualizacoes_reels'),
+        comments: tem('comentarios', 'comentarios'),
+      };
+      const ids = { likes: 'promoLikes', views: 'promoViews', comments: 'promoComments' };
+      Object.keys(oculto).forEach((k) => {
+        const item = document.querySelector('.promo-item.' + k);
+        if (!item) return;
+        if (oculto[k]) {
+          item.style.display = 'none'; item.setAttribute('data-oculto', '1');
+          const cb = document.getElementById(ids[k]);
+          if (cb && cb.checked) { cb.checked = false; try { item.classList.remove('selected'); } catch (_) {} }
+        } else if (item.getAttribute('data-oculto') === '1') {
+          item.style.display = ''; item.removeAttribute('data-oculto');
+        }
+      });
+    } catch (_) {}
+  }
+
   function updatePromosSummary() {
+    aplicaOfertasOcultas();
     showResumoIfAllowed();
     
     // Atualiza header de quantidade (Bug fix)
