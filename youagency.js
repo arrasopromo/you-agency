@@ -1284,6 +1284,10 @@ module.exports.register = function register(app, deps) {
             if (limpa(cli.name)) extra.payer_name = limpa(cli.name);
             if (tel) { extra.payer_phone = tel; extra.phone = tel; }
             if (String(cli.email || '').includes('@')) extra.payer_email = String(cli.email).trim();
+            // Referência da venda = número do pedido (external_id), o MESMO transaction_id do evento
+            // add_payment_info que a página /pago dispara no navegador. Garante que vá mesmo se a Xpag não mandar.
+            const ref = String((record.xpag && record.xpag.external_id) || '');
+            if (ref) { if (!req.body || !req.body.external_id) extra.external_id = ref; if (!req.body || !req.body.transaction_id) extra.transaction_id = ref; extra.order_id = ref; }
             const payloadTc = Object.assign({}, req.body, extra);
             const registra = (http, erro) => {
               col.updateOne({ _id: record._id }, { $set: { 'trackcombo.repassadoEm': new Date().toISOString(), 'trackcombo.http': http, ...(erro ? { 'trackcombo.erro': erro } : {}) } }).catch(() => {});
