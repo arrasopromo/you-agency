@@ -46,6 +46,12 @@
     /* Quebram linha: rolar as guias pro lado no celular não funcionava e a 3ª em
        diante ficava inalcançável. Agora TODAS aparecem, em duas fileiras. */
     .tabs { display:flex; flex-wrap:wrap; gap:6px; padding:2px 10px 10px; }
+    .origem-resumo { display:flex; flex-wrap:wrap; gap:6px; padding:2px 10px 8px; }
+    .or-chip { display:inline-flex; align-items:center; gap:6px; font-size:0.74rem; font-weight:600; padding:5px 10px; border:1px solid #dfe5ea; border-radius:999px; background:#fff; color:#3a404b; cursor:pointer; white-space:nowrap; }
+    .or-chip.on { background:#14171c; border-color:#14171c; color:#fff; }
+    .or-n { font-variant-numeric:tabular-nums; font-weight:700; }
+    .or-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+    .or-dot.wa { background:#16a34a; } .or-dot.site { background:#2563eb; } .or-dot.dir { background:#9ca3af; }
     .tab { flex:0 0 auto; white-space:nowrap; font-size:0.76rem; font-weight:600; padding:7px 13px; border:1px solid #dfe5ea;
       background:#fff; color:#54656f; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:background .12s, color .12s; }
     .tab:hover { background:#f3f6f8; }
@@ -243,6 +249,13 @@
         <% if (!C.temBot) { %>
         <label class="so-resposta"><input type="checkbox" id="soResposta"> Só conversas com resposta do cliente</label>
         <% } %>
+        <!-- De onde vieram as conversas (lista carregada): clique filtra. -->
+        <div class="origem-resumo" id="origemResumo">
+          <button type="button" class="or-chip on" data-or=""><span class="or-n" id="orTotal">0</span> conversas</button>
+          <button type="button" class="or-chip" data-or="anuncio_whatsapp"><i class="or-dot wa"></i>Anúncio WhatsApp <span class="or-n" id="orWa">0</span></button>
+          <button type="button" class="or-chip" data-or="site"><i class="or-dot site"></i>Site <span class="or-n" id="orSite">0</span></button>
+          <button type="button" class="or-chip" data-or="direto"><i class="or-dot dir"></i>Direto <span class="or-n" id="orDir">0</span></button>
+        </div>
         <!-- Uma linha de guias: fila de trabalho + separação novas/histórico importado. -->
         <div class="tabs" id="tabs">
           <button type="button" class="tab" data-tab="pending" title="Você ainda não respondeu manualmente<%= C.temBot ? ' — atendimento só do bot continua aqui' : '' %>">⏳ Não respondidas <span class="tab-badge" id="pendCount">0</span></button>
@@ -366,6 +379,15 @@
           var dd=Math.floor(h/24); return dd+'d';
         }catch(_){ return ''; }
       }
+      (function(){
+        var box=document.getElementById('origemResumo'); if(!box) return;
+        box.addEventListener('click', function(e){
+          var b=e.target.closest('.or-chip'); if(!b) return;
+          state.origem=b.getAttribute('data-or')||'';
+          [].forEach.call(box.querySelectorAll('.or-chip'), function(x){ x.classList.toggle('on', x===b); });
+          renderConvs();
+        });
+      })();
       function renderConvs(){
         var list=$('convList'); var q=state.filter.toLowerCase();
         // Busca por @perfil: mostra o que o servidor achou (pedidos e conversas com esse @),
@@ -375,6 +397,7 @@
           // Com busca no servidor (state.qServer), a lista já vem filtrada (telefone com/sem 9, histórico todo).
           if(q && state.qServer===state.filter) return true;   // resultado da busca: mostra em qualquer guia
           if(q && (c.name||'').toLowerCase().indexOf(q)<0 && (c.phone||'').indexOf(q)<0) return false;
+          if(state.origem && (c.origem||'direto')!==state.origem) return false;
           // "respondida" = VOCÊ respondeu manualmente em algum momento. Conversa
           // atendida só pelo BOT continua como não respondida. E o "ok" do cliente
           // depois da sua resposta não joga a conversa de volta pra fila.
@@ -393,6 +416,12 @@
         // Badge da guia "Não respondidas" = o que está na lista carregada.
         var nPend=state.convs.filter(function(c){ return !c.answered && c.inCount!==0; }).length;
         $('convCount').textContent=state.convs.length;
+        try{
+          var no={ anuncio_whatsapp:0, site:0, direto:0 };
+          state.convs.forEach(function(c){ var o=c.origem||'direto'; if(no[o]!=null) no[o]++; });
+          $('orTotal').textContent=state.convs.length.toLocaleString('pt-BR'); $('orWa').textContent=no.anuncio_whatsapp.toLocaleString('pt-BR');
+          $('orSite').textContent=no.site.toLocaleString('pt-BR'); $('orDir').textContent=no.direto.toLocaleString('pt-BR');
+        }catch(_){}
         var badgePend=$('pendCount'); if(badgePend && !state.bloqueados) badgePend.textContent=nPend;   // na guia Bloqueados a lista é outra
 
         // Sem cabeçalho de grupo no meio da lista: a separação respondida/não

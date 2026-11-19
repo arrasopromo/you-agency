@@ -5467,6 +5467,7 @@ app.get('/api/painel/ia-crm/conversations', requireAdmin, async (req, res) => {
       importedFrom: (cmap[c._id] && cmap[c._id].importedFrom) || '',
       bloqueado: !!(cmap[c._id] && cmap[c._id].bloqueado),
     }));
+    try { const om = await crmOrigensLote(phones); for (const it of list) it.origem = om[it.phone] || 'direto'; } catch (_) {}
     // Fila de trabalho: conversas NOVAS que o ATENDENTE ainda não respondeu
     // (atendimento só do bot continua contando como pendente). Vai sempre no
     // retorno pra guia "Não respondidas" mostrar o mesmo número em qualquer aba.
@@ -5491,6 +5492,38 @@ async function crmNomeAnuncio(adId) {
   } catch (_) {}
   __crmAdNome.set(id, { at: Date.now(), nome });
   return nome;
+}
+// Mesma regra do crmOrigemConversa, em lote para a lista do CRM: anúncio de WhatsApp (clique com
+// ctwa_clid) > botão do site (código #XXXXX ou mensagem pronta "Estoy en el sitio") > direto.
+const __crmOrigemCache = new Map();
+async function crmOrigensLote(phones) {
+  const out = {}, faltam = [];
+  const agora = Date.now();
+  for (const ph of phones) { const c = __crmOrigemCache.get(ph); if (c && agora - c.at < 120000) out[ph] = c.tipo; else faltam.push(ph); }
+  if (!faltam.length) return out;
+  const tailDe = (ph) => String(ph || '').replace(/\D/g, '').slice(-10);
+  const tails = [...new Set(faltam.map(tailDe).filter((t) => t.length === 10))];
+  const ultClique = {}, ultRef = {}, primeira = {};
+  try { for (const d of await (await getCollection('wpp_ctwa_clicks')).find({ tail: { $in: tails } }, { projection: { tail: 1, at: 1 } }).toArray()) { const t = new Date(d.at).getTime() || 0; if (!(ultClique[d.tail] >= t)) ultClique[d.tail] = t; } } catch (_) {}
+  try { for (const d of await (await getCollection('wa_refs_telefone')).find({ tail: { $in: tails } }, { projection: { tail: 1, em: 1 } }).toArray()) { const t = new Date(d.em).getTime() || 0; if (!(ultRef[d.tail] >= t)) ultRef[d.tail] = t; } } catch (_) {}
+  try {
+    const ag = await (await getCollection('wa_ia_messages')).aggregate([
+      { $match: { phone: { $in: faltam }, direction: 'in' } }, { $sort: { createdAt: 1 } },
+      { $group: { _id: '$phone', text: { $first: '$text' } } },
+    ]).toArray();
+    for (const d of ag) primeira[d._id] = String(d.text || '');
+  } catch (_) {}
+  for (const ph of faltam) {
+    const t = tailDe(ph);
+    const tc = ultClique[t], tr = ultRef[t];
+    let tipo = 'direto';
+    if (tc != null && !(tr > tc)) tipo = 'anuncio_whatsapp';
+    else if (tr != null) tipo = 'site';
+    else if (/estoy en el sitio|estou no site|\(#[A-Z0-9]{4,6}\)/i.test(primeira[ph] || '')) tipo = 'site';
+    out[ph] = tipo; __crmOrigemCache.set(ph, { at: agora, tipo });
+  }
+  if (__crmOrigemCache.size > 5000) __crmOrigemCache.clear();
+  return out;
 }
 async function crmOrigemConversa(phone, msgs) {
   const tail = String(phone || '').replace(/\D/g, '').slice(-10); if (tail.length !== 10) return null;
