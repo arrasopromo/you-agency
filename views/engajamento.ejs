@@ -1144,10 +1144,11 @@
     @media (min-width: 1024px) { .cards-grid.checkout-grid { grid-template-columns: 1fr; max-width: 1440px; margin: 0 auto; } }
     #engajamentoServiceCards {
       display: grid;
-      grid-template-columns: repeat(4, 1fr) !important;
+      /* --cols = cards visíveis da rede escolhida (JS). Menos de 4 → mesma largura de card, centralizados. */
+      grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)) !important;
       gap: 1.25rem;
       margin-top: 6rem;
-      max-width: 1320px;
+      max-width: calc(var(--cols, 4) * 330px);
       margin-left: auto;
       margin-right: auto;
       padding: 1rem 1rem;
@@ -1349,8 +1350,8 @@
     /* Ajustes Mobile */
     @media (max-width: 1023px) and (min-width: 640px) {
       #engajamentoServiceCards {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        max-width: 920px;
+        grid-template-columns: repeat(min(2, var(--cols, 4)), minmax(0, 1fr)) !important;
+        max-width: calc(min(2, var(--cols, 4)) * 460px);
         margin-top: 3.25rem;
       }
     }
@@ -1519,20 +1520,31 @@
             var m = String(c.getAttribute('href') || '').match(/servicio=([a-z]+)/); var k = m ? m[1] : '';
             if (k && !tem[c.getAttribute('data-plat') + '|' + k]) { c.setAttribute('data-oculto', '1'); c.style.display = 'none'; }
           });
+          try { if (window.__contaColunasCards) window.__contaColunasCards(); } catch (_) {}
           // Instagram: comentários ocultos no Gerenciamento de Tipo → some o card de comentários.
           if (d.instagramOcultos && d.instagramOcultos.comentarios) {
             Array.prototype.forEach.call(document.querySelectorAll('[data-plat="instagram"][onclick*="servicios-comentarios"]'), function (c) { c.setAttribute('data-oculto', '1'); c.style.display = 'none'; });
+            try { if (window.__contaColunasCards) window.__contaColunasCards(); } catch (_) {}
           }
         }).catch(function () {});
       } catch (_) {}
     })();
     // Plataforma: Instagram / TikTok / Facebook trocam os cards do mesmo grid.
     (function () {
+      // Quantos cards estão visíveis → --cols da grade (centraliza quando são menos de 4).
+      function contaColunas() {
+        var grid = document.getElementById('engajamentoServiceCards');
+        if (!grid) return;
+        var n = Array.prototype.filter.call(grid.children, function (c) { return c.style.display !== 'none' && getComputedStyle(c).display !== 'none'; }).length;
+        grid.style.setProperty('--cols', String(Math.max(1, Math.min(4, n || 4))));
+      }
+      window.__contaColunasCards = contaColunas;
       function mostrar(plat) {
         var grid = document.getElementById('engajamentoServiceCards');
         if (!grid) return;
         grid.style.display = 'grid';
         Array.prototype.forEach.call(grid.querySelectorAll('[data-plat]'), function (c) { c.style.display = (c.getAttribute('data-plat') === plat && c.getAttribute('data-oculto') !== '1') ? '' : 'none'; });
+        contaColunas();
         Array.prototype.forEach.call(document.querySelectorAll('.platform-btn'), function (b) { b.setAttribute('aria-pressed', b.classList.contains(plat) ? 'true' : 'false'); });
         var tip = document.getElementById('tutorialPlatform'); if (tip) tip.style.setProperty('display', 'none', 'important');
         setTimeout(function () { try { rolarSuave(); } catch (_) {} }, 120);
