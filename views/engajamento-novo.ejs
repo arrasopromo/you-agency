@@ -522,9 +522,9 @@
               <button type="button" class="carousel-btn prev" aria-label="Anterior">‹</button>
               <div class="carousel-viewport">
               <div class="carousel-track">
-                  <div class="carousel-item active" data-index="0"><img src="/images/depo1-es.png" alt="Reseña 1" loading="lazy" width="505" height="897" /></div>
+                  <div class="carousel-item active" data-index="0"><img src="/images/depo1-es.jpg" alt="Reseña 1" loading="lazy" width="505" height="897" /></div>
                   <div class="carousel-item" data-index="1"><img src="/images/depo2-es.jpg" alt="Reseña 2" loading="lazy" width="577" height="769" /></div>
-                  <div class="carousel-item" data-index="2"><img src="/images/depo3-es.png" alt="Reseña 3" loading="lazy" width="433" height="769" /></div>
+                  <div class="carousel-item" data-index="2"><img src="/images/depo3-es.jpg" alt="Reseña 3" loading="lazy" width="433" height="769" /></div>
               </div>
               </div>
               <button type="button" class="carousel-btn next" aria-label="Siguiente">›</button>
@@ -1004,7 +1004,7 @@
             Garantía extendida: si hay una caída dentro de los 60 días, la reponemos sin costo. Con solo 4 clics y en menos de 30 segundos, ingresa el ID de tu pedido en nuestro sistema y haz clic en solicitar reposición para recuperar tus seguidores (solo para seguidores mixtos).
           </p>
           <div class="exclusive-img-container">
-            <img src="/images/refil%20(1).png" alt="Herramienta exclusiva" style="display: block; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));">
+            <img src="/images/refil-1-320.png" alt="Herramienta exclusiva" style="display: block; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));">
           </div>
         </div>
       </section>
@@ -1159,8 +1159,8 @@
       <div class="modal-content" style="background:transparent; width:100%; max-width:350px; position:relative; display:flex; flex-direction:column; align-items:center;">
          <button type="button" onclick="document.getElementById('toolExplanationModal').style.display='none'" style="position:absolute; top:-40px; right:0; background:none; border:none; color:white; font-size:2rem; cursor:pointer; z-index:10001;">&times;</button>
          <div style="width:100%; height: 60vh; max-height: 500px; aspect-ratio: auto; background:#000; border-radius:16px; overflow:hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
-            <video controls autoplay loop muted playsinline style="width:100%; height:100%; object-fit:contain;">
-                <source src="/images/como%20usar%20nome.mp4" type="video/mp4">
+            <video controls loop muted playsinline preload="none" data-autoplay-modal style="width:100%; height:100%; object-fit:contain;">
+                <source src="/images/como-usar-nome.mp4" type="video/mp4">
                 Tu navegador no soporta la reproducción de video.
             </video>
          </div>
@@ -1307,5 +1307,19 @@
       });
     });
   </script>
+<script>
+/* Vídeos dos modais (preload="none"): tocam só quando o modal aparece e pausam ao fechar. */
+(function(){
+  function liga(){
+    document.querySelectorAll('video[data-autoplay-modal]').forEach(function(v){
+      var m = v.closest('.modal-overlay, .modal, [id$="Modal"]') || v.parentElement;
+      if (!m || m.__vidObs) return; m.__vidObs = true;
+      var checa = function(){ var on = m.offsetParent !== null || getComputedStyle(m).display !== 'none'; if (on) { try { v.play().catch(function(){}); } catch(_){} } else { try { v.pause(); } catch(_){} } };
+      new MutationObserver(checa).observe(m, { attributes: true, attributeFilter: ['style', 'class'] });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', liga); else liga();
+})();
+</script>
 </body>
 </html>

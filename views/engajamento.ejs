@@ -183,21 +183,21 @@
               <div class="value-props">
                 <div class="value-prop-item">
                   <div class="value-prop-row">
-                    <img class="value-prop-icon" src="/images/ampulheta.png" alt="Años en el mercado" />
+                    <img class="value-prop-icon" src="/images/ampulheta-320.png" alt="Años en el mercado" />
                     <div class="value-prop-metric">+3</div>
                   </div>
                   <div class="value-prop-caption"><span class="caption-desktop">años en el mercado</span><span class="caption-mobile">años<br>en el<br>mercado</span></div>
                 </div>
                 <div class="value-prop-item">
                   <div class="value-prop-row">
-                    <img class="value-prop-icon" src="/images/foguete.png" alt="Seguidores entregados" />
+                    <img class="value-prop-icon" src="/images/foguete-320.png" alt="Seguidores entregados" />
                     <div class="value-prop-metric">+2</div>
                   </div>
                   <div class="value-prop-caption"><span class="caption-desktop">millones de seguidores entregados</span><span class="caption-mobile">millones de<br>seguidores<br>entregados</span></div>
                 </div>
                 <div class="value-prop-item">
                   <div class="value-prop-row">
-                    <img class="value-prop-icon" src="/images/moeda.png" alt="Mejores precios" />
+                    <img class="value-prop-icon" src="/images/moeda-320.png" alt="Mejores precios" />
                     <div class="value-prop-metric">$<span class="value-prop-arrow">&darr;</span></div>
                   </div>
                   <div class="value-prop-caption"><span class="caption-desktop">los mejores precios del mercado</span><span class="caption-mobile">mejores<br>precios<br>del mercado</span></div>
@@ -213,9 +213,9 @@
               <button type="button" class="carousel-btn prev" aria-label="Anterior">‹</button>
               <div class="carousel-viewport">
               <div class="carousel-track">
-                  <div class="carousel-item active" data-index="0"><img src="/images/depo1-es.png" alt="Reseña 1" /></div>
-                  <div class="carousel-item" data-index="1"><img src="/images/depo2-es.jpg" alt="Reseña 2" /></div>
-                  <div class="carousel-item" data-index="2"><img src="/images/depo3-es.png" alt="Reseña 3" /></div>
+                  <div class="carousel-item active" data-index="0"><img src="/images/depo1-es.jpg" alt="Reseña 1" loading="lazy" decoding="async" /></div>
+                  <div class="carousel-item" data-index="1"><img src="/images/depo2-es.jpg" alt="Reseña 2" loading="lazy" decoding="async" /></div>
+                  <div class="carousel-item" data-index="2"><img src="/images/depo3-es.jpg" alt="Reseña 3" loading="lazy" decoding="async" /></div>
               </div>
               </div>
               <button type="button" class="carousel-btn next" aria-label="Siguiente">›</button>
@@ -340,7 +340,7 @@
                     <!-- Card Seguidores -->
                     <div data-plat="instagram" class="service-card premium-card card-seguidores" onclick="window.location.href = (function(){ try { const qs = (function(){ const p=new URLSearchParams(window.location.search); const s=new URLSearchParams(window.SERVER_UTMS_QUERY||''); s.forEach((v,k)=>{ if(!p.has(k)) p.set(k,v); }); const st=sessionStorage.getItem('ya_utms'); if(st){ try{ const o=JSON.parse(st); Object.keys(o).forEach(k=>{ if(!p.has(k)) p.set(k,o[k]); }); }catch(_){}} const str=p.toString(); return str ? ('?'+str) : ''; })(); return '/servicios-instagram'+qs; } catch(_){ return '/servicios-instagram'; } })()">
                       <div class="card-content">
-                        <img src="/images/icone-seguidores.png" alt="Seguidores" class="card-icon-3d" onerror="this.style.display='none'">
+                        <img src="/images/icone-seguidores-320.png" alt="Seguidores" class="card-icon-3d" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-seguidores">Seguidores</div>
                         <div class="card-subtitle">
                           <span class="badge-seguidores-br">Seguidores reales</span>
@@ -364,7 +364,7 @@
                     <!-- Card Curtidas -->
                     <div data-plat="instagram" class="service-card premium-card card-curtidas" onclick="window.location.href = (function(){ try { const qs = (function(){ const p=new URLSearchParams(window.location.search); const s=new URLSearchParams(window.SERVER_UTMS_QUERY||''); s.forEach((v,k)=>{ if(!p.has(k)) p.set(k,v); }); const st=sessionStorage.getItem('ya_utms'); if(st){ try{ const o=JSON.parse(st); Object.keys(o).forEach(k=>{ if(!p.has(k)) p.set(k,v); }); }catch(_){}} const str=p.toString(); return str ? ('?'+str) : ''; })(); return '/servicios-me-gusta'+qs; } catch(_){ return '/servicios-me-gusta'; } })()">
                       <div class="card-content">
-                        <img src="/images/curtidas-icone.png" alt="Me gusta" class="card-icon-3d" onerror="this.style.display='none'">
+                        <img src="/images/curtidas-icone-320.png" alt="Me gusta" class="card-icon-3d" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-curtidas">Me gusta</div>
                         <div class="card-subtitle">Mixtos y reales</div>
                         <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.curt) || '$ 20' %></span></div>
@@ -386,7 +386,7 @@
                     <!-- Card Visualizações -->
                     <div data-plat="instagram" class="service-card premium-card card-visualizacoes" onclick="window.location.href = (function(){ try { const qs = (function(){ const p=new URLSearchParams(window.location.search); const s=new URLSearchParams(window.SERVER_UTMS_QUERY||''); s.forEach((v,k)=>{ if(!p.has(k)) p.set(k,v); }); const st=sessionStorage.getItem('ya_utms'); if(st){ try{ const o=JSON.parse(st); Object.keys(o).forEach(k=>{ if(!p.has(k)) p.set(k,o[k]); }); }catch(_){}} const str=p.toString(); return str ? ('?'+str) : ''; })(); return '/servicios-visualizaciones'+qs; } catch(_){ return '/servicios-visualizaciones'; } })()">
                       <div class="card-content">
-                        <img src="/images/visualizacao-icon.png" alt="Vistas" class="card-icon-3d" onerror="this.style.display='none'">
+                        <img src="/images/visualizacao-icon-320.png" alt="Vistas" class="card-icon-3d" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-visualizacoes">Vistas</div>
                         <div class="card-subtitle">Vistas de Reels</div>
                         <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.views) || '$ 20' %></span></div>
@@ -445,7 +445,7 @@
                       </div>
                     <a data-plat="tiktok" class="service-card premium-card card-seguidores" style="display:none; text-decoration:none; color:inherit;" href="/servicios-tiktok?servicio=seguidores">
                       <div class="card-content">
-                        <img src="/images/icone-seguidores.png" alt="Seguidores" class="card-icon-3d rd-tint-tiktok" onerror="this.style.display='none'">
+                        <img src="/images/icone-seguidores-320.png" alt="Seguidores" class="card-icon-3d rd-tint-tiktok" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-seguidores">Seguidores</div>
                         <div class="card-subtitle">Perfil de TikTok</div>
                         <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.seg) || '$ 39' %></span></div>
@@ -461,7 +461,7 @@
                     </a>
                     <a data-plat="tiktok" class="service-card premium-card card-curtidas" style="display:none; text-decoration:none; color:inherit;" href="/servicios-tiktok?servicio=curtidas">
                       <div class="card-content">
-                        <img src="/images/curtidas-icone.png" alt="Me gusta" class="card-icon-3d rd-tint-tiktok" onerror="this.style.display='none'">
+                        <img src="/images/curtidas-icone-320.png" alt="Me gusta" class="card-icon-3d rd-tint-tiktok" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-curtidas">Me gusta</div>
                         <div class="card-subtitle">En tus videos</div>
                         <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.curt) || '$ 20' %></span></div>
@@ -477,7 +477,7 @@
                     </a>
                     <a data-plat="tiktok" class="service-card premium-card card-visualizacoes" style="display:none; text-decoration:none; color:inherit;" href="/servicios-tiktok?servicio=visualizacoes">
                       <div class="card-content">
-                        <img src="/images/visualizacao-icon.png" alt="Vistas" class="card-icon-3d rd-tint-tiktok" onerror="this.style.display='none'">
+                        <img src="/images/visualizacao-icon-320.png" alt="Vistas" class="card-icon-3d rd-tint-tiktok" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-visualizacoes">Vistas</div>
                         <div class="card-subtitle">En tus videos</div>
                         <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.views) || '$ 20' %></span></div>
@@ -517,7 +517,7 @@
                     </a>
                     <a data-plat="facebook" class="service-card premium-card card-seguidores" style="display:none; text-decoration:none; color:inherit;" href="/servicios-facebook?servicio=seguidores">
                       <div class="card-content">
-                        <img src="/images/icone-seguidores.png" alt="Seguidores" class="card-icon-3d rd-tint-facebook" onerror="this.style.display='none'">
+                        <img src="/images/icone-seguidores-320.png" alt="Seguidores" class="card-icon-3d rd-tint-facebook" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-seguidores">Seguidores</div>
                         <div class="card-subtitle">Perfil o página</div>
                         <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.seg) || '$ 39' %></span></div>
@@ -533,7 +533,7 @@
                     </a>
                     <a data-plat="facebook" class="service-card premium-card card-curtidas" style="display:none; text-decoration:none; color:inherit;" href="/servicios-facebook?servicio=curtidas">
                       <div class="card-content">
-                        <img src="/images/curtidas-icone.png" alt="Me gusta" class="card-icon-3d rd-tint-facebook" onerror="this.style.display='none'">
+                        <img src="/images/curtidas-icone-320.png" alt="Me gusta" class="card-icon-3d rd-tint-facebook" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-curtidas">Me gusta</div>
                         <div class="card-subtitle">En publicaciones</div>
                         <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.curt) || '$ 20' %></span></div>
@@ -549,7 +549,7 @@
                     </a>
                     <a data-plat="facebook" class="service-card premium-card card-visualizacoes" style="display:none; text-decoration:none; color:inherit;" href="/servicios-facebook?servicio=visualizacoes">
                       <div class="card-content">
-                        <img src="/images/visualizacao-icon.png" alt="Vistas" class="card-icon-3d rd-tint-facebook" onerror="this.style.display='none'">
+                        <img src="/images/visualizacao-icon-320.png" alt="Vistas" class="card-icon-3d rd-tint-facebook" onerror="this.style.display='none'">
                         <div class="card-title text-gradient-visualizacoes">Vistas</div>
                         <div class="card-subtitle">Videos y reels</div>
                         <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.views) || '$ 20' %></span></div>
@@ -611,7 +611,7 @@
             Conoce nuestra tecnología exclusiva de reposición automática de seguidores (solo seguidores mixtos).
           </p>
           <div style="max-width: 500px; margin: 0 auto;">
-            <img src="/images/refil%20(1).png" alt="Herramienta de reposición" style="width: 100%; max-width: 500px !important; display: block; margin: 0 auto; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));">
+            <img src="/images/refil-1-320.png" alt="Herramienta de reposición" style="width: 100%; max-width: 500px !important; display: block; margin: 0 auto; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));">
           </div>
         </div>
       </section>
@@ -949,7 +949,7 @@
           </div>
           <div class="modal-body" style="text-align:center;">
             <div style="position:relative; aspect-ratio: 9 / 16; height: clamp(320px, 60vh, 560px); max-width: 100%; margin: 0.75rem auto 0; border-radius:12px; overflow:hidden; box-shadow: var(--shadow); background: #000;">
-              <video id="commentsVideoPlayer" src="/images/comentarios.mp4" controls muted playsinline style="position:absolute; inset:0; width:100%; height:100%; object-fit: cover;"></video>
+              <video preload="none" id="commentsVideoPlayer" src="/images/comentarios-leve.mp4" controls muted playsinline style="position:absolute; inset:0; width:100%; height:100%; object-fit: cover;"></video>
             </div>
             <p style="margin-top:0.75rem; color: var(--text-secondary);">Perfiles de alta calidad, comentarios positivos y caídas mínimas.</p>
           </div>
@@ -964,8 +964,8 @@
       <div class="modal-content" style="background:transparent; width:100%; max-width:350px; position:relative; display:flex; flex-direction:column; align-items:center;">
          <button type="button" onclick="document.getElementById('toolExplanationModal').style.display='none'" style="position:absolute; top:-40px; right:0; background:none; border:none; color:white; font-size:2rem; cursor:pointer; z-index:10001;">&times;</button>
          <div style="width:100%; height: 60vh; max-height: 500px; aspect-ratio: auto; background:#000; border-radius:16px; overflow:hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
-            <video controls autoplay loop muted playsinline style="width:100%; height:100%; object-fit:contain;">
-                <source src="/images/como%20usar%20nome.mp4" type="video/mp4">
+            <video controls loop muted playsinline preload="none" data-autoplay-modal style="width:100%; height:100%; object-fit:contain;">
+                <source src="/images/como-usar-nome.mp4" type="video/mp4">
                 Tu navegador no soporta la reproducción de video.
             </video>
          </div>
@@ -1588,5 +1588,19 @@
       } catch (_) {}
     })();
   </script>
+<script>
+/* Vídeos dos modais (preload="none"): tocam só quando o modal aparece e pausam ao fechar. */
+(function(){
+  function liga(){
+    document.querySelectorAll('video[data-autoplay-modal]').forEach(function(v){
+      var m = v.closest('.modal-overlay, .modal, [id$="Modal"]') || v.parentElement;
+      if (!m || m.__vidObs) return; m.__vidObs = true;
+      var checa = function(){ var on = m.offsetParent !== null || getComputedStyle(m).display !== 'none'; if (on) { try { v.play().catch(function(){}); } catch(_){} } else { try { v.pause(); } catch(_){} } };
+      new MutationObserver(checa).observe(m, { attributes: true, attributeFilter: ['style', 'class'] });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', liga); else liga();
+})();
+</script>
 </body>
 </html>

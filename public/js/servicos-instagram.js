@@ -2165,8 +2165,8 @@ document.addEventListener('DOMContentLoaded', function() {
     1: 'PAQUETE DE PRUEBA',
     50: 'PAQUETE DE PRUEBA',
     20: 'PAQUETE DE PRUEBA',
-    150: 'INICIAL',
-    500: 'BÁSICO',
+    150: 'PAQUETE INICIAL',
+    500: 'PAQUETE BÁSICO',
     1000: 'MÁS POPULAR',
     3000: 'EXCLUSIVO',
     5000: 'VIP',
@@ -2185,11 +2185,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (isFollowersTipo(tipo)) {
       const allowed = getAllowedQuantities(tipo);
       if (isCurtidasContext) {
-        // Me gusta reales: o pacote de 700 aparece mesmo sem selo (os demais seguem só os com selo).
-        const extra700 = (tipo === 'organicos') ? [700] : [];
         arr = arr
           .filter(x => allowed.includes(Number(x.q)))
-          .filter(x => quantityBadges.hasOwnProperty(Number(x.q)) || extra700.includes(Number(x.q)));
+          .filter(x => quantityBadges.hasOwnProperty(Number(x.q)));
       } else {
         arr = arr
           .filter(x => allowed.includes(Number(x.q)))
@@ -2236,8 +2234,8 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (tipo === 'organicos') {
           if (qNum === 1000) { badgeText = 'MÁS POPULAR'; card.classList.add('gold-card'); }
         } else if (tipo === 'visualizacoes_reels') {
-          if (qNum === 1000) badgeText = 'INICIAL';
-          if (qNum === 5000) badgeText = 'BÁSICO';
+          if (qNum === 1000) badgeText = 'PAQUETE INICIAL';
+          if (qNum === 5000) badgeText = 'PAQUETE BÁSICO';
           if (qNum === 25000) badgeText = 'MEJOR PRECIO';
           if (qNum === 100000) { badgeText = 'MÁS POPULAR'; card.classList.add('gold-card'); }
           if (qNum === 200000) badgeText = 'VIP';

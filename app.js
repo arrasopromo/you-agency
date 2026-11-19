@@ -5503,16 +5503,16 @@ async function crmOrigensLote(phones) {
   if (!faltam.length) return out;
   const tailDe = (ph) => String(ph || '').replace(/\D/g, '').slice(-10);
   const tails = [...new Set(faltam.map(tailDe).filter((t) => t.length === 10))];
-  const ultClique = {}, ultRef = {}, primeira = {};
-  try { for (const d of await (await getCollection('wpp_ctwa_clicks')).find({ tail: { $in: tails } }, { projection: { tail: 1, at: 1 } }).toArray()) { const t = new Date(d.at).getTime() || 0; if (!(ultClique[d.tail] >= t)) ultClique[d.tail] = t; } } catch (_) {}
-  try { for (const d of await (await getCollection('wa_refs_telefone')).find({ tail: { $in: tails } }, { projection: { tail: 1, em: 1 } }).toArray()) { const t = new Date(d.em).getTime() || 0; if (!(ultRef[d.tail] >= t)) ultRef[d.tail] = t; } } catch (_) {}
+  const ultClique = {}, ultRef = {}, primeira = {}; let falhou = false; // consulta que falha não pode virar "direto" guardado no cache
+  try { for (const d of await (await getCollection('wpp_ctwa_clicks')).find({ tail: { $in: tails } }, { projection: { tail: 1, at: 1 } }).toArray()) { const t = new Date(d.at).getTime() || 0; if (!(ultClique[d.tail] >= t)) ultClique[d.tail] = t; } } catch (_) { falhou = true; }
+  try { for (const d of await (await getCollection('wa_refs_telefone')).find({ tail: { $in: tails } }, { projection: { tail: 1, em: 1 } }).toArray()) { const t = new Date(d.em).getTime() || 0; if (!(ultRef[d.tail] >= t)) ultRef[d.tail] = t; } } catch (_) { falhou = true; }
   try {
     const ag = await (await getCollection('wa_ia_messages')).aggregate([
       { $match: { phone: { $in: faltam }, direction: 'in' } }, { $sort: { createdAt: 1 } },
       { $group: { _id: '$phone', text: { $first: '$text' } } },
     ]).toArray();
     for (const d of ag) primeira[d._id] = String(d.text || '');
-  } catch (_) {}
+  } catch (_) { falhou = true; }
   for (const ph of faltam) {
     const t = tailDe(ph);
     const tc = ultClique[t], tr = ultRef[t];
@@ -5520,7 +5520,7 @@ async function crmOrigensLote(phones) {
     if (tc != null && !(tr > tc)) tipo = 'anuncio_whatsapp';
     else if (tr != null) tipo = 'site';
     else if (/estoy en el sitio|estou no site|\(#[A-Z0-9]{4,6}\)/i.test(primeira[ph] || '')) tipo = 'site';
-    out[ph] = tipo; __crmOrigemCache.set(ph, { at: agora, tipo });
+    out[ph] = tipo; if (!falhou) __crmOrigemCache.set(ph, { at: agora, tipo });
   }
   if (__crmOrigemCache.size > 5000) __crmOrigemCache.clear();
   return out;
