@@ -108,7 +108,11 @@
 <script>
 (function(){
   var $ = function(id){ return document.getElementById(id); };
-  var brl = function(v){ return '$ ' + Number(v || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN'; };
+  // Valores chegam em pesos; a tela mostra em REAIS pela cotação BRL→MXN de hoje (d.fxBrlMxn) e o peso fica na legenda.
+  var __fx = 0;
+  var mxn = function(v){ return '$ ' + Number(v || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN'; };
+  var brl = function(v){ if (!(__fx > 0)) return mxn(v); return 'R$ ' + (Number(v || 0) / __fx).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  var precoTxt = function(p){ var n = Number(String(p || '').replace(/[^\d.]/g, '')); return (p && n > 0) ? brl(n) : (p || ''); };
   var nf = function(v){ return Number(v || 0).toLocaleString('pt-BR'); };
   var pct = function(v, d){ return (Number(v || 0) * 100).toLocaleString('pt-BR', { minimumFractionDigits: d == null ? 1 : d, maximumFractionDigits: d == null ? 1 : d }) + '%'; };
   var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' })[c]; }); };
@@ -146,16 +150,17 @@
 
   function desenhar(d){
     graficos.forEach(function(g){ try { g.destroy(); } catch(_){} }); graficos = [];
+    __fx = Number(d.fxBrlMxn) || 0;
     var k = d.kpis;
     var h = '';
     h += '<div class="ts-kpis">'
       + kpi('Visitantes únicos', nf(k.visitantes), nf(k.botsPageviews) + ' visitas de robôs fora')
       + kpi('Pageviews', nf(k.pageviews), (k.pvPorVisitante || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' por visitante')
-      + kpi('Perfis validados', nf(k.perfisValidados))
+      + kpi('Perfis validados', nf(k.perfisValidados), 'no site' + (k.perfisValidadosBot ? ' · ' + nf(k.perfisValidadosBot) + ' pelo bot' : ''))
       + kpi('Cobranças geradas', nf(k.pix), nf(k.pixSite) + ' site · ' + nf(k.pixBot) + ' bot')
       + kpi('Pedidos pagos', nf(k.pagos), nf(k.pagosSite) + ' site · ' + nf(k.pagosBot) + ' bot')
-      + kpi('Faturamento', brl(k.receita), 'ticket ' + brl(k.ticket))
-      + kpi('Faturamento do site', brl(k.receitaSite), 'bot WhatsApp: ' + brl(k.receitaBot))
+      + kpi('Faturamento', brl(k.receita), mxn(k.receita) + ' · ticket ' + brl(k.ticket))
+      + kpi('Faturamento do site', brl(k.receitaSite), mxn(k.receitaSite) + ' · bot WhatsApp: ' + brl(k.receitaBot))
       + kpi('Visitante → pago', pct(k.convVisitantePago), 'só pedidos do site')
       + kpi('Cobrança → pago', pct(k.convPixPago))
       + kpi('Com oferta (bump)', nf(k.pedidosComOferta), k.pagos ? pct(k.pedidosComOferta / k.pagos) + ' dos pagos' : '')
@@ -238,7 +243,7 @@
     }
     var tipoNome = { mistos: 'mistos', brasileiros: 'brasileiros', curtidas_brasileiras: 'brasileiras', organicos: 'reais', visualizacoes_reels: '', comentarios: '' };
     h += '<section class="ts-bloco"><h2>Top 5 pacotes</h2><p class="sub">Do clique no pacote até o pagamento.</p><div class="ts-top5">'
-      + '<div><h3>Mais escolhidos (clique no card)</h3>' + (d.topEscolhidos.length ? lista(d.topEscolhidos, function(x){ return x.servico + ' ' + (tipoNome[x.tipo] != null ? tipoNome[x.tipo] : x.tipo) + ' · ' + nf(x.qtd); }, function(x){ return x.preco || ''; }, function(x){ return x.visitantes; }, C.vis) : '<p class="vazio">Começa a contar com o rastreio novo publicado.</p>') + '</div>'
+      + '<div><h3>Mais escolhidos (clique no card)</h3>' + (d.topEscolhidos.length ? lista(d.topEscolhidos, function(x){ return x.servico + ' ' + (tipoNome[x.tipo] != null ? tipoNome[x.tipo] : x.tipo) + ' · ' + nf(x.qtd); }, function(x){ return precoTxt(x.preco); }, function(x){ return x.visitantes; }, C.vis) : '<p class="vazio">Começa a contar com o rastreio novo publicado.</p>') + '</div>'
       + '<div><h3>Mais pedidos (cobrança gerada)</h3>' + lista(d.topPix, function(x){ return x.produto + ' · ' + nf(x.qtd); }, function(){ return ''; }, function(x){ return x.n; }, C.pix) + '</div>'
       + '<div><h3>Mais pagos</h3>' + lista(d.topPagos, function(x){ return x.produto + ' · ' + nf(x.qtd); }, function(x){ return brl(x.receita); }, function(x){ return x.n; }, C.pago) + '</div>'
       + '</div></section>';
@@ -283,7 +288,7 @@
     graficos.push(new Chart($('gReceita'), { type: 'bar', data: { labels: rot, datasets: [
       { label: 'Faturamento', data: d.serie.map(function(x){ return x.receita; }), backgroundColor: C.pago, borderRadius: 3 }
     ] }, options: Object.assign({}, base, { plugins: Object.assign({}, base.plugins, { tooltip: { callbacks: { label: function(c){ return 'Faturamento: ' + brl(c.parsed.y); } } } }),
-      scales: { x: semGrade, y: Object.assign({ beginAtZero: true }, eixo, { ticks: { callback: function(v){ return '$ ' + Number(v).toLocaleString('es-MX'); } } }) } }) }));
+      scales: { x: semGrade, y: Object.assign({ beginAtZero: true }, eixo, { ticks: { callback: function(v){ return __fx > 0 ? 'R$ ' + Math.round(Number(v) / __fx).toLocaleString('pt-BR') : '$ ' + Number(v).toLocaleString('es-MX'); } } }) } }) }));
     graficos.push(new Chart($('gHora'), { type: 'bar', data: { labels: d.porHora.map(function(_, i){ return String(i).padStart(2, '0') + 'h'; }), datasets: [{ label: 'Pageviews', data: d.porHora, backgroundColor: C.vis, borderRadius: 2 }] },
       options: Object.assign({}, base, { scales: { x: Object.assign({}, semGrade, { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } }), y: Object.assign({ beginAtZero: true }, eixo) } }) }));
     var paleta = [C.pago, C.vis, C.pix, '#8a4fd8', '#0e7490', '#c8352b', '#6b7280', '#a16207'];
