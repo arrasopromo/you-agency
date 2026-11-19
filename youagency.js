@@ -1274,9 +1274,24 @@ module.exports.register = function register(app, deps) {
           const tcUrl = String(process.env.YA_TRACKCOMBO_XPAG_URL || '').trim();
           const doBot = /^WppAgent_/.test(String(record.correlationID || '')) || String((record.additionalInfoMap && record.additionalInfoMap.source) || ((Array.isArray(record.additionalInfo) ? record.additionalInfo : []).find((i) => i && i.key === 'source') || {}).value || '') === 'wpp_agent';
           if (tcUrl && !doBot) {
-            axios.post(tcUrl, req.body, { headers: { 'Content-Type': 'application/json' }, timeout: 15000, validateStatus: () => true })
-              .then((r) => col.updateOne({ _id: record._id }, { $set: { 'trackcombo.repassadoEm': new Date().toISOString(), 'trackcombo.http': r.status } }).catch(() => {}))
-              .catch((e) => { try { console.error('❌ TrackCombo repasse', e && e.message); } catch (_) {} });
+            // Igual ao repasse do PagHiper na Oppus: o corpo da Xpag intacto + dados do cliente
+            // (melhoram o casamento com o anúncio) + custo ZERADO (o Meta recebe o valor cheio da venda).
+            const cli = record.customer || {};
+            const limpa = (s) => String(s || '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').trim();
+            let tel = String(cli.phone || (record.additionalInfoMap && record.additionalInfoMap.phone) || '').replace(/\D/g, '');
+            if (tel && !tel.startsWith('52') && tel.length === 10) tel = '52' + tel;
+            const extra = { cost: 0, custo: 0, product_cost: 0, cost_cents: 0, sale_value: Math.round(Number(record.expectedValueCents || record.valueCents || 0)) / 100, cost_source: 'zerado' };
+            if (limpa(cli.name)) extra.payer_name = limpa(cli.name);
+            if (tel) { extra.payer_phone = tel; extra.phone = tel; }
+            if (String(cli.email || '').includes('@')) extra.payer_email = String(cli.email).trim();
+            const payloadTc = Object.assign({}, req.body, extra);
+            const registra = (http, erro) => {
+              col.updateOne({ _id: record._id }, { $set: { 'trackcombo.repassadoEm': new Date().toISOString(), 'trackcombo.http': http, ...(erro ? { 'trackcombo.erro': erro } : {}) } }).catch(() => {});
+              deps.getCollection('trackcombo_forwards').then((c) => c.insertOne({ at: new Date(), gateway: 'xpag', correlationID: record.correlationID, statusXpag: String(req.body && req.body.status || ''), http, erro: erro || null, payload: payloadTc })).catch(() => {});
+            };
+            axios.post(tcUrl, payloadTc, { headers: { 'Content-Type': 'application/json' }, timeout: 15000, validateStatus: () => true })
+              .then((r) => registra(r.status, r.status >= 400 ? String(JSON.stringify(r.data || '')).slice(0, 200) : ''))
+              .catch((e) => { registra(0, String((e && e.message) || e).slice(0, 200)); try { console.error('❌ TrackCombo repasse', e && e.message); } catch (_) {} });
           }
         } catch (_) {}
         await sincronizarXpag(col, record);
