@@ -6441,7 +6441,7 @@ async function __igProfileHandler(req, res) {
   if (hitRateLimit(`ig_scraper:${rlKey}`, perMin, 60 * 1000)) return res.status(429).json({ ok: false, error: 'rate_limited', message: `Limite de ${perMin} consultas por minuto.` });
   const r = await __igScraper.getInstagramProfile(req.params.username, { fresh: String(req.query.fresh || '') === '1' });
   if (r.ok) return res.json(Object.assign({ ok: true }, r.profile, { cached: !!r.cached, stale: !!r.stale }));
-  const map = { invalid_username: [400, 'Usuário inválido.'], not_found: [404, 'Perfil não existe (ou foi removido).'], blocked: [503, 'O Instagram está negando consultas agora. Tente de novo em instantes.'], error: [502, 'Falha ao consultar o Instagram.'] };
+  const map = { invalid_username: [400, 'Usuario inválido.'], not_found: [404, 'Ese perfil no existe (o fue eliminado).'], blocked: [503, 'Instagram no está respondiendo ahora. Inténtalo de nuevo en unos segundos.'], error: [502, 'No pudimos consultar Instagram. Inténtalo de nuevo.'] };
   const [code, msg] = map[r.status] || [502, 'Falha ao consultar o Instagram.'];
   if (r.retryAfterSec) { try { res.set('Retry-After', String(r.retryAfterSec)); } catch (_) {} }
   return res.status(code).json({ ok: false, error: r.status, message: msg, ...(r.retryAfterSec ? { retryAfterSec: r.retryAfterSec } : {}), ...(r.detail ? { detail: r.detail } : {}) });
@@ -6485,7 +6485,7 @@ app.get('/api/instagram/info', async (req, res) => {
         } else {
             return res.status(404).json({ 
                 success: false, 
-                error: result.error || 'Perfil não encontrado.' 
+                error: result.error || 'No encontramos ese perfil.' 
             });
         }
     } catch (error) {
@@ -6933,7 +6933,7 @@ async function verifyInstagramProfile(username, userAgent, ip, req, res, bypassC
             // fora, pula direto e devolve "perfil não encontrado" (o RocketAPI já falhou acima).
             if (global.apifyDisabledUntil && Date.now() < global.apifyDisabledUntil) {
                 console.warn(`⏭️ Apify pulado (cota estourada) — @${username}`);
-                const r404 = { success: false, status: 404, error: 'Perfil não encontrado. Confira o @ digitado e tente novamente.' };
+                const r404 = { success: false, status: 404, error: 'No encontramos ese perfil. Revisa cómo escribiste el @ e inténtalo de nuevo.' };
                 setCache(username, r404, NEGATIVE_CACHE_TTL_MS);
                 return r404;
             }
@@ -6960,7 +6960,7 @@ async function verifyInstagramProfile(username, userAgent, ip, req, res, bypassC
             
             if (!Array.isArray(items) || items.length === 0 || (items[0] && items[0].error)) {
                  console.warn(`⚠️ Apify não encontrou @${username} ou retornou erro.`);
-                 const result404 = { success: false, status: 404, error: "Perfil não localizado." };
+                 const result404 = { success: false, status: 404, error: "No encontramos ese perfil. Revisa cómo escribiste el @ e inténtalo de nuevo." };
                  setCache(username, result404, NEGATIVE_CACHE_TTL_MS);
                  return result404;
             }
@@ -7071,12 +7071,12 @@ async function verifyInstagramProfile(username, userAgent, ip, req, res, bypassC
             try {
                 const st = error && error.response ? error.response.status : null;
                 const em = (error && error.response && error.response.data && error.response.data.error && error.response.data.error.message) ? String(error.response.data.error.message) : String((error && error.message) || '');
-                if (st === 403 || /hard limit|usage.*limit|feature-disabled|monthly/i.test(em)) {
+                if (st === 401 || st === 403 || /hard limit|usage.*limit|feature-disabled|monthly|token is not valid/i.test(em)) { // 401 = chave da Apify recusada
                     global.apifyDisabledUntil = Date.now() + 6 * 60 * 60 * 1000;
                     console.warn('⛔ Apify desativado por 6h (cota mensal estourada).');
                 }
             } catch (_) {}
-            const errorResult = { success: false, status: 404, error: "Perfil não encontrado. Confira o @ digitado e tente novamente." };
+            const errorResult = { success: false, status: 404, error: "No encontramos ese perfil. Revisa cómo escribiste el @ e inténtalo de nuevo." };
             setCache(username, errorResult, NEGATIVE_CACHE_TTL_MS);
             return errorResult;
         }

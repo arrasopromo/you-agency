@@ -328,6 +328,38 @@ module.exports.register = function register(app, deps) {
       });
   });
   
+  // Prova social da página inicial: só pedidos PAGOS de verdade (últimas 72 h), @ mascarado. Cache 5 min.
+  let __provaCache = { at: 0, itens: [] };
+  app.get('/api/prova-social', async (req, res) => {
+    try {
+      res.set('Cache-Control', 'public, max-age=120');
+      if (Date.now() - __provaCache.at < 5 * 60e3) return res.json({ ok: true, itens: __provaCache.itens });
+      const { getCollection } = require('./mongodbClient');
+      const col = await getCollection('checkout_orders');
+      const desde = new Date(Date.now() - 72 * 3600e3).toISOString();
+      const docs = await col.find({ status: 'pago', paidAt: { $gte: desde } }, { projection: { instagramUsername: 1, additionalInfo: 1, additionalInfoMapPaid: 1, paidAt: 1 } }).sort({ paidAt: -1 }).limit(30).toArray();
+      const info = (o, k) => { const m = o.additionalInfoMapPaid || {}; if (m[k] != null) return String(m[k]); const it = (o.additionalInfo || []).find((x) => x && x.key === k); return it ? String(it.value) : ''; };
+      const nomeSv = (cat, tipo) => {
+        const c = String(cat || '').toLowerCase(), t = String(tipo || '').toLowerCase();
+        if (/tiktok/.test(c + t)) return /curtid|like/.test(t) ? 'me gusta en TikTok' : (/visual|view/.test(t) ? 'vistas en TikTok' : 'seguidores en TikTok');
+        if (/facebook/.test(c + t)) return /curtid|like/.test(t) ? 'me gusta en Facebook' : (/visual|view/.test(t) ? 'vistas en Facebook' : 'seguidores en Facebook');
+        if (/coment/.test(c + t)) return 'comentarios';
+        if (/curtid/.test(c)) return 'me gusta';
+        if (/visual/.test(c)) return 'vistas';
+        return 'seguidores';
+      };
+      const itens = [];
+      for (const o of docs) {
+        const u = String(o.instagramUsername || info(o, 'instagram_username') || '').replace(/^@+/, '').trim();
+        const q = parseInt(info(o, 'quantidade'), 10) || 0;
+        if (!u || !q) continue;
+        itens.push({ u: u.slice(0, 3) + '***', q, sv: nomeSv(info(o, 'categoria_servico'), info(o, 'tipo_servico')), t: new Date(o.paidAt).getTime() });
+        if (itens.length >= 12) break;
+      }
+      __provaCache = { at: Date.now(), itens };
+      return res.json({ ok: true, itens });
+    } catch (_) { return res.json({ ok: true, itens: [] }); }
+  });
   app.get('/engagement', (req, res) => {
     console.log('📈 Acessando rota /engagement');
     try { deps.trackPageView(req, '/interaccion'); } catch (_) {} // entrada do anúncio: 1º passo do funil por visitante

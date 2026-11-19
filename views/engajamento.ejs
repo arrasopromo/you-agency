@@ -146,35 +146,212 @@
         Haz crecer tu perfil de Instagram con<br>
         <span class="title-highlight-gradient">seguidores reales</span>
       </h1>
-      <p class="subtitle" style="margin-top:0.25rem;">Transforma tu perfil con seguidores reales que construyen autoridad de verdad.<br>Ve resultados en tan solo 5 minutos.</p>
+      <p class="subtitle" style="margin-top:0.25rem;">Escribe tu @ y ve los paquetes. Resultados en minutos.</p>
       <div id="clientTools" class="client-tools" style="display:none;"></div>
     </header>
-    
-        <div class="cards-grid checkout-grid">
-          <%# Guía en audio en español (audio-site-es.mp3, 12/11/2026) %>
-          <div class="service-card" id="audioCard">
-            <div class="card-content">
-              <h3 class="card-title">Guía en audio</h3>
-              <div class="card-desc">
-                  <div class="audio-player">
-                  <audio id="guideAudio" class="audio-element" preload="none" src="/images/audio-site-es.mp3"></audio>
-                  <div class="audio-controls">
-                    <div id="tutorialAudio" class="tutorial-pop tutorial-pop-input" data-tip-mode="manual" data-tip-top="50" data-tip-left="" data-tip-arrow-left="">
-                      <div class="tutorial-pop-step">1/5</div>
-                      <div class="tutorial-pop-text">Escucha primero el audio</div>
-                    </div>
-                    <button type="button" id="audioPlayBtn" class="audio-speed-btn">Reproducir audio</button>
-                    <input type="range" id="audioProgress" class="audio-progress" min="0" max="100" value="0" />
-                  <span class="audio-time" style="white-space:nowrap;"><span id="audioCurrent">00:00</span>/<span id="audioDuration">00:00</span></span>
-                  </div>
-                  <div class="audio-speed-row">
-                    <button type="button" id="audioSpeed15x" class="audio-speed-btn">1.5x</button>
-                    <button type="button" id="audioSpeed2x" class="audio-speed-btn">2x</button>
-                  </div>
-                </div>
-              </div>
-            </div>
+
+    <%# Topo de conversão v2 (19/11/2026): @ primeiro + prévia do perfil ao vivo. %>
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" rel="stylesheet">
+    <section class="yh" id="yaHero">
+      <div class="yh-txt">
+        <p class="yh-badge"><svg class="yh-flag" viewBox="0 0 30 20" aria-hidden="true"><rect width="10" height="20" fill="#006847"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#CE1126"/><circle cx="15" cy="10" r="2.6" fill="#8C6239"/></svg><span>Hecho para México<span class="yh-badge-extra">, pagas con SPEI u OXXO</span></span></p>
+        <h1 class="yh-h1">Haz crecer tu Instagram hoy mismo.</h1>
+        <p class="yh-sub">Seguidores, me gusta y vistas con entrega automática. Nunca te pedimos la contraseña.</p>
+        <form class="yh-form" id="yaArrobaForm" autocomplete="off" novalidate>
+          <label class="yh-campo">
+            <span class="yh-at" aria-hidden="true">@</span>
+            <input id="yaArrobaInput" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="tu.usuario" aria-label="Tu usuario de Instagram">
+          </label>
+          <button type="submit" class="yh-btn" id="yaArrobaBtn">Empezar</button>
+        </form>
+        <p class="yh-msg" id="yaArrobaMsg" role="status" aria-live="polite"></p>
+        <ul class="yh-confia">
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Sin contraseña</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Entrega en minutos</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>Garantía de 30 días</li>
+        </ul>
+      </div>
+      <div class="yh-vis" aria-hidden="true">
+        <div class="yh-disco"></div>
+        <div class="yh-chip yh-chip-a"><span class="yh-chip-ic ok"><svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg></span><span><b>Pago confirmado</b><small>SPEI en segundos</small></span></div>
+        <div class="yh-chip yh-chip-b"><span class="yh-chip-ic go"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span><span><b>Entrega iniciada</b><small>en minutos</small></span></div>
+        <div class="yh-ig" id="yaIg">
+          <div class="yh-ig-top">
+            <div class="yh-ig-anel"><div class="yh-ig-foto" id="yaIgFoto"><span id="yaIgIni">TU</span></div></div>
+            <div class="yh-ig-id"><b id="yaIgUser">tu.usuario</b><small id="yaIgNome">Tu negocio</small></div>
           </div>
+          <div class="yh-ig-nums">
+            <div><b id="yaIgPosts">86</b><small>publicaciones</small></div>
+            <div class="yh-ig-seg"><b id="yaIgSeg">412</b><small>seguidores</small></div>
+            <div><b id="yaIgSegue">305</b><small>seguidos</small></div>
+          </div>
+          <p class="yh-ig-bio" id="yaIgBio">Hecho a mano en Guadalajara.<br>Envíos a todo México.</p>
+          <div class="yh-ig-acoes"><span class="seg">Seguir</span><span>Mensaje</span></div>
+          <p class="yh-ig-nota" id="yaIgNota">Así se ve tu perfil</p>
+        </div>
+      </div>
+      <div class="ya-prova" id="yaProva" hidden>
+        
+        <span class="ya-prova-txt"><b id="yaProvaU"></b> compró <b id="yaProvaQ"></b><br><small id="yaProvaT"></small></span>
+      </div>
+    </section>
+    <style>
+      /* página inicial: o topo novo substitui o título antigo, a faixa e o botão de compra do topo */
+      .checkout-page > .header #headerTicker, .checkout-page > .header .title, .checkout-page > .header .subtitle, #buyFollowersBtn { display:none !important; }
+      .checkout-page > .header { margin:0; padding:0; min-height:0; }
+      #tutorialAudio { display:none !important; }
+
+      .yh { --yh-ink:#F4F2FA; --yh-sub:#A9A6BF; --yh-card:#191930; --yh-line:rgba(255,255,255,.09); --yh-campo:#14142a;
+            position:relative; max-width:1120px; margin:8px auto 28px; padding:28px 16px 8px; display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr); gap:40px; align-items:center; }
+      body.theme-light .yh { --yh-ink:#14112B; --yh-sub:#5B5873; --yh-card:#FFFFFF; --yh-line:#E7E3EE; --yh-campo:#FFFFFF; }
+      .yh-txt { min-width:0; }
+      .yh-flag { width:18px; height:12px; border-radius:2px; box-shadow:0 0 0 1px rgba(0,0,0,.08); flex:0 0 auto; }
+      .yh-badge { display:inline-flex; align-items:center; gap:8px; margin:0 0 18px; padding:6px 12px; border-radius:999px; font-size:.82rem; font-weight:600; color:#E8336D; background:rgba(232,51,109,.10); }
+      .yh-h1 { font-family:'Bricolage Grotesque', var(--font-family); font-weight:800; font-size:clamp(2.35rem, 5.2vw, 4rem); line-height:1.02; letter-spacing:-.035em; color:var(--yh-ink); margin:0 0 16px; max-width:12ch; text-wrap:balance; }
+      .yh-sub { font-size:1.08rem; line-height:1.55; color:var(--yh-sub); margin:0 0 24px; max-width:44ch; }
+      .yh-form { display:flex; gap:10px; max-width:470px; }
+      .yh-campo { flex:1; min-width:0; display:flex; align-items:center; gap:2px; height:58px; padding:0 16px; border-radius:16px; background:var(--yh-campo); border:2px solid rgba(232,51,109,.45); transition:border-color .15s, box-shadow .15s; }
+      .yh-campo:focus-within { border-color:#E8336D; box-shadow:0 0 0 4px rgba(232,51,109,.16); }
+      .yh-at { font-weight:700; font-size:1.1rem; color:#E8336D; }
+      .yh-campo input { flex:1; min-width:0; border:0; outline:0; background:transparent; color:var(--yh-ink); font:inherit; font-size:1.05rem; }
+      .yh-campo input::placeholder { color:var(--yh-sub); opacity:.8; }
+      .yh-btn { height:58px; padding:0 26px; border:0; border-radius:16px; font:inherit; font-weight:700; font-size:1.05rem; color:#fff; cursor:pointer;
+                background:linear-gradient(120deg,#F58529,#E8336D 70%); box-shadow:0 10px 24px rgba(232,51,109,.30); }
+      .yh-btn:focus-visible { outline:3px solid #E8336D; outline-offset:3px; }
+      .yh-btn[disabled] { opacity:.7; cursor:wait; }
+      .yh-msg { margin:10px 0 0; font-size:.9rem; color:#F87171; }
+      .yh-msg:empty { display:none; }
+      .yh-confia { list-style:none; display:flex; flex-wrap:wrap; gap:8px 20px; margin:16px 0 26px; padding:0; color:var(--yh-sub); font-size:.88rem; }
+      .yh-confia li { display:inline-flex; align-items:center; gap:7px; }
+      .yh-confia svg { width:17px; height:17px; fill:none; stroke:#E8336D; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+      .yh-vis { position:relative; min-height:470px; display:flex; align-items:center; justify-content:center; }
+      .yh-disco { position:absolute; width:min(420px, 92%); aspect-ratio:1; border-radius:50%; top:4%; left:50%; transform:translateX(-50%);
+                  background:radial-gradient(circle at 30% 25%, #FFB36B 0, #F58529 30%, #E8336D 72%, #B1246A 100%); opacity:.92; }
+      .yh-ig { position:relative; z-index:2; width:min(360px, 100%); margin-top:110px; padding:20px; border-radius:24px; background:var(--yh-card); border:1px solid var(--yh-line); color:var(--yh-ink); box-shadow:0 30px 60px rgba(20,10,40,.28); }
+      .yh-ig-top { display:flex; align-items:center; gap:14px; }
+      .yh-ig-anel { width:66px; height:66px; border-radius:50%; padding:3px; background:conic-gradient(#F58529, #E8336D, #8B5CF6, #F58529); flex:0 0 auto; }
+      .yh-ig-foto { width:100%; height:100%; border-radius:50%; border:3px solid var(--yh-card); background:#2a2347 center/cover no-repeat; display:grid; place-items:center; font-weight:800; color:#fff; font-size:1.05rem; }
+      body.theme-light .yh-ig-foto { background-color:#F3D5E1; color:#B1246A; }
+      .yh-ig-id { min-width:0; display:flex; flex-direction:column; }
+      .yh-ig-id b { font-size:1.05rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .yh-ig-id small { color:var(--yh-sub); }
+      .yh-ig-nums { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:18px 0 12px; text-align:center; }
+      .yh-ig-nums b { display:block; font-size:1.15rem; font-variant-numeric:tabular-nums; }
+      .yh-ig-nums small { font-size:.78rem; color:var(--yh-sub); }
+      .yh-ig-seg { border-radius:12px; padding:6px 0; background:rgba(232,51,109,.12); position:relative; }
+      .yh-ig-seg b { color:#E8336D; }
+      .yh-ig-bio { font-size:.88rem; line-height:1.45; margin:0 0 14px; }
+      .yh-ig-acoes { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+      .yh-ig-acoes span { text-align:center; padding:9px 0; border-radius:10px; font-weight:600; font-size:.9rem; background:rgba(127,127,160,.16); }
+      .yh-ig-acoes .seg { background:#0095F6; color:#fff; }
+      .yh-ig-nota { margin:12px 0 0; text-align:right; font-size:.72rem; color:var(--yh-sub); }
+      .yh-chip { position:absolute; z-index:3; display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:16px; background:var(--yh-card); border:1px solid var(--yh-line); color:var(--yh-ink); box-shadow:0 14px 30px rgba(20,10,40,.22); }
+      .yh-chip b { display:block; font-size:.86rem; } .yh-chip small { display:block; font-size:.74rem; color:var(--yh-sub); }
+      .yh-chip-a { top:9%; left:2%; } .yh-chip-b { top:30%; right:0; }
+      .yh-chip-ic { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; }
+      .yh-chip-ic svg { width:16px; height:16px; fill:none; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+      .yh-chip-ic.ok { background:rgba(34,197,94,.15); } .yh-chip-ic.ok svg { stroke:#16A34A; }
+      .yh-chip-ic.go { background:rgba(245,133,41,.16); } .yh-chip-ic.go svg { stroke:#F58529; fill:#F58529; }
+
+      .ya-prova { text-align:left; position:fixed; right:20px; bottom:calc(env(safe-area-inset-bottom, 0px) + 96px); z-index:60; max-width:calc(100vw - 40px); padding:10px 14px; border-radius:10px; background:#1A1A2E; color:#E8E6F2; border:1px solid rgba(255,255,255,.08); font-size:.84rem; line-height:1.4; transition:opacity .35s; }
+      body.theme-light .ya-prova { background:#fff; color:#1f2333; border-color:#e5e7eb; box-shadow:0 2px 10px rgba(15,23,42,.06); }
+      .ya-prova.sai { opacity:0; }
+      .ya-prova b { font-weight:600; }
+      .ya-prova small { opacity:.6; }
+      @media (max-width: 900px) {
+        .yh { grid-template-columns:1fr; gap:8px; padding-top:18px; text-align:center; }
+        .yh-badge, .yh-h1, .yh-sub { margin-left:auto; margin-right:auto; }
+        .yh-h1 { max-width:14ch; }
+        .yh-form { margin:0 auto; }
+        .yh-confia { justify-content:center; }
+        .yh-vis { min-height:0; padding-top:12px; }
+        .yh-disco { width:300px; top:0; }
+        .yh-ig { margin-top:70px; text-align:left; }
+        .yh-chip-a { top:4px; left:0; } .yh-chip-b { display:none; }
+        .yh-badge-extra { display:none; }
+      }
+      @media (max-width: 600px) {
+        .ya-prova { right:12px; bottom:calc(env(safe-area-inset-bottom, 0px) + 84px); width:auto; max-width:calc(100vw - 24px); }
+      }
+      @media (max-width: 420px) {
+        .yh-form { flex-direction:column; }
+        .yh-campo { flex:none; width:100%; height:56px; }
+        .yh-btn { width:100%; height:56px; }
+        .yh-chip { padding:8px 10px; } .yh-chip b { font-size:.8rem; }
+      }
+      @media (prefers-reduced-motion: reduce) { .ya-prova { transition:none; } }
+    </style>
+    <script>
+    (function(){
+      var $ = function(id){ return document.getElementById(id); };
+      var qsUtm = function(){ try { var p = new URLSearchParams(window.location.search); var keep = new URLSearchParams(); ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','fbclid','gclid','sck'].forEach(function(k){ if (p.get(k)) keep.set(k, p.get(k)); }); return keep; } catch(_) { return new URLSearchParams(); } };
+      var limpa = function(v){ v = String(v || '').trim(); var m = v.match(/instagram\.com\/([A-Za-z0-9._]+)/i); if (m) v = m[1]; return v.replace(/^@+/, '').replace(/[\/?#].*$/, '').replace(/\s+/g, ''); };
+      var fmt = function(n){ return Number(n).toLocaleString('en-US'); };
+      var reduz = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      // única animação: os seguidores da prévia sobem uma vez
+      var conta = function(el, de, ate, ms){ if (reduz) { el.textContent = fmt(ate); return; } var t0 = null; var passo = function(t){ if (!t0) t0 = t; var k = Math.min(1, (t - t0) / ms); var e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(Math.round(de + (ate - de) * e)); if (k < 1) requestAnimationFrame(passo); }; requestAnimationFrame(passo); };
+      setTimeout(function(){ conta($('yaIgSeg'), 412, 1412, 1400); }, 700);
+      // o @ digitado aparece na prévia
+      var inp = $('yaArrobaInput');
+      if (inp) inp.addEventListener('input', function(){
+        var u = limpa(inp.value);
+        $('yaIgUser').textContent = u || 'tu.usuario';
+        $('yaIgIni').textContent = (u.replace(/[^A-Za-z0-9]/g, '').slice(0, 2) || 'TU').toUpperCase();
+      });
+      var form = $('yaArrobaForm'), btn = $('yaArrobaBtn'), msg = $('yaArrobaMsg');
+      if (form) form.addEventListener('submit', async function(e){
+        e.preventDefault(); msg.textContent = '';
+        var u = limpa(inp.value);
+        if (!/^[A-Za-z0-9._]{2,30}$/.test(u)) { msg.textContent = 'Escribe tu usuario de Instagram, por ejemplo tu.usuario'; inp.focus(); return; }
+        btn.disabled = true; btn.textContent = 'Buscando...';
+        try {
+          var utms = {}; qsUtm().forEach(function(v, k){ utms[k.replace(/^utm_/, '')] = v; });
+          var r = await fetch('/api/check-instagram-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, utms: utms }) });
+          var d = await r.json();
+          if (d && d.success) {
+            var pr = d.profile || {}; var nome = pr.username || u;
+            $('yaIgUser').textContent = nome;
+            $('yaIgNome').textContent = pr.fullName || 'Perfil encontrado';
+            if (pr.postsCount != null) $('yaIgPosts').textContent = fmt(pr.postsCount);
+            if (pr.followingCount != null) $('yaIgSegue').textContent = fmt(pr.followingCount);
+            var seg = Number(pr.followersCount); if (isFinite(seg)) $('yaIgSeg').textContent = fmt(seg);
+            $('yaIgBio').textContent = pr.isPrivate ? 'Tu perfil está privado. Ponlo público para recibir tu pedido.' : 'Encontramos tu perfil. Ahora elige tu paquete.';
+            var foto = String(pr.profilePicUrl || pr.driveImageUrl || '').trim();
+            if (foto) { if (/^https?:\/\//i.test(foto) && /instagram|cdninstagram|fbcdn|scontent/i.test(foto)) foto = '/image-proxy?url=' + encodeURIComponent(foto); var im = new Image(); im.onload = function(){ $('yaIgFoto').style.backgroundImage = 'url("' + foto + '")'; $('yaIgIni').textContent = ''; }; im.src = foto; }
+            $('yaIgNota').textContent = 'Tu perfil';
+            try { sessionStorage.setItem('ya_ig_validado', nome); } catch(_) {}
+            var q = qsUtm(); q.set('ig', nome);
+            var link = '/servicios-instagram?' + q.toString();
+            btn.textContent = 'Ver paquetes';
+            if (!pr.isPrivate) setTimeout(function(){ window.location.href = link; }, 1500);
+            else { btn.disabled = false; btn.onclick = function(ev){ ev.preventDefault(); window.location.href = link; }; }
+            return;
+          }
+          msg.textContent = (d && (d.error || d.message)) ? String(d.error || d.message) : 'No encontramos ese usuario. Revisa cómo está escrito.';
+        } catch (_) { msg.textContent = 'No pudimos revisar tu perfil ahora. Inténtalo de nuevo.'; }
+        btn.disabled = false; btn.textContent = 'Empezar';
+      });
+      // Prova social: compras reais recentes, uma por vez.
+      (async function(){
+        var box = $('yaProva'); if (!box) return;
+        var itens = []; try { var r = await fetch('/api/prova-social'); var d = await r.json(); itens = (d && d.itens) || []; } catch(_) {}
+        if (!itens.length) return;
+        var ha = function(t){ var m = Math.max(1, Math.round((Date.now() - t) / 60000)); if (m < 60) return 'hace ' + m + ' min'; var h = Math.round(m / 60); return h < 24 ? 'hace ' + h + ' h' : 'hace ' + Math.round(h / 24) + ' d'; };
+        var i = 0, mostra = function(){
+          var it = itens[i % itens.length]; i++;
+          $('yaProvaU').textContent = '@' + it.u;
+          $('yaProvaQ').textContent = fmt(it.q) + ' ' + it.sv;
+          $('yaProvaT').textContent = ha(it.t);
+          box.hidden = false; box.classList.remove('sai');
+          setTimeout(function(){ box.classList.add('sai'); }, 4500);
+        };
+        setTimeout(function(){ mostra(); var n = 1; var tm = setInterval(function(){ if (n++ >= 5) { clearInterval(tm); return; } mostra(); }, 12000); }, 3000);
+      })();
+    })();
+    </script>
+        <div class="cards-grid checkout-grid">
           <div class="service-card" style="background: transparent; border: none; box-shadow: none; padding: 0;">
             <div class="card-content" style="display:flex; justify-content:center; align-items:center; text-align:center;">
               <a href="#plataformaCard" id="buyFollowersBtn" class="continue-button" style="display:inline-flex; justify-content:center; align-items:center; text-align:center; margin:34px auto 0;">
@@ -201,6 +378,35 @@
                     <div class="value-prop-metric">$<span class="value-prop-arrow">&darr;</span></div>
                   </div>
                   <div class="value-prop-caption"><span class="caption-desktop">los mejores precios del mercado</span><span class="caption-mobile">mejores<br>precios<br>del mercado</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <%# Guía en audio en español (audio-site-es.mp3, 12/11/2026) %>
+          <div class="audio-titulo" style="text-align:center; margin-top: 1.75rem;">
+            <div class="why-us-pill">Conoce nuestro servicio</div>
+            <h2 class="why-us-title">Escucha cómo <span class="why-us-gradient-text">funciona</span></h2>
+            <p class="why-us-subtitle" style="margin-bottom: 1rem;">En poco más de un minuto te explicamos cómo hacemos crecer tu perfil, sin pedir tu contraseña.</p>
+          </div>
+          <div class="service-card" id="audioCard">
+            <div class="card-content">
+              <h3 class="card-title">Guía en audio</h3>
+              <div class="card-desc">
+                  <div class="audio-player">
+                  <audio id="guideAudio" class="audio-element" preload="none" src="/images/audio-site-es.mp3"></audio>
+                  <div class="audio-controls">
+                    <div id="tutorialAudio" class="tutorial-pop tutorial-pop-input" data-tip-mode="manual" data-tip-top="50" data-tip-left="" data-tip-arrow-left="">
+                      <div class="tutorial-pop-step">1/5</div>
+                      <div class="tutorial-pop-text">Escucha primero el audio</div>
+                    </div>
+                    <button type="button" id="audioPlayBtn" class="audio-speed-btn">Reproducir audio</button>
+                    <input type="range" id="audioProgress" class="audio-progress" min="0" max="100" value="0" />
+                  <span class="audio-time" style="white-space:nowrap;"><span id="audioCurrent">00:00</span>/<span id="audioDuration">00:00</span></span>
+                  </div>
+                  <div class="audio-speed-row">
+                    <button type="button" id="audioSpeed15x" class="audio-speed-btn">1.5x</button>
+                    <button type="button" id="audioSpeed2x" class="audio-speed-btn">2x</button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -4685,6 +4685,31 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initial Step
   if (window.goToStep) window.goToStep(1);
 
+  // @ digitado na página inicial (?ig=…): preenche e valida sozinho quando o cliente chega no passo 2.
+  (function arrobaDaHome(){
+    try {
+      const ig = String(new URLSearchParams(window.location.search || '').get('ig') || '').trim().replace(/^@+/, '');
+      if (!/^[A-Za-z0-9._]{2,30}$/.test(ig)) return;
+      const inp = document.getElementById('usernameCheckoutInput');
+      if (inp && !inp.value) inp.value = ig;
+      let feito = false;
+      const orig = window.goToStep;
+      if (typeof orig === 'function') {
+        window.goToStep = function(n){
+          const r = orig.apply(this, arguments);
+          try {
+            if (Number(n) === 2 && !feito) {
+              feito = true;
+              const i2 = document.getElementById('usernameCheckoutInput'); if (i2 && !i2.value) i2.value = ig;
+              const b = document.getElementById('checkCheckoutButton'); if (b) setTimeout(function(){ b.click(); }, 150);
+            }
+          } catch (_) {}
+          return r;
+        };
+      }
+    } catch (_) {}
+  })();
+
   // Retomada pelo e-mail de recuperação (?rt=…), igual à Oppus: recarrega o pedido pelo token e
   // já abre com tipo, pacote, @ (validado), nome/e-mail/teléfono e cupom preenchidos, no passo 3.
   // Não gera a cobrança sozinho: o cliente só confere e clica em pagar.
