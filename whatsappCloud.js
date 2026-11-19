@@ -532,12 +532,18 @@ const _REC_ETAPA = {
     '¡Hola! ¿Qué cantidad te gustaría? Me dices y te dejo el pedido listo.',
     '¡Hola! ¿Ya elegiste la cantidad? Con eso armo tu pedido en un momento.',
   ],
+  // Já escolheu serviço e quantidade; falta só o @/link (sem "pasarte los paquetes": ela já viu).
+  arroba: [
+    '¡Hola! Solo me falta tu {ARROBA} para dejar tu pedido listo.',
+    '¡Hola! ¿Me pasas tu {ARROBA}? Con eso dejo tu pedido listo.',
+  ],
 };
 function _recEtapa(lastOutText) {
   const t = String(lastOutText || '');
   if (/c[oó]mo prefieres pagar|spei[^\n]{0,80}oxxo|oxxo[^\n]{0,80}spei|a nombre de qui[eé]n/i.test(t)) return 'metodo';
   if (/es correcto\?|conf[ií]rmame si/i.test(t)) return 'confirma';
   if (/cu[aá]nt[oa]s[^\n?]{0,60}\?|qu[eé] cantidad/i.test(t)) return 'cantidad';
+  if (/(dame|m[aá]ndame|p[aá]same|comparte|comp[aá]rteme|env[ií]ame|proporci[oó]name|necesito)[^\n]{0,60}(@|link de tu (perfil|p[aá]gina))/i.test(t)) return 'arroba';
   return '';
 }
 function _recRede(txt) {
@@ -548,7 +554,10 @@ function _recRede(txt) {
 }
 function _recMsg(stage, tipo, ctx) {
   const c = ctx || {};
-  if (c.etapa && _REC_ETAPA[c.etapa]) return _recPick(_REC_ETAPA[c.etapa]);
+  if (c.etapa && _REC_ETAPA[c.etapa]) {
+    const arroba = c.rede === 'tiktok' ? '@ de TikTok' : (c.rede === 'facebook' ? 'link de tu perfil o página de Facebook' : '@ de Instagram');
+    return _recPick(_REC_ETAPA[c.etapa]).split('{ARROBA}').join(arroba);
+  }
   const t = (stage === 2) ? (tipo === 'sem_arroba' ? 'sem_arroba' : 'geral')
                           : (tipo === 'preco' && c.rede !== 'facebook' ? 'preco' : (tipo === 'sem_arroba' ? 'sem_arroba' : 'geral'));
   let msg = _recPick(_REC_VARIANTS[stage + '_' + t] || _REC_VARIANTS['1_geral']);
