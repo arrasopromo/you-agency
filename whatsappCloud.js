@@ -534,8 +534,8 @@ const _REC_ETAPA = {
   ],
   // Já escolheu serviço e quantidade; falta só o @/link (sem "pasarte los paquetes": ela já viu).
   arroba: [
-    '¡Hola! Solo me falta tu {ARROBA} para dejar tu pedido listo.',
-    '¡Hola! ¿Me pasas tu {ARROBA}? Con eso dejo tu pedido listo.',
+    '¡Hola! Solo me falta {ARROBA} para dejar tu pedido listo.',
+    '¡Hola! ¿Me pasas {ARROBA}? Con eso dejo tu pedido listo.',
   ],
 };
 function _recEtapa(lastOutText) {
@@ -555,7 +555,7 @@ function _recRede(txt) {
 function _recMsg(stage, tipo, ctx) {
   const c = ctx || {};
   if (c.etapa && _REC_ETAPA[c.etapa]) {
-    const arroba = c.rede === 'tiktok' ? '@ de TikTok' : (c.rede === 'facebook' ? 'link de tu perfil o página de Facebook' : '@ de Instagram');
+    const arroba = c.rede === 'tiktok' ? 'tu @ de TikTok' : (c.rede === 'facebook' ? 'el link de tu perfil o página de Facebook' : 'tu @ de Instagram');
     return _recPick(_REC_ETAPA[c.etapa]).split('{ARROBA}').join(arroba);
   }
   const t = (stage === 2) ? (tipo === 'sem_arroba' ? 'sem_arroba' : 'geral')
