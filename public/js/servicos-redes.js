@@ -72,8 +72,10 @@
   }
   var descricoes = {
     tiktok_seguidores: ['Seguidores para tu perfil de TikTok con entrega rápida y estable.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '🌍 Perfiles de varios países para hacer crecer tu cuenta.', '🔗 Solo necesitas el enlace de tu perfil.']],
+    tiktok_curtidas_reais: ['Me gusta de perfiles reales para tus videos de TikTok.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '❤️ Me gusta de perfiles reales y activos.', '🔗 Solo necesitas el enlace del video.']],
     tiktok_curtidas: ['Me gusta para tus videos de TikTok con entrega rápida.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '❤️ Refuerza la prueba social de tus videos.', '🔗 Solo necesitas el enlace del video.']],
     tiktok_visualizacoes: ['Vistas para tus videos de TikTok.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '🎬 Da un impulso inicial a tus videos.', '🔗 Solo necesitas el enlace del video.']],
+    facebook_seguidores: ['Seguidores para tu perfil o página de Facebook.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '👥 Sirve para perfiles personales y páginas (fanpage).', '🔗 Solo necesitas el enlace del perfil o de la página.']],
     facebook_seguidores_perfil: ['Seguidores para tu perfil personal de Facebook.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '👤 Para perfiles personales (no páginas).', '🔗 Solo necesitas el enlace de tu perfil.']],
     facebook_seguidores_pagina: ['Seguidores para tu página (fanpage) de Facebook.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '🏢 Para páginas de negocio, marca o creador.', '🔗 Solo necesitas el enlace de tu página.']],
     facebook_curtidas: ['Me gusta para tus publicaciones de Facebook.', ['✅ 100% seguro y confidencial, sin pedir contraseña.', '❤️ Refuerza la prueba social de tus publicaciones.', '🔗 Solo necesitas el enlace de la publicación.']],
@@ -88,14 +90,15 @@
   var preSv = String(new URLSearchParams(location.search).get('servicio') || '').toLowerCase();
   var FOCO = /coment|comment/.test(preSv) ? 'comentarios' : (/curtid|gusta|like/.test(preSv) ? 'curtidas' : (/visualiz|view/.test(preSv) ? 'visualizacoes' : 'seguidores'));
   var LABEL_TIPO = {
-    tiktok_seguidores: 'Seguidores mixtos', tiktok_curtidas: 'Me gusta mixtos', tiktok_visualizacoes: 'Vistas', tiktok_comentarios: 'Comentarios', facebook_comentarios: 'Comentarios',
-    facebook_seguidores_perfil: 'Seguidores de perfil', facebook_seguidores_pagina: 'Seguidores de página',
+    tiktok_seguidores: 'Seguidores mixtos', tiktok_curtidas: 'Me gusta mixtos', tiktok_curtidas_reais: 'Me gusta reales', tiktok_visualizacoes: 'Vistas', tiktok_comentarios: 'Comentarios', facebook_comentarios: 'Comentarios',
+    facebook_seguidores: 'Seguidores', facebook_seguidores_perfil: 'Seguidores de perfil', facebook_seguidores_pagina: 'Seguidores de página',
     facebook_curtidas: 'Me gusta mixtos', facebook_visualizacoes: 'Vistas'
   };
   function renderTipoCards() {
     tipoCards.innerHTML = '';
     var lista = servicos.filter(function (s) { return kind(s) === FOCO; });
     tipoCards.setAttribute('data-n', String(lista.length));
+    if (!lista.length) { tipoCards.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#6b7280; padding:18px 8px;">Este servicio no está disponible por ahora.</p>'; return; }
     var pre = preSv;
     var escolhido = null, primeiro = null;
     lista.forEach(function (s) {

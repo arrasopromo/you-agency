@@ -20,6 +20,13 @@ document.addEventListener('DOMContentLoaded', function() {
       fetch('/api/funil/evento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body, keepalive: true }).catch(function () {});
     } catch (_) {}
   }
+  // Tipos ocultos no Gerenciamento de Tipo (o servidor manda em #oppusServiceVisibilityJson).
+  const serviceVisibility = (function () {
+    try { const node = document.getElementById('oppusServiceVisibilityJson'); const raw = node ? String(node.textContent || '').trim() : ''; return raw ? JSON.parse(raw) : {}; } catch (_) { return {}; }
+  })();
+  const hiddenTipos = (function () {
+    try { const k = isCommentsContext ? 'comentarios' : (isViewsContext ? 'visualizacoes' : (isCurtidasContext ? 'curtidas' : 'seguidores')); return (Array.isArray(serviceVisibility[k]) ? serviceVisibility[k] : []).map((x) => String(x || '').trim()).filter(Boolean); } catch (_) { return []; }
+  })();
   function funilSelecao() {
     try {
       const t = document.getElementById('tipoSelect'), q = document.getElementById('quantidadeSelect');
@@ -2097,15 +2104,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Garantir visibilidade (pois vem oculto do HTML)
     tipoCards.style.display = 'grid';
     
+    // Tipo oculto no Gerenciamento de Tipo (coluna Oculto) não aparece; se estava selecionado, sai.
+    try {
+      const cur = tipoSelect ? String(tipoSelect.value || '').trim() : '';
+      if (cur && hiddenTipos.indexOf(cur) >= 0) { tipoSelect.value = ''; tipoSelect.dispatchEvent(new Event('change')); }
+    } catch (_) {}
     const tipos = Object.keys(tabela).filter(t => {
       if (t === 'seguidores_tiktok') return false;
       if (isCurtidasContext && t === 'curtidas_brasileiras') return false;
       if (!isCurtidasContext && !isViewsContext && t === 'brasileiros') return false;
+      if (hiddenTipos.indexOf(t) >= 0) return false;
       return true;
     });
 
-    // Fallback de segurança: garantir que organicos esteja presente se disponível na tabela
-    if (!isCurtidasContext && !isViewsContext && !tipos.includes('organicos') && tabela.organicos) {
+    // Fallback de segurança: garantir que organicos esteja presente se disponível na tabela (e não oculto)
+    if (!isCurtidasContext && !isViewsContext && !tipos.includes('organicos') && tabela.organicos && hiddenTipos.indexOf('organicos') < 0) {
        tipos.push('organicos');
     }
     
@@ -4629,8 +4642,10 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Default selection (Mistos)
   if (tipoSelect) {
-    if (!tipoSelect.value || tipoSelect.value === 'brasileiros' || tipoSelect.value === 'curtidas_brasileiras') {
-      tipoSelect.value = 'mistos';
+    if (!tipoSelect.value || tipoSelect.value === 'brasileiros' || tipoSelect.value === 'curtidas_brasileiras' || hiddenTipos.indexOf(String(tipoSelect.value)) >= 0) {
+      // Mistos por padrão — ou o primeiro tipo visível, se mistos estiver oculto.
+      const visiveis = Object.keys(tabela).filter(t => t !== 'seguidores_tiktok' && t !== 'brasileiros' && t !== 'curtidas_brasileiras' && hiddenTipos.indexOf(t) < 0);
+      tipoSelect.value = hiddenTipos.indexOf('mistos') < 0 ? 'mistos' : (visiveis[0] || 'mistos');
     }
     // Always dispatch change to ensure cards are rendered and scroll logic runs
     setTimeout(() => {
@@ -4640,6 +4655,69 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Initial Step
   if (window.goToStep) window.goToStep(1);
+
+  // Retomada pelo e-mail de recuperação (?rt=…), igual à Oppus: recarrega o pedido pelo token e
+  // já abre com tipo, pacote, @ (validado), nome/e-mail/teléfono e cupom preenchidos, no passo 3.
+  // Não gera a cobrança sozinho: o cliente só confere e clica em pagar.
+  (async function retomadaRecuperacao(){
+    try {
+      const p = new URLSearchParams(window.location.search || '');
+      const rt = String(p.get('rt') || '').trim();
+      if (!rt) return;
+      const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+      let ctx = null;
+      try {
+        const r = await fetch('/api/recovery/context?rt=' + encodeURIComponent(rt), { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+        const d = await r.json();
+        if (d && d.ok && d.context) ctx = d.context;
+      } catch (_) {}
+      if (!ctx) ctx = { tipo_servico: p.get('tipo') || '', quantidade: p.get('quantidade') || '', instagram_username: p.get('instagram_username') || '', coupon: '', customer: {} };
+      const tipo = String(ctx.tipo_servico || p.get('tipo') || '').trim().toLowerCase();
+      const qtd = parseInt(String(ctx.quantidade || p.get('quantidade') || '0'), 10) || 0;
+      const user = String(ctx.instagram_username || p.get('instagram_username') || '').trim().replace(/^@+/, '').replace(/\/+$/, '');
+      const cupom = String(p.get('cupom') || ctx.coupon || '').trim().toUpperCase();
+      const cust = ctx.customer || {};
+
+      await sleep(300); // deixa os cards de tipo renderizarem (o default "mistos" dispara em 100ms)
+      if (tipo && tipoCards) {
+        const tc = tipoCards.querySelector('.option-card[data-tipo="' + tipo + '"]');
+        if (tc) tc.click();
+        else if (tipoSelect && tabela && tabela[tipo]) { tipoSelect.value = tipo; tipoSelect.dispatchEvent(new Event('change')); }
+      }
+      await sleep(250);
+      if (qtd && planCards) {
+        let card = planCards.querySelector('.service-card[data-role="plano"][data-qtd="' + qtd + '"]');
+        if (!card) {
+          let melhor = null, dif = Infinity;
+          planCards.querySelectorAll('.service-card[data-role="plano"]').forEach(function(c){ const q = Number(c.getAttribute('data-qtd')) || 0; const df = Math.abs(q - qtd); if (q && df < dif) { dif = df; melhor = c; } });
+          card = melhor;
+        }
+        if (card) card.click();
+      }
+      await sleep(200);
+      try { if (window.goToStep) window.goToStep(2); } catch (_) {}
+      const nome = String(cust.name || '').trim();
+      const email = String(cust.email || '').trim();
+      const tel = String(cust.phone || '').replace(/\D/g, '').slice(-10);
+      const setV = (el, v) => { if (el && v && !String(el.value || '').trim()) { el.value = v; try { el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); } catch (_) {} } };
+      setV(typeof contactNameInput !== 'undefined' ? contactNameInput : document.getElementById('contactNameInput'), nome);
+      setV(typeof contactEmailInput !== 'undefined' ? contactEmailInput : document.getElementById('contactEmailInput'), email);
+      setV(typeof contactPhoneInput !== 'undefined' ? contactPhoneInput : document.getElementById('contactPhoneInput'), tel);
+      if (user && usernameCheckoutInput) {
+        usernameCheckoutInput.value = user;
+        try { await checkInstagramProfileCheckout(); } catch (_) {}
+        for (let i = 0; i < 40 && !isInstagramVerified; i++) await sleep(250);
+      }
+      if (cupom) {
+        const ci = document.getElementById('couponInput');
+        if (ci) ci.value = cupom;
+        const ab = document.getElementById('applyCouponBtn');
+        if (ab) ab.click();
+        await sleep(600);
+      }
+      if (isInstagramVerified) { try { if (window.goToStep) window.goToStep(3); } catch (_) {} }
+    } catch (_) {}
+  })();
   
   // Expor função para o EJS se necessário (mas tentamos evitar scripts inline)
   window.checkInstagramProfileCheckout = checkInstagramProfileCheckout;

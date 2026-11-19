@@ -117,4 +117,25 @@ function iniciar() {
   __timer = setInterval(() => { __live.atMs = 0; getUsdMxnRate().catch(() => {}); }, 60 * 60 * 1000);
 }
 
-module.exports = { getUsdMxnRate, taxasPorDia, converterUsdPorDia, iniciar, _diaMX: diaMX };
+// Real → peso (custo dos fornecedores é calculado em R$; o painel do You Agency mostra tudo em MXN).
+// Cotação do momento (AwesomeAPI BRL-MXN, cache de 10 min); sem resposta: USD-MXN ÷ USD-BRL; último caso, padrão.
+let __brlLive = { atMs: 0, rate: null };
+const validaBrl = (r) => Number.isFinite(r) && r > 1.5 && r < 8;
+async function getBrlMxnRate() {
+  if (__brlLive.rate && Date.now() - __brlLive.atMs < 10 * 60 * 1000) return __brlLive.rate;
+  try {
+    const r = await axios.get('https://economia.awesomeapi.com.br/json/last/BRL-MXN', { timeout: 8000, validateStatus: () => true });
+    const bid = Number(r && r.data && r.data.BRLMXN && r.data.BRLMXN.bid);
+    if (validaBrl(bid)) { __brlLive = { atMs: Date.now(), rate: bid }; return bid; }
+  } catch (_) {}
+  try {
+    const usdMxn = await getUsdMxnRate();
+    const r = await axios.get('https://economia.awesomeapi.com.br/json/last/USD-BRL', { timeout: 8000, validateStatus: () => true });
+    const usdBrl = Number(r && r.data && r.data.USDBRL && r.data.USDBRL.bid);
+    const x = usdMxn / usdBrl;
+    if (validaBrl(x)) { __brlLive = { atMs: Date.now(), rate: x }; return x; }
+  } catch (_) {}
+  return __brlLive.rate || (Number(process.env.FX_BRL_MXN_PADRAO || 3.3) || 3.3);
+}
+
+module.exports = { getUsdMxnRate, getBrlMxnRate, taxasPorDia, converterUsdPorDia, iniciar, _diaMX: diaMX };

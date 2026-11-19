@@ -37,8 +37,7 @@ const REDES = {
   facebook: {
     nome: 'Facebook',
     servicos: {
-      seguidores: { tipo: 'facebook_seguidores_perfil', unit: 'seguidores', alvo: 'perfil' },
-      seguidores_pagina: { tipo: 'facebook_seguidores_pagina', unit: 'seguidores', alvo: 'perfil' },
+      seguidores: { tipo: 'facebook_seguidores', unit: 'seguidores', alvo: 'perfil' },  // perfil ou página
       curtidas: { tipo: 'facebook_curtidas', unit: 'me gusta', alvo: 'post' },
       visualizacoes: { tipo: 'facebook_visualizacoes', unit: 'vistas', alvo: 'post' },
       comentarios: { tipo: 'facebook_comentarios', unit: 'comentarios', alvo: 'post' },
@@ -70,8 +69,9 @@ const _linkPostRedeOk = (rede, u) => {
   if (rede === 'tiktok') return /\/(video|photo)\/\d+/i.test(s) || /\/\/(vm|vt)\.tiktok\.com\//i.test(s);
   return /\/(posts|videos|reel|watch|photo|story\.php|permalink|share)\b|fbid=|\/p\/|fb\.watch\//i.test(s);
 };
-function _quoteRede(rede, servico, quantidade) {
+function _quoteRede(rede, servico, quantidade, hidden) {
   const sv = _servicoRede(rede, servico);
+  if (sv && hidden && Array.isArray(hidden[rede]) && hidden[rede].includes(String(sv.tipo).toLowerCase())) return { ok: false, error: 'servico_indisponivel', message: 'Ese servicio no está disponible por ahora.' };
   if (!sv) return { ok: false, error: 'servico_invalido', message: `En ${REDES[rede].nome} vendemos: ${Object.values(REDES[rede].servicos).map((x) => x.unit).filter((v, i, a) => a.indexOf(v) === i).join(', ')}.` };
   const tab = (tabelaRedes[sv.tipo] || []);
   const q = parseInt(quantidade, 10);
@@ -81,8 +81,9 @@ function _quoteRede(rede, servico, quantidade) {
   const priceCents = parsePrecoToCents(it.p);
   return { ok: true, rede, redeNombre: REDES[rede].nome, servico: sv.tipo, tipo: sv.tipo, tipoNombre: 'mixtos', quantidade: q, priceCents, priceLabel: mxn(priceCents), unit: sv.unit, needsPost: sv.alvo === 'post', alvo: sv.alvo };
 }
-function _tableRede(rede, servico) {
+function _tableRede(rede, servico, hidden) {
   const sv = _servicoRede(rede, servico);
+  if (sv && hidden && Array.isArray(hidden[rede]) && hidden[rede].includes(String(sv.tipo).toLowerCase())) return { ok: false, error: 'servico_indisponivel', message: 'Ese servicio no está disponible por ahora.' };
   if (!sv) return { ok: false, error: 'servico_invalido' };
   return { ok: true, rede, redeNombre: REDES[rede].nome, servico: sv.tipo, tipoNombre: 'mixtos', unit: sv.unit, needsPost: sv.alvo === 'post', moneda: 'MXN', itens: (tabelaRedes[sv.tipo] || []).map((x) => ({ quantidade: x.q, preco: _label(x.p), precoCents: parsePrecoToCents(x.p) })) };
 }
@@ -99,7 +100,7 @@ async function validateRedeProfile(rede, usuario) {
 }
 // Pedido de TikTok/Facebook pelo MESMO endpoint e formato da página do site (/servicios-tiktok|facebook).
 async function createRedeOrder({ rede, servico, quantidade, usuario, perfil_link, nome, email, phone, post_link, comprar_mais, metodo }) {
-  const cot = _quoteRede(rede, servico, quantidade);
+  const cot = _quoteRede(rede, servico, quantidade, await loadHiddenTypes());
   if (!cot.ok) return cot;
   const nomeOk = String(nome || '').trim();
   if (nomeOk.length < 2) return { ok: false, error: 'falta_nombre', message: 'Falta el nombre del cliente. Pídeselo antes de generar el pago.' };
@@ -187,13 +188,13 @@ let __hiddenTypesCache = { at: 0, data: null };
 async function loadHiddenTypes() {
   const now = Date.now();
   if (__hiddenTypesCache.data && (now - __hiddenTypesCache.at) < 60000) return __hiddenTypesCache.data;
-  const out = { seguidores: [], curtidas: [], visualizacoes: [] };
+  const out = { seguidores: [], curtidas: [], visualizacoes: [], tiktok: [], facebook: [] };
   try {
     const col = await getCollection('settings');
     const doc = col ? await col.findOne({ _id: 'service_visibility' }, { projection: { _id: 0, values: 1 } }) : null;
     const values = (doc && doc.values && typeof doc.values === 'object') ? doc.values : {};
     const hidden = (values && values.hidden && typeof values.hidden === 'object') ? values.hidden : ((values && typeof values === 'object') ? values : {});
-    for (const k of ['seguidores', 'curtidas', 'visualizacoes']) {
+    for (const k of ['seguidores', 'curtidas', 'visualizacoes', 'tiktok', 'facebook']) {
       out[k] = Array.isArray(hidden[k]) ? hidden[k].map((x) => String(x || '').trim().toLowerCase()).filter(Boolean) : [];
     }
   } catch (_) {}
@@ -227,7 +228,7 @@ function _indisponivel(key, tipoKey, hidden) {
 }
 
 async function quote({ servico, tipo, quantidade, rede }) {
-  const _r = normalizeRede(rede); if (_r !== 'instagram') return _quoteRede(_r, servico, quantidade);
+  const _r = normalizeRede(rede); if (_r !== 'instagram') return _quoteRede(_r, servico, quantidade, await loadHiddenTypes());
   const key = normalizeServico(servico);
   const svc = CATALOG[key];
   if (!svc) return { ok: false, error: 'servico_invalido', message: 'Servicio inválido. Vendemos seguidores, me gusta y vistas.' };
@@ -252,7 +253,7 @@ async function quote({ servico, tipo, quantidade, rede }) {
 }
 
 async function priceTable({ servico, tipo, rede }) {
-  const _r = normalizeRede(rede); if (_r !== 'instagram') return _tableRede(_r, servico);
+  const _r = normalizeRede(rede); if (_r !== 'instagram') return _tableRede(_r, servico, await loadHiddenTypes());
   const key = normalizeServico(servico);
   const svc = CATALOG[key];
   if (!svc) return { ok: false, error: 'servico_invalido' };

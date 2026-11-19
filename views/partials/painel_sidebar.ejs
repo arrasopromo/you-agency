@@ -3,7 +3,8 @@
     function _a(k){ return _p === k ? 'active' : ''; }
     var _groups = {
         geral:       ['dashboard','vendas'],
-        operacao:    ['gerenciamento-seguidores','refil2','gestao-parcial-topfama','gestao-parcial-seguidores','aguardando','unknown_orderid','registro-pedido','privados'],
+        track:       ['track-site'],
+        operacao:    ['gerenciamento-seguidores','refil2','gestao-parcial-topfama','gestao-parcial-seguidores','aguardando','unknown_orderid','registro-pedido','privados','bloqueados'],
         marketing:   ['coupons','upsell','ia-crm','ia-followup'],
         ferramentas: ['consulta-perfil','service_types','testes-servicos']
     };
@@ -31,6 +32,13 @@
             </ul>
         </details>
 
+        <details class="nav-group" data-group="track" <%= _open(_groups.track) %>>
+            <summary>Track do Site <span class="nav-caret">›</span></summary>
+            <ul>
+                <li><a href="/painel/track-site" class="<%= _a('track-site') %>">Visitas, funil e vendas</a></li>
+            </ul>
+        </details>
+
         <details class="nav-group" data-group="operacao" <%= _open(_groups.operacao) %>>
             <summary>Operação de Pedidos <span class="nav-caret">›</span></summary>
             <ul>
@@ -42,6 +50,7 @@
                 <li><a href="/painel?view=unknown_orderid&period=all" class="<%= _a('unknown_orderid') %>">OrderID Unknown</a></li>
                 <li><a href="/painel/registro-pedido" class="<%= _a('registro-pedido') %>">Registro de Pedido</a></li>
                 <li><a href="/painel/privados" class="<%= _a('privados') %>">Perfis Privados</a></li>
+                <li><a href="/painel/bloqueados" class="<%= _a('bloqueados') %>">Usuários Bloqueados</a></li>
             </ul>
         </details>
 

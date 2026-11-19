@@ -546,7 +546,9 @@ require('./youagency.js').register(app, {
   get sendOrderCreatedEmail() { return sendOrderCreatedEmail; },
   get getCollection() { return require('./mongodbClient').getCollection; },
   get processOrderFulfillment() { return processOrderFulfillment; },
-  get notifyWppAgentPaidWhatsapp() { return notifyWppAgentPaidWhatsapp; }
+  get notifyWppAgentPaidWhatsapp() { return notifyWppAgentPaidWhatsapp; },
+  get loadServiceVisibility() { return loadServiceVisibility; },
+  get blacklistBarra() { return blacklistBarra; }
 });
 
 const ADMIN_AUTH_COOKIE = 'ya_admin_auth';
@@ -2597,7 +2599,7 @@ const sendPaymentApprovedEmailToCustomer = async ({ record, toOverride, serviceL
         <table width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
           <tr>
             <td bgcolor="#111827" style="padding:14px 20px;font-family:Arial,Helvetica,sans-serif;background:#111827;background-color:#111827;color:#ffffff;text-align:center;">
-              <div style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:#ffffff;color:#111827;font-weight:900;font-size:20px;letter-spacing:0.04em;">Y</div>
+              <img src="https://youagency.site/images/y%20branco.png" width="64" height="64" alt="You Agency" style="display:block;margin:0 auto;width:64px;height:64px;border:0;outline:none;text-decoration:none;" />
               <div style="margin-top:8px;font-size:14px;font-weight:800;letter-spacing:0.06em;color:#ffffff;">You Agency</div>
             </td>
           </tr>
@@ -4588,16 +4590,81 @@ app.post('/api/painel/seg-parcial/config', requireAdmin, async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 // Checa UM teste: busca seguidores atuais, atualiza pico/atual/queda e o histórico
 // (1 ponto por dia BRT — reconsulta no mesmo dia substitui o ponto do dia).
+// Ritmo do TikTok: todo acesso à página do TikTok (checagem das 12h e botões de checar) passa por
+// aqui. Um acesso por vez, intervalo mínimo de ~10s (+ variação aleatória) e, quando o TikTok devolve
+// a página de verificação/bloqueio, pausa de 3 min antes do próximo. Assim o IP não toma 403.
+const __ttPace = { last: 0, cooldownUntil: 0, chain: Promise.resolve() };
+const TT_GAP_MS = 10000, TT_JITTER_MS = 5000, TT_COOLDOWN_MS = 180000;
+function ttGet(url, ua) {
+  const run = async () => {
+    const espera = Math.max(__ttPace.cooldownUntil, __ttPace.last + TT_GAP_MS + Math.floor(Math.random() * TT_JITTER_MS)) - Date.now();
+    if (espera > 0) await new Promise((res) => setTimeout(res, espera));
+    try { return await axios.get(url, { headers: { 'User-Agent': ua, 'Accept-Language': 'es-MX,es;q=0.9' }, timeout: 20000, validateStatus: () => true }); }
+    finally { __ttPace.last = Date.now(); }
+  };
+  const p = __ttPace.chain.then(run, run);
+  __ttPace.chain = p.catch(() => {});
+  return p;
+}
+function ttMarcarBloqueio() { __ttPace.cooldownUntil = Date.now() + TT_COOLDOWN_MS; }
+const TT_UA_MOB = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+const TT_UA_DESK = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+
+// Seguidores de perfil/página do Facebook pela prévia pública (UA do crawler do Facebook): o
+// og:description traz o número exato ("Nome. 28.726.311 seguidores · …"). Mesma leitura da etapa 2 do You Agency.
+// Retorna { count } | null (link inválido / página não existe = 404) | { semNumero: true } (abriu sem número).
+async function fetchFacebookFollowerCount(linkRaw) {
+  let v = String(linkRaw || '').trim();
+  if (/^([a-z0-9-]+\.)*(facebook\.com|fb\.com)\//i.test(v)) v = 'https://' + v;
+  if (/^\d{5,20}$/.test(v)) v = 'https://www.facebook.com/profile.php?id=' + v;
+  if (!/^https?:\/\/([a-z0-9-]+\.)*(facebook\.com|fb\.com)\//i.test(v)) return null;
+  const pid = v.match(/profile\.php\?id=(\d+)/i);
+  const url = pid ? 'https://www.facebook.com/profile.php?id=' + pid[1] : v.replace(/^http:/i, 'https:').replace(/[?#].*$/, '').replace(/^https:\/\/(m\.|web\.|mbasic\.)?facebook\.com/i, 'https://www.facebook.com');
+  let ultimoStatus = 0;
+  for (let t = 0; t < 2; t++) {
+    try {
+      const r = await axios.get(url, { headers: { 'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)', 'Accept-Language': 'pt-BR,pt;q=0.9' }, timeout: 20000, maxRedirects: 5, validateStatus: () => true });
+      ultimoStatus = r.status;
+      if (r.status === 404) return null;
+      const h = String(r.data || '');
+      const desc = (h.match(/<meta (?:name="description"|property="og:description") content="([^"]*)"/) || [])[1] || '';
+      const m = desc.match(/(\d[\d.,]*)[\s ]*(mil\s+)?(seguidores|followers)/i);
+      if (m) {
+        let n = Number(m[1].replace(/[^\d,]/g, '').replace(/,(?=\d{3}\b)/g, '').replace(',', '.'));
+        if (m[2]) n *= 1000; // "1,2 mil seguidores" (o Facebook costuma mandar o número cheio, mas por via das dúvidas)
+        if (Number.isFinite(n)) return { count: Math.round(n), source: 'facebook_og' };
+      }
+    } catch (_) {}
+    await new Promise((res) => setTimeout(res, 2500));
+  }
+  return { semNumero: true, status: ultimoStatus };
+}
+
 // Seguidores de um perfil do TikTok pela página pública (mesma leitura da busca do You Agency).
+// Retorna { count } | null (perfil não existe/inválido) | { blocked: true } (TikTok bloqueou: não é falha do teste).
 async function fetchTikTokFollowerCount(perfilRaw) {
   const v = String(perfilRaw || '').trim();
   const m = v.match(/tiktok\.com\/@([A-Za-z0-9._]+)/i);
   const user = (m ? m[1] : v).replace(/^@+/, '').replace(/[/?#].*$/, '');
   if (!/^[A-Za-z0-9._]{2,24}$/.test(user)) return null;
-  const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
   for (let t = 0; t < 2; t++) {
+    // 1) Embed do criador (tiktok.com/embed/@perfil): a página de perfil anda bloqueando o servidor
+    //    (devolve 1462 bytes), o embed não. Traz userInfo { uniqueId, followerCount, privateAccount }.
     try {
-      const r = await axios.get('https://www.tiktok.com/@' + user + '?lang=es', { headers: { 'User-Agent': UA, 'Accept-Language': 'es-MX,es;q=0.9' }, timeout: 20000, validateStatus: () => true });
+      const r = await ttGet('https://www.tiktok.com/embed/@' + user, TT_UA_DESK);
+      const h = String(r.data || '');
+      const i = h.indexOf('"userInfo":{');
+      if (i >= 0) {
+        const ui = h.slice(i, h.indexOf('}', i) + 1);
+        const fc = ui.match(/"followerCount":(\d+)/);
+        const un = (ui.match(/"uniqueId":"([^"]+)"/) || [])[1];
+        if (fc && (!un || un.toLowerCase() === user.toLowerCase())) return { count: Number(fc[1]), source: 'tiktok_embed', isPrivate: /"privateAccount":true/.test(ui) };
+      }
+      if (r.status === 400 && /Frontity/i.test(h)) return null; // embed responde 400 quando o perfil não existe
+    } catch (_) {}
+    // 2) Página do perfil (fallback)
+    try {
+      const r = await ttGet('https://www.tiktok.com/@' + user + '?lang=es', TT_UA_MOB);
       const mm = String(r.data || '').match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
       if (mm) {
         const d = (JSON.parse(mm[1]).__DEFAULT_SCOPE__ || {})['webapp.user-detail'] || {};
@@ -4606,19 +4673,61 @@ async function fetchTikTokFollowerCount(perfilRaw) {
         if (Number(d.statusCode) === 10221 || Number(d.statusCode) === 10202) return null; // perfil não existe
       }
     } catch (_) {}
-    await new Promise((res) => setTimeout(res, 4000)); // página de verificação: espera e tenta 1x
+    ttMarcarBloqueio(); // sem os dados = página de verificação/403: pausa antes de tentar de novo
   }
-  return null;
+  return { blocked: true };
+}
+
+// Curtidas de um vídeo do TikTok. Página mobile: o item vem no HTML e o 1º "diggCount" depois do
+// "id" do vídeo é o dele. Página desktop: itemStruct em webapp.video-detail.
+// Retorna { count } | null (link inválido) | { blocked: true }.
+// campo: 'diggCount' (curtidas, padrão) ou 'playCount' (visualizações) — mesma página do vídeo.
+async function fetchTikTokVideoLikeCount(linkRaw, campo = 'diggCount') {
+  const link = String(linkRaw || '').trim();
+  if (!/^https?:\/\/([a-z0-9-]+\.)*tiktok\.com\/@[^/]+\/(video|photo)\/\d+/i.test(link)) return null;
+  const id = (link.match(/\/(?:video|photo)\/(\d+)/) || [])[1];
+  for (let t = 0; t < 2; t++) {
+    try {
+      const r = await ttGet(link, TT_UA_MOB);
+      const h = String(r.data || '');
+      const i = h.indexOf('"id":"' + id + '"');
+      if (i >= 0) { const m = h.slice(i, i + 20000).match(new RegExp('"' + campo + '":"?(\\d+)')); if (m) return { count: Number(m[1]), source: 'tiktok_video' }; }
+    } catch (_) {}
+    try {
+      const r = await ttGet(link, TT_UA_DESK);
+      const mm = String(r.data || '').match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
+      if (mm) {
+        const d = (JSON.parse(mm[1]).__DEFAULT_SCOPE__ || {})['webapp.video-detail'] || {};
+        const it = d.itemInfo && d.itemInfo.itemStruct;
+        if (it) { const st = it.statsV2 || it.stats || {}; const n = Number(st[campo]); if (Number.isFinite(n)) return { count: n, source: 'tiktok_video' }; }
+      }
+    } catch (_) {}
+    ttMarcarBloqueio();
+  }
+  return { blocked: true };
 }
 
 async function serviceTestCheckOne(col, rec) {
-  // Facebook: ainda não há medição automática. Não marca falha.
-  if (rec && rec.rede === 'facebook') return { ok: false, skipped: 'rede_sem_medicao' };
-  // TikTok: seguidores pela página pública do perfil.
-  if (rec && rec.rede === 'tiktok') {
-    const tt = await fetchTikTokFollowerCount(rec.perfil);
+  // Facebook: só SEGUIDORES (perfil/página) têm medição; curtidas/visualizações ainda não.
+  if (rec && rec.rede === 'facebook' && !/seguidor/i.test(String(rec.tipo || ''))) return { ok: false, skipped: 'rede_sem_medicao' };
+  // TikTok: seguidores pela página do perfil; curtidas e visualizações pela página do vídeo (o "perfil" é o link do vídeo).
+  // Facebook: seguidores pela prévia pública (og:description "N seguidores").
+  if (rec && (rec.rede === 'tiktok' || rec.rede === 'facebook')) {
+    const tt = rec.rede === 'facebook' ? await fetchFacebookFollowerCount(rec.perfil)
+      : (/curtida/i.test(String(rec.tipo || '')) ? await fetchTikTokVideoLikeCount(rec.perfil)
+        : (/visualiz|views/i.test(String(rec.tipo || '')) ? await fetchTikTokVideoLikeCount(rec.perfil, 'playCount') : await fetchTikTokFollowerCount(rec.perfil)));
+    if (tt && tt.semNumero) {
+      // Página abriu mas o Facebook não mostrou o número (perfil com seguidores ocultos, login): não marca X.
+      try { await col.updateOne({ _id: rec._id }, { $set: { lastCheckError: 'facebook_sem_numero', lastCheckErrorAt: new Date().toISOString() } }); } catch (_) {}
+      return { ok: false, semNumero: true };
+    }
+    if (tt && tt.blocked) {
+      // Bloqueio do TikTok não é defeito do teste: NÃO marca X (senão a linha seria ignorada para sempre).
+      try { await col.updateOne({ _id: rec._id }, { $set: { lastCheckError: 'tiktok_bloqueio', lastCheckErrorAt: new Date().toISOString() } }); } catch (_) {}
+      return { ok: false, blocked: true };
+    }
     if (!tt) {
-      try { await col.updateOne({ _id: rec._id }, { $set: { measureFailed: true, measureFailedAt: new Date().toISOString(), measureFailReason: 'tiktok_fetch_failed', updatedAt: new Date().toISOString() }, $inc: { measureFailCount: 1 } }); } catch (_) {}
+      try { await col.updateOne({ _id: rec._id }, { $set: { measureFailed: true, measureFailedAt: new Date().toISOString(), measureFailReason: rec.rede + '_fetch_failed', updatedAt: new Date().toISOString() }, $inc: { measureFailCount: 1 } }); } catch (_) {}
       return { ok: false };
     }
     const count = tt.count;
@@ -4628,7 +4737,7 @@ async function serviceTestCheckOne(col, rec) {
     const point = { at: new Date().toISOString(), count, source: tt.source };
     if (hist.length && brtDayKey(hist[hist.length - 1].at) === brtDayKey(Date.now())) hist[hist.length - 1] = point; else hist.push(point);
     if (hist.length > 180) hist = hist.slice(-180);
-    await col.updateOne({ _id: rec._id }, { $set: { atual: count, atualSource: tt.source, atualHidden: false, pico, quedaPct, history: hist, measureFailed: false, lastCheckAt: new Date().toISOString(), updatedAt: new Date().toISOString() } });
+    await col.updateOne({ _id: rec._id }, { $set: { atual: count, atualSource: tt.source, atualHidden: false, pico, quedaPct, history: hist, measureFailed: false, lastCheckAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, $unset: { lastCheckError: '', lastCheckErrorAt: '' } });
     return { ok: true, count, pico, quedaPct, source: tt.source };
   }
   // Tipo CURTIDAS → o "perfil" é o LINK DO POST; medimos as CURTIDAS ATUAIS do post
@@ -4667,27 +4776,65 @@ async function serviceTestCheckOne(col, rec) {
   await col.updateOne({ _id: rec._id }, { $set: { atual: count, atualSource: source, atualHidden: false, pico, quedaPct, history: hist, measureFailed: false, lastCheckAt: new Date().toISOString(), updatedAt: new Date().toISOString() } });
   return { ok: true, count, pico, quedaPct, source };
 }
-// Checa TODOS os testes (usado pelo cron das 12h e pelo botão "Checar todos agora").
+// Checagem dos testes: um job por vez (cron das 12h, "Checar todos", "Checar selecionados").
+// O painel acompanha por /check-status e pode PAUSAR: termina a linha em andamento, para e guarda as
+// linhas que faltam em __svcJob.pausado; "Continuar" retoma só essas.
 let __serviceTestsRunning = false;
-async function runServiceTestsDailyCheck() {
+const __svcJob = { running: false, origem: '', rede: '', total: 0, feitos: 0, ok: 0, fail: 0, pausar: false, pausado: null, inicio: null, fim: null, ultimo: null };
+function svcJobStatus() {
+  const j = __svcJob;
+  return { running: j.running, origem: j.origem, rede: j.rede, total: j.total, feitos: j.feitos, ok: j.ok, fail: j.fail, pausando: j.running && j.pausar,
+    pausado: j.pausado ? { rede: j.pausado.rede, origem: j.pausado.origem, restantes: j.pausado.ids.length, feitos: j.pausado.feitos, total: j.pausado.total } : null,
+    inicio: j.inicio, fim: j.fim, ultimo: j.ultimo };
+}
+// Roda a checagem de uma lista de registros. `origem`: 'cron' | 'todos' | 'selecionados' | 'continuar'.
+async function runServiceTestsJob(recs, { rede = '', origem = '', ignored = 0 } = {}) {
   if (__serviceTestsRunning) return { skipped: true, reason: 'running' };
   __serviceTestsRunning = true;
-  const out = { checked: 0, ok: 0, fail: 0, ignored: 0, failedIds: [] };
+  const out = { checked: 0, ok: 0, fail: 0, ignored, failedIds: [] };
+  Object.assign(__svcJob, { running: true, origem, rede, total: recs.length, feitos: 0, ok: 0, fail: 0, pausar: false, pausado: null, inicio: new Date().toISOString(), fim: null });
   try {
     const col = await getCollection('service_tests');
-    // Ignora linhas já marcadas como falha (perfil caiu/sumiu) — não tenta medir de novo.
-    const recs = await col.find({ measureFailed: { $ne: true } }).toArray();
-    out.ignored = await col.countDocuments({ measureFailed: true }).catch(() => 0);
-    for (const rec of recs) {
+    let ttBloqueiosSeguidos = 0;
+    for (let i = 0; i < recs.length; i++) {
+      if (__svcJob.pausar) {
+        const ids = recs.slice(i).map((r) => String(r._id));
+        __svcJob.pausado = { rede, origem, ids, feitos: i, total: recs.length };
+        out.paused = true; out.restantes = ids.length;
+        break;
+      }
+      const rec = recs[i];
+      const ehTT = rec.rede === 'tiktok';
+      // TikTok bloqueou 3 vezes seguidas (mesmo com as pausas): deixa o resto do TikTok para a próxima rodada.
+      if (ehTT && ttBloqueiosSeguidos >= 3) { out.tiktokAdiados = (out.tiktokAdiados || 0) + 1; __svcJob.feitos++; continue; }
       out.checked++;
-      let ok = false;
-      try { const r = await serviceTestCheckOne(col, rec); ok = !!(r && r.ok); } catch (_) { ok = false; }
-      if (ok) out.ok++; else { out.fail++; out.failedIds.push(String(rec._id)); }
-      await new Promise((res) => setTimeout(res, 400));
+      let ok = false, r = null;
+      try { r = await serviceTestCheckOne(col, rec); ok = !!(r && r.ok); } catch (_) { ok = false; }
+      if (ehTT) ttBloqueiosSeguidos = (r && r.blocked) ? ttBloqueiosSeguidos + 1 : 0;
+      if (ok) out.ok++;
+      else if (r && r.skipped) { out.semMedicao = (out.semMedicao || 0) + 1; } // tipo sem medição (FB curtidas/views): não é falha
+      else { out.fail++; out.failedIds.push(String(rec._id)); }
+      __svcJob.feitos++; __svcJob.ok = out.ok; __svcJob.fail = out.fail;
+      if (!ehTT) await new Promise((res) => setTimeout(res, 400)); // TikTok já tem o ritmo próprio (ttGet)
     }
   } catch (e) { out.error = e && e.message; }
+  __svcJob.running = false; __svcJob.pausar = false; __svcJob.fim = new Date().toISOString();
+  __svcJob.ultimo = { origem, rede, ok: out.ok, fail: out.fail, ignored: out.ignored, paused: !!out.paused, restantes: out.restantes || 0, tiktokAdiados: out.tiktokAdiados || 0, failedIds: out.failedIds.slice(0, 500), fim: __svcJob.fim };
   __serviceTestsRunning = false;
   return out;
+}
+function svcFiltroRede(rede) {
+  return rede === 'tiktok' || rede === 'facebook' ? { rede } : (rede === 'instagram' ? { rede: { $nin: ['tiktok', 'facebook'] } } : {});
+}
+// Checa TODOS os testes (cron das 12h sem `rede`; botão "Checar todos agora" com a rede da aba aberta).
+async function runServiceTestsDailyCheck(rede, origem) {
+  if (__serviceTestsRunning) return { skipped: true, reason: 'running' };
+  const col = await getCollection('service_tests');
+  // Ignora linhas já marcadas como falha (perfil caiu/sumiu) — não tenta medir de novo.
+  const fRede = svcFiltroRede(rede);
+  const recs = await col.find({ ...fRede, measureFailed: { $ne: true } }).toArray();
+  const ignored = await col.countDocuments({ ...fRede, measureFailed: true }).catch(() => 0);
+  return runServiceTestsJob(recs, { rede: rede || '', origem: origem || 'cron', ignored });
 }
 // Agenda o check diário às 12h BRT (12:00 BRT = 15:00 UTC).
 let __serviceTestsTimer = null;
@@ -5020,7 +5167,13 @@ app.post('/api/painel/testes-servicos/check', requireAdmin, async (req, res) => 
     const col = await getCollection('service_tests');
     const rec = await col.findOne({ _id: new ObjectId(id) });
     if (!rec) return res.status(404).json({ ok: false, error: 'not_found' });
+    if (rec.rede === 'tiktok' && __ttPace.cooldownUntil > Date.now()) {
+      return res.status(429).json({ ok: false, error: 'tiktok_pausa', message: 'TikTok em pausa anti-bloqueio. Tente de novo em ' + Math.ceil((__ttPace.cooldownUntil - Date.now()) / 1000) + 's.' });
+    }
     const r = await serviceTestCheckOne(col, rec);
+    if (r && r.blocked) return res.status(429).json({ ok: false, error: 'tiktok_bloqueio', message: 'O TikTok bloqueou a leitura agora. Pausa de 3 min; a linha NÃO foi marcada com X.' });
+    if (r && r.skipped) return res.status(422).json({ ok: false, error: 'sem_medicao', message: 'Esse tipo do Facebook ainda não tem medição automática (só seguidores de perfil/página).' });
+    if (r && r.semNumero) return res.status(502).json({ ok: false, error: 'facebook_sem_numero', message: 'O Facebook abriu a página mas não mostrou o número de seguidores (perfil com seguidores ocultos?). A linha NÃO foi marcada com X.' });
     if (!r.ok) return res.status(502).json({ ok: false, error: 'check_failed', message: 'Não foi possível obter os seguidores (RocketAPI e Apify falharam).' });
     return res.json({ ok: true, count: r.count, pico: r.pico, quedaPct: r.quedaPct, source: r.source });
   } catch (e) { return res.status(500).json({ ok: false, error: (e && e.message) || 'internal' }); }
@@ -5131,32 +5284,65 @@ app.post('/api/painel/testes-servicos/refil-bulk', requireAdmin, async (req, res
     return res.json(out);
   } catch (e) { return res.status(500).json({ ok: false, error: (e && e.message) || 'internal' }); }
 });
-// Checa TODOS agora (botão do topo)
+// Checa TODOS agora (botão do topo) — roda em segundo plano; o painel acompanha por /check-status.
+function svcJobMinutos(recs) {
+  const nTT = recs.filter((r) => r.rede === 'tiktok').length;
+  return Math.max(1, Math.ceil((nTT * (TT_GAP_MS + TT_JITTER_MS / 2) + (recs.length - nTT) * 1500) / 60000));
+}
 app.post('/api/painel/testes-servicos/check-all', requireAdmin, async (req, res) => {
-  try { const r = await runServiceTestsDailyCheck(); return res.json({ ok: true, result: r }); }
+  try {
+    const rede = String((req.body && req.body.rede) || '').toLowerCase();
+    if (__serviceTestsRunning) return res.json({ ok: false, error: 'Já tem uma checagem rodando (cron das 12h ou outro clique). Pause ela ou espere terminar.', status: svcJobStatus() });
+    const r0 = ['instagram', 'tiktok', 'facebook'].includes(rede) ? rede : '';
+    const col = await getCollection('service_tests');
+    const recs = await col.find({ ...svcFiltroRede(r0), measureFailed: { $ne: true } }).toArray();
+    const ignored = await col.countDocuments({ ...svcFiltroRede(r0), measureFailed: true }).catch(() => 0);
+    runServiceTestsJob(recs, { rede: r0, origem: 'todos', ignored }).then((r) => { try { console.log('🧪 [testes-servicos] checar todos (' + (r0 || 'todas') + '):', JSON.stringify({ ...r, failedIds: undefined })); } catch (_) {} }).catch(() => {});
+    return res.json({ ok: true, background: true, total: recs.length, minutos: svcJobMinutos(recs), status: svcJobStatus() });
+  }
   catch (e) { return res.status(500).json({ ok: false, error: (e && e.message) || 'internal' }); }
 });
-// Checa os SELECIONADOS agora (checkboxes das linhas)
+// Checa os SELECIONADOS agora (checkboxes das linhas) — também em segundo plano, pausável.
 app.post('/api/painel/testes-servicos/check-bulk', requireAdmin, async (req, res) => {
   try {
     const { ObjectId } = require('mongodb');
     const ids = (Array.isArray(req.body && req.body.ids) ? req.body.ids : []).filter((x) => /^[0-9a-fA-F]{24}$/.test(String(x))).slice(0, 500);
     if (!ids.length) return res.status(400).json({ ok: false, error: 'no_ids' });
+    if (__serviceTestsRunning) return res.json({ ok: false, error: 'Já tem uma checagem rodando (cron das 12h ou outro clique). Pause ela ou espere terminar.', status: svcJobStatus() });
     const col = await getCollection('service_tests');
-    const out = { pedidos: ids.length, checados: 0, falhas: 0, linhas: [] };
-    for (const id of ids) {
-      try {
-        const rec = await col.findOne({ _id: new ObjectId(id) });
-        if (!rec) { out.falhas++; continue; }
-        const r = await serviceTestCheckOne(col, rec);
-        if (r && r.ok) { out.checados++; out.linhas.push({ id, count: r.count, pico: r.pico, quedaPct: r.quedaPct, source: r.source }); }
-        else { out.falhas++; out.linhas.push({ id, erro: true }); }
-      } catch (_) { out.falhas++; out.linhas.push({ id, erro: true }); }
-      await new Promise((r2) => setTimeout(r2, 200)); // rate-limit gentil no RocketAPI
-    }
-    return res.json({ ok: true, result: out });
+    const docs = await col.find({ _id: { $in: ids.map((x) => new ObjectId(x)) } }).toArray();
+    const byId = new Map(docs.map((d) => [String(d._id), d]));
+    const recs = ids.map((x) => byId.get(String(x))).filter(Boolean); // mantém a ordem da tela
+    const rede = String((req.body && req.body.rede) || '').toLowerCase();
+    runServiceTestsJob(recs, { rede, origem: 'selecionados' }).then((r) => { try { console.log('🧪 [testes-servicos] checar selecionados:', JSON.stringify({ ...r, failedIds: undefined })); } catch (_) {} }).catch(() => {});
+    return res.json({ ok: true, background: true, total: recs.length, minutos: svcJobMinutos(recs), status: svcJobStatus() });
   } catch (e) { return res.status(500).json({ ok: false, error: (e && e.message) || 'internal' }); }
 });
+// Progresso da checagem em andamento (o painel consulta a cada 2s).
+app.get('/api/painel/testes-servicos/check-status', requireAdmin, (req, res) => res.json({ ok: true, status: svcJobStatus() }));
+// Pausar: termina a linha que está sendo medida e para; guarda as que faltam.
+app.post('/api/painel/testes-servicos/check-pause', requireAdmin, (req, res) => {
+  if (!__svcJob.running) return res.json({ ok: false, error: 'Nenhuma checagem rodando.', status: svcJobStatus() });
+  __svcJob.pausar = true;
+  return res.json({ ok: true, status: svcJobStatus() });
+});
+// Continuar: retoma só as linhas que faltavam quando pausou.
+app.post('/api/painel/testes-servicos/check-resume', requireAdmin, async (req, res) => {
+  try {
+    const { ObjectId } = require('mongodb');
+    const pz = __svcJob.pausado;
+    if (!pz || !pz.ids.length) return res.json({ ok: false, error: 'Não tem checagem pausada.', status: svcJobStatus() });
+    if (__serviceTestsRunning) return res.json({ ok: false, error: 'Já tem uma checagem rodando.', status: svcJobStatus() });
+    const col = await getCollection('service_tests');
+    const docs = await col.find({ _id: { $in: pz.ids.map((x) => new ObjectId(x)) } }).toArray();
+    const byId = new Map(docs.map((d) => [String(d._id), d]));
+    const recs = pz.ids.map((x) => byId.get(x)).filter(Boolean);
+    runServiceTestsJob(recs, { rede: pz.rede, origem: 'continuar' }).then((r) => { try { console.log('🧪 [testes-servicos] continuar:', JSON.stringify({ ...r, failedIds: undefined })); } catch (_) {} }).catch(() => {});
+    return res.json({ ok: true, background: true, total: recs.length, minutos: svcJobMinutos(recs), status: svcJobStatus() });
+  } catch (e) { return res.status(500).json({ ok: false, error: (e && e.message) || 'internal' }); }
+});
+// Descartar a checagem pausada (some o "Continuar").
+app.post('/api/painel/testes-servicos/check-discard', requireAdmin, (req, res) => { __svcJob.pausado = null; return res.json({ ok: true, status: svcJobStatus() }); });
 
 // Follow-up diário do bot (IA WhatsApp): /painel/ia-followup + geração sob demanda.
 try { require('./precosTestes.js').registerPrecosTestes(app, { requireAdmin }); } catch (e) { try { console.error('⚠️ precos-testes não registrado:', e && e.message); } catch (_) {} }
@@ -5232,6 +5418,21 @@ app.get('/api/painel/ia-crm/conversations', requireAdmin, async (req, res) => {
     else if (telsBloqueados.length) pipeline.push({ $match: { phone: { $nin: telsBloqueados } } });
     if (scope === 'new') pipeline.push({ $match: { importedFrom: { $ne: 'datacrazy' } } });
     else if (scope === 'legacy') pipeline.push({ $match: { importedFrom: 'datacrazy' } });
+    // Busca (?q=): procura em TODO o histórico, não só nas 300 conversas mais recentes.
+    // Telefone com ou sem 55 e com ou sem o 9; texto = nome do contato.
+    {
+      const q = String(req.query.q || '').trim();
+      const dig = q.replace(/\D/g, '');
+      if (dig.length >= 4 && dig.length >= q.replace(/[\s()+-]/g, '').length - 1) {
+        let loc = dig.replace(/^55(?=\d{10,11}$)/, '');
+        const vs = [loc];
+        if (loc.length === 11 && loc[2] === '9') vs.push(loc.slice(0, 2) + loc.slice(3));
+        if (loc.length === 10) vs.push(loc.slice(0, 2) + '9' + loc.slice(2));
+        pipeline.push({ $match: { phone: { $regex: (loc.length >= 10 ? '(' + vs.join('|') + ')$' : loc) } } });
+      } else if (q.length >= 3) {
+        pipeline.push({ $match: { name: { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } } });
+      }
+    }
     pipeline.push(
       { $sort: { createdAt: -1 } },
       // `humanOuts` = respostas do ATENDENTE (agent:true), não do bot. É o que
@@ -11329,8 +11530,18 @@ app.get('/api/painel/thankyou-stats', requireAdmin, async (req, res) => {
     const { start, endExclusive } = resolvePanelPeriodRange(req.query.period, req.query.startDate, req.query.endDate);
     const col = await getCollection('checkout_orders');
     const paidOr = [{ status: { $in: ['pago', 'paid'] } }, { 'woovi.status': 'pago' }, { paidAt: { $exists: true, $nin: [null, ''] } }, { 'woovi.paidAt': { $exists: true, $nin: [null, ''] } }, { 'paghiper.paidAt': { $exists: true, $nin: [null, ''] } }];
-    const baseAnd = [{ $or: paidOr }];
-    if (start && endExclusive) baseAnd.push({ createdAt: { $gte: start.toISOString(), $lt: endExclusive.toISOString() } });
+    // Base = só pedidos que PODEM cair na tela de obrigado: do SITE (o bot paga no WhatsApp), sem upsell
+    // (pago dentro do /pedido) e sem extensão de refil, criados depois que a medição entrou no ar
+    // (1º thankYouViewedAt). Antes, a base era todo pago desde sempre e o % saía ~20% em vez de ~60%.
+    const __tyIni = await (async () => { try { const d = await col.find({ thankYouViewedAt: { $exists: true, $nin: [null, ''] } }).sort({ thankYouViewedAt: 1 }).limit(1).project({ thankYouViewedAt: 1 }).toArray(); return d[0] ? new Date(d[0].thankYouViewedAt) : null; } catch (_) { return null; } })();
+    const ini = (__tyIni && (!start || __tyIni > start)) ? __tyIni : start;
+    const baseAnd = [{ $or: paidOr }, { 'upsell.isUpsell': { $ne: true } }, { tipo: { $not: /refil/i } }, { correlationID: { $not: /^WppAgent_/ } }, { 'additionalInfoMap.source': { $ne: 'wpp_agent' } }, { additionalInfo: { $not: { $elemMatch: { key: 'source', value: 'wpp_agent' } } } }];
+    if (ini || endExclusive) {
+      const rS = {}, rD = {};
+      if (ini) { rS.$gte = ini.toISOString(); rD.$gte = ini; }
+      if (endExclusive) { rS.$lt = endExclusive.toISOString(); rD.$lt = endExclusive; }
+      baseAnd.push({ $or: [{ createdAt: rS }, { createdAt: rD }] });
+    }
     const paidOrders = await col.countDocuments({ $and: baseAnd });
     const viewedOrders = await col.countDocuments({ $and: baseAnd.concat([{ thankYouViewedAt: { $exists: true, $nin: [null, ''] } }]) });
     const pct = paidOrders > 0 ? Math.round((viewedOrders / paidOrders) * 1000) / 10 : 0;
@@ -11931,7 +12142,7 @@ async function runLtvD2Sweep({ dryRun = true, capOverride = null } = {}) {
   const upperMs = now - days * 86400000;            // paidAt <= now - Ddias (já passou de D+dias)
   const lowerMs = now - (days + 2) * 86400000;      // janela: até 2 dias além (evita backfill antigo)
   const paidOr = [{ status: 'pago' }, { 'woovi.status': 'pago' }, { paidAt: { $exists: true, $nin: [null, ''] } }, { 'woovi.paidAt': { $exists: true, $nin: [null, ''] } }, { 'paghiper.paidAt': { $exists: true, $nin: [null, ''] } }];
-  const projection = { customer: 1, additionalInfoMapPaid: 1, additionalInfoPaid: 1, additionalInfoMap: 1, additionalInfo: 1, tipo: 1, tipoServico: 1, instagramUsername: 1, instauser: 1, identifier: 1, correlationID: 1, 'woovi.identifier': 1, 'woovi.paidAt': 1, 'paghiper.transactionId': 1, 'paghiper.paidAt': 1, 'expay.transactionId': 1, paidAt: 1, createdAt: 1, ltvD2SentAt: 1, 'fama24h.orderId': 1, 'fornecedor_social.orderId': 1, 'topfama.orderId': 1, 'fama24h_multi.orders': 1, 'fornecedor_social_multi.orders': 1 };
+  const projection = { customer: 1, additionalInfoMapPaid: 1, additionalInfoPaid: 1, additionalInfoMap: 1, additionalInfo: 1, tipo: 1, tipoServico: 1, instagramUsername: 1, instauser: 1, identifier: 1, correlationID: 1, 'woovi.identifier': 1, 'woovi.paidAt': 1, 'paghiper.transactionId': 1, 'paghiper.paidAt': 1, 'expay.transactionId': 1, paidAt: 1, createdAt: 1, ltvD2SentAt: 1, 'fama24h.orderId': 1, 'fama24h.provider': 1, 'fama24h.status': 1, 'fornecedor_social.orderId': 1, 'fornecedor_social.provider': 1, 'fornecedor_social.status': 1, 'topfama.orderId': 1, 'topfama.provider': 1, 'fama24h_multi.orders': 1, 'fama24h_multi.provider': 1, 'fornecedor_social_multi.orders': 1, provider: 1, categoria: 1 };
   const orders = await col.find({ $or: paidOr }, { projection }).sort({ paidAt: -1, 'woovi.paidAt': -1, createdAt: -1, _id: -1 }).limit(8000).toArray();
   const getPaidMs = (o) => { let best = 0; for (const x of [o.paidAt, o.woovi && o.woovi.paidAt, o.paghiper && o.paghiper.paidAt, o.createdAt]) { const t = x ? new Date(String(x)).getTime() : 0; if (Number.isFinite(t) && t > best) best = t; } return best; };
   // Tipos de serviço habilitados para o LTV automático (config do admin).
@@ -11939,7 +12150,8 @@ async function runLtvD2Sweep({ dryRun = true, capOverride = null } = {}) {
   const wabaCfg = await getWabaConfig();
   const willSend = !dryRun && wabaCfg.configured;
   if (willSend) { try { await ensureLtvCouponPool(); } catch (_) {} }
-  const stats = { scanned: orders.length, eligible: 0, sent: 0, failed: 0, skip_window: 0, skip_already: 0, skip_no_phone: 0, skip_no_ig: 0, skip_optout: 0, skip_blacklist: 0, skip_dup: 0, skip_not_completed: 0, skip_cooldown: 0 };
+  const stats = { scanned: orders.length, eligible: 0, sent: 0, failed: 0, skip_window: 0, skip_already: 0, skip_no_phone: 0, skip_no_ig: 0, skip_optout: 0, skip_blacklist: 0, skip_dup: 0, skip_not_completed: 0, skip_cooldown: 0, notCompletedSample: [] };
+  let __d2ProvMap = {}; try { __d2ProvMap = (await getServiceTypeProvidersCached()) || {}; } catch (_) {}
   // Mapa telefone → pedido MAIS RECENTE do cliente (orders já vem ordenado por paidAt DESC).
   // A mensagem de LTV referencia o ÚLTIMO pedido, mesmo que o D+2 tenha disparado por um anterior.
   const latestByPhone = new Map();
@@ -11999,11 +12211,14 @@ async function runLtvD2Sweep({ dryRun = true, capOverride = null } = {}) {
     // (completed) no fornecedor. Se ainda está processando/não despachado, PULA — volta a
     // ser elegível no próximo ciclo, quando concluir.
     {
-      const provs = fqCollectProviderOrders(refOrder);
-      const main = provs[0] || null; // pedido principal (do último pedido) no fornecedor
+      // Pedido principal no fornecedor REAL (o carimbado no pedido; sem carimbo, o do Gerenciamento de
+      // Tipos) — mesma regra da coluna Status de Vendas. Antes deduzia pelo tamanho do orderId e mandava
+      // WorldOfSMM/JAP (IDs > 1 milhão) para a Fama24h, que não existe mais: tudo voltava "não concluído".
+      const main = mainProviderSlotOf(refOrder, __d2ProvMap);
+      const mainOid = main ? String((main.subs && main.subs.length) ? (main.subs.find((x) => x.orderId) || {}).orderId || '' : (main.orderId || '')).trim() : '';
       let mainStatus = '';
-      if (main && main.orderId) { try { mainStatus = await fqFetchProviderStatus(main.provider, main.orderId); } catch (_) { mainStatus = ''; } }
-      if (mainStatus !== 'completed') { stats.skip_not_completed++; continue; }
+      if (main && mainOid) { try { mainStatus = await fqFetchProviderStatus(main.provider, mainOid); } catch (_) { mainStatus = ''; } }
+      if (mainStatus !== 'completed') { stats.skip_not_completed++; if (stats.notCompletedSample.length < 8) stats.notCompletedSample.push({ provider: main ? main.provider : '', orderId: mainOid, status: mainStatus || 'sem_status' }); continue; }
     }
     seenPhones.add(phoneE164);
     stats.eligible++;
@@ -12553,7 +12768,9 @@ const loadServiceVisibility = async () => {
     const out = {
       seguidores: pick('seguidores'),
       curtidas: pick('curtidas'),
-      visualizacoes: pick('visualizacoes')
+      visualizacoes: pick('visualizacoes'),
+      tiktok: pick('tiktok'),
+      facebook: pick('facebook')
     };
     try {
       const alreadyFixed = values && values._autoUnhidCurtidasBrasileiras === true;
@@ -12786,6 +13003,62 @@ const slotRealProvider = (slot, sub, parent) => {
     if (p && SMM_PROVIDERS[p]) return p;
   }
   return SLOT_DEFAULT_PROVIDER[slot] || 'nuvra';
+};
+// Pedido PRINCIPAL de uma venda (não os bumps): orgânicos vão pro slot fornecedor_social, o
+// resto pro fama24h (com fama24h_multi/topfama de reserva). Usado na coluna "Status (fornecedor)"
+// da tela de Vendas. Retorna { slot, provider, orderId, status, remains, checkedAt } ou null.
+const mainProviderSlotOf = (o, provMap) => {
+  try {
+    if (!o || typeof o !== 'object') return null;
+    const _arrT = (arr, k) => { try { const it = Array.isArray(arr) ? arr.find((i) => i && i.key === k) : null; return it ? it.value : ''; } catch (_) { return ''; } };
+    const _info = (k) => (o.additionalInfoMapPaid && o.additionalInfoMapPaid[k]) || (o.additionalInfoMap && o.additionalInfoMap[k]) || _arrT(o.additionalInfoPaid, k) || _arrT(o.additionalInfo, k) || '';
+    const tipo = String(o.tipo || o.tipoServico || _info('tipo_servico') || '').toLowerCase();
+    const cat = String(o.categoria || _info('categoria_servico') || '').toLowerCase();
+    // Fornecedor quando o slot não foi carimbado (pedidos de vários posts): o configurado pro tipo
+    // no Gerenciamento de Tipos (o mesmo que o despacho usou).
+    const pm = provMap || (__serviceTypeProvidersCache && __serviceTypeProvidersCache.values) || {};
+    const provDoTipo = () => {
+      try {
+        if (/curtid|like/.test(cat) || /^curtidas/.test(tipo)) { const k = /brasil/.test(tipo) ? 'curtidas_brasileiras' : (/organic/.test(tipo) ? 'organicos' : 'mistos'); return normalizeSmmProvider((pm.curtidas || {})[k]); }
+        if (/visualiz|view/.test(cat) || /visualiz/.test(tipo)) return normalizeSmmProvider((pm.visualizacoes || {}).visualizacoes_reels);
+        if (/seguid/.test(cat) || /mistos|brasileir/.test(tipo)) return normalizeSmmProvider((pm.seguidores || {})[/brasil/.test(tipo) ? 'brasileiros' : 'mistos']);
+      } catch (_) {}
+      return '';
+    };
+    const ordem = (/organic/.test(tipo) && !/curtid/.test(cat)) ? ['fornecedor_social', 'fama24h', 'fama24h_multi', 'topfama'] : ['fama24h', 'fama24h_multi', 'fornecedor_social', 'topfama'];
+    for (const slot of ordem) {
+      const v = o[slot];
+      if (!v || typeof v !== 'object' || Array.isArray(v)) continue;
+      const subs = Array.isArray(v.orders) ? v.orders.filter((x) => x && typeof x === 'object') : [];
+      if (!v.orderId && !v.status && !v.error && !subs.length) continue;
+      const carimbo = normalizeSmmProvider(v.provider || (subs[0] && subs[0].provider) || o.provider);
+      const provider = (carimbo && SMM_PROVIDERS[carimbo]) ? carimbo : (slot === 'fama24h_multi' ? (provDoTipo() || slotRealProvider(slot, v, o)) : slotRealProvider(slot, v, o));
+      if (subs.length) {
+        // Vários posts: um sub-pedido por post. Status = o pior entre eles (erro > pendente > andamento > concluído).
+        const lista = subs.map((x) => ({ orderId: (x.orderId != null && x.orderId !== '') ? String(x.orderId) : '', status: String((x.statusPayload && x.statusPayload.status) || x.status || ((x.response && x.response.error) ? 'error' : '') || ''), remains: (x.statusPayload && x.statusPayload.remains != null) ? Number(x.statusPayload.remains) : null }));
+        return { slot, provider, carimbado: !!(carimbo && SMM_PROVIDERS[carimbo]), orderId: lista.map((x) => x.orderId).filter(Boolean).join(','), subs: lista, status: agregaStatusSubs(lista.map((x) => (x.orderId ? x.status : 'error'))), remains: lista.some((x) => x.remains != null) ? lista.reduce((a, x) => a + (x.remains || 0), 0) : null, checkedAt: v.lastStatusAt || null };
+      }
+      const sp = (v.statusPayload && typeof v.statusPayload === 'object') ? v.statusPayload : {};
+      return {
+        slot, provider, carimbado: !!(carimbo && SMM_PROVIDERS[carimbo]), orderId: (v.orderId != null && v.orderId !== '') ? String(v.orderId) : '',
+        status: String(sp.status || v.status || (v.error ? 'error' : '') || ''), remains: (sp.remains != null ? sp.remains : (v.remains != null ? v.remains : null)),
+        checkedAt: v.lastStatusAt || v.statusCheckedAt || null
+      };
+    }
+  } catch (_) {}
+  return null;
+};
+// Junta status de vários sub-pedidos no "pior" deles, pra coluna de Vendas.
+const agregaStatusSubs = (arr) => {
+  const s = (arr || []).map((x) => String(x || '').toLowerCase());
+  if (!s.length) return '';
+  if (s.some((x) => !x || /error|fail|erro/.test(x))) return 'error';
+  if (s.some((x) => /cancel|refund/.test(x))) return 'Canceled';
+  if (s.some((x) => /partial/.test(x))) return 'Partial';
+  if (s.some((x) => /pend|created|queue/.test(x))) return 'Pending';
+  if (s.some((x) => /progress|processing/.test(x))) return 'In progress';
+  if (s.every((x) => /complete/.test(x))) return 'Completed';
+  return arr[0];
 };
 const normalizeProviderStatusText = (data) => {
   const txt = String(data?.status || data?.Status || data?.status_text || data?.statusText || data?.StatusText || '').toLowerCase();
@@ -18681,7 +18954,8 @@ async function queuePaymentRecoveryForNewOrder(col, insertedId, record) {
         const customer = (record && record.customer && typeof record.customer === 'object') ? record.customer : {};
         const to = String(customer.email || '').trim();
         if (!to) return;
-        const hasPix = !!(record?.woovi?.qrCodeImage || record?.woovi?.brCode || record?.expay?.qrCodeImage || record?.expay?.brCode || record?.paghiper?.qrCodeImage || record?.paghiper?.brCode);
+        // You Agency: pedido Xpag (CLABE SPEI ou referência OXXO) também entra na recuperação.
+        const hasPix = !!(record?.woovi?.qrCodeImage || record?.woovi?.brCode || record?.expay?.qrCodeImage || record?.expay?.brCode || record?.paghiper?.qrCodeImage || record?.paghiper?.brCode || (record?.paymentMethod === 'xpag' && (record?.xpag?.clabe || record?.xpag?.reference || record?.xpag?.barcode)));
         if (!hasPix) return;
 
         const dueAtIso = new Date(createdAtMs + (isOrderRecoveryDebugProfile(record) ? (60 * 1000) : (cfg.afterMinutes * 60 * 1000))).toISOString();
@@ -18944,7 +19218,7 @@ const maybeSendPaymentRecoveryEmail = async (record, col) => {
         const woovi = (record && record.woovi && typeof record.woovi === 'object') ? record.woovi : {};
         const expay = (record && record.expay && typeof record.expay === 'object') ? record.expay : {};
         const paghiper = (record && record.paghiper && typeof record.paghiper === 'object') ? record.paghiper : {};
-        const hasPix = !!(woovi.qrCodeImage || woovi.brCode || expay.qrCodeImage || expay.brCode || paghiper.qrCodeImage || paghiper.brCode);
+        const hasPix = !!(woovi.qrCodeImage || woovi.brCode || expay.qrCodeImage || expay.brCode || paghiper.qrCodeImage || paghiper.brCode || (record.paymentMethod === 'xpag' && record.xpag && (record.xpag.clabe || record.xpag.reference || record.xpag.barcode)));
         if (!hasPix) {
             await markSkip('missing_pix');
             return;
@@ -20789,8 +21063,10 @@ async function fqHoldIfBlocked(col, record, req) {
 const REDES_SERVICOS = {
     tiktok_seguidores:          { rede: 'tiktok',   alvo: 'perfil' },
     tiktok_curtidas:            { rede: 'tiktok',   alvo: 'post' },
+    tiktok_curtidas_reais:      { rede: 'tiktok',   alvo: 'post' },
     tiktok_visualizacoes:       { rede: 'tiktok',   alvo: 'post' },
-    facebook_seguidores_perfil: { rede: 'facebook', alvo: 'perfil' },
+    facebook_seguidores:        { rede: 'facebook', alvo: 'perfil' },
+    facebook_seguidores_perfil: { rede: 'facebook', alvo: 'perfil' }, // antigo (compat)
     facebook_seguidores_pagina: { rede: 'facebook', alvo: 'perfil' },
     facebook_curtidas:          { rede: 'facebook', alvo: 'post' },
     facebook_visualizacoes:     { rede: 'facebook', alvo: 'post' },
@@ -21690,7 +21966,7 @@ async function processOrderFulfillment(record, col, req) {
                             const createdCount = orders.filter(o => o && o.orderId).length;
                             const doneCount = orders.filter(o => o && (o.orderId || o.status === 'duplicate')).length;
                             const overall = doneCount === orders.length ? (createdCount > 0 ? 'created' : 'duplicate') : (createdCount > 0 ? 'partial' : 'error');
-                            await col.updateOne(filter, { $set: { fama24h_multi: { status: overall, requestPayload: { service: serviceId, plan: planFiltered, totalQuantity: qtd, totalQuantitySent: totalSent }, orders, requestedAt: new Date().toISOString() } } });
+                            await col.updateOne(filter, { $set: { fama24h_multi: { status: overall, provider: mainProvider, requestPayload: { service: serviceId, plan: planFiltered, totalQuantity: qtd, totalQuantitySent: totalSent }, orders, requestedAt: new Date().toISOString() } } });
                             try { await broadcastPaymentPaid(identifier, correlationID); } catch(_) {}
                         }
                     }
@@ -23378,19 +23654,9 @@ app.post("/api/check-instagram-profile", async (req, res) => {
         });
     }
 
-    // Verificar Blacklist
-    try {
-        const blacklistCol = await getCollection('blacklist');
-        const blocked = await blacklistCol.findOne({ username: String(username).trim().toLowerCase() });
-        if (blocked) {
-            return res.status(403).json({
-                success: false,
-                error: "blocked_user",
-                message: "Este usuario está bloqueado en el sistema."
-            });
-        }
-    } catch (e) {
-        console.error('Erro ao verificar blacklist:', e);
+    // Verificar Blacklist (@ normalizado: "@user", link do perfil e maiúsculas caem no mesmo bloqueio)
+    if (await blacklistBarra(username, 'site_validacao', req)) {
+        return res.status(403).json({ success: false, error: "blocked_user", message: "Este usuario está bloqueado en el sistema." });
     }
 
     try {
@@ -23502,6 +23768,7 @@ app.post('/api/internal/ia-check-profile', async (req, res) => {
     }
     const raw = String((req.body && req.body.username) || '').trim();
     if (!raw) return res.status(400).json({ success: false, error: 'missing_username' });
+    if (await blacklistBarra(raw, 'bot_whatsapp', req)) return res.json({ success: false, error: 'blocked_user', message: 'Este perfil no puede ser atendido.' });
     const uname = raw.replace(/^@+/, '').replace(/\/+$/, '').split('/').pop().trim();
     if (!uname) return res.status(400).json({ success: false, error: 'missing_username' });
     // 1) RocketAPI direto (rápido; cobre pessoais, criador e business).
@@ -23524,12 +23791,62 @@ app.post('/api/internal/ia-check-profile', async (req, res) => {
 });
 
 // --- Rotas de Blacklist ---
+// @ normalizado do jeito que o cliente pode digitar: "@User", "instagram.com/user/", "user?igsh=...".
+function __blNorm(u) {
+  let v = String(u || '').trim().toLowerCase();
+  const m = v.match(/instagram\.com\/([^/?#\s]+)/); if (m) v = m[1];
+  return v.replace(/[?#].*$/, '').replace(/\/+$/, '').replace(/^@+/, '').trim();
+}
+// Usuário bloqueado? Se sim, registra a tentativa (data, por onde, quantas) no próprio bloqueio.
+async function blacklistBarra(username, via, req) {
+  try {
+    const u = __blNorm(username);
+    if (!u) return false;
+    const col = await getCollection('blacklist');
+    const doc = await col.findOne({ username: { $in: [u, '@' + u] } });
+    if (!doc) return false;
+    const ip = req ? String(req.realIP || req.ip || '') : '';
+    await col.updateOne({ _id: doc._id }, { $set: { lastAttemptAt: new Date().toISOString(), lastAttemptVia: String(via || ''), lastAttemptIp: ip }, $inc: { attempts: 1 } });
+    try { console.log('⛔ [blacklist] @' + u + ' barrado (' + via + ')'); } catch (_) {}
+    return true;
+  } catch (e) { try { console.error('Erro ao verificar blacklist:', e && e.message); } catch (_) {} return false; }
+}
 
 // Listar usuários bloqueados
 app.get('/api/blacklist', adminOnly, async (req, res) => {
     try {
         const col = await getCollection('blacklist');
         const list = await col.find({}).sort({ blockedAt: -1 }).toArray();
+        // Depois do bloqueio: último pedido criado com o @ e última validação feita pelo próprio cliente
+        // (verifyInstagramProfile*). Conferências de fundo (refil/privacidade) não contam como tentativa.
+        try {
+          const users = list.map((b) => __blNorm(b.username)).filter(Boolean);
+          const co = await getCollection('checkout_orders');
+          const vu = await getCollection('validated_insta_users');
+          const [peds, vals] = await Promise.all([
+            co.aggregate([
+              { $match: { $or: [{ instagramUsername: { $in: users } }, { 'additionalInfoMap.instagram_username': { $in: users } }, { 'additionalInfoMapPaid.instagram_username': { $in: users } }] } },
+              { $project: { u: { $toLower: { $ifNull: ['$instagramUsername', { $ifNull: ['$additionalInfoMapPaid.instagram_username', '$additionalInfoMap.instagram_username'] }] } }, createdAt: 1, status: 1, identifier: 1 } },
+              { $sort: { createdAt: -1 } },
+              { $group: { _id: '$u', pedidos: { $push: { at: '$createdAt', status: '$status', id: '$identifier' } } } },
+            ]).toArray(),
+            vu.find({ username: { $in: users } }).project({ username: 1, checks: 1 }).toArray(),
+          ]);
+          const pedMap = new Map(peds.map((x) => [String(x._id || ''), x.pedidos]));
+          const valMap = new Map(vals.map((x) => [x.username, Array.isArray(x.checks) ? x.checks : []]));
+          for (const b of list) {
+            const u = __blNorm(b.username); const desde = String(b.blockedAt || '');
+            const cand = [];
+            if (b.lastAttemptAt) cand.push({ at: String(b.lastAttemptAt), tipo: 'barrado', via: b.lastAttemptVia || '' });
+            const p = (pedMap.get(u) || []).find((x) => String(x.at || '') > desde);
+            if (p) cand.push({ at: String(p.at), tipo: 'pedido', status: p.status || '', id: p.id || '' });
+            const v = (valMap.get(u) || []).filter((c) => c && /^verifyInstagramProfile/i.test(String(c.source || '')) && String(c.checkedAt || '') > desde).sort((a, c) => String(c.checkedAt).localeCompare(String(a.checkedAt)))[0];
+            if (v) cand.push({ at: String(v.checkedAt), tipo: 'validou' });
+            cand.sort((a, c) => c.at.localeCompare(a.at));
+            b.ultimaTentativa = cand[0] || null;
+            b.pedidoDepois = p ? { at: p.at, status: p.status || '', id: p.id || '' } : null;
+          }
+        } catch (e) { try { console.error('blacklist: tentativas', e && e.message); } catch (_) {} }
         res.json({ success: true, blacklist: list });
     } catch (error) {
         console.error('Erro ao listar blacklist:', error);
@@ -23543,7 +23860,8 @@ app.post('/api/blacklist/add', adminOnly, async (req, res) => {
         const { username } = req.body;
         if (!username) return res.status(400).json({ error: 'missing_username' });
         
-        const normalized = String(username).trim().toLowerCase();
+        const normalized = __blNorm(username);
+        if (!normalized) return res.status(400).json({ error: 'missing_username' });
         const col = await getCollection('blacklist');
         await col.updateOne(
             { username: normalized },
@@ -23568,9 +23886,9 @@ app.post('/api/blacklist/remove', adminOnly, async (req, res) => {
         const { username } = req.body;
         if (!username) return res.status(400).json({ error: 'missing_username' });
         
-        const normalized = String(username).trim().toLowerCase();
+        const normalized = __blNorm(username);
         const col = await getCollection('blacklist');
-        await col.deleteOne({ username: normalized });
+        await col.deleteMany({ username: { $in: [normalized, '@' + normalized, String(username).trim().toLowerCase()] } });
         res.json({ success: true, message: 'Usuário desbloqueado com sucesso.' });
     } catch (error) {
         console.error('Erro ao remover da blacklist:', error);
@@ -24505,7 +24823,7 @@ app.post('/api/openpix/webhook', async (req, res) => {
                       const createdCount = orders.filter(o => o && o.orderId).length;
                       const doneCount = orders.filter(o => o && (o.orderId || o.status === 'duplicate')).length;
                       const overall = doneCount === orders.length ? (createdCount > 0 ? 'created' : 'duplicate') : (createdCount > 0 ? 'partial' : 'error');
-                      await col.updateOne(filter, { $set: { fama24h_multi: { status: overall, requestPayload: { service: serviceId, plan: planFiltered, totalQuantity: qtd, totalQuantitySent: totalSent }, orders, requestedAt: new Date().toISOString() } } });
+                      await col.updateOne(filter, { $set: { fama24h_multi: { status: overall, provider: mainProvider, requestPayload: { service: serviceId, plan: planFiltered, totalQuantity: qtd, totalQuantitySent: totalSent }, orders, requestedAt: new Date().toISOString() } } });
                       try { await broadcastPaymentPaid(charge?.identifier, charge?.correlationID); } catch(_) {}
                     }
                   }
@@ -27257,7 +27575,7 @@ app.post('/session/mark-paid', async (req, res) => {
                 const createdCount = orders.filter(o => o && o.orderId).length;
                 const doneCount = orders.filter(o => o && (o.orderId || o.status === 'duplicate')).length;
                 const overall = doneCount === orders.length ? (createdCount > 0 ? 'created' : 'duplicate') : (createdCount > 0 ? 'partial' : 'error');
-                await col.updateOne(filter, { $set: { fama24h_multi: { status: overall, requestPayload: { service: serviceId, plan: planFiltered, totalQuantity: qtd, totalQuantitySent: totalSent }, orders, requestedAt: new Date().toISOString() } } });
+                await col.updateOne(filter, { $set: { fama24h_multi: { status: overall, provider: mainProvider, requestPayload: { service: serviceId, plan: planFiltered, totalQuantity: qtd, totalQuantitySent: totalSent }, orders, requestedAt: new Date().toISOString() } } });
                 try { await broadcastPaymentPaid(identifier, correlationID); } catch(_) {}
               }
             }
@@ -28149,6 +28467,7 @@ app.post('/api/refil/simple', publicIpLimit('refil_simple', 20, 10), async (req,
     // despacho do pedido escolhido (uma compra nova legítima ainda vence a âncora).
     let __usingAnchor = false;
     let __anchorProvider = '';   // só quando o registro da âncora tem provider CONFIRMADO (ex.: SMMHustle)
+    let __anchorAtMs = 0;        // quando a âncora (force-refil) foi criada, se for usada
     try {
       const r2c = await getCollection('refil2_requests');
       const anchorArr = await r2c.find(
@@ -28181,12 +28500,36 @@ app.post('/api/refil/simple', publicIpLimit('refil_simple', 20, 10), async (req,
           famaOrderId = anchorOid;
           __refilLogOrderId = anchorOid;
           __usingAnchor = true;
+          __anchorAtMs = anchorMs;
           if (fr.providerVerified === true && SMM_PROVIDERS[normalizeSmmProvider(fr.provider)]) __anchorProvider = normalizeSmmProvider(fr.provider);
           // O provedor da âncora é resolvido pela MESMA heurística de sempre (tamanho do
           // orderId) — não pelo forceRefil.provider, que em registros antigos foi gravado
           // fixo como 'fama24h' quando na verdade o pedido foi pro Nuvra.
           try { console.log('🔁 [refil/simple] âncora de force-refil', { username, anchorOid }); } catch (_) {}
         }
+      }
+    } catch (_) {}
+
+    // Reposição FORÇADA gravada no próprio pedido (fama24h.reorders[], ex.: reposição de queda
+    // manual no JAP 2971): é o pedido mais novo do perfil, então o refil tem que ir PARA ELE, no
+    // fornecedor dele. Antes, essa reposição só servia para "vencer" a âncora antiga e o refil
+    // voltava para o fama24h.orderId original (ex.: Nuvra 15636, serviço SEM refil → "Refill not
+    // available for this service" para @deborangomes em 14 e 16/11).
+    try {
+      const reos = (order && order.fama24h && Array.isArray(order.fama24h.reorders)) ? order.fama24h.reorders : [];
+      let ultimo = null, ultimoMs = 0;
+      for (const ro of reos) {
+        const oid = String((ro && ro.orderId) || '').trim();
+        const t = (ro && ro.at) ? new Date(String(ro.at)).getTime() : 0;
+        if (/^[0-9]+$/.test(oid) && Number.isFinite(t) && t > ultimoMs) { ultimo = ro; ultimoMs = t; }
+      }
+      const provRe = ultimo ? normalizeSmmProvider(ultimo.provider) : '';
+      if (ultimo && provRe && SMM_PROVIDERS[provRe] && ultimoMs >= __anchorAtMs && ultimoMs >= orderRecencyMs(order)) {
+        famaOrderId = String(ultimo.orderId).trim();
+        __refilLogOrderId = famaOrderId;
+        __usingAnchor = true;
+        __anchorProvider = provRe;
+        try { console.log('🔁 [refil/simple] reposição forçada do pedido', { username, orderId: famaOrderId, provider: provRe }); } catch (_) {}
       }
     } catch (_) {}
 
@@ -28548,7 +28891,7 @@ async function syncSpecialProfileAnchor(username, opts = {}) {
         { 'fama24h.orderId': { $exists: true, $nin: [null, ''] } },
         { $or: [ { instauser: re }, { instagramUsername: re }, { 'additionalInfoMapPaid.instagram_username': re }, { 'additionalInfoMap.instagram_username': re } ] }
       ] },
-      { projection: { 'fama24h.orderId': 1, initialFollowersCount: 1, 'fama24h.requestPayload.quantity': 1, qtd: 1, tipo: 1, tipoServico: 1, paidAt: 1, createdAt: 1, woovi: 1, paghiper: 1 } }
+      { projection: { 'fama24h.orderId': 1, 'fama24h.reorders': 1, initialFollowersCount: 1, 'fama24h.requestPayload.quantity': 1, qtd: 1, tipo: 1, tipoServico: 1, paidAt: 1, createdAt: 1, woovi: 1, paghiper: 1 } }
     ).limit(30).toArray();
     const recency = (o) => { let b = 0; for (const c of [o && o.woovi && o.woovi.paidAt, o && o.paghiper && o.paghiper.paidAt, o && o.paidAt, o && o.createdAt]) { const t = c ? new Date(String(c)).getTime() : 0; if (t > b) b = t; } return b; };
     clientArr.sort((a, b) => recency(b) - recency(a));
@@ -28592,6 +28935,16 @@ async function syncSpecialProfileAnchor(username, opts = {}) {
     if (clientOid && clientMs >= forceMs) anchor = clientOid;
     else if (forceOid) { anchor = forceOid; anchorProv = forceProv; }
     else if (clientOid) anchor = clientOid;
+    // 3) Reposição manual gravada no pedido (fama24h.reorders[], ex.: reposição de queda no JAP 2971):
+    //    se for o evento mais novo, é ela a âncora — o mesmo critério do /api/refil/simple.
+    try {
+      let ro = null, roMs = 0;
+      for (const o of clientArr) for (const r of ((o.fama24h && Array.isArray(o.fama24h.reorders)) ? o.fama24h.reorders : [])) {
+        const t = (r && r.at) ? new Date(String(r.at)).getTime() : 0;
+        if (r && /^[0-9]+$/.test(String(r.orderId || '').trim()) && SMM_PROVIDERS[normalizeSmmProvider(r.provider)] && Number.isFinite(t) && t > roMs) { ro = r; roMs = t; }
+      }
+      if (ro && roMs >= clientMs && roMs >= forceMs) { anchor = String(ro.orderId).trim(); anchorProv = normalizeSmmProvider(ro.provider); }
+    } catch (_) {}
     if (anchor && anchor !== String(doc.orderId || '').trim()) set.orderId = anchor;
     // Fornecedor da âncora (só quando confirmado, ex.: força no SMMHustle). Vazio =
     // reposição segue a heurística de sempre pelo tamanho do orderId.
@@ -32501,6 +32854,16 @@ app.get('/painel/gerenciamento-seguidores', requireAdmin, async (req, res) => {
       return t;
     };
 
+    // Slot com o pedido MAIS RECENTE (fornecedor_social x fama24h): o reenvio de parcial/cancelado
+    // grava o pedido novo num slot, e o painel tem que olhar esse (o último orderId), não o antigo.
+    // Empate/sem data mantém a ordem antiga (fornecedor_social primeiro).
+    const ultimoSlotComPedido = (o, temPedido) => {
+      const cands = ['fornecedor_social', 'fama24h'].filter((f) => o && o[f] && typeof o[f] === 'object' && temPedido(o[f]));
+      if (cands.length <= 1) return cands[0] || null;
+      const ts = (s) => { for (const k of ['reorderAt', 'requestedAt', 'createdAt', 'sentAt']) { const t = Date.parse((s && s[k]) || ''); if (Number.isFinite(t)) return t; } return 0; };
+      return cands.reduce((best, f) => (ts(o[f]) > ts(o[best]) ? f : best), cands[0]);
+    };
+
     const resolveFornecedor = (o) => {
       const isUnknown = (v) => {
         const s = String(v ?? '').toLowerCase().trim();
@@ -32554,7 +32917,8 @@ app.get('/painel/gerenciamento-seguidores', requireAdmin, async (req, res) => {
       // o provedor de verdade vem do `.provider` gravado no despacho/reenvio (ou do último
       // reorder). Assim aparece Nuvra/SMMHustle/TopFama corretamente, não "Fama24h" pra tudo.
       const LABEL = { fornecedor_social: 'Fornecedor Social', fama24h: 'Fama24h', nuvra: 'Nuvra', smmhustle: 'SMMHustle', topfama: 'TopFama', worldsmm: 'WorldSMM' };
-      const CAMPOS = ['fornecedor_social', 'fama24h', 'nuvra', 'topfama'];
+      const ultimo = ultimoSlotComPedido(o, pickProviderOrderId);
+      const CAMPOS = ultimo ? [ultimo] : ['fornecedor_social', 'fama24h', 'nuvra', 'topfama'];
       for (const f of CAMPOS) {
         const sub = o && o[f];
         if (!sub || !pickProviderOrderId(sub)) continue;
@@ -32616,14 +32980,8 @@ app.get('/painel/gerenciamento-seguidores', requireAdmin, async (req, res) => {
         return '';
       };
 
-      const fs = o && o.fornecedor_social ? o.fornecedor_social : null;
-      const fama = o && o.fama24h ? o.fama24h : null;
-
-      const fsOid = pickProviderOrderId(fs);
-      if (fsOid) return fsOid;
-      const famaOid = pickProviderOrderId(fama);
-      if (famaOid) return famaOid;
-      return '';
+      const ultimo = ultimoSlotComPedido(o, pickProviderOrderId);
+      return ultimo ? pickProviderOrderId(o[ultimo]) : '';
     };
 
     const resolveIdentifier = (o) => {
@@ -32669,10 +33027,11 @@ app.get('/painel/gerenciamento-seguidores', requireAdmin, async (req, res) => {
       if (w === '12m' || w === '1ano' || w === '1_ano') return '12m';
       if (w === '6m' || w === '6meses' || w === '6_meses') return '6m';
       if (w === '4m' || w === '4meses' || w === '4_meses') return '4m';
+      if (w === '3m' || w === '3meses' || w === '3_meses' || w === '90') return '3m';
       if (!w && lifetimeOnly) return 'life';
       return '';
     })();
-    const warrantyFilter = (warrantyUi === 'life' || warrantyUi === '12m' || warrantyUi === '6m' || warrantyUi === '4m') ? warrantyUi : '';
+    const warrantyFilter = (warrantyUi === 'life' || warrantyUi === '12m' || warrantyUi === '6m' || warrantyUi === '4m' || warrantyUi === '3m') ? warrantyUi : '';
     const refilExpiredOnly = (refilExpiredFlag || warrantyUi === 'expired');
     const startDateRaw = String(req.query.startDate || '').trim();
     const endDateRaw = String(req.query.endDate || '').trim();
@@ -33440,6 +33799,8 @@ app.get('/painel/gerenciamento-seguidores', requireAdmin, async (req, res) => {
           if (mode !== '6m') return false;
         } else if (warrantyFilter === '4m') {
           if (mode !== '4m') return false;
+        } else if (warrantyFilter === '3m') {
+          if (mode !== '3m') return false;
         }
       } else if (lifetimeOnly) {
         if (r.refilIsLifetime !== true) return false;
@@ -33546,6 +33907,7 @@ app.get('/painel/gerenciamento-seguidores', requireAdmin, async (req, res) => {
       const absDiffAgg = { thresholdAbs: warrantyThresholdAbs, base: 0, gte: 0, lt: 0 };
       const warrantyAgg = {
         life: { key: 'life', label: 'Vitalício', ok: 0, nok: 0, total: 0 },
+        '3m': { key: '3m', label: '3 meses', ok: 0, nok: 0, total: 0 },
         '4m': { key: '4m', label: '4 meses', ok: 0, nok: 0, total: 0 },
         '6m': { key: '6m', label: '6 meses', ok: 0, nok: 0, total: 0 },
         '12m': { key: '12m', label: '1 ano', ok: 0, nok: 0, total: 0 }
@@ -33596,7 +33958,7 @@ app.get('/painel/gerenciamento-seguidores', requireAdmin, async (req, res) => {
         }
         if (abs != null && Number.isFinite(abs)) {
           const mode = String(r && r.refilWarrantyMode ? r.refilWarrantyMode : '').trim().toLowerCase();
-          const wKey = (r && r.refilIsLifetime === true) || mode === 'life' ? 'life' : (mode === '4m' ? '4m' : (mode === '6m' ? '6m' : (mode === '12m' ? '12m' : '')));
+          const wKey = (r && r.refilIsLifetime === true) || mode === 'life' ? 'life' : (mode === '3m' ? '3m' : (mode === '4m' ? '4m' : (mode === '6m' ? '6m' : (mode === '12m' ? '12m' : ''))));
           if (wKey && warrantyAgg[wKey]) {
             warrantyAgg[wKey].total += 1;
             if (abs >= warrantyThresholdAbs) warrantyAgg[wKey].nok += 1;
@@ -33757,11 +34119,13 @@ app.get('/painel/gerenciamento-seguidores', requireAdmin, async (req, res) => {
         if (!c || !c.status) continue;
         const st = String(c.status).toLowerCase();
         const entregue = /complet|conclu/.test(st);
-        if (!entregue && !/cancel|refund|estorn/.test(st)) {
-          r.entregaPendente = true;
-          r.entregaStatus = c.status;
-          r.diffAbs = null; r.diffPct = null; // não trata como queda: pedido ainda não entregue
-        }
+        if (entregue) continue;
+        // Último pedido Parcial ou Cancelado no fornecedor = "Cancelado" (status final, não fica
+        // "Em andamento"). Não é queda: o que falta vai pela Gestão Parcial (reenvio), não pelo refil.
+        r.entregaPendente = true;
+        r.entregaStatus = c.status;
+        r.entregaCancelada = /cancel|refund|estorn|partial|parcial/.test(st);
+        r.diffAbs = null; r.diffPct = null; // não trata como queda: pedido não entregue por inteiro
       }
     } catch (_) {}
 
@@ -41617,6 +41981,454 @@ async function computeMetaAdsData(q) {
   return value;
 }
 
+// ── Track do Site (/painel/track-site) ─────────────────────────────────────────────
+// Tudo que o site registra num período (dias no horário de SP): visitas (page_views),
+// funil por visitante (funil_eventos), perfis validados (validated_insta_users), Pix gerados
+// e pagos (checkout_orders), ofertas (order_bumps) e o áudio da página inicial (audio_logs).
+// Pix gerado = pedido criado no período; pago = desses, os que já foram pagos (coorte).
+const __trackSiteCache = new Map();
+let __trackSiteIdx = false;
+const __TS_PAGINAS = {
+  '/interaccion': 'Página inicial (/interaccion)',
+  '/engajamento': 'Página inicial (/engajamento)',
+  '/servicios-tiktok': 'TikTok',
+  '/servicios-facebook': 'Facebook',
+  '/likes-services': 'Curtidas',
+  '/views-services': 'Visualizações',
+  '/pago': 'Página de pagamento (CLABE/OXXO)',
+  '/servicos-instagram': 'Seguidores',
+  '/servicos-curtidas': 'Curtidas',
+  '/servicos-visualizacoes': 'Visualizações',
+  '/servicos-comentarios': 'Comentários',
+  '/pix': 'Tela do Pix (antiga)',
+};
+const __TS_PAG_SERV = { '/servicos-instagram': 'seguidores', '/servicos-curtidas': 'curtidas', '/likes-services': 'curtidas', '/servicos-visualizacoes': 'visualizacoes', '/views-services': 'visualizacoes', '/servicos-comentarios': 'comentarios', '/servicios-tiktok': 'tiktok', '/servicios-facebook': 'facebook' };
+function __tsProduto(o) {
+  const arr = Array.isArray(o.additionalInfoPaid) ? o.additionalInfoPaid : (Array.isArray(o.additionalInfo) ? o.additionalInfo : []);
+  const m = Object.assign({}, o.additionalInfoMap || {}, o.additionalInfoMapPaid || {});
+  for (const it of arr) { if (it && it.key && m[it.key] == null) m[it.key] = it.value; }
+  const tipo = String(o.tipo || o.tipoServico || m.tipo_servico || '').toLowerCase().trim();
+  let cat = String(m.categoria_servico || '').toLowerCase().trim();
+  if (/^tiktok_/.test(tipo)) cat = 'tiktok';
+  else if (/^facebook_/.test(tipo)) cat = 'facebook';
+  if (!cat) {
+    if (/coment/.test(tipo)) cat = 'comentarios';
+    else if (/visualiz|views|reels/.test(tipo)) cat = 'visualizacoes';
+    else if (/curtid|likes/.test(tipo)) cat = 'curtidas';
+    else if (tipo === 'refil_extensao') cat = 'refil';
+    else cat = 'seguidores';
+  }
+  const nomes = {
+    seguidores: { mistos: 'Seguidores mistos', brasileiros: 'Seguidores brasileiros', organicos: 'Seguidores reais' },
+    curtidas: { mistos: 'Curtidas mistas', curtidas_brasileiras: 'Curtidas brasileiras', brasileiros: 'Curtidas brasileiras', organicos: 'Curtidas reais', curtidas_reais: 'Curtidas reais' },
+  };
+  let nome = (nomes[cat] && nomes[cat][tipo]) || ({ visualizacoes: 'Visualizações', comentarios: 'Comentários', refil: 'Extensão de refil' })[cat] || (tipo || 'Outro');
+  if (cat === 'tiktok' || cat === 'facebook') nome = (cat === 'tiktok' ? 'TikTok ' : 'Facebook ') + tipo.replace(/^(tiktok|facebook)_/, '').replace(/_/g, ' ');
+  const isUpsell = !!(o.upsell && o.upsell.isUpsell) || String(m.is_upsell || '') === '1';
+  const qtd = parseInt(String(o.qtd || o.quantidade || m.quantidade || '').replace(/\D/g, ''), 10) || 0;
+  const canal = String(m.source || '') === 'wpp_agent' ? 'bot' : 'site';
+  return { cat, tipo, nome, qtd, isUpsell, canal, bumps: String(m.order_bumps || ''), visitorId: o.visitorId || '', utm: o.utms || {} };
+}
+// Robôs (prévia de link do Facebook/WhatsApp, revisão de anúncio da Meta, Google…) não são visitantes.
+const __TS_BOT_RE = /bot|crawl|spider|slurp|facebookexternalhit|externalhit|meta-externalads|go-http-client|whatsapp\/|googleother|google-|headless|prospector|python|curl\/|wget|axios|node-fetch|Mac OS X 10_11_1\) AppleWebKit\/601/i;
+function __tsEhBot(ua, city) { return !String(ua || '').trim() || __TS_BOT_RE.test(String(ua || '')) || /^mountain view$/i.test(String(city || '').trim()); }
+const TRACK_SITE_INICIO = '2026-11-17';
+async function computeTrackSite({ since, until, fresh } = {}) {
+  const hojeSP = new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10);
+  let s = /^\d{4}-\d{2}-\d{2}$/.test(String(since || '')) ? String(since) : hojeSP;
+  let u = /^\d{4}-\d{2}-\d{2}$/.test(String(until || '')) ? String(until) : hojeSP;
+  // O rastreio completo (pageview em todas as páginas, UTM na visita) entrou em 17/11/2026: nada
+  // antes disso entra na conta, senão o período mistura dado incompleto com dado completo.
+  if (u < TRACK_SITE_INICIO) return { ok: false, error: 'O Track do Site só tem dados a partir de 17/11/2026.' };
+  if (s < TRACK_SITE_INICIO) s = TRACK_SITE_INICIO;
+  const ini = new Date(s + 'T00:00:00-03:00'), fim = new Date(new Date(u + 'T00:00:00-03:00').getTime() + 864e5);
+  if (!(fim > ini) || (fim - ini) > 400 * 864e5) return { ok: false, error: 'periodo_invalido' };
+  const key = s + '|' + u;
+  const hit = __trackSiteCache.get(key);
+  if (!fresh && hit && Date.now() - hit.at < 2 * 60 * 1000) return hit.data;
+  const iniS = ini.toISOString(), fimS = fim.toISOString();
+  const db = { pv: await getCollection('page_views'), fe: await getCollection('funil_eventos'), co: await getCollection('checkout_orders'), vu: await getCollection('validated_insta_users'), al: await getCollection('audio_logs') };
+  if (!__trackSiteIdx) { __trackSiteIdx = true; try { db.pv.createIndex({ createdAt: 1 }).catch(() => {}); db.fe.createIndex({ createdAt: 1 }).catch(() => {}); } catch (_) {} }
+  const TZ = '-03:00';
+  const rangeDate = { createdAt: { $gte: ini, $lt: fim } };
+  const rangeStr = { $or: [{ createdAt: { $gte: ini, $lt: fim } }, { createdAt: { $gte: iniS, $lt: fimS } }] };
+
+  // 1) Visitas
+  const [pvRows, feRows, orders, vuRows, alRows] = await Promise.all([
+    db.pv.find(rangeDate).project({ path: 1, clientId: 1, createdAt: 1, ua: 1, city: 1, region: 1, utm: 1, referer: 1 }).toArray(),
+    db.fe.find(rangeDate).project({ visitorId: 1, evento: 1, servico: 1, tipo: 1, qtd: 1, preco: 1, erro: 1, createdAt: 1, utm: 1 }).toArray(),
+    db.co.find(rangeStr).project({ status: 1, paidAt: 1, 'paghiper.paidAt': 1, 'paghiper.status': 1, createdAt: 1, valueCents: 1, expectedValueCents: 1, tipo: 1, tipoServico: 1, qtd: 1, quantidade: 1, additionalInfo: 1, additionalInfoMap: 1, additionalInfoPaid: 1, additionalInfoMapPaid: 1, upsell: 1, utms: 1, visitorId: 1, refund: 1, refunded: 1, instagramUsername: 1, instauser: 1 }).toArray(),
+    // Mesma regra do card do Dashboard: só validação REAL (o cliente digitou o @ no site → source
+    // verifyInstagramProfile*) com a checagem dentro do período. As conferências de fundo (refil,
+    // reposição, gerenciamento) também atualizam o perfil e inflavam a contagem.
+    db.vu.find({ checks: { $elemMatch: { source: { $regex: '^verifyInstagramProfile', $options: 'i' }, checkedAt: { $gte: iniS, $lt: fimS } } } }).project({ username: 1, lastAt: 1, utms: 1 }).toArray(),
+    db.al.find(rangeDate).project({ max_percentage: 1 }).toArray(),
+  ]);
+  const diaSP = (d) => new Date(new Date(d).getTime() - 3 * 3600e3).toISOString().slice(0, 10);
+  const horaSP = (d) => new Date(new Date(d).getTime() - 3 * 3600e3).getUTCHours();
+  const dias = []; for (let t = ini.getTime(); t < fim.getTime(); t += 864e5) dias.push(new Date(t - 3 * 3600e3 + 3 * 3600e3).toISOString().slice(0, 10));
+  const porDia = {}; for (const d of dias) porDia[d] = { dia: d, pageviews: 0, visitantes: new Set(), pix: 0, pagos: 0, receita: 0 };
+  const visitantes = new Set(), visServico = new Set(), porHora = Array(24).fill(0);
+  const pags = {}, disp = { Celular: new Set(), Computador: new Set(), Outro: new Set() }, cidades = {}, origem = {};
+  let botsPv = 0;
+  // A UTM só passou a ser gravada na visita em 17/11: antes disso a origem fica sem registro.
+  // A tabela de origem usa só as visitas a partir da 1ª com UTM, pra não mostrar milhares de "sem origem".
+  let origemDesdeMs = null;
+  for (const r of pvRows) { if (r.utm) { const t = new Date(r.createdAt).getTime(); if (origemDesdeMs == null || t < origemDesdeMs) origemDesdeMs = t; } }
+  for (const r of pvRows) {
+    if (__tsEhBot(r.ua, r.city)) { botsPv++; continue; }
+    const cid = String(r.clientId || ''); const p = String(r.path || '').split(':')[0] || '(sem caminho)';
+    const d = diaSP(r.createdAt);
+    if (porDia[d]) { porDia[d].pageviews++; if (cid) porDia[d].visitantes.add(cid); }
+    porHora[horaSP(r.createdAt)]++;
+    if (cid) { visitantes.add(cid); if (__TS_PAG_SERV[p]) visServico.add(cid); }
+    const pg = pags[p] || (pags[p] = { path: p, nome: __TS_PAGINAS[p] || p, pageviews: 0, vis: new Set() });
+    pg.pageviews++; if (cid) pg.vis.add(cid);
+    const ua = String(r.ua || '');
+    const tipoDisp = /mobi|android|iphone|ipad/i.test(ua) ? 'Celular' : (/windows nt|macintosh|x11|cros/i.test(ua) ? 'Computador' : 'Outro');
+    if (cid) disp[tipoDisp].add(cid);
+    const cidade = [r.city, r.region].filter(Boolean).join(' / ');
+    if (cidade && cid) (cidades[cidade] || (cidades[cidade] = new Set())).add(cid);
+    let src = '';
+    if (r.utm && (r.utm.source || r.utm.campaign)) src = 'Anúncio';
+    else if (/facebook|instagram|fb\.|l\.instagram/i.test(String(r.referer || ''))) src = 'Instagram/Facebook';
+    else if (/google\./i.test(String(r.referer || ''))) src = 'Google';
+    else if (r.referer && !/agenciaoppus/i.test(String(r.referer))) src = 'Outros sites';
+    else src = 'Sem origem registrada';
+    if (cid && origemDesdeMs != null && new Date(r.createdAt).getTime() >= origemDesdeMs) (origem[src] || (origem[src] = new Set())).add(cid);
+  }
+
+  // 2) Pedidos (Pix gerado) e pagos
+  const pago = (o) => { const st = String(o.status || '').toLowerCase(); if (/estorn|refund|reembols|cancel/.test(st)) return false; return st === 'pago' || !!o.paidAt || !!(o.paghiper && o.paghiper.paidAt); };
+  const prod = {}, porCat = {}, pacotesPix = {}, pacotesPagos = {}, bumps = {}, utmContent = {};
+  let pix = 0, pagos = 0, receita = 0, receitaUpsell = 0, pagosUpsell = 0, comVisitor = 0, comBumpPagos = 0;
+  const canais = { site: { canal: 'Site', pix: 0, pagos: 0, receita: 0 }, bot: { canal: 'WhatsApp (bot)', pix: 0, pagos: 0, receita: 0 } };
+  const porCatSite = {};
+  const bumpNome = { likes: 'Curtidas', views: 'Visualizações', comments: 'Comentários', upgrade: 'Upgrade de pacote', warranty_3m: 'Garantia 3 meses', warranty3m: 'Garantia 3 meses', warranty_4m: 'Garantia 4 meses', warranty_6m: 'Garantia 6 meses' };
+  for (const o of orders) {
+    const info = __tsProduto(o);
+    if (info.cat === 'refil') continue;
+    const ok = pago(o); const v = Number(o.valueCents || o.expectedValueCents || 0) / 100;
+    const d = diaSP(o.createdAt);
+    pix++; if (porDia[d]) porDia[d].pix++;
+    if (o.visitorId) comVisitor++;
+    const cn = canais[info.canal]; cn.pix++; if (ok) { cn.pagos++; cn.receita += v; }
+    if (info.canal === 'site') { const ps = porCatSite[info.cat] || (porCatSite[info.cat] = { pix: 0, pagos: 0, receita: 0 }); ps.pix++; if (ok) { ps.pagos++; ps.receita += v; } }
+    const pk = info.nome + '|' + info.qtd;
+    (pacotesPix[pk] || (pacotesPix[pk] = { produto: info.nome, qtd: info.qtd, n: 0 })).n++;
+    const pr = prod[info.nome] || (prod[info.nome] = { produto: info.nome, cat: info.cat, pix: 0, pagos: 0, receita: 0 });
+    pr.pix++;
+    const pc = porCat[info.cat] || (porCat[info.cat] = { pix: 0, pagos: 0, receita: 0 });
+    pc.pix++;
+    const uc = String((info.utm && info.utm.content) || '').trim() || '(sem anúncio)';
+    const ut = utmContent[uc] || (utmContent[uc] = { content: uc, campaign: String((info.utm && info.utm.campaign) || ''), pix: 0, pagos: 0, receita: 0 });
+    ut.pix++;
+    if (!ok) continue;
+    pagos++; receita += v; pr.pagos++; pr.receita += v; pc.pagos++; pc.receita += v; ut.pagos++; ut.receita += v;
+    if (porDia[d]) { porDia[d].pagos++; porDia[d].receita += v; }
+    if (info.isUpsell) { pagosUpsell++; receitaUpsell += v; }
+    (pacotesPagos[pk] || (pacotesPagos[pk] = { produto: info.nome, qtd: info.qtd, n: 0, receita: 0 })).n++;
+    pacotesPagos[pk].receita += v;
+    if (info.bumps) {
+      comBumpPagos++;
+      for (const parte of info.bumps.split(/[;,]/)) {
+        const [k0, q0] = parte.split(':'); const k = String(k0 || '').trim().toLowerCase(); if (!k) continue;
+        const b = bumps[k] || (bumps[k] = { oferta: bumpNome[k] || k, n: 0, unidades: 0 });
+        b.n++; if (!/^warranty|upgrade/.test(k)) b.unidades += parseInt(q0, 10) || 0;
+      }
+    }
+  }
+
+  // 3) Funil
+  const ev = {}; const erros = {}; const escolhidos = {};
+  for (const e of feRows) {
+    const k = String(e.evento || ''); (ev[k] || (ev[k] = new Set())).add(String(e.visitorId || ''));
+    if (k === 'erro_pix' || k === 'erro_pagamento') { const m = String(e.erro || 'sem mensagem').slice(0, 120); erros[m] = (erros[m] || 0) + 1; }
+    if (k === 'pacote_escolhido') {
+      const nome = ({ seguidores: 'Seguidores', curtidas: 'Curtidas', visualizacoes: 'Visualizações', comentarios: 'Comentários' })[e.servico] || e.servico || '';
+      const kk = nome + '|' + (e.tipo || '') + '|' + (e.qtd || '');
+      const x = escolhidos[kk] || (escolhidos[kk] = { servico: nome, tipo: e.tipo || '', qtd: e.qtd || 0, preco: e.preco || '', vis: new Set() });
+      x.vis.add(String(e.visitorId || ''));
+    }
+  }
+  const nEv = (k) => (ev[k] ? ev[k].size : 0);
+  // As etapas "escolheu pacote / validou / clicou em pagar" só são gravadas desde que o rastreio do
+  // funil entrou no ar. Pra não comparar 18 dias de visitas com 1 dia de eventos, o funil inteiro
+  // (visitas, Pix e pagos inclusive) usa a MESMA janela: do 1º evento gravado até o fim do período.
+  let funilDesdeMs = null;
+  for (const e of feRows) { const t = new Date(e.createdAt).getTime(); if (funilDesdeMs == null || t < funilDesdeMs) funilDesdeMs = t; }
+  const noFunil = (d) => funilDesdeMs == null || new Date(d).getTime() >= funilDesdeMs;
+  const fVis = new Set(), fServ = new Set();
+  for (const r of pvRows) {
+    if (!noFunil(r.createdAt) || __tsEhBot(r.ua, r.city)) continue;
+    const cid = String(r.clientId || ''); if (!cid) continue;
+    fVis.add(cid); if (__TS_PAG_SERV[String(r.path || '').split(':')[0]]) fServ.add(cid);
+  }
+  let fPix = 0, fPagos = 0;
+  for (const o of orders) {
+    if (!noFunil(o.createdAt)) continue;
+    const info = __tsProduto(o); if (info.cat === 'refil' || info.canal !== 'site') continue;
+    fPix++; if (pago(o)) fPagos++;
+  }
+  const funil = [
+    { etapa: 'Visitantes no site', n: fVis.size },
+    { etapa: 'Viram uma página de serviço', n: fServ.size },
+  ];
+  if (funilDesdeMs != null) funil.push(
+    { etapa: 'Escolheram um pacote', n: nEv('pacote_escolhido') },
+    { etapa: 'Validaram o perfil', n: nEv('perfil_validado') },
+    { etapa: 'Clicaram em pagar', n: nEv('clicou_pagar') },
+  );
+  funil.push(
+    { etapa: 'Cobrança gerada (pelo site)', n: fPix },
+    { etapa: 'Pagaram (pelo site)', n: fPagos },
+  );
+
+  // 4) CAC do Meta (ca 2 + ca3, em R$), no total e por anúncio.
+  //    CAC Meta = gasto ÷ compras atribuídas pelo PIXEL do Meta (a conta do Gerenciador de Anúncios);
+  //    ROAS Meta = valor das compras do pixel ÷ gasto;
+  //    CAC cliente novo = gasto ÷ @ que compraram pela 1ª vez (nenhum pedido pago antes do período), pelo banco.
+  //    Pagos = coorte do Track (Pix gerado no período e já pago). Anúncio da venda = utm_content (ad_id).
+  // You Agency: sem CAC do Meta aqui — o token de anúncios do .env é das contas da Oppus (ca4 sem acesso).
+  const meta = null;
+
+  const top = (obj, campo, n) => Object.values(obj).sort((a, b) => (b[campo] || 0) - (a[campo] || 0)).slice(0, n);
+  const out = {
+    ok: true, since: s, until: u, geradoEm: new Date().toISOString(),
+    funilAtivoDesde: feRows.length ? null : 'sem_eventos',
+    funilDesde: funilDesdeMs != null ? new Date(funilDesdeMs).toISOString() : null,
+    origemDesde: origemDesdeMs != null ? new Date(origemDesdeMs).toISOString() : null,
+    kpis: {
+      visitantes: visitantes.size, pageviews: pvRows.length - botsPv, pvPorVisitante: visitantes.size ? (pvRows.length - botsPv) / visitantes.size : 0,
+      perfisValidados: vuRows.length, pix, pagos, receita, ticket: pagos ? receita / pagos : 0,
+      convVisitantePago: visitantes.size ? canais.site.pagos / visitantes.size : 0, convPixPago: pix ? pagos / pix : 0,
+      pixSite: canais.site.pix, pagosSite: canais.site.pagos, receitaSite: Math.round(canais.site.receita * 100) / 100,
+      pixBot: canais.bot.pix, pagosBot: canais.bot.pagos, receitaBot: Math.round(canais.bot.receita * 100) / 100, botsPageviews: botsPv,
+      pagosUpsell, receitaUpsell, pedidosComOferta: comBumpPagos, pedidosComVisitante: comVisitor,
+      audio: { tocaram: alRows.length, metade: alRows.filter((a) => (a.max_percentage || 0) >= 50).length, fim: alRows.filter((a) => (a.max_percentage || 0) >= 99).length },
+    },
+    serie: dias.map((d) => { const x = porDia[d]; return { dia: d, pageviews: x.pageviews, visitantes: x.visitantes.size, pix: x.pix, pagos: x.pagos, receita: Math.round(x.receita * 100) / 100 }; }),
+    porHora,
+    paginas: Object.values(pags).map((p) => { const c = porCatSite[__TS_PAG_SERV[p.path]] || (__TS_PAG_SERV[p.path] ? { pix: 0, pagos: 0, receita: 0 } : null); return { path: p.path, nome: p.nome, pageviews: p.pageviews, visitantes: p.vis.size, pix: c ? c.pix : null, pagos: c ? c.pagos : null, receita: c ? Math.round(c.receita * 100) / 100 : null }; }).sort((a, b) => b.pageviews - a.pageviews),
+    funil,
+    topEscolhidos: top(Object.fromEntries(Object.entries(escolhidos).map(([k, x]) => [k, { servico: x.servico, tipo: x.tipo, qtd: x.qtd, preco: x.preco, visitantes: x.vis.size }])), 'visitantes', 5),
+    topPix: top(pacotesPix, 'n', 5),
+    topPagos: top(pacotesPagos, 'n', 5).map((x) => Object.assign({}, x, { receita: Math.round(x.receita * 100) / 100 })),
+    produtos: Object.values(prod).map((x) => Object.assign({}, x, { receita: Math.round(x.receita * 100) / 100 })).sort((a, b) => b.receita - a.receita),
+    ofertas: Object.values(bumps).sort((a, b) => b.n - a.n),
+    anuncios: top(utmContent, 'receita', 15).map((x) => Object.assign({}, x, { receita: Math.round(x.receita * 100) / 100 })),
+    dispositivos: Object.entries(disp).map(([k, v]) => ({ tipo: k, visitantes: v.size })).filter((x) => x.visitantes),
+    canais: Object.values(canais).map((x) => Object.assign({}, x, { receita: Math.round(x.receita * 100) / 100 })),
+    origem: Object.entries(origem).map(([k, v]) => ({ origem: k, visitantes: v.size })).sort((a, b) => b.visitantes - a.visitantes),
+    cidades: Object.entries(cidades).map(([k, v]) => ({ cidade: k, visitantes: v.size })).sort((a, b) => b.visitantes - a.visitantes).slice(0, 10),
+    errosPix: Object.entries(erros).map(([m, n]) => ({ erro: m, n })).sort((a, b) => b.n - a.n).slice(0, 10),
+    meta,
+  };
+  __trackSiteCache.set(key, { at: Date.now(), data: out });
+  if (__trackSiteCache.size > 60) __trackSiteCache.delete(__trackSiteCache.keys().next().value);
+  return out;
+}
+app.get('/painel/track-site', requireAdmin, (req, res) => res.render('painel_track_site', { page: 'track-site' }));
+app.get('/api/painel/track-site/dados', requireAdmin, async (req, res) => {
+  try {
+    const d = await computeTrackSite({ since: req.query.since, until: req.query.until, fresh: req.query.fresh === '1' });
+    return res.status(d.ok ? 200 : 400).json(d);
+  } catch (e) { return res.status(500).json({ ok: false, error: String((e && e.message) || e) }); }
+});
+// Status AO VIVO do pedido principal (no fornecedor) das vendas que estão na tela. Agrupa por
+// fornecedor e consulta em lote (action=status&orders=...). Só leitura: não grava no pedido.
+app.post('/api/painel/vendas/status-fornecedor', requireAdmin, async (req, res) => {
+  try {
+    const ids = (Array.isArray(req.body && req.body.ids) ? req.body.ids : []).map((x) => String(x || '')).filter((x) => /^[0-9a-f]{24}$/i.test(x)).slice(0, 300);
+    if (!ids.length) return res.json({ ok: true, status: {} });
+    const { ObjectId } = require('mongodb');
+    const col = await getCollection('checkout_orders');
+    const docs = await col.find({ _id: { $in: ids.map((i) => new ObjectId(i)) } }).toArray();
+    const porProv = new Map(); const ref = {};
+    let provMap = {}; try { provMap = (await getServiceTypeProvidersCached()) || {}; } catch (_) {}
+    const subsDe = {};
+    for (const o of docs) {
+      const m = mainProviderSlotOf(o, provMap); const id = String(o._id);
+      if (!m) { ref[id] = { status: 'sem_envio' }; continue; }
+      ref[id] = { provider: m.provider, orderId: m.orderId, status: m.status, remains: m.remains, posts: m.subs ? m.subs.length : undefined, origem: 'salvo', _presumido: !m.carimbado };
+      if (!SMM_PROVIDERS[m.provider]) continue;
+      const oids = m.subs ? m.subs.map((x) => x.orderId) : [m.orderId];
+      if (m.subs) subsDe[id] = m.subs;
+      if (!porProv.has(m.provider)) porProv.set(m.provider, []);
+      oids.forEach((oid) => { if (oid) porProv.get(m.provider).push([id, oid]); });
+    }
+    const vivo = {}; // id -> { orderId: { status, remains } }
+    await Promise.all([...porProv.entries()].map(async ([prov, lista]) => {
+      const key = smmProviderKey(prov); if (!key) return;
+      for (let i = 0; i < lista.length; i += 100) {
+        const lote = lista.slice(i, i + 100);
+        try {
+          const r = await axios.post(smmProviderUrl(prov), new URLSearchParams({ key, action: 'status', orders: lote.map((x) => x[1]).join(',') }), { timeout: 20000, validateStatus: () => true });
+          const data = (r && r.data && typeof r.data === 'object') ? r.data : {};
+          for (const [id, oid] of lote) {
+            const d = data[oid] || (lote.length === 1 && data.status ? data : null);
+            if (d && (d.status || d.error)) { vivo[id] = vivo[id] || {}; vivo[id][oid] = { status: String(d.status || ('erro: ' + d.error)), remains: d.remains != null ? Number(d.remains) : null }; }
+          }
+        } catch (_) {}
+      }
+    }));
+    const provDe = {};
+    const idErrado = (st) => /incorrect order|order not found|invalid order|not found/i.test(String(st || ''));
+    const revisar = [];
+    for (const [id, porOid] of Object.entries(vivo)) {
+      if (!ref[id] || !ref[id]._presumido) continue;
+      for (const [oid, v] of Object.entries(porOid)) if (idErrado(v.status)) revisar.push([id, oid]);
+    }
+    const ALT = ['fama24h', 'nuvra', 'worldofsmm', 'fornecedor_social', 'justanotherpanel', 'revendaexclusiva', 'smmhustle', 'topfama', 'worldsmm', 'followiz'];
+    for (const [id, oid] of revisar.slice(0, 30)) {
+      for (const prov of ALT) {
+        if (prov === ref[id].provider) continue;
+        const key = smmProviderKey(prov); if (!key) continue;
+        try {
+          const r = await axios.post(smmProviderUrl(prov), new URLSearchParams({ key, action: 'status', order: oid }), { timeout: 12000, validateStatus: () => true });
+          const d = (r && r.data && typeof r.data === 'object') ? r.data : {};
+          if (d.status && !d.error) { vivo[id][oid] = { status: String(d.status), remains: d.remains != null ? Number(d.remains) : null }; provDe[id] = prov; break; }
+        } catch (_) {}
+      }
+    }
+    for (const [id, porOid] of Object.entries(vivo)) {
+      if (provDe[id]) ref[id].provider = provDe[id];
+      const subs = subsDe[id];
+      if (subs) {
+        const st = subs.map((x) => (x.orderId ? ((porOid[x.orderId] && porOid[x.orderId].status) || x.status) : 'error'));
+        const rem = subs.reduce((a, x) => a + ((x.orderId && porOid[x.orderId] && porOid[x.orderId].remains) || 0), 0);
+        ref[id] = Object.assign({}, ref[id], { status: agregaStatusSubs(st), remains: rem, posts: subs.length, origem: 'fornecedor' });
+      } else {
+        const v = Object.values(porOid)[0];
+        if (v) ref[id] = Object.assign({}, ref[id], { status: v.status, remains: v.remains != null ? v.remains : ref[id].remains, origem: 'fornecedor' });
+      }
+    }
+    for (const v of Object.values(ref)) delete v._presumido;
+    return res.json({ ok: true, status: ref });
+  } catch (e) { return res.status(500).json({ ok: false, error: String((e && e.message) || e) }); }
+});
+// Botão ⟳ da tela de Vendas (pedido PRINCIPAL da venda). Parcial → novo pedido só com o que falta;
+// Cancelado → reenvia o que falta (ou o pedido inteiro, se o fornecedor não informar). Sempre:
+// status fresco no fornecedor, perfil público conferido na hora, UM add por item (sem repetição),
+// fornecedor carimbado e o orderId antigo guardado em `reenvios`. Vários posts: só os sub-pedidos
+// Parcial/Cancelado são reenviados, cada um no seu orders.{i}.
+async function vendasReenviarPrincipal(col, _id, por) {
+  const o = await col.findOne({ _id });
+  if (!o) return { erro: true, motivo: 'pedido_nao_encontrado' };
+  if (segParcialPedidoMorto(o)) return { erro: true, motivo: 'pedido_' + o.status };
+  let provMap = {}; try { provMap = (await getServiceTypeProvidersCached()) || {}; } catch (_) {}
+  const m = mainProviderSlotOf(o, provMap);
+  if (!m || !m.slot) return { erro: true, motivo: 'sem_envio_principal' };
+  const slot = m.slot; const v = o[slot] || {};
+  // Seguidores no fama24h com fornecedor carimbado: mesmo fluxo da Gestão Parcial (parcialHistorico).
+  if (slot === 'fama24h' && !m.subs && segParcialEhSeguidores(v) && segParcialProvider(v)) return segParcialReenviar(col, _id, { manual: true, por });
+  const provider = m.provider;
+  if (!SMM_PROVIDERS[provider] || !smmProviderKey(provider)) return { erro: true, motivo: 'fornecedor_desconhecido' };
+  const nowIso = new Date().toISOString();
+  const rp = v.requestPayload || {};
+  const itens = [];
+  if (Array.isArray(v.orders) && v.orders.length) {
+    v.orders.forEach((x, i) => { if (x && x.orderId) itens.push({ path: slot + '.orders.' + i, sub: true, orderId: String(x.orderId), quantity: Number(x.quantity) || 0, service: String(x.service || rp.service || ''), link: String(x.link || ''), reenvios: Array.isArray(x.reenvios) ? x.reenvios : [] }); });
+  } else if (v.orderId) {
+    itens.push({ path: slot, sub: false, orderId: String(v.orderId), quantity: Number(rp.quantity) || 0, service: String(rp.service || ''), link: String(rp.link || ''), reenvios: Array.isArray(v.reenvios) ? v.reenvios : [] });
+  }
+  if (!itens.length) return { erro: true, motivo: 'sem_orderid' };
+
+  // 1) Status FRESCO: só age no que o fornecedor confirma como Parcial/Cancelado agora.
+  const st = await segParcialStatusMany(provider, itens.map((x) => x.orderId));
+  const alvo = []; const vistos = [];
+  for (const it of itens) {
+    const sp = st[it.orderId];
+    if (!sp) return { erro: true, motivo: 'o ' + (SMM_PROVIDERS[provider].label || provider) + ' não reconhece o pedido ' + it.orderId + ' (fornecedor não confirmado)' };
+    const remains = Math.max(0, Math.floor(Number(sp.remains ?? sp.Remains) || 0));
+    const cat = topfamaStatusCat(sp.status || sp.Status, remains);
+    vistos.push(String(sp.status || sp.Status));
+    await col.updateOne({ _id }, { $set: { [it.path + '.statusPayload']: sp, [it.path + '.lastStatusAt']: nowIso } });
+    if (cat !== 'partial' && cat !== 'canceled') continue;
+    const qtd = cat === 'canceled' ? (remains > 0 ? remains : it.quantity) : remains;
+    if (!(qtd > 0)) continue;
+    if (!/^[A-Za-z0-9_-]+$/.test(it.service)) return { erro: true, motivo: 'servico_invalido_no_pedido ' + it.orderId };
+    if (!/^https?:\/\//i.test(it.link)) return { erro: true, motivo: 'link_ausente_no_pedido ' + it.orderId };
+    alvo.push(Object.assign({}, it, { qtd, cat, sp, remains }));
+  }
+  if (!alvo.length) return { pulado: true, motivo: 'nada a reenviar (status: ' + Array.from(new Set(vistos)).join(', ') + ')' };
+
+  // 2) Serviço ainda existe e aceita a quantidade.
+  for (const it of alvo) {
+    const c = await segParcialServico(provider, it.service);
+    if (c.erro) return { erro: true, motivo: c.erro };
+    if (c.ausente) return { erro: true, motivo: 'servico ' + it.service + ' não existe mais no ' + provider };
+    const smin = Number(c.servico.min) || 0, smax = Number(c.servico.max) || Infinity;
+    if (it.qtd < smin) return { erro: true, motivo: 'faltam ' + it.qtd + ', abaixo do mínimo ' + smin + ' do serviço ' + it.service };
+    if (it.qtd > smax) return { erro: true, motivo: 'faltam ' + it.qtd + ', acima do máximo ' + smax + ' do serviço ' + it.service };
+  }
+
+  // 3) Perfil público, conferido na hora (perfil privado não recebe envio).
+  const _info = (k) => (o.additionalInfoMapPaid && o.additionalInfoMapPaid[k]) || (o.additionalInfoMap && o.additionalInfoMap[k]) || '';
+  const lk = String(alvo[0].link || '').match(/instagram\.com\/([A-Za-z0-9._]+)/i);
+  const usuario = String(o.instagramUsername || _info('instagram_username') || o.instauser || (lk && !/^(p|reel|reels|tv|stories)$/i.test(lk[1]) ? lk[1] : '') || '').replace(/^@+/, '').trim().toLowerCase();
+  if (!usuario) return { erro: true, motivo: 'perfil_desconhecido' };
+  const pf = await segParcialPerfil(usuario);
+  if (pf.status === 'not_found') return { erro: true, motivo: 'perfil @' + usuario + ' não encontrado' };
+  if (pf.status !== 'ok') return { erro: true, motivo: 'não consegui conferir o perfil @' + usuario + ' agora' };
+  if (pf.isPrivate) { await col.updateOne({ _id }, { $set: { isPrivate: true, 'profilePrivacy.isPrivate': true, 'profilePrivacy.checkedAt': nowIso } }); return { erro: true, motivo: 'perfil @' + usuario + ' está privado' }; }
+  // Seguidores: se o perfil já ganhou o contratado desde a linha de base, reenviar duplicaria.
+  if (!alvo[0].sub && segParcialEhSeguidores(v)) {
+    const inicial = Number(o.initialFollowersCount);
+    const contratado = (alvo[0].reenvios.length && Number(alvo[0].reenvios[0].quantity)) || alvo[0].quantity;
+    if (Number.isFinite(inicial) && inicial >= 0 && Number.isFinite(pf.followers) && contratado > 0 && pf.followers - inicial >= Math.floor(contratado * 0.9)) {
+      return { erro: true, motivo: 'o perfil já ganhou ' + (pf.followers - inicial) + ' de ' + contratado + ' (' + inicial + ' → ' + pf.followers + '), não reenviei' };
+    }
+  }
+
+  // 4) Trava: um reenvio por vez no pedido (botão clicado duas vezes, duas abas…).
+  const travaAntiga = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const trava = await col.updateOne({ _id, $or: [{ [slot + '.reenvioLockAt']: { $exists: false } }, { [slot + '.reenvioLockAt']: null }, { [slot + '.reenvioLockAt']: { $lt: travaAntiga } }] }, { $set: { [slot + '.reenvioLockAt']: nowIso } });
+  if (!trava || trava.modifiedCount !== 1) return { pulado: true, motivo: 'já tem um reenvio em andamento neste pedido' };
+
+  const feitos = []; let falha = null;
+  try {
+    for (const it of alvo) {
+      // UM add, sem repetição: timeout/5xx pode ter criado o pedido no fornecedor.
+      const add = await segParcialPost(provider, { action: 'add', service: it.service, link: it.link, quantity: String(it.qtd) }, 45000);
+      const novo = add.data && (add.data.order || add.data.orderId);
+      if (!novo) {
+        const msg = String(add.erro || (add.data && (add.data.error || add.data.Error)) || 'sem_order').slice(0, 200);
+        falha = add.incerto ? ('resposta incerta no pedido ' + it.orderId + ' — confira no fornecedor antes de reenviar: ' + msg) : ('fornecedor recusou o pedido ' + it.orderId + ': ' + msg);
+        break;
+      }
+      const novoId = String(novo);
+      const hist = it.reenvios.concat([{ orderId: it.orderId, provider, service: it.service, quantity: it.quantity, status: String(it.sp.status || it.sp.Status), remains: it.remains, charge: it.sp.charge ?? null, statusPayload: it.sp, substituidoEm: nowIso, novoOrderId: novoId, quantidadeReenviada: it.qtd, motivo: it.cat === 'canceled' ? 'cancelado' : 'parcial', origem: 'vendas', por: por || null }]);
+      const set = {
+        [it.path + '.orderId']: novoId, [it.path + '.status']: 'created', [it.path + '.provider']: provider, [it.path + '.statusPayload']: null, [it.path + '.lastStatusAt']: null,
+        [it.path + '.requestedAt']: nowIso, [it.path + '.reorderAt']: nowIso, [it.path + '.reenvios']: hist, [it.path + '.error']: null,
+      };
+      if (it.sub) { set[it.path + '.id'] = novoId; set[it.path + '.quantity'] = it.qtd; set[it.path + '.response'] = add.data; }
+      else { set[it.path + '.requestPayload'] = { service: /^[0-9]+$/.test(it.service) ? Number(it.service) : it.service, link: it.link, quantity: it.qtd }; set[it.path + '.response'] = add.data; }
+      if (!m.carimbado) set[slot + '.provider'] = provider;
+      await col.updateOne({ _id }, { $set: set });
+      feitos.push({ de: it.orderId, para: novoId, quantidade: it.qtd, motivo: it.cat === 'canceled' ? 'cancelado' : 'parcial' });
+      try { console.log(`🔁 [vendas-reenvio] ${o.identifier || _id} @${usuario} ${it.cat} ${it.orderId} → ${provider}:${it.service} ${it.qtd} = ${novoId}`); } catch (_) {}
+    }
+  } finally {
+    await col.updateOne({ _id }, { $unset: { [slot + '.reenvioLockAt']: '' } }).catch(() => {});
+  }
+  if (feitos.length) setTimeout(() => { refreshOrderRealCostById(col, _id).catch(() => {}); }, 15000);
+  if (falha && !feitos.length) return { erro: true, motivo: falha };
+  return { ok: true, provider, reenviados: feitos, falha: falha || undefined };
+}
+app.post('/api/painel/vendas/reenviar', requireAdmin, async (req, res) => {
+  try {
+    const id = String((req.body && req.body.id) || '').trim();
+    if (!/^[0-9a-f]{24}$/i.test(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    const { ObjectId } = require('mongodb');
+    const col = await getCollection('checkout_orders');
+    const por = (req.session && req.session.adminUser && req.session.adminUser.username) || 'painel_vendas';
+    const r = await vendasReenviarPrincipal(col, new ObjectId(id), por);
+    return res.json(Object.assign({ ok: !!r.ok }, r));
+  } catch (e) { return res.status(500).json({ ok: false, erro: true, motivo: String((e && e.message) || e) }); }
+});
+app.get('/painel/bloqueados', requireAdmin, (req, res) => res.render('painel_bloqueados', { page: 'bloqueados' }));
 app.get('/painel/meta-ads', requireAdmin, (req, res) => res.render('painel_meta_ads', { page: 'meta-ads' }));
 app.get('/api/painel/meta-ads/dados', requireAdmin, async (req, res) => {
   try {
@@ -41784,12 +42596,12 @@ app.get('/painel', requireAdmin, async (req, res) => {
         tiktok: [
           { key: 'tiktok_seguidores', label: 'TikTok Seguidores' },
           { key: 'tiktok_curtidas', label: 'TikTok Curtidas' },
+          { key: 'tiktok_curtidas_reais', label: 'TikTok Curtidas Reais' },
           { key: 'tiktok_visualizacoes', label: 'TikTok Visualizações' },
           { key: 'tiktok_comentarios', label: 'TikTok Comentários' }
         ],
         facebook: [
-          { key: 'facebook_seguidores_perfil', label: 'Facebook Seguidores de perfil' },
-          { key: 'facebook_seguidores_pagina', label: 'Facebook Seguidores de página' },
+          { key: 'facebook_seguidores', label: 'Facebook Seguidores (perfil e página)' },
           { key: 'facebook_curtidas', label: 'Facebook Curtidas' },
           { key: 'facebook_visualizacoes', label: 'Facebook Visualizações' },
           { key: 'facebook_comentarios', label: 'Facebook Comentários' }
@@ -44017,7 +44829,7 @@ app.get('/painel', requireAdmin, async (req, res) => {
     // 15%, 30%) ou vários pedidos abandonados do mesmo cliente = 1 envio. (Antes a
     // base era o total de pedidos PAGOS do período, que não tem relação com envio.)
     const recoveryStats = await (async function () {
-        const toBRLr = (c) => `R$ ${(Math.max(0, Number(c) || 0) / 100).toFixed(2).replace('.', ',')}`;
+        const toBRLr = (c) => `$ ${(Math.max(0, Number(c) || 0) / 100).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         const emailKey = (o) => { const e = String((o && o.customer && o.customer.email) || (o && o.additionalInfoMapPaid && o.additionalInfoMapPaid.email) || (o && o.additionalInfoMap && o.additionalInfoMap.email) || '').trim().toLowerCase(); return e ? ('em:' + e) : ('id:' + String(o && o._id)); };
         const phoneKey = (o) => { const p = String((o && o.sms && o.sms.paymentRecoveryLastTo) || (o && o.customer && o.customer.phone) || '').replace(/\D/g, '').slice(-11); return p ? ('ph:' + p) : ('id:' + String(o && o._id)); };
         // Numerador: pedidos pagos no período que foram recuperados (valor em pedidos; % em clientes).
@@ -44142,6 +44954,9 @@ app.get('/painel', requireAdmin, async (req, res) => {
 
     // Cost calculation
     let totalCost = 0;
+    // You Agency: custos dos fornecedores são calculados em R$; o painel mostra tudo em pesos (MXN).
+    let __brlMxn = 1;
+    try { __brlMxn = Number(await require('./fxMxn.js').getBrlMxnRate()) || 1; } catch (_) {}
     let totalRevenue = 0;
     // Agregação por DIA (BRT) para a tabela de lucro diário. Usa exatamente o mesmo
     // faturamento e custo por pedido do resto do dashboard — o custo já inclui a taxa
@@ -44460,7 +45275,9 @@ app.get('/painel', requireAdmin, async (req, res) => {
       const _rc = sumStoredProviderCharges(o);
       const realProviderTotal = (_rc.total > 0) ? _rc.total : null;
       const usedRealCost = realProviderTotal != null;
-      const totalItemCost = usedRealCost ? (paymentFee + realProviderTotal) : (paymentFee + serviceCost + bumpCost);
+      // Taxa do pagamento: a da Xpag já vem em pesos (xpag.fee); a antiga (Pix, R$) é convertida.
+      paymentFee = (o && o.paymentMethod === 'xpag' && o.xpag && Number(o.xpag.fee) > 0) ? Number(o.xpag.fee) : paymentFee * __brlMxn;
+      const totalItemCost = paymentFee + (usedRealCost ? realProviderTotal : (serviceCost + bumpCost)) * __brlMxn;
       totalCost += totalItemCost;
 
       // Custo/1k e Custo Bump da tabela de vendas saem do action=status (charge real).
@@ -44555,13 +45372,13 @@ app.get('/painel', requireAdmin, async (req, res) => {
         createdAt: resolvePaidAtIsoForPanel(o) || null,
         type: typeForCost,
         qty,
-        costPer1000: (realPer1000 != null) ? realPer1000 : effectiveCostPer1000,
+        costPer1000: Math.round(((realPer1000 != null) ? realPer1000 : effectiveCostPer1000) * __brlMxn * 100) / 100,
         costPer1000Real: realPer1000 != null,
         costPer1000Qty: (realPer1000 != null) ? _baseQtyForRate : null,
         paymentFee,
         cost: totalItemCost,
         costReal: usedRealCost,
-        bumpCost: (realBumpCost != null) ? realBumpCost : bumpCost,
+        bumpCost: Math.round(((realBumpCost != null) ? realBumpCost : bumpCost) * __brlMxn * 100) / 100,
         bumpCostReal: realBumpCost != null,
         orderBumps: String(bumpStrRaw || ''),
         orderBumpsTotal: String(bumpTotalRaw || ''),
@@ -44572,7 +45389,8 @@ app.get('/painel', requireAdmin, async (req, res) => {
         customerLabel,
         instagramUsername: igUser,
         phone,
-        isUpsell: !!(o && o.upsell && o.upsell.isUpsell === true)
+        isUpsell: !!(o && o.upsell && o.upsell.isUpsell === true),
+        mainSupplier: mainProviderSlotOf(o)
       };
     });
 
@@ -45606,7 +46424,7 @@ app.get('/painel', requireAdmin, async (req, res) => {
     }
 
     // ── UPSELL: métricas para o card (dashboard E vendas — o card aparece nas duas views) ──
-    let upsellStats = { paidCount: 0, revenueCents: 0, revenueBRL: 'R$ 0,00', avgTicketBRL: 'R$ 0,00', conversionPct: 0, eligibleParents: 0, costCents: 0, costBRL: 'R$ 0,00', costPct: 0, netCents: 0, netBRL: 'R$ 0,00' };
+    let upsellStats = { paidCount: 0, revenueCents: 0, revenueBRL: '$ 0.00', avgTicketBRL: '$ 0.00', conversionPct: 0, eligibleParents: 0, costCents: 0, costBRL: 'R$ 0,00', costPct: 0, netCents: 0, netBRL: 'R$ 0,00' };
     if (view === 'dashboard' || view === 'vendas') {
       try {
         const isPaidForStats = (o) => {
@@ -45618,7 +46436,7 @@ app.get('/painel', requireAdmin, async (req, res) => {
           if (o?.paidAt || o?.woovi?.paidAt || o?.paghiper?.paidAt) return true;
           return false;
         };
-        const toBRL = (cents) => `R$ ${(Number(cents || 0) / 100).toFixed(2).replace('.', ',')}`;
+        const toBRL = (cents) => `$ ${(Number(cents || 0) / 100).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         // Pool elegível: pedidos pagos "normais" do período (já no fetch principal).
         // Calculado ANTES da query de upsell pra não ser zerado caso a query falhe.
         let eligibleParents = 0;
@@ -45856,7 +46674,9 @@ app.post('/api/painel/service-visibility', requireAdmin, async (req, res) => {
       hidden: {
         seguidores: normalizeArr(nextHidden.seguidores),
         curtidas: normalizeArr(nextHidden.curtidas),
-        visualizacoes: normalizeArr(nextHidden.visualizacoes)
+        visualizacoes: normalizeArr(nextHidden.visualizacoes),
+        tiktok: normalizeArr(nextHidden.tiktok),
+        facebook: normalizeArr(nextHidden.facebook)
       },
       _customHiddenSetAt: new Date().toISOString(),
       _custom: true
@@ -50392,7 +51212,7 @@ app.get('/painel/upsell', requireAdmin, async (req, res) => {
     const totalDispatched = await col.countDocuments({ 'upsell.isUpsell': true, 'upsell.dispatchStatus': { $in: ['dispatching', 'dispatched'] }, ..._dc });
 
     // Financeiro: valor total pago, custo, líquido e conversão (sobre TODOS os upsells pagos).
-    const toBRL = (c) => `R$ ${(Number(c || 0) / 100).toFixed(2).replace('.', ',')}`;
+    const toBRL = (c) => `$ ${(Number(c || 0) / 100).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const paidOr = [
       { status: { $in: ['pago', 'paid'] } },
       { 'woovi.status': { $in: ['pago', 'paid'] } },
@@ -51213,7 +52033,9 @@ const server = app.listen(port, () => {
                 { 'expay.brCode': { $exists: true, $ne: null } },
                 { 'expay.qrCodeImage': { $exists: true, $ne: null } },
                 { 'paghiper.brCode': { $exists: true, $ne: null } },
-                { 'paghiper.qrCodeImage': { $exists: true, $ne: null } }
+                { 'paghiper.qrCodeImage': { $exists: true, $ne: null } },
+                { paymentMethod: 'xpag', 'xpag.clabe': { $exists: true, $nin: [null, ''] } },
+                { paymentMethod: 'xpag', 'xpag.reference': { $exists: true, $nin: [null, ''] } }
               ]
             }
           ]
@@ -51364,7 +52186,9 @@ const server = app.listen(port, () => {
                 { 'expay.brCode': { $exists: true, $ne: null } },
                 { 'expay.qrCodeImage': { $exists: true, $ne: null } },
                 { 'paghiper.brCode': { $exists: true, $ne: null } },
-                { 'paghiper.qrCodeImage': { $exists: true, $ne: null } }
+                { 'paghiper.qrCodeImage': { $exists: true, $ne: null } },
+                { paymentMethod: 'xpag', 'xpag.clabe': { $exists: true, $nin: [null, ''] } },
+                { paymentMethod: 'xpag', 'xpag.reference': { $exists: true, $nin: [null, ''] } }
               ]
             }
           ]

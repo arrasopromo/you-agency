@@ -24,10 +24,11 @@ const nowpaymentsKeepAliveAgent = new https.Agent({ keepAlive: true, maxSockets:
 const REDES_CATALOGO_TIPOS = {
   tiktok_seguidores:          { rede: 'tiktok',   titulo: 'Seguidores',             unidade: 'seguidores',      alvo: 'perfil', desc: 'Seguidores para tu perfil de TikTok. Solo necesitas el enlace de tu perfil.' },
   tiktok_curtidas:            { rede: 'tiktok',   titulo: 'Me gusta',               unidade: 'me gusta',        alvo: 'post',   desc: 'Me gusta para un video de TikTok. Pega el enlace del video.' },
+  tiktok_curtidas_reais:      { rede: 'tiktok',   titulo: 'Me gusta reales',        unidade: 'me gusta',        alvo: 'post',   desc: 'Me gusta de perfiles reales para un video de TikTok. Pega el enlace del video.' },
   tiktok_visualizacoes:       { rede: 'tiktok',   titulo: 'Vistas',        unidade: 'vistas', alvo: 'post',   desc: 'Vistas para un video de TikTok. Pega el enlace del video.' },
   tiktok_comentarios:         { rede: 'tiktok',   titulo: 'Comentarios',            unidade: 'comentarios',     alvo: 'post',   desc: 'Comentarios para un video de TikTok. Pega el enlace del video.' },
-  facebook_seguidores_perfil: { rede: 'facebook', titulo: 'Seguidores de perfil',   unidade: 'seguidores',      alvo: 'perfil', desc: 'Seguidores para tu perfil personal de Facebook. Pega el enlace de tu perfil.' },
-  facebook_seguidores_pagina: { rede: 'facebook', titulo: 'Seguidores de página',   unidade: 'seguidores',      alvo: 'perfil', desc: 'Seguidores para tu página (fanpage) de Facebook. Pega el enlace de la página.' },
+  // Um tipo só: os serviços entregam tanto em perfil quanto em página (fanpage).
+  facebook_seguidores:        { rede: 'facebook', titulo: 'Seguidores',             unidade: 'seguidores',      alvo: 'perfil', desc: 'Seguidores para tu perfil o página de Facebook. Pega el enlace del perfil o de la página.' },
   facebook_curtidas:          { rede: 'facebook', titulo: 'Me gusta',               unidade: 'me gusta',        alvo: 'post',   desc: 'Me gusta para una publicación de Facebook. Pega el enlace de la publicación.' },
   facebook_visualizacoes:     { rede: 'facebook', titulo: 'Vistas',        unidade: 'vistas', alvo: 'post',   desc: 'Vistas para un video o reel de Facebook. Pega el enlace del video.' },
   facebook_comentarios:       { rede: 'facebook', titulo: 'Comentarios',            unidade: 'comentarios',     alvo: 'post',   desc: 'Comentarios para una publicación o video de Facebook. Pega el enlace.' },
@@ -96,16 +97,22 @@ const BLOQUEADAS = [
   // Meta Ads
   '/painel/meta-ads', '/api/painel/meta-ads',
   // Pix, recuperação de Pix e gateways que o You Agency não usa (só NOWPayments)
-  '/painel/recuperacao', '/api/painel/order-recovery', '/api/admin/recovery-links', '/api/recovery/context',
+  // (/api/recovery/context liberado: o link do e-mail de recuperação recarrega o pedido pelo token assinado)
+  '/painel/recuperacao', '/api/painel/order-recovery', '/api/admin/recovery-links',
   '/api/paghiper', '/api/painel/paghiper', '/api/woovi', '/api/openpix', '/api/efi', '/api/expay', '/api/stripe',
   '/api/pagarme', '/api/payment/confirm', '/webhook/validar-confirmado', '/pix',
   // Páginas sem versão You Agency
   '/presell'
 ];
 
+// Liberadas mesmo casando com um prefixo bloqueado: bot IA do WhatsApp (webhook + checagem de perfil)
+// e o CRM dele no painel (conversas e follow-up).
+const LIBERADAS = ['/api/whatsapp-ia', '/api/internal/ia-check-profile', '/api/painel/ia-crm', '/painel/ia-crm', '/api/painel/ia-followup', '/painel/ia-followup'];
 function bloqueada(p) {
   const s = String(p || '').toLowerCase();
-  return BLOQUEADAS.some((b) => s === b || s.startsWith(b + '/') || s.startsWith(b + '-') || s.startsWith(b + '?'));
+  const casa = (b) => s === b || s.startsWith(b + '/') || s.startsWith(b + '-') || s.startsWith(b + '?');
+  if (LIBERADAS.some(casa)) return false;
+  return BLOQUEADAS.some(casa);
 }
 
 module.exports.register = function register(app, deps) {
@@ -586,23 +593,26 @@ module.exports.register = function register(app, deps) {
   });
   app.get('/servicios-tiktok', renderRede('tiktok'));
   app.get('/servicios-facebook', renderRede('facebook'));
-  app.get('/api/redes/catalogo', (req, res) => {
+  app.get('/api/redes/catalogo', async (req, res) => {
     const rede = String(req.query.rede || '').toLowerCase();
     const { tabelaRedes, tabelaCurtidas, tabelaVisualizacoes, parsePrecoToCents } = require('./pricing');
+    // Ocultos no Gerenciamento de Tipo (coluna Oculto) não aparecem no site.
+    let ocultos = {}; try { ocultos = (await deps.loadServiceVisibility()) || {}; } catch (_) {}
+    const oculto = (d, tipo) => (Array.isArray(ocultos[d.rede]) ? ocultos[d.rede] : []).includes(tipo);
     const servicos = Object.entries(REDES_CATALOGO_TIPOS)
-      .filter(([, d]) => !rede || d.rede === rede)
+      .filter(([tipo, d]) => (!rede || d.rede === rede) && !oculto(d, tipo))
       .map(([tipo, d]) => ({
         tipo, rede: d.rede, titulo: d.titulo, unidade: d.unidade, alvo: d.alvo, desc: d.desc,
         pacotes: (tabelaRedes[tipo] || []).map((x) => ({ q: x.q, cents: parsePrecoToCents(x.p), label: x.p }))
       }));
-    res.set('Cache-Control', 'public, max-age=300');
+    res.set('Cache-Control', 'public, max-age=60');
     // Ofertas da etapa 3 (mesmos preços que o calculateOrderBumps do pricing.js soma no servidor).
     const pac = (arr) => (arr || []).map((x) => ({ q: x.q, cents: parsePrecoToCents(x.p) }));
     const ofertas = { likes: pac(tabelaCurtidas.mistos), views: pac(tabelaVisualizacoes.visualizacoes_reels), comments: { unitCents: 2000, max: 250 } };
     res.json({ ok: true, servicos, ofertas });
   });
 
-  app.get('/instagram-services', (req, res) => {
+  app.get('/instagram-services', async (req, res) => {
     console.log('📸 Acessando rota /instagram-services');
     const rawServico = String((req && req.query && (req.query.servico || req.query.service || req.query.tipo)) || '').trim().toLowerCase();
     const pvPath = '/servicos-instagram';
@@ -611,9 +621,8 @@ module.exports.register = function register(app, deps) {
     } else {
       deps.trackPageView(req, pvPath);
     }
-    res.render('servicos-instagram', { 
-      queryParams: req.query 
-    }, (err, html) => {
+    let serviceVisibility = null; try { serviceVisibility = await deps.loadServiceVisibility(); } catch (_) {}
+    res.render('servicos-instagram', { queryParams: req.query, serviceVisibility }, (err, html) => {
       if (err) {
         console.error('❌ Erro ao renderizar servicos-instagram:', err.message);
         return res.status(500).send('Error al cargar la página');
@@ -623,12 +632,11 @@ module.exports.register = function register(app, deps) {
     });
   });
   
-  app.get('/views-services', (req, res) => {
+  app.get('/views-services', async (req, res) => {
     console.log('▶️ Acessando rota /views-services');
     deps.trackPageView(req, '/views-services');
-    res.render('servicos-visualizacoes', { 
-      queryParams: req.query 
-    }, (err, html) => {
+    let serviceVisibility = null; try { serviceVisibility = await deps.loadServiceVisibility(); } catch (_) {}
+    res.render('servicos-visualizacoes', { queryParams: req.query, serviceVisibility }, (err, html) => {
       if (err) {
         console.error('❌ Erro ao renderizar servicos-visualizacoes:', err.message);
         return res.status(500).send('Error al cargar la página');
@@ -638,12 +646,11 @@ module.exports.register = function register(app, deps) {
     });
   });
   
-  app.get('/likes-services', (req, res) => {
+  app.get('/likes-services', async (req, res) => {
     console.log('❤️ Acessando rota /likes-services');
     deps.trackPageView(req, '/likes-services');
-    res.render('servicos-curtidas', { 
-      queryParams: req.query 
-    }, (err, html) => {
+    let serviceVisibility = null; try { serviceVisibility = await deps.loadServiceVisibility(); } catch (_) {}
+    res.render('servicos-curtidas', { queryParams: req.query, serviceVisibility }, (err, html) => {
       if (err) {
         console.error('❌ Erro ao renderizar servicos-curtidas:', err.message);
         return res.status(500).send('Error al cargar la página');
@@ -734,6 +741,13 @@ module.exports.register = function register(app, deps) {
         acc[k] = v;
         return acc;
       }, {});
+      // Usuário bloqueado (Usuários Bloqueados no painel) não gera cobrança, venha do site ou do bot.
+      try {
+        const igBl = String(addInfoMap['instagram_username'] || '').trim();
+        if (igBl && typeof deps.blacklistBarra === 'function' && await deps.blacklistBarra(igBl, 'pago', req)) {
+          return res.status(403).json({ error: 'blocked_user', message: 'Este perfil no puede ser atendido.' });
+        }
+      } catch (_) {}
   
       const tipoVal = addInfoMap['tipo_servico'] || '';
       const qtdVal = Number(addInfoMap['quantidade'] || 0) || 0;

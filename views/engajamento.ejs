@@ -1509,13 +1509,26 @@
     #engajamentoServiceCards .card-icon-3d.rd-tint-facebook { filter: grayscale(1) brightness(0.95) sepia(1) hue-rotate(178deg) saturate(5) drop-shadow(0 12px 12px rgba(0,0,0,0.15)); }
   </style>
   <script>
+    // TikTok/Facebook: card do serviço some quando todos os tipos dele estão ocultos (Gerenciamento de Tipo).
+    (function () {
+      try {
+        fetch('/api/redes/catalogo', { headers: { Accept: 'application/json' } }).then(function (r) { return r.json(); }).then(function (d) {
+          if (!d || !d.ok || !Array.isArray(d.servicos)) return;
+          var tem = {}; d.servicos.forEach(function (s) { var k = /seguidores/.test(s.tipo) ? 'seguidores' : (/curtidas/.test(s.tipo) ? 'curtidas' : (/comentarios/.test(s.tipo) ? 'comentarios' : 'visualizacoes')); tem[s.rede + '|' + k] = true; });
+          Array.prototype.forEach.call(document.querySelectorAll('a[data-plat="tiktok"], a[data-plat="facebook"]'), function (c) {
+            var m = String(c.getAttribute('href') || '').match(/servicio=([a-z]+)/); var k = m ? m[1] : '';
+            if (k && !tem[c.getAttribute('data-plat') + '|' + k]) { c.setAttribute('data-oculto', '1'); c.style.display = 'none'; }
+          });
+        }).catch(function () {});
+      } catch (_) {}
+    })();
     // Plataforma: Instagram / TikTok / Facebook trocam os cards do mesmo grid.
     (function () {
       function mostrar(plat) {
         var grid = document.getElementById('engajamentoServiceCards');
         if (!grid) return;
         grid.style.display = 'grid';
-        Array.prototype.forEach.call(grid.querySelectorAll('[data-plat]'), function (c) { c.style.display = c.getAttribute('data-plat') === plat ? '' : 'none'; });
+        Array.prototype.forEach.call(grid.querySelectorAll('[data-plat]'), function (c) { c.style.display = (c.getAttribute('data-plat') === plat && c.getAttribute('data-oculto') !== '1') ? '' : 'none'; });
         Array.prototype.forEach.call(document.querySelectorAll('.platform-btn'), function (b) { b.setAttribute('aria-pressed', b.classList.contains(plat) ? 'true' : 'false'); });
         var tip = document.getElementById('tutorialPlatform'); if (tip) tip.style.setProperty('display', 'none', 'important');
         setTimeout(function () { try { rolarSuave(); } catch (_) {} }, 120);

@@ -165,9 +165,11 @@ const tabelaComentariosRedes = [
 const tabelaRedes = {
     tiktok_seguidores: tabelaSeguidores.mistos,
     tiktok_curtidas: tabelaCurtidas.mistos,
+    tiktok_curtidas_reais: tabelaCurtidas.organicos,
     tiktok_visualizacoes: tabelaVisualizacoes.visualizacoes_reels,
     tiktok_comentarios: tabelaComentariosRedes,
-    facebook_seguidores_perfil: tabelaSeguidores.mistos,
+    facebook_seguidores: tabelaSeguidores.mistos,
+    facebook_seguidores_perfil: tabelaSeguidores.mistos, // antigo (compat)
     facebook_seguidores_pagina: tabelaSeguidores.mistos,
     facebook_curtidas: tabelaCurtidas.mistos,
     facebook_visualizacoes: tabelaVisualizacoes.visualizacoes_reels,

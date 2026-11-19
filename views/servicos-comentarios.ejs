@@ -654,6 +654,7 @@
 
    <script src="/js/main.js"></script>
    <script src="/js/why-us.js"></script>
+   <script type="application/json" id="oppusServiceVisibilityJson"><%- JSON.stringify((typeof serviceVisibility !== 'undefined' && serviceVisibility) ? serviceVisibility : { seguidores: [], curtidas: [], visualizacoes: [] }).replace(/</g, '\\u003c') %></script>
    <script src="/js/servicos-instagram.js?v=<%= Date.now() %>"></script>
    <div id="toastContainer" class="toast-container"></div>
   <div id="termsPage" class="client-page" aria-label="Términos de uso" style="display:none;">

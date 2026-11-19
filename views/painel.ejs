@@ -702,6 +702,7 @@
                 %>
                 <option value="all" <%= (!wf || wf === 'all') ? 'selected' : '' %>>Todos</option>
                 <option value="expired" <%= (wf === 'expired') ? 'selected' : '' %>>Expirada</option>
+                <option value="3m" <%= (wf === '3m') ? 'selected' : '' %>>3 meses</option>
                 <option value="4m" <%= (wf === '4m') ? 'selected' : '' %>>4 meses</option>
                 <option value="6m" <%= (wf === '6m') ? 'selected' : '' %>>6 meses</option>
                 <option value="12m" <%= (wf === '12m') ? 'selected' : '' %>>1 ano</option>
@@ -900,6 +901,7 @@
                   if (refilMode === '12m') return '1 ano';
                   if (refilMode === '6m') return '6 meses';
                   if (refilMode === '4m') return '4 meses';
+                  if (refilMode === '3m') return '3 meses';
                   if (refilDaysLeft !== null) return '30 dias';
                   return '-';
                 })();
@@ -929,6 +931,8 @@
                     <span class="unknown-badge unknown-badge--lifetime">6 meses</span>
                   <% } else if (refilMode === '4m') { %>
                     <span class="unknown-badge unknown-badge--lifetime">4 meses</span>
+                  <% } else if (refilMode === '3m') { %>
+                    <span class="unknown-badge unknown-badge--lifetime">3 meses</span>
                   <% } %>
                   <%
                     const uRaw = String(username || '').trim();
@@ -960,10 +964,12 @@
                 <td style="text-align:right;" class="cell-initial"><%= (init !== null ? init : '-') %></td>
                 <td style="text-align:right;"><%= contracted %></td>
                 <td style="text-align:right;" class="cell-resultado"><%= (resultado !== null ? resultado : '-') %></td>
-                <td style="text-align:right;" class="cell-current"><% if (entregaPendente) { %><span style="color:#d97706; font-weight:700;" title="Pedido <%= (row.entregaStatus||'') %> no fornecedor — ainda não entregue">Em andamento</span><% } else { %><%= (current !== null ? current : '-') %><% } %></td>
+                <td style="text-align:right;" class="cell-current"><% if (entregaPendente && row.entregaCancelada) { %><span style="color:#dc2626; font-weight:700;" title="Último pedido <%= (row.fornecedorOrderId||'') %> está <%= (row.entregaStatus||'') %> no fornecedor">Cancelado</span><% } else if (entregaPendente) { %><span style="color:#d97706; font-weight:700;" title="Pedido <%= (row.entregaStatus||'') %> no fornecedor — ainda não entregue">Em andamento</span><% } else { %><%= (current !== null ? current : '-') %><% } %></td>
                 <td style="text-align:right;" class="cell-diff"><% if (entregaPendente) { %><span class="muted" style="color:#94a3b8;">—</span><% } else { %><%= (diff !== null ? diff : '-') %><% } %></td>
                 <td style="text-align:right;" class="cell-pct">
-                  <% if (entregaPendente) { %>
+                  <% if (entregaPendente && row.entregaCancelada) { %>
+                    <span style="color:#dc2626; font-weight:700;" title="orderId <%= (row.fornecedorOrderId||'') %>: <%= (row.entregaStatus||'') %> no fornecedor">Cancelado</span>
+                  <% } else if (entregaPendente) { %>
                     <span style="color:#d97706; font-weight:700;" title="orderId <%= (row.fornecedorOrderId||'') %> ainda não concluído no fornecedor">Em andamento</span>
                   <% } else if (resultado !== null && current !== null) { %>
                     <% if (current >= resultado) { %>
@@ -2491,7 +2497,7 @@
             var btn = el('followersRefilCostBtn');
             var out = el('followersRefilCostResult');
             if (!btn) return;
-            var brl = function(v){ try { return Number(v||0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); } catch(_){ return 'R$ ' + Number(v||0).toFixed(2); } };
+            var brl = function(v){ try { return Number(v||0).toLocaleString('es-MX', { style:'currency', currency:'MXN' }); } catch(_){ return '$ ' + Number(v||0).toFixed(2); } };
             var nf = function(v){ return Number(v||0).toLocaleString('pt-BR'); };
             btn.addEventListener('click', async function(){
               try {
@@ -3583,7 +3589,10 @@
                       <% if (!provR || !getSvcId(rd[0], it.key, provR)) { %><span style="font-size:0.78rem; color:#b45309;">não despacha</span><% } %>
                     </div>
                   </td>
-                  <td style="padding:8px; border-bottom:1px solid #f3f4f6; text-align:center; color:#9ca3af;">—</td>
+                  <% var _hidRede = (Array.isArray(hidden0[rd[0]]) ? hidden0[rd[0]] : []).map(String); %>
+                  <td style="padding:8px; border-bottom:1px solid #f3f4f6; text-align:center;">
+                    <input type="checkbox" class="serviceTypeHiddenChk" data-ctx="<%= rd[0] %>" data-key="<%= it.key %>" <%= _hidRede.includes(String(it.key)) ? 'checked' : '' %> />
+                  </td>
                 </tr>
               <% }) }) %>
             </tbody>
@@ -4156,7 +4165,7 @@
               const maxPer = (c.maxUsesPerProfile != null) ? String(c.maxUsesPerProfile) : '-';
               const usedProfiles = (typeof c.usedProfiles === 'number') ? c.usedProfiles : 0;
               const movedCents = (typeof c.movedCents === 'number') ? c.movedCents : 0;
-              const movedBrl = (movedCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+              const movedBrl = (movedCents / 100).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
               const isActive = !(c && c.isActive === false);
               let restr = '';
               const blockedC = couponBlockedServices(c);
@@ -4272,17 +4281,17 @@
       <div class="summary-grid summary-grid-dashboard">
         <div class="summary-card">
           <div class="summary-label">Total de pedidos gerados</div>
-          <div class="summary-value">R$ <%= (typeof totalOrdersGeneratedValue !== 'undefined' ? Number(totalOrdersGeneratedValue || 0) : 0).toFixed(2).replace('.', ',') %></div>
+          <div class="summary-value">$ <%= Number((typeof totalOrdersGeneratedValue !== 'undefined' ? Number(totalOrdersGeneratedValue || 0) : 0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
           <div class="summary-sub" style="margin-top:6px;"><%= (typeof totalOrdersGenerated !== 'undefined' ? Number(totalOrdersGenerated || 0) : 0).toLocaleString('pt-BR') %> pedido(s)</div>
         </div>
         <div class="summary-card">
           <div class="summary-label">Total de Vendas</div>
-          <div class="summary-value">R$ <%= (typeof revenueShown !== 'undefined' ? Number(revenueShown || 0) : Number(totalRevenue || 0)).toFixed(2).replace('.', ',') %></div>
+          <div class="summary-value">$ <%= Number((typeof revenueShown !== 'undefined' ? Number(revenueShown || 0) : Number(totalRevenue || 0))).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
         </div>
         <% var _totVendas = (typeof revenueShown !== 'undefined' ? Number(revenueShown || 0) : Number(totalRevenue || 0)); var _ltvRev = (typeof ltvRevenue !== 'undefined' ? Number(ltvRevenue || 0) : 0); var _ltvPct = _totVendas > 0 ? (_ltvRev / _totVendas * 100) : 0; %>
         <div class="summary-card" id="ltvRecompraCard" style="cursor:pointer;" title="Ver compras de recompra">
           <div class="summary-label">Faturamento LTV (recompra) <span style="color:#7c3aed; font-size:0.78rem; font-weight:700;">ver ›</span></div>
-          <div class="summary-value" style="color:#7c3aed;">R$ <%= _ltvRev.toFixed(2).replace('.', ',') %></div>
+          <div class="summary-value" style="color:#7c3aed;">$ <%= Number(_ltvRev).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
           <% var _lpN = (typeof ltvPurchases !== 'undefined' && Array.isArray(ltvPurchases) ? ltvPurchases.length : 0); var _ttN = (typeof totalTransactions !== 'undefined' ? Number(totalTransactions || 0) : 0); var _lpPct = _ttN > 0 ? (_lpN / _ttN * 100) : 0; %>
           <div class="summary-sub" style="margin-top:6px;"><%= _ltvPct.toFixed(1).replace('.', ',') %>% das vendas · <%= _lpN %> pedido(s) recorrente(s) (<%= _lpPct.toFixed(1).replace('.', ',') %>%)</div>
         </div>
@@ -4310,7 +4319,7 @@
             if (!card || !modal) return;
             var data = [];
             try { data = JSON.parse((document.getElementById('ltvPurchasesJson') || {}).textContent || '[]') || []; } catch(_) { data = []; }
-            function brl(v){ try { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); } catch(_) { return 'R$ ' + Number(v||0).toFixed(2); } }
+            function brl(v){ try { return Number(v || 0).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }); } catch(_) { return '$ ' + Number(v||0).toFixed(2); } }
             function fmtDate(ms){ if (!ms) return '-'; try { return new Date(Number(ms)).toLocaleString('pt-BR'); } catch(_) { return '-'; } }
             function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
             function render(){
@@ -4342,11 +4351,11 @@
         </script>
         <div class="summary-card">
           <div class="summary-label">Ticket Médio</div>
-          <div class="summary-value">R$ <%= (typeof avgTicket !== 'undefined' ? Number(avgTicket || 0) : 0).toFixed(2).replace('.', ',') %></div>
+          <div class="summary-value">$ <%= Number((typeof avgTicket !== 'undefined' ? Number(avgTicket || 0) : 0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
         </div>
         <div class="summary-card">
           <div class="summary-label">Custo Total no Período</div>
-          <div class="summary-value">R$ <%= totalCost.toFixed(2).replace('.', ',') %></div>
+          <div class="summary-value">$ <%= Number(totalCost).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
         </div>
         <% var _vendasOper = (typeof revenueShown !== 'undefined' ? Number(revenueShown || 0) : Number(totalRevenue || 0)); var _lucroOper = _vendasOper - Number(totalCost || 0);
            var _aj = (typeof ajustesLucro !== 'undefined' && ajustesLucro) ? ajustesLucro : { total: 0, itens: [], comAsterisco: false };
@@ -4363,10 +4372,10 @@
            var _cfValorRef = _cfRefTravado ? Number(_cfMesesTrav[_cfMesRef].mensal || 0) : _cfMensal;
            var _cfItensRef = _cfRefTravado ? (_cfMesesTrav[_cfMesRef].itens || []) : _cfItens;
            var _cfTravadosNoPeriodo = _cfPorMes.filter(function(x){ return x && x.travado; });
-           var _cfPeriodoTxt = 'R$ ' + _cfPeriodo.toFixed(2).replace('.', ',') + ' no período (' + _cfDias + 'd)'; %>
+           var _cfPeriodoTxt = '$ ' + _cfPeriodo.toFixed(2) + ' no período (' + _cfDias + 'd)'; %>
         <div class="summary-card">
           <div class="summary-label">Lucro Líquido (período)</div>
-          <div class="summary-value" id="dashLucroOperValue" style="color: <%= _lucroOper >= 0 ? '#16a34a' : '#dc2626' %>;">R$ <%= _lucroOper.toFixed(2).replace('.', ',') %></div>
+          <div class="summary-value" id="dashLucroOperValue" style="color: <%= _lucroOper >= 0 ? '#16a34a' : '#dc2626' %>;">$ <%= Number(_lucroOper).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
           <div id="dashLucroMargem" style="margin-top:4px; font-size:0.85rem; font-weight:700; color:#6b7280;"></div>
           <button type="button" id="dashMetaTaxToggle" style="margin-top:8px; font-size:0.72rem; padding:4px 10px; border:1px solid #e0e0ea; border-radius:999px; background:#fff; cursor:pointer; color:#374151; font-weight:600;">c/ imposto Meta (13,8%)</button>
           <% if (_ajTotal > 0) { %>
@@ -4379,16 +4388,16 @@
         <% if (_ajTotal > 0) { %>
         <div class="summary-card">
           <div class="summary-label">Custo Adicional (período)</div>
-          <div class="summary-value" style="color:#dc2626;">R$ <%= _ajTotal.toFixed(2).replace('.', ',') %></div>
+          <div class="summary-value" style="color:#dc2626;">$ <%= Number(_ajTotal).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
           <div class="summary-sub" id="dashAjusteSub" data-base="<%= _aj.itens.length %> lançamento<%= _aj.itens.length > 1 ? 's' : '' %> fora da operação" style="margin-top:6px;"><%= _aj.itens.length %> lançamento<%= _aj.itens.length > 1 ? 's' : '' %> fora da operação</div>
           <button type="button" id="dashAjusteDetalhe" style="margin-top:8px; font-size:0.72rem; padding:4px 10px; border:1px solid #fecaca; border-radius:999px; background:#fff5f5; cursor:pointer; color:#b91c1c; font-weight:600;">Detalhamento</button>
         </div>
         <% } %>
         <div class="summary-card">
           <div class="summary-label">Custos Fixos (<%= _cfMesNome(_cfMesRef) %>)<% if (_cfRefTravado) { %> <span title="Mês travado: usa a lista própria deste mês, não o padrão" style="color:#b91c1c;">🔒</span><% } %></div>
-          <div class="summary-value" style="color:#dc2626;">R$ <%= _cfValorRef.toFixed(2).replace('.', ',') %></div>
+          <div class="summary-value" style="color:#dc2626;">$ <%= Number(_cfValorRef).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
           <div class="summary-sub" id="dashCustoFixoSub" data-base="<%= _cfItensRef.length %> assinatura<%= _cfItensRef.length !== 1 ? 's' : '' %> · <%= _cfPeriodoTxt %>" style="margin-top:6px;"><%= _cfItensRef.length %> assinatura<%= _cfItensRef.length !== 1 ? 's' : '' %> · <%= _cfPeriodoTxt %></div>
-          <% if (_cfRefTravado) { %><div style="margin-top:4px; font-size:0.72rem; color:#b91c1c;">🔒 <%= _cfMesNome(_cfMesRef) %> travado · padrão R$ <%= _cfMensal.toFixed(2).replace('.', ',') %></div><% } else if (_cfTravadosNoPeriodo.length) { %><div style="margin-top:4px; font-size:0.72rem; color:#b91c1c;">🔒 travado<%= _cfTravadosNoPeriodo.length > 1 ? 's' : '' %>: <%= _cfTravadosNoPeriodo.map(function(x){ return _cfMesNome(x.mes) + ' R$ ' + Number(x.valor).toFixed(2).replace('.', ','); }).join(' · ') %></div><% } %>
+          <% if (_cfRefTravado) { %><div style="margin-top:4px; font-size:0.72rem; color:#b91c1c;">🔒 <%= _cfMesNome(_cfMesRef) %> travado · padrão $ <%= Number(_cfMensal).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div><% } else if (_cfTravadosNoPeriodo.length) { %><div style="margin-top:4px; font-size:0.72rem; color:#b91c1c;">🔒 travado<%= _cfTravadosNoPeriodo.length > 1 ? 's' : '' %>: <%= _cfTravadosNoPeriodo.map(function(x){ return _cfMesNome(x.mes) + ' $ ' + Number(x.valor).toFixed(2); }).join(' · ') %></div><% } %>
           <button type="button" id="dashCustoFixoEditar" style="margin-top:8px; font-size:0.72rem; padding:4px 10px; border:1px solid #fecaca; border-radius:999px; background:#fff5f5; cursor:pointer; color:#b91c1c; font-weight:600;">Editar / Detalhar</button>
         </div>
         <div id="dashCustoFixoModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); z-index:9999; align-items:center; justify-content:center; padding:16px;">
@@ -4411,7 +4420,7 @@
               <button type="button" id="cfAddRow" style="margin-top:8px; font-size:.8rem; padding:6px 12px; border:1px dashed #cbd5e1; border-radius:8px; background:#fff; cursor:pointer; color:#374151;">+ adicionar</button>
               <div style="display:flex; justify-content:space-between; font-weight:800; color:#111827; padding-top:12px; margin-top:8px; border-top:1px solid #f1f2f6;">
                 <span>Total mensal</span>
-                <span id="cfTotal" style="color:#dc2626;">R$ 0,00</span>
+                <span id="cfTotal" style="color:#dc2626;">$ 0,00</span>
               </div>
               <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px; align-items:center;">
                 <span id="cfMsg" style="font-size:.8rem; color:#6b7280;"></span>
@@ -4447,12 +4456,12 @@
               for (var i = -12; i <= 1; i++) { var x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + i, 1)); ks[x.getUTCFullYear() + '-' + String(x.getUTCMonth()+1).padStart(2,'0')] = 1; }
               Object.keys(travados).forEach(function(k){ ks[k] = 1; }); if (mesRef) ks[mesRef] = 1;
               var html = '<option value="">Padrão (todo mês sem trava)</option>';
-              Object.keys(ks).sort().reverse().forEach(function(k){ html += '<option value="' + k + '">' + nomeMes(k) + (travados[k] ? ' 🔒 R$ ' + (Number(travados[k].mensal)||0).toFixed(2).replace('.', ',') : '') + '</option>'; });
+              Object.keys(ks).sort().reverse().forEach(function(k){ html += '<option value="' + k + '">' + nomeMes(k) + (travados[k] ? ' 🔒 $ ' + (Number(travados[k].mensal)||0).toFixed(2) : '') + '</option>'; });
               mesSel.innerHTML = html;
             }
             function setEditavel(on){ rowsEl.querySelectorAll('input,button').forEach(function(el){ el.disabled = !on; }); rowsEl.style.opacity = on ? '1' : '.55'; if (addBtn) { addBtn.disabled = !on; addBtn.style.opacity = on ? '1' : '.55'; } }
             var itens = padrao;
-            function brl(n){ return 'R$ ' + (Number(n)||0).toFixed(2).replace('.', ','); }
+            function brl(n){ return '$ ' + (Number(n)||0).toFixed(2); }
             function recalc(){
               var t = 0;
               rowsEl.querySelectorAll('.cfRow').forEach(function(r){ var v = Number(String(r.querySelector('.cfVal').value||'').replace(',', '.'))||0; if (v>0) t+=v; });
@@ -4518,7 +4527,7 @@
               <% _aj.itens.forEach(function(it, _i){ %>
               <div style="border-bottom:1px solid #f1f2f6; padding:10px 0;">
                 <div style="display:flex; justify-content:space-between; gap:12px; align-items:baseline;">
-                  <div style="color:#111827;"><strong style="color:#dc2626;">R$ <%= Number(it.valor||0).toFixed(2).replace('.', ',') %></strong> — <%= it.titulo %></div>
+                  <div style="color:#111827;"><strong style="color:#dc2626;">$ <%= Number(Number(it.valor||0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></strong> — <%= it.titulo %></div>
                   <div style="font-size:.78rem; color:#9ca3af; white-space:nowrap;"><%= it.data ? String(it.data).slice(8,10) + '/' + String(it.data).slice(5,7) : it.mes %></div>
                 </div>
                 <div style="font-size:.84rem; color:#6b7280; margin-top:4px; line-height:1.45;"><%= it.motivo %></div>
@@ -4526,7 +4535,7 @@
                 <details style="margin-top:4px;">
                   <summary style="cursor:pointer; font-size:.78rem; color:#9ca3af;">dados</summary>
                   <ul style="margin:6px 0 0 16px; padding:0; font-size:.78rem; color:#6b7280; line-height:1.5; word-break:break-word;">
-                    <% it.detalhes.forEach(function(d){ %><li><% if (d && typeof d === 'object') { %><strong style="color:#374151;">@<%= d.perfil || '?' %></strong> — repôs <strong><%= d.repor != null ? Number(d.repor).toLocaleString('pt-BR') : '?' %></strong> · R$ <%= d.custoBrl != null ? Number(d.custoBrl).toFixed(2).replace('.', ',') : '?' %> · <%= d.provider || '?' %><% if (d.order) { %> · #<%= d.order %><% } %><% if (d.pedidosPagos != null) { %> · <span title="pedidos pagos deste perfil conosco"><%= d.pedidosPagos %> pedido<%= d.pedidosPagos === 1 ? '' : 's' %> pago<%= d.pedidosPagos === 1 ? '' : 's' %></span><% } %><% } else { %><%= d %><% } %></li><% }); %>
+                    <% it.detalhes.forEach(function(d){ %><li><% if (d && typeof d === 'object') { %><strong style="color:#374151;">@<%= d.perfil || '?' %></strong> — repôs <strong><%= d.repor != null ? Number(d.repor).toLocaleString('pt-BR') : '?' %></strong> · $ <%= d.custoBrl != null ? Number(d.custoBrl).toFixed(2) : '?' %> · <%= d.provider || '?' %><% if (d.order) { %> · #<%= d.order %><% } %><% if (d.pedidosPagos != null) { %> · <span title="pedidos pagos deste perfil conosco"><%= d.pedidosPagos %> pedido<%= d.pedidosPagos === 1 ? '' : 's' %> pago<%= d.pedidosPagos === 1 ? '' : 's' %></span><% } %><% } else { %><%= d %><% } %></li><% }); %>
                   </ul>
                 </details>
                 <% } %>
@@ -4534,7 +4543,7 @@
               <% }); %>
               <div style="display:flex; justify-content:space-between; font-weight:800; color:#111827; padding-top:12px;">
                 <span>Total</span>
-                <span style="color:#dc2626;">R$ <%= _ajTotal.toFixed(2).replace('.', ',') %></span>
+                <span style="color:#dc2626;">$ <%= Number(_ajTotal).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></span>
               </div>
               <div id="dashAjusteEstado" style="margin-top:8px; font-size:.78rem; color:#9ca3af;"></div>
             </div>
@@ -4560,7 +4569,7 @@
            var _fb = _fbBr + _fbUsd;            // gasto total (BR + USD convertido)
            var _fbTax = _fbBr * 0.138;          // imposto SÓ sobre a conta BR; a ca3 (USD) não tem
            var _fbTotal = _fb + _fbTax;
-           var _brl = function(n){ return 'R$ ' + Number(n || 0).toFixed(2).replace('.', ','); };
+           var _brl = function(n){ return '$ ' + Number(n || 0).toFixed(2); };
            var _dol = (typeof fbSpendDolar !== 'undefined') ? Number(fbSpendDolar || 0) : 0;
            var _taxaMx = (typeof fbUsdMxn !== 'undefined' && fbUsdMxn) ? Number(fbUsdMxn) : null;
            var _soUsd = _fbOk && _fbBr === 0; // You Agency: só a ca4 (USD), sem conta BR
@@ -4606,7 +4615,7 @@
         </div>
         <div class="summary-card" id="dashImpostoCard" data-vendas="<%= _vendasOper.toFixed(2) %>" data-lucrobruto="<%= _lucroOper.toFixed(2) %>" data-ads-base="<%= _fb.toFixed(2) %>" data-ads-tax="<%= _fbTax.toFixed(2) %>" data-ajuste="<%= _ajTotal.toFixed(2) %>" data-custofixo="<%= _cfPeriodo.toFixed(2) %>">
           <div class="summary-label">Imposto (período)</div>
-          <div class="summary-value" id="dashImpostoValue" style="color:#dc2626;">R$ 0,00</div>
+          <div class="summary-value" id="dashImpostoValue" style="color:#dc2626;">$ 0,00</div>
           <div class="summary-sub" style="margin-top:8px;">
             <div style="display:flex; align-items:center; gap:10px;">
               <input type="range" id="dashImpostoRate" min="6" max="13" step="0.1" value="13" style="flex:1; accent-color:#7c3aed; cursor:pointer;">
@@ -4643,7 +4652,7 @@
             try { includeAjuste = (localStorage.getItem(KEY_AJUSTE) === '1'); } catch(_){}
             var includeCustoFixo = false; // por padrão o custo fixo NÃO entra no lucro
             try { includeCustoFixo = (localStorage.getItem(KEY_CUSTOFIXO) === '1'); } catch(_){}
-            function fmt(n){ return 'R$ ' + (Number(n) || 0).toFixed(2).replace('.', ','); }
+            function fmt(n){ return '$ ' + (Number(n) || 0).toFixed(2); }
             function apply(){
               var rate = Number(slider.value); if (!(rate >= 6 && rate <= 13)) rate = 13;
               var rateStr = (Math.round(rate * 10) / 10).toString().replace('.', ',');
@@ -4788,10 +4797,10 @@
           <% var _tcU = (typeof totalCustomers !== 'undefined' ? Number(totalCustomers || 0) : 0); var _rcU = (typeof ltvCustomers !== 'undefined' ? Number(ltvCustomers || 0) : 0); var _rcPct = _tcU > 0 ? (_rcU / _tcU * 100) : 0; %>
           <div class="summary-sub" style="margin-top:6px;"><%= _tcU %> cliente(s) único(s) · <%= _rcU %> recorrente(s) (<%= _rcPct.toFixed(1).replace('.', ',') %>%)</div>
         </div>
-        <div class="summary-card" title="Clientes que caíram na tela de obrigado logo APÓS pagar (não conta consulta do pedido). Sobre o total de pagos no período.">
+        <div class="summary-card" title="Clientes que caíram na tela de obrigado logo APÓS pagar (não conta consulta do pedido). Sobre os pedidos pagos PELO SITE no período (sem bot, upsell e refil), a partir de quando a medição começou.">
           <div class="summary-label">Viram a tela de obrigado (pós-pagamento)</div>
           <div class="summary-value" id="thankyouPct">—</div>
-          <div class="summary-sub" style="margin-top:6px;"><span id="thankyouViewed">—</span> de <span id="thankyouPaid">—</span> pagos chegaram na tela</div>
+          <div class="summary-sub" style="margin-top:6px;"><span id="thankyouViewed">—</span> de <span id="thankyouPaid">—</span> pagos no site chegaram na tela</div>
         </div>
         <script>
         (function(){
@@ -4856,7 +4865,7 @@
             function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
             function fmtDate(v){ try { var d = new Date(v); return isFinite(d.getTime()) ? d.toLocaleString('pt-BR') : '-'; } catch (_) { return '-'; } }
             function fmtNum(n){ return (typeof n === 'number' && isFinite(n)) ? n.toLocaleString('pt-BR') : '-'; }
-            function brl(v){ try { return Number(v||0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); } catch(_){ return 'R$ ' + Number(v||0).toFixed(2); } }
+            function brl(v){ try { return Number(v||0).toLocaleString('es-MX', { style:'currency', currency:'MXN' }); } catch(_){ return '$ ' + Number(v||0).toFixed(2); } }
             function render(){
               var q = String(search && search.value || '').trim().replace(/^@+/, '').toLowerCase();
               var bo = !!(boughtOnly && boughtOnly.checked);
@@ -4930,14 +4939,14 @@
         </script>
         <div class="summary-card">
           <div class="summary-label">Vendas sem orderbump</div>
-          <div class="summary-value">R$ <%= (typeof revenueWithoutBumps !== 'undefined' ? Number(revenueWithoutBumps || 0) : 0).toFixed(2).replace('.', ',') %></div>
+          <div class="summary-value">$ <%= Number((typeof revenueWithoutBumps !== 'undefined' ? Number(revenueWithoutBumps || 0) : 0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
           <div style="margin-top:8px;">
             <a href="<%= (typeof toggleIgnoreBumpRevenueUrl !== 'undefined' && toggleIgnoreBumpRevenueUrl) ? toggleIgnoreBumpRevenueUrl : '/painel' %>" style="display:inline-block; padding:6px 10px; background:#0d6efd; color:#fff; border-radius:6px; text-decoration:none; font-size:0.85rem;">
               <%= (typeof ignoreBumpRevenue !== 'undefined' && ignoreBumpRevenue) ? 'Considerar venda de orderbump' : 'Retirar venda de orderbump' %>
             </a>
           </div>
         </div>
-        <% var _us = (typeof upsellStats !== 'undefined' && upsellStats) ? upsellStats : { revenueBRL:'R$ 0,00', conversionPct:0, paidCount:0, avgTicketBRL:'R$ 0,00', eligibleParents:0, costBRL:'R$ 0,00', costPct:0, netBRL:'R$ 0,00' }; %>
+        <% var _us = (typeof upsellStats !== 'undefined' && upsellStats) ? upsellStats : { revenueBRL:'$ 0.00', conversionPct:0, paidCount:0, avgTicketBRL:'$ 0.00', eligibleParents:0, costBRL:'$ 0.00', costPct:0, netBRL:'$ 0.00' }; %>
         <div class="summary-card">
           <div class="summary-label">Valor total pago de Upsell (período)</div>
           <div class="summary-value"><%= _us.revenueBRL %></div>
@@ -4948,7 +4957,7 @@
           <div class="summary-value"><%= Number(_us.conversionPct || 0).toFixed(1).replace('.', ',') %>%</div>
           <div class="summary-sub" style="margin-top:6px;">dos <%= _us.eligibleParents %> pedidos pagos pegaram upsell</div>
         </div>
-        <% var _rs = (typeof recoveryStats !== 'undefined' && recoveryStats) ? recoveryStats : { totalPaid:0, sms:{count:0,pct:0,valueBRL:'R$ 0,00'}, email:{count:0,pct:0,valueBRL:'R$ 0,00'} }; %>
+        <% var _rs = (typeof recoveryStats !== 'undefined' && recoveryStats) ? recoveryStats : { totalPaid:0, sms:{count:0,pct:0,valueBRL:'$ 0.00'}, email:{count:0,pct:0,valueBRL:'$ 0.00'} }; %>
         <div class="summary-card" title="Clientes que pagaram depois do SMS de recuperação ÷ clientes que receberam SMS no período (cada cliente conta 1 vez, mesmo com vários SMS/pedidos)">
           <div class="summary-label">Recuperado por SMS</div>
           <div class="summary-value"><%= Number(_rs.sms.pct || 0).toFixed(1).replace('.', ',') %>%</div>
@@ -4962,7 +4971,7 @@
       </div>
       <%# ── LUCRO POR DIA — segue o filtro de período do dashboard ───────────── %>
       <% if (view === 'dashboard' && typeof dailyProfit !== 'undefined' && dailyProfit && dailyProfit.length) {
-           var _dpBrl = function(n){ return 'R$ ' + Number(n || 0).toFixed(2).replace('.', ','); };
+           var _dpBrl = function(n){ return '$ ' + Number(n || 0).toFixed(2); };
            var _dpNum = function(n){ return Number(n || 0).toFixed(1).replace('.', ','); };
            var _dpT = dailyProfitTotals || { pedidos:0, receita:0, custoServico:0, ads:0, imposto:0, lucro:0 };
            var _dpMargem = _dpT.receita > 0 ? (_dpT.lucro / _dpT.receita * 100) : 0; %>
@@ -4988,6 +4997,7 @@
             <thead>
               <tr style="background:#f9fafb; text-align:right;">
                 <th style="padding:8px 12px; text-align:left; border-bottom:1px solid #e5e7eb;">Dia</th>
+                <th style="padding:8px 12px; border-bottom:1px solid #e5e7eb;">Pedidos pagos</th>
                 <th style="padding:8px 12px; border-bottom:1px solid #e5e7eb;">Lucro</th>
                 <th style="padding:8px 12px; border-bottom:1px solid #e5e7eb;">Margem</th>
               </tr>
@@ -4998,6 +5008,7 @@
                    var _dia = d.dia.slice(8,10) + '/' + d.dia.slice(5,7); %>
               <tr style="text-align:right; border-bottom:1px solid #f3f4f6;">
                 <td style="padding:8px 12px; text-align:left; font-weight:600;"><%= _dia %></td>
+                <td style="padding:8px 12px; font-weight:600; color:#374151; font-variant-numeric:tabular-nums;"><%= Number(d.pedidos || 0).toLocaleString('pt-BR') %></td>
                 <td style="padding:8px 12px; font-weight:700; color:<%= _lucroCor %>;"><%= _dpBrl(d.lucro) %></td>
                 <td style="padding:8px 12px; font-weight:600; color:<%= _lucroCor %>;"><%= _dpNum(d.margem) %>%</td>
               </tr>
@@ -5006,6 +5017,7 @@
             <tfoot>
               <tr style="text-align:right; background:#f9fafb; font-weight:700;">
                 <td style="padding:10px 12px; text-align:left;">Total</td>
+                <td style="padding:10px 12px; color:#374151; font-variant-numeric:tabular-nums;"><%= Number(_dpT.pedidos || 0).toLocaleString('pt-BR') %></td>
                 <td style="padding:10px 12px; color:<%= _dpT.lucro >= 0 ? '#16a34a' : '#dc2626' %>;"><%= _dpBrl(_dpT.lucro) %></td>
                 <td style="padding:10px 12px; color:<%= _dpT.lucro >= 0 ? '#16a34a' : '#dc2626' %>;"><%= _dpNum(_dpMargem) %>%</td>
               </tr>
@@ -5093,11 +5105,11 @@
         </div>
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; margin-top: 12px;">
           <div style="width:100%; min-width: 0;">
-            <div style="font-weight:700; margin-bottom:8px; color:#111827;">Ticket médio (R$)</div>
+            <div style="font-weight:700; margin-bottom:8px; color:#111827;">Ticket médio (MXN)</div>
             <canvas id="avgTicketTimelineChart" height="140"></canvas>
           </div>
           <div style="width:100%; min-width: 0;">
-            <div style="font-weight:700; margin-bottom:8px; color:#111827;">Faturamento (R$)</div>
+            <div style="font-weight:700; margin-bottom:8px; color:#111827;">Faturamento (MXN)</div>
             <canvas id="salesRevenueTimelineChart" height="140"></canvas>
           </div>
           <div style="width:100%; min-width: 0;">
@@ -5136,7 +5148,7 @@
                   data: {
                     labels: labelShort,
                     datasets: [{
-                      label: 'Ticket médio (R$)',
+                      label: 'Ticket médio (MXN)',
                       data: Array.isArray(data.dailyAvgTicket) ? data.dailyAvgTicket : [],
                       borderColor: '#2563eb',
                       backgroundColor: 'rgba(37, 99, 235, 0.15)',
@@ -5149,7 +5161,7 @@
                     responsive: true,
                     plugins: { legend: { display: false } },
                     scales: {
-                      y: { ticks: { stepSize: 5, callback: function(v){ return 'R$ ' + Number(v || 0).toFixed(2); } } }
+                      y: { ticks: { stepSize: 5, callback: function(v){ return '$ ' + Number(v || 0).toFixed(2); } } }
                     }
                   }
                 });
@@ -5161,7 +5173,7 @@
                   data: {
                     labels: labelShort,
                     datasets: [{
-                      label: 'Faturamento (R$)',
+                      label: 'Faturamento (MXN)',
                       data: Array.isArray(data.dailyRevenue) ? data.dailyRevenue : [],
                       borderColor: '#f59e0b',
                       backgroundColor: 'rgba(245, 158, 11, 0.15)',
@@ -5174,7 +5186,7 @@
                     responsive: true,
                     plugins: { legend: { display: false } },
                     scales: {
-                      y: { ticks: { callback: function(v){ return 'R$ ' + Number(v || 0).toFixed(0); } } }
+                      y: { ticks: { callback: function(v){ return '$ ' + Number(v || 0).toFixed(0); } } }
                     }
                   }
                 });
@@ -5264,7 +5276,7 @@
                               var pct = Number(ctx.parsed && ctx.parsed.y ? ctx.parsed.y : 0);
                               var bump = Array.isArray(br.dailyBumpRevenue) ? Number(br.dailyBumpRevenue[idx] || 0) : 0;
                               var tot = Array.isArray(br.dailyTotalRevenue) ? Number(br.dailyTotalRevenue[idx] || 0) : 0;
-                              return pct.toFixed(1) + '% (R$ ' + bump.toFixed(2).replace('.', ',') + ' de R$ ' + tot.toFixed(2).replace('.', ',') + ')';
+                              return pct.toFixed(1) + '% ($ ' + bump.toFixed(2) + ' de $ ' + tot.toFixed(2) + ')';
                             } catch (_) {
                               return (Number(ctx.parsed && ctx.parsed.y ? ctx.parsed.y : 0).toFixed(1) + '%');
                             }
@@ -5295,7 +5307,7 @@
           <div style="display:flex; gap:22px; align-items:center; flex-wrap:wrap; margin-top:12px;">
             <div style="flex:0 0 auto;"><canvas id="adFormatPieChart" width="280" height="280" style="max-width:280px;"></canvas></div>
             <div style="flex:1 1 340px; min-width:0; overflow-x:auto;">
-              <% var afRow = function(f){ var rc=(f.roas>=2.5?'#166534':(f.roas>=1.5?'#b45309':'#991b1b')); return '<tr><td style="white-space:nowrap;">'+f.label+'</td><td style="text-align:right;font-weight:700;">'+(f.purchases||0).toLocaleString('pt-BR')+'</td><td style="text-align:right;">R$ '+(f.revenue||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td><td style="text-align:right;color:#6b7280;">R$ '+(f.spend||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td><td style="text-align:right;font-weight:700;color:'+rc+';">'+(f.roas||0).toFixed(2)+'</td></tr>'; }; %>
+              <% var afRow = function(f){ var rc=(f.roas>=2.5?'#166534':(f.roas>=1.5?'#b45309':'#991b1b')); return '<tr><td style="white-space:nowrap;">'+f.label+'</td><td style="text-align:right;font-weight:700;">'+(f.purchases||0).toLocaleString('pt-BR')+'</td><td style="text-align:right;">$ '+(f.revenue||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td><td style="text-align:right;color:#6b7280;">$ '+(f.spend||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td><td style="text-align:right;font-weight:700;color:'+rc+';">'+(f.roas||0).toFixed(2)+'</td></tr>'; }; %>
               <table class="dashboard-table" style="min-width:0; font-size:0.9rem;">
                 <thead><tr><th>Formato</th><th style="text-align:right;">Vendas</th><th style="text-align:right;">Faturamento</th><th style="text-align:right;">Gasto</th><th style="text-align:right;">ROAS</th></tr></thead>
                 <tbody>
@@ -5387,7 +5399,7 @@
                     <tr>
                       <td style="white-space:nowrap;"><%= c.label %></td>
                       <td style="text-align:right;"><%= (c.count||0).toLocaleString('pt-BR') %></td>
-                      <td style="text-align:right; font-weight:700;">R$ <%= (c.revenue||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) %></td>
+                      <td style="text-align:right; font-weight:700;">$ <%= (c.revenue||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></td>
                     </tr>
                   <% }); %>
                 </tbody>
@@ -5405,7 +5417,7 @@
                   var labels=data.map(function(c){ return c.label; }); var vals=data.map(function(c){ return c.revenue; });
                   var colors=['#7c3aed','#ec4899','#2563eb','#16a34a','#f59e0b','#06b6d4','#9ca3af'];
                   var ctx=document.getElementById('bumpPieChart'); if(!ctx||(Chart.getChart&&Chart.getChart(ctx))) return;
-                  new Chart(ctx,{ type:'pie', data:{ labels:labels, datasets:[{ data:vals, backgroundColor:colors, borderColor:'#ffffff', borderWidth:2 }] }, options:{ responsive:false, animation:false, plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, padding:8, boxWidth:12 } }, tooltip:{ callbacks:{ label:function(c){ var t=c.dataset.data.reduce(function(s,v){ return s+v; },0); var p=t?Math.round(c.parsed/t*100):0; return c.label+': R$ '+Number(c.parsed).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ('+p+'%)'; } } } } } });
+                  new Chart(ctx,{ type:'pie', data:{ labels:labels, datasets:[{ data:vals, backgroundColor:colors, borderColor:'#ffffff', borderWidth:2 }] }, options:{ responsive:false, animation:false, plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, padding:8, boxWidth:12 } }, tooltip:{ callbacks:{ label:function(c){ var t=c.dataset.data.reduce(function(s,v){ return s+v; },0); var p=t?Math.round(c.parsed/t*100):0; return c.label+': $ '+Number(c.parsed).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})+' ('+p+'%)'; } } } } } });
                 } catch(_){}
               }
               function ready(){ if(typeof Chart!=='undefined'){ draw(); return; } var t=0; var iv=setInterval(function(){ if(typeof Chart!=='undefined'){ clearInterval(iv); draw(); } else if(++t>50){ clearInterval(iv); } }, 100); }
@@ -7389,7 +7401,7 @@
                     }
                   } catch (_) {}
                   var finalEst = (estTotalServer !== null) ? estTotalServer : estTotal;
-                  if (finalEst > 0) totalLabel = '\nTotal estimado: R$ ' + String(finalEst.toFixed(2)).replace('.', ',') + missingLabel;
+                  if (finalEst > 0) totalLabel = '\nTotal estimado: $ ' + String(finalEst.toFixed(2)) + missingLabel;
                 } catch (_) {}
                 var skippedLabel = '';
                 if (skippedForced || skippedAuditOk) {
@@ -7788,7 +7800,7 @@
                       <tr>
                         <td style="padding:6px 0; border-bottom:1px solid #fafafa;"><%= String(u && u.label ? u.label : '-') %></td>
                         <td style="padding:6px 0; border-bottom:1px solid #fafafa; text-align:right;"><%= Number(u && u.orders ? u.orders : 0) %></td>
-                        <td style="padding:6px 0; border-bottom:1px solid #fafafa; text-align:right;">R$ <%= Number(u && u.spend ? u.spend : 0).toFixed(2).replace('.', ',') %></td>
+                        <td style="padding:6px 0; border-bottom:1px solid #fafafa; text-align:right;">$ <%= Number(Number(u && u.spend ? u.spend : 0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></td>
                       </tr>
                     <% }) %>
                     <% if (!(Array.isArray(topUsersByOrders) && topUsersByOrders.length)) { %>
@@ -7812,7 +7824,7 @@
                     <% (Array.isArray(topUsersBySpend) ? topUsersBySpend : []).slice(0,5).forEach(u => { %>
                       <tr>
                         <td style="padding:6px 0; border-bottom:1px solid #fafafa;"><%= String(u && u.label ? u.label : '-') %></td>
-                        <td style="padding:6px 0; border-bottom:1px solid #fafafa; text-align:right;">R$ <%= Number(u && u.spend ? u.spend : 0).toFixed(2).replace('.', ',') %></td>
+                        <td style="padding:6px 0; border-bottom:1px solid #fafafa; text-align:right;">$ <%= Number(Number(u && u.spend ? u.spend : 0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></td>
                         <td style="padding:6px 0; border-bottom:1px solid #fafafa; text-align:right;"><%= Number(u && u.orders ? u.orders : 0) %></td>
                       </tr>
                     <% }) %>
@@ -7874,7 +7886,7 @@
             function fmtMoney(n) {
               var x = Number(n || 0);
               if (!isFinite(x)) x = 0;
-              return 'R$ ' + x.toFixed(2).replace('.', ',');
+              return '$ ' + x.toFixed(2);
             }
             function safeStr(v) { return String(v == null ? '' : v); }
             var all = readJson('ltvCustomersData', []);
@@ -8210,10 +8222,24 @@
           </table>
           </div>
         <% } else if (isVendasView) { %>
+          <div class="vd-filtro" id="vdFiltro" role="group" aria-label="Filtrar por status do fornecedor">
+            <button type="button" data-f="" aria-pressed="true">Todos <span>0</span></button>
+            <button type="button" data-f="ok"><i class="ok"></i>Concluído <span>0</span></button>
+            <button type="button" data-f="and"><i class="and"></i>Em andamento <span>0</span></button>
+            <button type="button" data-f="pend"><i class="pend"></i>Pendente <span>0</span></button>
+            <button type="button" data-f="parc"><i class="parc"></i>Parcial <span>0</span></button>
+            <button type="button" data-f="ruim"><i class="ruim"></i>Cancelado / erro <span>0</span></button>
+            <small id="vdFiltroInfo">consultando fornecedores…</small>
+          </div>
+          <div class="vd-lote" id="vdLote">
+            <button type="button" id="vdReMarcados" disabled>⟳ Reenviar marcados (<span id="vdReN">0</span>)</button>
+            <small id="vdLoteInfo">Marque pedidos Parcial ou Cancelado para reenviar de uma vez.</small>
+          </div>
           <div class="dashboard-table-wrap panel-table-scroll">
-          <table class="dashboard-table" style="min-width: 1180px; font-size: 0.92rem;">
+          <table class="dashboard-table vd-tab" style="width:100%; font-size: 0.92rem;">
             <thead>
               <tr>
+                <th class="vd-ck"><input type="checkbox" id="vdSelAll" title="Marcar todos os Parciais e Cancelados visíveis" aria-label="Marcar todos os Parciais e Cancelados visíveis"></th>
                 <th>Data (SP)</th>
                 <th>Usuário</th>
                 <th>Serviço</th>
@@ -8221,10 +8247,10 @@
                 <th>Custo/1k</th>
                 <th>Taxa</th>
                 <th>Orderbump</th>
-                <th style="text-align:center; width:44px;">X</th>
                 <th>Custo Bump</th>
                 <th>Total Item</th>
                 <th>Total Pago</th>
+                <th class="vd-th-st">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -8264,76 +8290,222 @@
                    const dateStr = formatDateTimeSP(order.createdAt);
                    const userLabel = String(order.instagramUsername ? ('@' + String(order.instagramUsername).replace(/^@+/, '')) : (order.customerLabel || '-'));
                 %>
-                <tr>
+                <tr data-oid="<%= String(order._id || '') %>">
+                  <td class="vd-ck"><input type="checkbox" class="vd-sel" disabled title="Só Parcial ou Cancelado podem ser reenviados" aria-label="Marcar para reenviar"></td>
                   <td><%= dateStr %></td>
-                  <td><%= userLabel %></td>
+                  <% const _igU = String(order.instagramUsername || '').replace(/^@+/, '').trim(); %>
+                  <td><% if (/^[A-Za-z0-9._]{1,30}$/.test(_igU)) { %><a class="vd-user" href="https://www.instagram.com/<%= _igU %>/" target="_blank" rel="noopener noreferrer" title="Abrir o perfil no Instagram">@<%= _igU %></a><% } else { %><%= userLabel %><% } %></td>
                   <td><%= order.type %></td>
                   <td><%= order.qty %></td>
                   <td>
-                    R$ <%= order.costPer1000.toFixed(2).replace('.', ',') %>
+                    $ <%= Number(order.costPer1000).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %>
                     <% if (order.costPer1000Real && order.costPer1000Qty && Number(order.costPer1000Qty) !== Number(order.qty)) { %>
                       <div><small style="color:#666;">base <%= order.costPer1000Qty %> enviados</small></div>
                     <% } %>
                   </td>
-                  <td>R$ <%= (function(){ try { var n = Number(order && typeof order.paymentFee !== 'undefined' ? order.paymentFee : NaN); if (isFinite(n) && n > 0) return n.toFixed(2).replace('.', ','); var pm = String(order && (order.paymentMethod || order.payment_method || order.method) ? (order.paymentMethod || order.payment_method || order.method) : '').toLowerCase(); if (pm.indexOf('paghiper') >= 0) return '0,99'; return '0,85'; } catch(_) { return '0,85'; } })() %></td>
-                  <td><%= (order.orderBumps || '-') %></td>
-                  <td style="text-align:center;">
-                    <button type="button" class="sale-delete-btn" data-sale-id="<%= String(order._id || '') %>" style="background:#dc3545; color:#fff; border:none; border-radius:8px; width:32px; height:32px; font-weight:900; cursor:pointer;">x</button>
-                  </td>
+                  <td>$ <%= (function(){ try { var n = Number(order && typeof order.paymentFee !== 'undefined' ? order.paymentFee : NaN); if (isFinite(n) && n > 0) return n.toFixed(2); var pm = String(order && (order.paymentMethod || order.payment_method || order.method) ? (order.paymentMethod || order.payment_method || order.method) : '').toLowerCase(); if (pm.indexOf('paghiper') >= 0) return '0,99'; return '0,85'; } catch(_) { return '0,85'; } })() %></td>
+                  <td class="vd-bump"><% const _bl = order.orderBumps ? String(order.orderBumps).split(';').filter(Boolean) : []; %><% if (!_bl.length) { %>-<% } else { _bl.forEach(function(x){ %><span><%= x %></span><% }) } %></td>
                   <td>
-                    R$ <%= (typeof order.bumpCost !== 'undefined' ? order.bumpCost : 0).toFixed(2).replace('.', ',') %>
+                    $ <%= Number((typeof order.bumpCost !== 'undefined' ? order.bumpCost : 0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %>
                     <% if (order.orderBumpsTotal) { %>
                       <div><small style="color:#666;"><%= order.orderBumpsTotal %></small></div>
                     <% } %>
                   </td>
-                  <td>R$ <%= order.cost.toFixed(2).replace('.', ',') %></td>
-                  <td>R$ <%= (typeof order.totalPaid !== 'undefined' ? Number(order.totalPaid || 0) : 0).toFixed(2).replace('.', ',') %></td>
+                  <td>$ <%= Number(order.cost).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></td>
+                  <td>$ <%= Number((typeof order.totalPaid !== 'undefined' ? Number(order.totalPaid || 0) : 0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></td>
+                  <% const _ms = order.mainSupplier || null; %>
+                  <td class="vd-st" data-st="<%= _ms ? (_ms.status || '') : 'sem_envio' %>" data-rem="<%= _ms && _ms.remains != null ? _ms.remains : '' %>" data-prov="<%= _ms ? (_ms.provider || '') : '' %>" data-ord="<%= _ms ? (_ms.orderId || '') : '' %>" data-posts="<%= _ms && _ms.subs ? _ms.subs.length : '' %>"><span class="vd-badge"><i></i><b>…</b></span></td>
                 </tr>
               <% }) %>
             </tbody>
           </table>
           </div>
+          <style>
+            .vd-th-st{ min-width:140px; }
+            a.vd-user{ color:inherit; text-decoration:none; border-bottom:1px solid #c9ced6; }
+            a.vd-user:hover{ color:#2a4fc4; border-bottom-color:#2a4fc4; }
+            .vd-tab td.vd-bump{ color:#4b5260; } .vd-tab td.vd-bump span{ display:block; white-space:nowrap; line-height:1.5; }
+            .vd-st{ white-space:nowrap; }
+            .vd-badge{ display:inline-flex; align-items:center; gap:6px; padding:3px 10px 3px 8px; border-radius:6px; font-size:12px; line-height:18px; background:#f2f3f5; color:#4b5260; }
+            .vd-badge b{ font-weight:600; }
+            .vd-badge i, .vd-filtro i{ width:7px; height:7px; border-radius:50%; background:#9aa1ad; flex:none; display:inline-block; }
+            .vd-badge.ok{ background:#ecf6f0; color:#17643f; } .vd-badge.ok i, .vd-filtro i.ok{ background:#1f9d5c; }
+            .vd-badge.and{ background:#eef2fd; color:#2a4fc4; } .vd-badge.and i, .vd-filtro i.and{ background:#3b6cf0; }
+            .vd-badge.pend{ background:#fbf5e8; color:#8a5a00; } .vd-badge.pend i, .vd-filtro i.pend{ background:#d99a1e; }
+            .vd-badge.parc{ background:#fcf0e8; color:#a4491a; } .vd-badge.parc i, .vd-filtro i.parc{ background:#e0702c; }
+            .vd-badge.ruim{ background:#fcedeb; color:#b0322a; } .vd-badge.ruim i, .vd-filtro i.ruim{ background:#dc4a3f; }
+            .vd-st small{ display:block; color:#8a93a1; font-size:11px; margin-top:4px; }
+            .vd-tab th.vd-ck, .vd-tab td.vd-ck{ width:28px; padding-right:0; }
+            .vd-tab td.vd-ck + td{ white-space:nowrap; }
+            .vd-ck input{ width:16px; height:16px; cursor:pointer; accent-color:#2a4fc4; }
+            .vd-ck input:disabled{ cursor:not-allowed; opacity:.3; }
+            .vd-lote{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:-4px 0 12px; }
+            .vd-lote button{ display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border:0; border-radius:8px; background:#14171c; color:#fff; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+            .vd-lote button:disabled{ background:#e3e6eb; color:#8a93a1; cursor:not-allowed; }
+            .vd-lote small{ color:#8a93a1; font-size:12px; }
+            .vd-re{ display:inline-flex; align-items:center; justify-content:center; width:26px; height:24px; margin-left:6px; vertical-align:middle; border:1px solid #e3e6eb; border-radius:6px; background:#fff; color:#4b5260; cursor:pointer; padding:0; }
+            .vd-re:hover{ border-color:#2a4fc4; color:#2a4fc4; background:#eef2fd; }
+            .vd-re:disabled{ cursor:wait; opacity:.7; }
+            .vd-re.gira svg{ animation:vdGira .9s linear infinite; }
+            @keyframes vdGira{ to{ transform:rotate(360deg); } }
+            .vd-re-msg{ white-space:normal; max-width:220px; font-size:11px; line-height:1.35; margin-top:4px; }
+            .vd-re-msg.ok{ color:#17643f; } .vd-re-msg.erro{ color:#b0322a; }
+            .vd-filtro{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:0 0 12px; }
+            .vd-filtro button{ display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border:1px solid #e3e6eb; border-radius:999px; background:#fff; color:#3a404b; font:inherit; font-size:13px; cursor:pointer; }
+            .vd-filtro button span{ color:#8a93a1; font-variant-numeric:tabular-nums; font-size:12px; }
+            .vd-filtro button:hover{ border-color:#c9ced6; }
+            .vd-filtro button[aria-pressed="true"]{ background:#14171c; border-color:#14171c; color:#fff; }
+            .vd-filtro button[aria-pressed="true"] span{ color:rgba(255,255,255,.7); }
+            .vd-filtro small{ color:#8a93a1; font-size:12px; margin-left:4px; }
+          </style>
           <script>
+            // Coluna "Status (fornecedor)": mostra o último status gravado e, logo depois, o status AO VIVO
+            // consultado no fornecedor do pedido principal (POST /api/painel/vendas/status-fornecedor).
             (function(){
-              function safeTrim(v){ return String(v == null ? '' : v).trim(); }
-              function bind(){
-                var btns = Array.prototype.slice.call(document.querySelectorAll('.sale-delete-btn'));
-                if (!btns.length) return;
-                btns.forEach(function(btn){
-                  if (btn.getAttribute('data-bound') === '1') return;
-                  btn.setAttribute('data-bound', '1');
-                  btn.addEventListener('click', async function(){
-                    var id = safeTrim(btn.getAttribute('data-sale-id') || '');
-                    if (!id) return;
-                    if (!confirm('Excluir esta venda? Isso apaga o registro no MongoDB.')) return;
-                    btn.disabled = true;
-                    try {
-                      var resp = await fetch('/api/painel/vendas/delete', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                        body: JSON.stringify({ id: id }),
-                        credentials: 'same-origin'
-                      });
-                      var data = await resp.json().catch(function(){ return null; });
-                      if (!data || data.ok !== true) {
-                        var err = (data && (data.message || data.error)) ? (data.message || data.error) : ('HTTP ' + resp.status);
-                        alert('Erro ao excluir: ' + err);
-                        btn.disabled = false;
-                        return;
-                      }
-                      try {
-                        var tr = btn.closest ? btn.closest('tr') : null;
-                        if (tr && tr.parentNode) tr.parentNode.removeChild(tr);
-                      } catch(_) {}
-                    } catch (e) {
-                      alert('Erro ao excluir: ' + (e && e.message ? e.message : String(e)));
-                      btn.disabled = false;
-                    }
-                  });
-                });
+              var NOME = { fama24h:'Fama24h', nuvra:'NuvraSMM', fornecedor_social:'Forn. Social', topfama:'TopFama', smmhustle:'SMMHustle', worldsmm:'WorldSMM', worldofsmm:'WorldOfSMM', justanotherpanel:'JAP', revendaexclusiva:'Revenda', followiz:'Followiz', smmraja:'SMMRaja', smmturk:'SMMTurk', peakerr:'Peakerr' };
+              function traduz(st){
+                var s = String(st || '').toLowerCase();
+                if (!s || s === 'sem_envio') return ['Sem envio','ruim'];
+                if (/^erro|error|fail/.test(s)) return ['Erro no envio','ruim'];
+                if (/unknown/.test(s)) return ['Desconhecido','ruim'];
+                if (/cancel|refund/.test(s)) return ['Cancelado','ruim'];
+                if (/partial/.test(s)) return ['Parcial','parc'];
+                if (/complete|conclu|success|done/.test(s)) return ['Concluído','ok'];
+                if (/progress|processing|andamento/.test(s)) return ['Em andamento','and'];
+                if (/pend|created|queue/.test(s)) return ['Pendente','pend'];
+                return [st, ''];
               }
-              if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
-              else bind();
+              var filtro = '';
+              function aplica(){
+                var n = { '': 0, ok: 0, and: 0, pend: 0, parc: 0, ruim: 0 };
+                Array.prototype.forEach.call(document.querySelectorAll('tr[data-oid]'), function(tr){
+                  var c = tr.getAttribute('data-cat') || ''; n[''] += 1; if (n[c] != null && c) n[c] += 1;
+                  tr.hidden = !!filtro && c !== filtro;
+                });
+                Array.prototype.forEach.call(document.querySelectorAll('#vdFiltro button'), function(b){
+                  var f = b.getAttribute('data-f') || ''; b.setAttribute('aria-pressed', f === filtro ? 'true' : 'false');
+                  var sp = b.querySelector('span'); if (sp) sp.textContent = (n[f] || 0).toLocaleString('pt-BR');
+                });
+                try { contaMarcados(); } catch (_) {}
+              }
+              var fb = document.getElementById('vdFiltro');
+              if (fb) fb.addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; filtro = b.getAttribute('data-f') || ''; aplica(); });
+              function pinta(td, d){
+                var t = traduz(d.status), b = td.querySelector('.vd-badge') || document.createElement('span');
+                b.className = 'vd-badge ' + t[1]; b.innerHTML = '<i></i><b></b>'; b.querySelector('b').textContent = t[0];
+                var tr0 = td.closest('tr'); if (tr0) tr0.setAttribute('data-cat', t[1]);
+                var extra = [];
+                if (d.provider) extra.push(NOME[d.provider] || d.provider);
+                if (d.posts && Number(d.posts) > 1) extra.push(d.posts + ' posts');
+                if (d.remains != null && d.remains !== '' && Number(d.remains) > 0 && !/complete/i.test(String(d.status||''))) extra.push('faltam ' + Number(d.remains).toLocaleString('pt-BR'));
+                var sm = td.querySelector('small'); if (!sm) { sm = document.createElement('small'); td.appendChild(sm); }
+                sm.textContent = extra.join(' · '); if (d.orderId) sm.title = 'Pedido ' + d.orderId + (d.origem === 'fornecedor' ? ' (consultado agora)' : ' (último status salvo)');
+                if (!td.contains(b)) td.insertBefore(b, td.firstChild);
+                // ⟳ reenviar: só Parcial e Cancelado (erro/sem envio não têm pedido no fornecedor pra reaproveitar)
+                var podeRe = t[1] === 'parc' || /cancel|refund/i.test(String(d.status || ''));
+                var bt = td.querySelector('.vd-re');
+                if (podeRe && !bt) { bt = document.createElement('button'); bt.type = 'button'; bt.className = 'vd-re'; bt.innerHTML = RE_SVG; b.insertAdjacentElement('afterend', bt); }
+                if (bt) { bt.hidden = !podeRe; bt.title = /cancel|refund/i.test(String(d.status || '')) ? 'Reenviar pedido cancelado (novo pedido no fornecedor)' : 'Reenviar o que falta (novo pedido no fornecedor)'; }
+                if (podeRe && d.remains != null && d.remains !== '') td.setAttribute('data-rem', d.remains);
+                var ck = tr0 && tr0.querySelector('.vd-sel');
+                if (ck) { ck.disabled = !podeRe; if (!podeRe) ck.checked = false; ck.title = podeRe ? 'Marcar para reenviar' : 'Só Parcial ou Cancelado podem ser reenviados'; }
+                try { contaMarcados(); } catch (_) {}
+              }
+              var RE_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>';
+              function consulta(ids, depois){
+                return fetch('/api/painel/vendas/status-fornecedor', { method:'POST', credentials:'same-origin', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ ids: ids }) })
+                  .then(function(r){ return r.json(); })
+                  .then(function(d){ if (!d || !d.ok || !d.status) return; ids.forEach(function(id){ var v = d.status[id]; if (!v) return; var c = document.querySelector('tr[data-oid="' + id + '"] td.vd-st'); if (c) pinta(c, v); }); })
+                  .catch(function(){}).then(function(){ if (depois) depois(); });
+              }
+              // Reenvia UMA venda (sem perguntar): o servidor confere o status no fornecedor de novo e
+              // só reenvia Parcial/Cancelado. Devolve uma Promise que resolve { ok } quando termina.
+              function reenviaLinha(tr){
+                var td = tr && tr.querySelector('td.vd-st'); if (!td) return Promise.resolve({ ok: false });
+                var id = tr.getAttribute('data-oid'), bt = td.querySelector('.vd-re');
+                if (bt) { bt.disabled = true; bt.classList.add('gira'); }
+                [].slice.call(td.querySelectorAll('.vd-re-msg')).forEach(function(x){ x.remove(); });
+                var sm = td.querySelector('small'); var antes = sm ? sm.textContent : '';
+                if (sm) sm.textContent = 'reenviando… (confere status e perfil antes)';
+                var acabou = function(){ if (bt) { bt.disabled = false; bt.classList.remove('gira'); } };
+                return fetch('/api/painel/vendas/reenviar', { method:'POST', credentials:'same-origin', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ id: id }) })
+                  .then(function(r){ return r.json(); })
+                  .then(function(d){
+                    acabou();
+                    var feitos = (d && d.reenviados) || (d && d.ok && d.orderId ? [{ para: d.orderId, quantidade: d.quantidade }] : []);
+                    if (d && d.ok && feitos.length) {
+                      var txt = feitos.map(function(f){ return (f.quantidade || 0).toLocaleString('pt-BR') + ' → pedido ' + f.para; }).join(', ');
+                      var aviso = document.createElement('div'); aviso.className = 'vd-re-msg ok'; aviso.textContent = 'Reenviado: ' + txt + (d.falha ? ' · ' + d.falha : '');
+                      td.appendChild(aviso);
+                      var ck = tr.querySelector('.vd-sel'); if (ck) ck.checked = false;
+                      setTimeout(function(){ consulta([id]); }, 2500);
+                      return { ok: true };
+                    }
+                    if (sm) sm.textContent = antes;
+                    var av = document.createElement('div'); av.className = 'vd-re-msg erro'; av.textContent = 'Não reenviado: ' + ((d && (d.motivo || d.error)) || 'erro');
+                    td.appendChild(av);
+                    return { ok: false };
+                  })
+                  .catch(function(){ acabou(); if (sm) sm.textContent = antes; var av = document.createElement('div'); av.className = 'vd-re-msg erro'; av.textContent = 'Sem resposta do servidor — confira no fornecedor antes de tentar de novo.'; td.appendChild(av); return { ok: false, semResposta: true }; });
+              }
+              document.addEventListener('click', function(e){
+                var bt = e.target.closest && e.target.closest('.vd-re'); if (!bt || bt.disabled) return;
+                var td = bt.closest('td.vd-st'), tr = bt.closest('tr'); if (!td || !tr) return;
+                var user = (tr.querySelector('.vd-user') || {}).textContent || '';
+                var cancelado = /cancel/i.test(bt.title), rem = Number(td.getAttribute('data-rem') || 0);
+                var msg = cancelado
+                  ? 'Reenviar o pedido CANCELADO de ' + user + '?\n\nCria um novo pedido no fornecedor' + (rem > 0 ? ' com ' + rem.toLocaleString('pt-BR') : '') + ' e troca o orderId no registro.'
+                  : 'Reenviar o que falta do pedido PARCIAL de ' + user + '?\n\nCria um novo pedido no fornecedor' + (rem > 0 ? ' com os ' + rem.toLocaleString('pt-BR') + ' que faltam' : '') + ' e troca o orderId no registro.';
+                if (!window.confirm(msg)) return;
+                reenviaLinha(tr);
+              });
+              // ── Seleção e reenvio em lote (só Parcial/Cancelado ficam marcáveis) ──
+              var emLote = false;
+              function marcados(){ return [].slice.call(document.querySelectorAll('tr[data-oid] .vd-sel:checked:not(:disabled)')).map(function(c){ return c.closest('tr'); }); }
+              function contaMarcados(){
+                var n = marcados().length, b = document.getElementById('vdReMarcados'), sp = document.getElementById('vdReN');
+                if (sp) sp.textContent = n; if (b) b.disabled = emLote || !n;
+                var all = document.getElementById('vdSelAll');
+                if (all) { var vis = [].slice.call(document.querySelectorAll('tr[data-oid]:not([hidden]) .vd-sel:not(:disabled)')); all.checked = vis.length > 0 && vis.every(function(c){ return c.checked; }); all.disabled = !vis.length; }
+              }
+              document.addEventListener('change', function(e){
+                if (e.target && e.target.id === 'vdSelAll') {
+                  var on = e.target.checked;
+                  [].slice.call(document.querySelectorAll('tr[data-oid]:not([hidden]) .vd-sel:not(:disabled)')).forEach(function(c){ c.checked = on; });
+                }
+                if (e.target && (e.target.id === 'vdSelAll' || e.target.classList.contains('vd-sel'))) contaMarcados();
+              });
+              var btLote = document.getElementById('vdReMarcados');
+              if (btLote) btLote.addEventListener('click', async function(){
+                var trs = marcados(); if (!trs.length || emLote) return;
+                var nomes = trs.slice(0, 8).map(function(tr){ return (tr.querySelector('.vd-user') || {}).textContent || tr.getAttribute('data-oid'); });
+                if (!window.confirm('Reenviar ' + trs.length + ' pedido(s) marcado(s)?\n\n' + nomes.join('\n') + (trs.length > 8 ? '\n…' : '') + '\n\nCada um é conferido de novo no fornecedor: Parcial reenvia o que falta, Cancelado reenvia o pedido. Um por vez.')) return;
+                emLote = true; contaMarcados();
+                var info = document.getElementById('vdLoteInfo'), ok = 0, falha = 0;
+                for (var k = 0; k < trs.length; k++) {
+                  if (info) info.textContent = 'Reenviando ' + (k + 1) + ' de ' + trs.length + '…';
+                  var r = await reenviaLinha(trs[k]);
+                  if (r && r.ok) ok++; else falha++;
+                  if (r && r.semResposta) { if (info) info.textContent = 'Parei: sem resposta do servidor no ' + (k + 1) + 'º. Confira no fornecedor antes de continuar.'; break; }
+                }
+                emLote = false; contaMarcados();
+                if (info && !/^Parei/.test(info.textContent)) info.textContent = ok + ' reenviado(s)' + (falha ? ' · ' + falha + ' não reenviado(s) (motivo na linha)' : '') + '.';
+              });
+              var cels = Array.prototype.slice.call(document.querySelectorAll('td.vd-st'));
+              cels.forEach(function(td){ pinta(td, { status: td.getAttribute('data-st'), remains: td.getAttribute('data-rem'), provider: td.getAttribute('data-prov'), orderId: td.getAttribute('data-ord'), posts: td.getAttribute('data-posts') }); });
+              aplica();
+              var ids = cels.map(function(td){ var tr = td.closest('tr'); return tr ? tr.getAttribute('data-oid') : ''; }).filter(Boolean);
+              var faltam = Math.ceil(ids.length / 150), info = document.getElementById('vdFiltroInfo');
+              var fim = function(){ faltam -= 1; aplica(); if (faltam <= 0 && info) info.textContent = 'status ao vivo do fornecedor'; };
+              if (!ids.length && info) info.textContent = '';
+              for (var i = 0; i < ids.length; i += 150) {
+                (function(lote){
+                  fetch('/api/painel/vendas/status-fornecedor', { method:'POST', credentials:'same-origin', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ ids: lote }) })
+                    .then(function(r){ return r.json(); })
+                    .then(function(d){ if (!d || !d.ok || !d.status) return; lote.forEach(function(id){ var v = d.status[id]; if (!v) return; var tr = document.querySelector('tr[data-oid="' + id + '"] td.vd-st'); if (tr) pinta(tr, v); }); })
+                    .catch(function(){}).then(fim);
+                })(ids.slice(i, i + 150));
+              }
             })();
           </script>
         <% } else { %>
@@ -8429,7 +8601,7 @@
                         var n = Number(v);
                         return isFinite(n) ? n : 0;
                       }
-                      function brlNum(v){ try { return Number(v||0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); } catch(_){ return 'R$ ' + Number(v||0).toFixed(2).replace('.', ','); } }
+                      function brlNum(v){ try { return Number(v||0).toLocaleString('es-MX', { style:'currency', currency:'MXN' }); } catch(_){ return '$ ' + Number(v||0).toFixed(2); } }
                       // Mobile: legenda embaixo (não corta na largura estreita).
                       var legendPos = (typeof window !== 'undefined' && window.innerWidth && window.innerWidth < 680) ? 'bottom' : 'right';
                       // Tabela de faturamento/gasto/margem por tipo de produto.
@@ -8801,7 +8973,7 @@
                             <tr>
                               <td style="padding:6px 0; border-bottom:1px solid #fafafa;"><%= String(u && u.label ? u.label : '-') %></td>
                               <td style="padding:6px 0; border-bottom:1px solid #fafafa; text-align:right;"><%= Number(u && u.orders ? u.orders : 0) %></td>
-                              <td style="padding:6px 0; border-bottom:1px solid #fafafa; text-align:right;">R$ <%= Number(u && u.spend ? u.spend : 0).toFixed(2).replace('.', ',') %></td>
+                              <td style="padding:6px 0; border-bottom:1px solid #fafafa; text-align:right;">$ <%= Number(Number(u && u.spend ? u.spend : 0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></td>
                             </tr>
                           <% }) %>
                           <% if (!ltvDashTopByOrders.length) { %>
@@ -8828,7 +9000,7 @@
                           <% ltvDashTopBySpend.slice(0,5).forEach(u => { %>
                             <tr>
                               <td style="padding:6px 0; border-bottom:1px solid #fafafa;"><%= String(u && u.label ? u.label : '-') %></td>
-                              <td style="padding:6px 0; border-bottom:1px solid #fafafa; text-align:right;">R$ <%= Number(u && u.spend ? u.spend : 0).toFixed(2).replace('.', ',') %></td>
+                              <td style="padding:6px 0; border-bottom:1px solid #fafafa; text-align:right;">$ <%= Number(Number(u && u.spend ? u.spend : 0)).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) %></td>
                               <td style="padding:6px 0; border-bottom:1px solid #fafafa; text-align:right;"><%= Number(u && u.orders ? u.orders : 0) %></td>
                             </tr>
                           <% }) %>
@@ -8890,7 +9062,7 @@
                   function fmtMoney(n) {
                     var x = Number(n || 0);
                     if (!isFinite(x)) x = 0;
-                    return 'R$ ' + x.toFixed(2).replace('.', ',');
+                    return '$ ' + x.toFixed(2);
                   }
                   function safeStr(v) { return String(v == null ? '' : v); }
                   var all = readJson('ltvCustomersData', []);
@@ -8910,7 +9082,7 @@
                     mode = newMode || 'all';
                     if (titleEl) titleEl.textContent =
                       mode === 'repeat' ? 'Clientes recorrentes (2+)' :
-                      (mode === 'spend500' ? 'Clientes (gasto ≥ R$ 500)' :
+                      (mode === 'spend500' ? 'Clientes (gasto ≥ $ 500)' :
                       (mode === 'topOrders' ? 'Top usuários (mais pedidos)' :
                       (mode === 'topSpend' ? 'Top usuários (maior gasto)' : 'Clientes únicos')));
                     if (searchEl) searchEl.value = '';
@@ -9127,107 +9299,7 @@
         <% } %>
       </div>
 
-      <% if (!isUnknownOrderIdView && isVendasView) { %>
-      <div class="cost-panel-wrap">
-
-        <div style="border:1px solid #ddd; border-radius:8px; padding:16px; background:#fafafa; margin-top: 16px;">
-          <h2 style="margin:0 0 8px; font-size:1rem;">Usuários Bloqueados</h2>
-          <div style="display:flex; gap:8px; margin-bottom:12px;">
-            <input type="text" id="blacklistInput" placeholder="Usuário (sem @)" style="flex:1; padding:6px; border:1px solid #ccc; border-radius:4px;">
-            <button onclick="addToBlacklist()" style="padding:6px 12px; background:#dc3545; color:#fff; border:none; border-radius:4px; cursor:pointer;">Bloquear</button>
-          </div>
-          <ul id="blacklistList" style="list-style:none; padding:0; margin:0; max-height: 200px; overflow-y: auto;">
-            <!-- Items via JS -->
-          </ul>
-          <script>
-            async function loadBlacklist() {
-              try {
-                const res = await fetch('/api/blacklist');
-                const data = await res.json();
-                if(data.success) {
-                  renderBlacklist(data.blacklist);
-                }
-              } catch(e) { console.error(e); }
-            }
-
-            function renderBlacklist(list) {
-              const ul = document.getElementById('blacklistList');
-              ul.innerHTML = '';
-              if (list.length === 0) {
-                ul.innerHTML = '<li style="color:#777; font-size:0.9rem; text-align:center;">Nenhum usuário bloqueado</li>';
-                return;
-              }
-              list.forEach(item => {
-                const li = document.createElement('li');
-                li.style.display = 'flex';
-                li.style.justifyContent = 'space-between';
-                li.style.alignItems = 'center';
-                li.style.padding = '6px 0';
-                li.style.borderBottom = '1px solid #eee';
-                
-                const span = document.createElement('span');
-                span.textContent = item.username;
-                span.style.fontWeight = '500';
-                
-                const btn = document.createElement('button');
-                btn.textContent = '✕';
-                btn.style.background = 'transparent';
-                btn.style.border = 'none';
-                btn.style.color = '#dc3545';
-                btn.style.cursor = 'pointer';
-                btn.style.fontSize = '1.1rem';
-                btn.title = 'Desbloquear';
-                btn.onclick = () => removeFromBlacklist(item.username);
-                
-                li.appendChild(span);
-                li.appendChild(btn);
-                ul.appendChild(li);
-              });
-            }
-
-            async function addToBlacklist() {
-              const input = document.getElementById('blacklistInput');
-              const username = input.value.trim();
-              if(!username) return;
-              
-              try {
-                const res = await fetch('/api/blacklist/add', {
-                  method: 'POST',
-                  headers: {'Content-Type': 'application/json'},
-                  body: JSON.stringify({ username })
-                });
-                const data = await res.json();
-                if(data.success) {
-                  input.value = '';
-                  loadBlacklist();
-                } else {
-                  alert('Erro ao bloquear: ' + (data.message || data.error));
-                }
-              } catch(e) { alert('Erro: ' + e.message); }
-            }
-
-            async function removeFromBlacklist(username) {
-              if(!confirm('Desbloquear ' + username + '?')) return;
-              try {
-                const res = await fetch('/api/blacklist/remove', {
-                  method: 'POST',
-                  headers: {'Content-Type': 'application/json'},
-                  body: JSON.stringify({ username })
-                });
-                const data = await res.json();
-                if(data.success) {
-                  loadBlacklist();
-                } else {
-                  alert('Erro ao desbloquear: ' + (data.message || data.error));
-                }
-              } catch(e) { alert('Erro: ' + e.message); }
-            }
-
-            loadBlacklist();
-          </script>
-        </div>
-    </div>
-    <% } %>
+      <%# Usuários Bloqueados saiu daqui: agora é a página /painel/bloqueados (menu Operação). %>
       <% } %>
     <% } %>
 
