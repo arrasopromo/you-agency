@@ -170,7 +170,7 @@
       + kpi('Pedidos pagos', nf(k.pagos), nf(k.pagosSite) + ' site · ' + nf(k.pagosBot) + ' bot')
       + kpi('Faturamento', brl(k.receita), mxn(k.receita) + ' · ticket ' + brl(k.ticket))
       + kpi('Faturamento do site', brl(k.receitaSite), mxn(k.receitaSite) + ' · bot WhatsApp: ' + brl(k.receitaBot))
-      + kpi('Visitante → pago', pct(k.convVisitantePago), 'só pedidos do site · com o bot: ' + pct(k.visitantes ? (Number(k.pagos) || 0) / k.visitantes : 0))
+      + kpi('Visitante → pago', pct(k.convVisitantePago), nf(k.pagantesSite) + ' pessoas pagaram pelo site · com o bot: ' + pct(k.convComBot))
       + kpi('Cobrança → pago', pct(k.convPixPago))
       + kpi('Com oferta (bump)', nf(k.pedidosComOferta), k.pagos ? pct(k.pedidosComOferta / k.pagos) + ' dos pagos' : '')
       + kpi('Upsell pago', nf(k.pagosUpsell), brl(k.receitaUpsell))
@@ -192,7 +192,7 @@
     var rs = function(v){ return v == null ? '<span class="muted">—</span>' : brl(v); };
     var rx = function(v){ return v == null ? '<span class="muted">—</span>' : (Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '×'); };
     if (M && !M.erro) {
-      h += '<section class="ts-bloco"><h2>CAC do Meta</h2><p class="sub">Contas ca 2 + ca3 em R$ (sem imposto). <b>CAC Meta</b> = gasto ÷ compras que o pixel do Meta atribui aos anúncios (a mesma conta do Gerenciador de Anúncios). <b>ROAS Meta</b> = valor dessas compras ÷ gasto. <b>CAC cliente novo</b> = gasto ÷ @ que pagaram pela primeira vez, pelo nosso banco (nenhum pedido pago antes do período).</p>'
+      h += '<section class="ts-bloco"><h2>CAC do Meta</h2><p class="sub">Conta ca4 (dólar convertido pela cotação de cada dia, sem imposto), mostrada em reais. <b>CAC Meta</b> = gasto ÷ compras que o pixel do Meta atribui aos anúncios (a mesma conta do Gerenciador de Anúncios). <b>ROAS Meta</b> = valor dessas compras ÷ gasto. <b>CAC cliente novo</b> = gasto ÷ @ que pagaram pela primeira vez, pelo nosso banco (nenhum pedido pago antes do período).</p>'
         + '<div class="ts-kpis" style="margin:0 0 14px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">'
         + kpi('Gasto no Meta', brl(M.gasto))
         + kpi('CAC Meta', rs(M.cac), nf(M.compras) + ' compras no pixel')
@@ -236,11 +236,11 @@
 
     // Páginas
     var maxPv = Math.max.apply(null, d.paginas.map(function(p){ return p.pageviews; }).concat([1]));
-    h += '<section class="ts-bloco ts-8"><h2>Pageview por página / produto</h2><p class="sub">Só estas páginas registram visita; a soma dos pageviews é o total do topo. Um visitante pode ver várias páginas, então os visitantes não somam. Cobranças e pagos = pedidos do site daquele serviço.</p><div class="ts-scroll"><table><thead><tr><th>Página</th><th class="n">Pageviews</th><th></th><th class="n">Visitantes</th><th class="n">Cobranças</th><th class="n">Pagos</th><th class="n">Visitante → pago</th><th class="n">Faturamento</th></tr></thead><tbody>';
+    h += '<section class="ts-bloco ts-8"><h2>Pageview por página / produto</h2><p class="sub">Só estas páginas registram visita; a soma dos pageviews é o total do topo. Um visitante pode ver várias páginas, então os visitantes não somam. Cobranças e pagos = pedidos do site daquele serviço, sem upsell. Visitante → pago = pessoas que visitaram a página e pagaram aquele serviço.</p><div class="ts-scroll"><table><thead><tr><th>Página</th><th class="n">Pageviews</th><th></th><th class="n">Visitantes</th><th class="n">Cobranças</th><th class="n">Pagos</th><th class="n">Visitante → pago</th><th class="n">Faturamento</th></tr></thead><tbody>';
     d.paginas.forEach(function(p){
       h += '<tr><td>' + esc(p.nome) + '<br><span class="muted" style="font-size:11.5px">' + esc(p.path) + '</span></td><td class="n">' + nf(p.pageviews) + '</td><td style="width:18%">' + barra(p.pageviews, maxPv) + '</td><td class="n">' + nf(p.visitantes) + '</td>'
         + '<td class="n">' + (p.pix == null ? '<span class="muted">—</span>' : nf(p.pix)) + '</td><td class="n">' + (p.pagos == null ? '<span class="muted">—</span>' : nf(p.pagos)) + '</td>'
-        + '<td class="n">' + (p.pagos == null || !p.visitantes ? '<span class="muted">—</span>' : pct(p.pagos / p.visitantes)) + '</td><td class="n">' + (p.receita == null ? '<span class="muted">—</span>' : brl(p.receita)) + '</td></tr>';
+        + '<td class="n">' + (p.conv == null ? '<span class="muted">—</span>' : pct(p.conv)) + '</td><td class="n">' + (p.receita == null ? '<span class="muted">—</span>' : brl(p.receita)) + '</td></tr>';
     });
     h += '</tbody></table></div></section>';
     h += '<section class="ts-bloco ts-4"><h2>Visitas por hora</h2><p class="sub">Pageviews no horário de Brasília.</p><div class="ts-chart baixo"><canvas id="gHora" aria-label="Visitas por hora"></canvas></div></section>';

@@ -42220,6 +42220,8 @@ async function computeTrackSite({ since, until, fresh } = {}) {
   // A tabela de origem usa só as visitas a partir da 1ª com UTM, pra não mostrar milhares de "sem origem".
   let origemDesdeMs = null;
   for (const r of pvRows) { if (r.utm) { const t = new Date(r.createdAt).getTime(); if (origemDesdeMs == null || t < origemDesdeMs) origemDesdeMs = t; } }
+  const origemVisto = new Set();
+  pvRows.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   for (const r of pvRows) {
     if (__tsEhBot(r.ua, r.city, r.ip, r.referer, r.dc, r.country)) { botsPv++; continue; }
     const cid = String(r.clientId || ''); const p = String(r.path || '').split(':')[0] || '(sem caminho)';
@@ -42234,13 +42236,19 @@ async function computeTrackSite({ since, until, fresh } = {}) {
     if (cid) disp[tipoDisp].add(cid);
     const cidade = [r.city, r.region].filter(Boolean).join(' / ');
     if (cidade && cid) (cidades[cidade] || (cidades[cidade] = new Set())).add(cid);
-    let src = '';
-    if (r.utm && (r.utm.source || r.utm.campaign)) src = 'Anúncio';
-    else if (/facebook|instagram|fb\.|l\.instagram/i.test(String(r.referer || ''))) src = 'Instagram/Facebook';
-    else if (/google\./i.test(String(r.referer || ''))) src = 'Google';
-    else if (r.referer && !/agenciaoppus/i.test(String(r.referer))) src = 'Outros sites';
-    else src = 'Sem origem registrada';
-    if (cid && origemDesdeMs != null && new Date(r.createdAt).getTime() >= origemDesdeMs) (origem[src] || (origem[src] = new Set())).add(cid);
+    // Origem: UMA por pessoa, pela 1ª visita dela no período (antes contava cada página e a mesma pessoa
+    // aparecia em "Anúncio" e em "Sem origem" quando navegava pelo site).
+    if (cid && !origemVisto.has(cid) && origemDesdeMs != null && new Date(r.createdAt).getTime() >= origemDesdeMs) {
+      origemVisto.add(cid);
+      const ref = String(r.referer || '');
+      let src = '';
+      if (r.utm && (r.utm.source || r.utm.campaign || r.utm.fbclid)) src = 'Anúncio';
+      else if (/facebook|instagram|fb\.|l\.instagram/i.test(ref)) src = 'Instagram/Facebook';
+      else if (/google\./i.test(ref)) src = 'Google';
+      else if (ref && !/youagency/i.test(ref)) src = 'Outros sites';
+      else src = 'Direto / sem origem';
+      (origem[src] || (origem[src] = new Set())).add(cid);
+    }
   }
 
   // 2) Pedidos (Pix gerado) e pagos
@@ -42248,7 +42256,7 @@ async function computeTrackSite({ since, until, fresh } = {}) {
   const prod = {}, porCat = {}, pacotesPix = {}, pacotesPagos = {}, bumps = {}, utmContent = {};
   let pix = 0, pagos = 0, receita = 0, receitaUpsell = 0, pagosUpsell = 0, comVisitor = 0, comBumpPagos = 0;
   const canais = { site: { canal: 'Site', pix: 0, pagos: 0, receita: 0 }, bot: { canal: 'WhatsApp (bot)', pix: 0, pagos: 0, receita: 0 } };
-  const porCatSite = {};
+  const porCatSite = {}; const pagantesSite = new Set(); let pagosBotSemUpsell = 0;
   const bumpNome = { likes: 'Curtidas', views: 'Visualizações', comments: 'Comentários', upgrade: 'Upgrade de pacote', warranty_3m: 'Garantia 3 meses', warranty3m: 'Garantia 3 meses', warranty_4m: 'Garantia 4 meses', warranty_6m: 'Garantia 6 meses' };
   for (const o of orders) {
     const info = __tsProduto(o);
@@ -42258,7 +42266,9 @@ async function computeTrackSite({ since, until, fresh } = {}) {
     pix++; if (porDia[d]) porDia[d].pix++;
     if (o.visitorId) comVisitor++;
     const cn = canais[info.canal]; cn.pix++; if (ok) { cn.pagos++; cn.receita += v; }
-    if (info.canal === 'site') { const ps = porCatSite[info.cat] || (porCatSite[info.cat] = { pix: 0, pagos: 0, receita: 0 }); ps.pix++; if (ok) { ps.pagos++; ps.receita += v; } }
+    if (info.canal === 'site' && !info.isUpsell) { const ps = porCatSite[info.cat] || (porCatSite[info.cat] = { pix: 0, pagos: 0, receita: 0, pessoas: new Set() }); ps.pix++; if (ok) { ps.pagos++; ps.receita += v; if (o.visitorId) ps.pessoas.add(String(o.visitorId)); } }
+    if (info.canal === 'site' && !info.isUpsell && ok) pagantesSite.add(o.visitorId ? 'v:' + o.visitorId : 'o:' + String(o._id));
+    if (info.canal === 'bot' && !info.isUpsell && ok) pagosBotSemUpsell++;
     const pk = info.nome + '|' + info.qtd;
     (pacotesPix[pk] || (pacotesPix[pk] = { produto: info.nome, qtd: info.qtd, n: 0 })).n++;
     const pr = prod[info.nome] || (prod[info.nome] = { produto: info.nome, cat: info.cat, pix: 0, pagos: 0, receita: 0 });
@@ -42327,8 +42337,9 @@ async function computeTrackSite({ since, until, fresh } = {}) {
     { etapa: 'Viram uma página de serviço', n: fServ.size },
   ];
   if (funilDesdeMs != null) funil.push(
-    { etapa: 'Validaram o perfil', n: nEv('perfil_validado') },
+    // No You Agency a pessoa escolhe o pacote ANTES de validar o @ (na Oppus é o contrário).
     { etapa: 'Escolheram um pacote', n: nEv('pacote_escolhido') },
+    { etapa: 'Validaram o perfil', n: nEv('perfil_validado') },
     { etapa: 'Clicaram em pagar', n: nEv('clicou_pagar') },
   );
   funil.push(
@@ -42342,7 +42353,51 @@ async function computeTrackSite({ since, until, fresh } = {}) {
   //    CAC cliente novo = gasto ÷ @ que compraram pela 1ª vez (nenhum pedido pago antes do período), pelo banco.
   //    Pagos = coorte do Track (Pix gerado no período e já pago). Anúncio da venda = utm_content (ad_id).
   // You Agency: sem CAC do Meta aqui — o token de anúncios do .env é das contas da Oppus (ca4 sem acesso).
-  const meta = null;
+  // 4) CAC do Meta (conta ca4, já em pesos), no total e por anúncio.
+  let meta = null;
+  try {
+    const md = await computeMetaAdsData({ periodo: 'custom', since: s, until: u });
+    if (md && md.ok) {
+      const igDe = (o) => String(o.instagramUsername || (o.additionalInfoMapPaid && o.additionalInfoMapPaid.instagram_username) || (o.additionalInfoMap && o.additionalInfoMap.instagram_username) || o.instauser || '').replace(/^@+/, '').trim().toLowerCase();
+      const adDe = (o) => { const c = String((o.utms && o.utms.content) || '').trim(); return /^\d{10,}$/.test(c) ? c : ''; };
+      const pagosP = orders.filter((o) => pago(o) && __tsProduto(o).cat !== 'refil').sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      const users = Array.from(new Set(pagosP.map(igDe).filter(Boolean)));
+      const { ObjectId } = require('mongodb');
+      const jaComprou = new Set();
+      if (users.length) {
+        const antes = await db.co.find({ _id: { $lt: ObjectId.createFromTime(Math.floor(ini.getTime() / 1000)) }, status: 'pago', $or: [{ instagramUsername: { $in: users.concat(users.map((x) => '@' + x)) } }, { 'additionalInfoMapPaid.instagram_username': { $in: users.concat(users.map((x) => '@' + x)) } }] })
+          .project({ instagramUsername: 1, 'additionalInfoMapPaid.instagram_username': 1 }).toArray();
+        for (const o of antes) { const g = igDe(o); if (g) jaComprou.add(g); }
+      }
+      const porAd = new Map();
+      for (const a of (md.ads || [])) porAd.set(String(a.id), { id: String(a.id), nome: a.nome || '', thumb: a.thumb || '', conta: a.conta || '', status: a.efetivo || a.status || '', gasto: Number(a.gasto) || 0, compras: Number(a.metaCompras) || 0, valor: Number(a.metaValor) || 0, vendas: 0, receita: 0, novos: 0 });
+      const vistos = new Set(); let novos = 0, novosAnuncio = 0, vendasAnuncio = 0;
+      for (const o of pagosP) {
+        const g = igDe(o); const ad = adDe(o); const a = ad && porAd.get(ad);
+        const v = Number(o.valueCents || o.expectedValueCents || 0) / 100;
+        if (a) { a.vendas++; a.receita += v; vendasAnuncio++; }
+        if (!g || vistos.has(g)) continue;
+        vistos.add(g);
+        if (jaComprou.has(g)) continue;
+        novos++; if (a) { a.novos++; novosAnuncio++; }
+      }
+      const r2 = (n) => Math.round(n * 100) / 100;
+      const div = (a, b) => (b > 0 ? r2(a / b) : null);
+      const gasto = [...porAd.values()].reduce((x, a) => x + a.gasto, 0);
+      const compras = [...porAd.values()].reduce((x, a) => x + a.compras, 0);
+      const valor = [...porAd.values()].reduce((x, a) => x + a.valor, 0);
+      meta = {
+        gasto: r2(gasto), compras, valor: r2(valor), cac: div(gasto, compras), roas: div(valor, gasto),
+        vendas: pagosP.length,
+        clientesNovos: novos, custoClienteNovo: div(gasto, novos), custoClienteNovoAnuncio: div(gasto, novosAnuncio),
+        vendasAnuncio, novosAnuncio, clientes: vistos.size,
+        anuncios: [...porAd.values()].filter((a) => a.gasto > 0 || a.compras > 0 || a.vendas > 0)
+          .map((a) => ({ ...a, gasto: r2(a.gasto), valor: r2(a.valor), receita: r2(a.receita), cac: div(a.gasto, a.compras), roas: div(a.valor, a.gasto), custoClienteNovo: div(a.gasto, a.novos) }))
+          .sort((x, y) => y.gasto - x.gasto),
+        erros: md.erros || [],
+      };
+    } else if (md) meta = { erro: md.error || 'meta_indisponivel' };
+  } catch (e) { meta = { erro: String((e && e.message) || e) }; }
 
   const top = (obj, campo, n) => Object.values(obj).sort((a, b) => (b[campo] || 0) - (a[campo] || 0)).slice(0, n);
   // A tela mostra em REAIS (valores aqui estão em pesos) com o valor em pesos na legenda.
@@ -42355,7 +42410,7 @@ async function computeTrackSite({ since, until, fresh } = {}) {
     kpis: {
       visitantes: visitantes.size, pageviews: pvRows.length - botsPv, pvPorVisitante: visitantes.size ? (pvRows.length - botsPv) / visitantes.size : 0,
       perfisValidados: vuRows.length, perfisValidadosBot: vuBot, pix, pagos, receita, ticket: pagos ? receita / pagos : 0,
-      convVisitantePago: visitantes.size ? canais.site.pagos / visitantes.size : 0, convPixPago: pix ? pagos / pix : 0,
+      convVisitantePago: visitantes.size ? pagantesSite.size / visitantes.size : 0, convComBot: visitantes.size ? (pagantesSite.size + pagosBotSemUpsell) / visitantes.size : 0, pagantesSite: pagantesSite.size, convPixPago: pix ? pagos / pix : 0,
       pixSite: canais.site.pix, pagosSite: canais.site.pagos, receitaSite: Math.round(canais.site.receita * 100) / 100,
       pixBot: canais.bot.pix, pagosBot: canais.bot.pagos, receitaBot: Math.round(canais.bot.receita * 100) / 100, botsPageviews: botsPv,
       pagosUpsell, receitaUpsell, pedidosComOferta: comBumpPagos, pedidosComVisitante: comVisitor,
@@ -42363,7 +42418,7 @@ async function computeTrackSite({ since, until, fresh } = {}) {
     },
     serie: dias.map((d) => { const x = porDia[d]; return { dia: d, pageviews: x.pageviews, visitantes: x.visitantes.size, pix: x.pix, pagos: x.pagos, receita: Math.round(x.receita * 100) / 100 }; }),
     porHora,
-    paginas: Object.values(pags).map((p) => { const c = porCatSite[__TS_PAG_SERV[p.path]] || (__TS_PAG_SERV[p.path] ? { pix: 0, pagos: 0, receita: 0 } : null); return { path: p.path, nome: p.nome, pageviews: p.pageviews, visitantes: p.vis.size, pix: c ? c.pix : null, pagos: c ? c.pagos : null, receita: c ? Math.round(c.receita * 100) / 100 : null }; }).sort((a, b) => b.pageviews - a.pageviews),
+    paginas: Object.values(pags).map((p) => { const c = porCatSite[__TS_PAG_SERV[p.path]] || (__TS_PAG_SERV[p.path] ? { pix: 0, pagos: 0, receita: 0 } : null); let conv = null; if (c && p.vis.size) { let n = 0; if (c.pessoas) for (const v of c.pessoas) if (p.vis.has(v)) n++; conv = n / p.vis.size; } return { path: p.path, nome: p.nome, pageviews: p.pageviews, visitantes: p.vis.size, pix: c ? c.pix : null, pagos: c ? c.pagos : null, receita: c ? Math.round(c.receita * 100) / 100 : null, conv }; }).sort((a, b) => b.pageviews - a.pageviews),
     funil,
     topEscolhidos: top(Object.fromEntries(Object.entries(escolhidos).map(([k, x]) => [k, { servico: x.servico, tipo: x.tipo, qtd: x.qtd, preco: x.preco, visitantes: x.vis.size }])), 'visitantes', 200),
     topPix: top(pacotesPix, 'n', 200),
