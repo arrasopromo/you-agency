@@ -41909,11 +41909,11 @@ function __metaRange(q) {
 // Busca por dia em paralelo; dia fechado fica 6h em cache, o dia de hoje 2 min.
 const __tcDiaCache = new Map();
 function __tcConfigurado() { return !!String(process.env.TRACKCOMBO_API_KEY || '').trim(); }
-async function __tcMcpCall(args) {
+async function __tcMcpCall(args, tool = 'get_recent_events') {
   const raw = String(process.env.TRACKCOMBO_API_KEY || '').trim();
   const auth = /^bearer /i.test(raw) ? raw : 'Bearer ' + raw;
   const url = String(process.env.TRACKCOMBO_MCP_URL || 'https://mcp.trackcombo.com/mcp');
-  const r = await axios.post(url, { jsonrpc: '2.0', id: Date.now(), method: 'tools/call', params: { name: 'get_recent_events', arguments: args } },
+  const r = await axios.post(url, { jsonrpc: '2.0', id: Date.now(), method: 'tools/call', params: { name: tool, arguments: args } },
     { headers: { Authorization: auth, 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' }, timeout: 60000, validateStatus: () => true });
   let j = r.data;
   if (typeof j === 'string') { const l = j.split('\n').filter((x) => x.startsWith('data:')).pop(); j = l ? JSON.parse(l.slice(5)) : null; }
@@ -41925,23 +41925,23 @@ async function __tcDia(dia, agora) {
   const ini = Date.parse(dia + 'T03:00:00Z'), fim = Math.min(ini + 864e5, agora);
   const hit = __tcDiaCache.get(dia);
   if (hit && hit.exp > agora) return hit.compras;
-  const container = String(process.env.TRACKCOMBO_CONTAINER_ID || 'MXERC7WMHA');
-  const ev = new Map(); let cursor, guard = 0;
+  const container = String(process.env.TRACKCOMBO_CONTAINER_ID || 'O1IGWOAVVG');
+  // Relatório de Vendas do TC (get_sales_report): mesma base do painel deles, venda deduplicada por
+  // transação, com a UTM INTEIRA do último clique (last_touch). Antes era get_recent_events, que
+  // devolvia a UTM cortada ("1202***") e obrigava a raspar o painel do TC (tc_atribuicao).
+  const porTx = new Map(); let cursor, guard = 0;
   do {
-    const args = { container_id: container, event_name: 'purchase', status: 'SUCCESS', from: ini, to: fim };
+    const args = { container_id: container, from: ini, to: fim - 1, limit: 200 };
     if (cursor) args.cursor = cursor;
-    const o = await __tcMcpCall(args);
-    for (const e of (o.events || [])) ev.set(e.id, e);
-    cursor = o.nextCursor;
-  } while (cursor && guard++ < 40);
-  const porTx = new Map();
-  for (const e of ev.values()) {
-    const cd = e.data && e.data.custom_data; if (!cd || cd.status !== 'paid' || !cd.transaction_id) continue;
-    const t = (e.data && e.data.tracking) || {};
-    // utm_content vem cortado ("1202***") enquanto o TC esconder a UTM; quando vier inteiro, já é usado.
-    const uc = String(t.utm_content || '').trim();
-    porTx.set(cd.transaction_id, { tx: cd.transaction_id, valor: Number(cd.value) || 0, em: e.date, pago: /^paid/.test(String(t.channel || '')) || /^120/.test(uc), content: /^\d{10,}$/.test(uc) ? uc : '' });
-  }
+    const o = await __tcMcpCall(args, 'get_sales_report');
+    for (const s of (o.sales || [])) {
+      const tx = String(s.transaction_id || '').trim(); if (!tx || String(s.status || 'OK').toUpperCase() !== 'OK') continue;
+      const lt = s.last_touch || {};
+      const uc = String(lt.utm_content || '').trim();
+      porTx.set(tx, { tx, valor: Number(s.value) || 0, em: Number(s.date) || 0, pago: s.attribution_type === 'campaign' || /^paid/.test(String(lt.channel || '')) || /^\d{10,}$/.test(uc), content: /^\d{10,}$/.test(uc) ? uc : '' });
+    }
+    cursor = o.next_cursor;
+  } while (cursor && guard++ < 60);
   const compras = [...porTx.values()];
   __tcDiaCache.set(dia, { compras, exp: agora + (fim < ini + 864e5 ? 2 * 60e3 : 6 * 3600e3) });
   return compras;
@@ -41966,7 +41966,10 @@ async function computeMetaAdsData(q) {
   const key = range.since + '|' + range.until;
   const hit = __metaAdsCache.get(key);
   if (hit && hit.exp > Date.now() && !(q && q.fresh)) return { ...hit.value, cached: true };
-  let fx = 5.03; try { const r = await getUsdBrlRate(); if (r && r.rate) fx = r.rate; } catch (_) {}
+  // You Agency: conta ca4 em dólar, SEM imposto; tudo vira PESO (vendas são em MXN) e a tela mostra em reais pela cotação BRL→MXN de hoje.
+  const __fxm = require('./fxMxn.js');
+  let fx = 18; try { const r = Number(await __fxm.getUsdMxnRate()); if (r > 1) fx = r; } catch (_) {}
+  let fxBrlMxn = null; try { fxBrlMxn = Number(await __fxm.getBrlMxnRate()) || null; } catch (_) {}
   const ads = new Map();
   const tr = JSON.stringify({ since: range.since, until: range.until });
   const erros = [];
@@ -41978,7 +41981,15 @@ async function computeMetaAdsData(q) {
         range.until === range.hoje && range.since === range.hoje ? Promise.resolve(null)
           : __metaGetAll(`https://graph.facebook.com/v21.0/${act}/insights`, { fields: 'ad_id,spend', level: 'ad', date_preset: 'today', limit: 500, access_token: token }),
       ]);
-      const m = conta === 'USD' ? fx : 1;
+      // ca3: orçamento e gasto de hoje pela taxa de HOJE do mesmo critério do período
+      // (custo médio das recargas LootRush; sem ele, a cotação do momento).
+      let m = 1;
+      if (conta === 'USD') m = fx;
+      // Gasto do período: cada dia pela cotação daquele dia (média ponderada pelo gasto diário da conta).
+      let mPer = m;
+      if (conta === 'USD') {
+        try { const dd = await __fbSpendOne(act, token, { since: range.since, until: range.until, daily: true }); if (dd.ok) { const cv = await __fxm.converterUsdPorDia(dd.byDay); if (cv.taxaMedia) mPer = cv.taxaMedia; } } catch (_) {}
+      }
       for (const a of lista) {
         const st = String(a.effective_status || '');
         if (st === 'DELETED' || st === 'ARCHIVED') continue;
@@ -41992,23 +42003,24 @@ async function computeMetaAdsData(q) {
       }
       for (const x of ins) {
         const a = ads.get(String(x.ad_id)); if (!a) continue;
-        a.gasto += (Number(x.spend) || 0) * m; a.impressoes += Number(x.impressions) || 0; a.cliques += Number(x.inline_link_clicks) || 0;
-        a.metaCompras += __metaPick(x.actions); a.metaValor += __metaPick(x.action_values) * m;
+        a.gasto += (Number(x.spend) || 0) * mPer; a.impressoes += Number(x.impressions) || 0; a.cliques += Number(x.inline_link_clicks) || 0;
+        a.metaCompras += __metaPick(x.actions); a.metaValor += __metaPick(x.action_values) * mPer;
       }
-      if (hojeIns === null) { for (const a of ads.values()) if (a.conta === conta) a.gastoHoje = a.gasto; }
+      if (hojeIns === null) { for (const a of ads.values()) if (a.conta === conta) a.gastoHoje = a.gasto; } // período = só hoje → mPer já é a cotação de hoje
       else for (const x of hojeIns) { const a = ads.get(String(x.ad_id)); if (a) a.gastoHoje += (Number(x.spend) || 0) * m; }
     } catch (e) { erros.push(conta + ': ' + ((e && e.message) || e)); }
   }
   // Vendas do banco no período (horário de SP).
   const iniMs = Date.parse(range.since + 'T03:00:00Z'), fimMs = Date.parse(range.until + 'T03:00:00Z') + 864e5;
   const semAnuncio = { vendas: 0, receita: 0 }, recuperadas = { vendas: 0, receita: 0 }; let totVendas = 0, totReceita = 0;
+  const __cacPrim = new Map(), __cacCli = { clientes: 0, novos: 0, novosAnuncio: 0 };
   const tc = { configurado: __tcConfigurado(), total: { vendas: 0, receita: 0 }, meta: { vendas: 0, receita: 0 }, anuncio: { vendas: 0, receita: 0 }, semRelatorio: { vendas: 0, receita: 0 } };
   const tcPromise = tc.configurado ? __tcCompras(iniMs, fimMs).catch((e) => { erros.push('TrackCombo: ' + ((e && e.message) || e)); return []; }) : Promise.resolve([]);
   try {
     const col = await getCollection('checkout_orders');
     const desde = new Date(iniMs - 3 * 864e5);
     const docs = await col.find({ status: 'pago', $or: [{ createdAt: { $gte: desde } }, { createdAt: { $gte: desde.toISOString() } }] })
-      .project({ identifier: 1, utms: 1, utmsFonte: 1, upsell: 1, valueCents: 1, paidAt: 1, 'paghiper.paidAt': 1, 'woovi.paidAt': 1, createdAt: 1 }).limit(50000).toArray();
+      .project({ identifier: 1, utms: 1, utmsFonte: 1, upsell: 1, valueCents: 1, paidAt: 1, 'paghiper.paidAt': 1, 'woovi.paidAt': 1, createdAt: 1, instagramUsername: 1, instauser: 1, tipo: 1, tipoServico: 1, additionalInfo: 1, additionalInfoPaid: 1, additionalInfoMap: 1, additionalInfoMapPaid: 1 }).limit(50000).toArray();
     const quando = (d) => new Date(d.paidAt || (d.paghiper && d.paghiper.paidAt) || (d.woovi && d.woovi.paidAt) || d.createdAt).getTime();
     const noPeriodo = docs.filter((d) => { const t = quando(d); return t >= iniMs && t < fimMs; });
     const adDe = (u) => { const s = String((u && u.content) || '').trim(); return /^\d{10,}$/.test(s) ? s : ''; };
@@ -42022,10 +42034,29 @@ async function computeMetaAdsData(q) {
       if (!ad && d.upsell) { const p = paiPorId.get('i:' + d.upsell.parentIdentifier) || paiPorId.get('c:' + d.upsell.parentCorrelationID); if (p) ad = adDe(p.utms); }
       const a = ad && ads.get(ad);
       if (a) { a.vendas++; a.receita += v; if (d.utmsFonte === 'cookie_ya') { recuperadas.vendas++; recuperadas.receita += v; } } else { semAnuncio.vendas++; semAnuncio.receita += v; }
+      // CAC: 1ª compra de cada @ no período (refil fora), com ou sem anúncio.
+      try {
+        if (__tsProduto(d).cat !== 'refil') {
+          const g = String(d.instagramUsername || (d.additionalInfoMapPaid && d.additionalInfoMapPaid.instagram_username) || (d.additionalInfoMap && d.additionalInfoMap.instagram_username) || d.instauser || '').replace(/^@+/, '').trim().toLowerCase();
+          if (g && !__cacPrim.has(g)) __cacPrim.set(g, { t: quando(d), ad: !!a });
+          else if (g && a && __cacPrim.get(g).t === quando(d)) __cacPrim.get(g).ad = true;
+        }
+      } catch (_) {}
     }
+    // Quem já tinha pedido pago ANTES do período não é cliente novo.
+    try {
+      const users = [...__cacPrim.keys()];
+      const jaComprou = new Set();
+      for (let i = 0; i < users.length; i += 2000) {
+        const lote = users.slice(i, i + 2000);
+        const antes = await col.find({ status: 'pago', $and: [{ $or: [{ createdAt: { $lt: new Date(iniMs) } }, { createdAt: { $lt: new Date(iniMs).toISOString() } }] }, { $or: [{ instagramUsername: { $in: lote.concat(lote.map((x) => '@' + x)) } }, { 'additionalInfoMapPaid.instagram_username': { $in: lote } }] }] }).project({ instagramUsername: 1, 'additionalInfoMapPaid.instagram_username': 1 }).toArray();
+        for (const o of antes) { const g = String(o.instagramUsername || (o.additionalInfoMapPaid && o.additionalInfoMapPaid.instagram_username) || '').replace(/^@+/, '').trim().toLowerCase(); if (g) jaComprou.add(g); }
+      }
+      for (const [g, x] of __cacPrim) { __cacCli.clientes++; if (jaComprou.has(g)) continue; __cacCli.novos++; if (x.ad) __cacCli.novosAnuncio++; }
+    } catch (e) { erros.push('CAC: ' + ((e && e.message) || e)); }
     // TrackCombo: só o que o PRÓPRIO TC atribuiu, sem usar nada do nosso banco (fontes independentes).
-    // A API (MCP) do TC devolve a UTM cortada, então o anúncio de cada venda vem do relatório "Vendas" do
-    // painel do TC, importado em tc_atribuicao (_id = transaction_id). Venda sem import fica sem anúncio.
+    // O anúncio de cada venda vem da UTM do último clique no relatório de Vendas do TC (get_sales_report).
+    // tc_atribuicao (raspagem antiga do painel do TC) só cobre venda que veio sem utm_content na API.
     const compras = await tcPromise;
     if (compras.length) {
       const ids = [...new Set(compras.map((x) => x.tx).filter(Boolean))];
@@ -42049,10 +42080,13 @@ async function computeMetaAdsData(q) {
     .filter((a) => a.gasto > 0 || a.vendas > 0 || a.metaCompras > 0 || a.tcVendas > 0 || a.efetivo === 'ACTIVE')
     .map((a) => ({ ...a, gasto: r2(a.gasto), gastoHoje: r2(a.gastoHoje), metaValor: r2(a.metaValor), receita: r2(a.receita), tcReceita: r2(a.tcReceita), conjunto: a.conjunto && { ...a.conjunto, orcamentoDia: a.conjunto.orcamentoDia == null ? null : r2(a.conjunto.orcamentoDia) }, campanha: a.campanha && { ...a.campanha, orcamentoDia: a.campanha.orcamentoDia == null ? null : r2(a.campanha.orcamentoDia) } }))
     .sort((x, y) => y.gasto - x.gasto);
-  const value = { ok: true, range, fx, geradoEm: new Date().toISOString(), ads: linhas, semAnuncio: { vendas: semAnuncio.vendas, receita: r2(semAnuncio.receita) }, banco: { vendas: totVendas, receita: r2(totReceita), recuperadas: { vendas: recuperadas.vendas, receita: r2(recuperadas.receita) } }, tc, erros };
+  const __gastoTot = r2([...ads.values()].reduce((x, a) => x + (Number(a.gasto) || 0), 0));
+  const cac = { gasto: __gastoTot, clientes: __cacCli.clientes, novos: __cacCli.novos, novosAnuncio: __cacCli.novosAnuncio, cacGeral: __cacCli.novos ? r2(__gastoTot / __cacCli.novos) : null, cacAnuncio: __cacCli.novosAnuncio ? r2(__gastoTot / __cacCli.novosAnuncio) : null };
+  const value = { ok: true, range, fx, fxBrlMxn, geradoEm: new Date().toISOString(), cac, ads: linhas, semAnuncio: { vendas: semAnuncio.vendas, receita: r2(semAnuncio.receita) }, banco: { vendas: totVendas, receita: r2(totReceita), recuperadas: { vendas: recuperadas.vendas, receita: r2(recuperadas.receita) } }, tc, erros };
   if (!erros.length) __metaAdsCache.set(key, { value, exp: Date.now() + 2 * 60 * 1000 });
   return value;
 }
+
 
 // ── Track do Site (/painel/track-site) ─────────────────────────────────────────────
 // Tudo que o site registra num período (dias no horário de SP): visitas (page_views),

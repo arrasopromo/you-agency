@@ -94,8 +94,6 @@ const BLOQUEADAS = [
   // Nota fiscal, controladoria e enriquecimento fiscal (CPF)
   '/painel/controladoria', '/painel/notas-fiscais', '/api/admin/controladoria', '/api/admin/fiscal', '/api/admin/spedy',
   '/api/spedy', '/api/painel/notas-fiscais',
-  // Meta Ads
-  '/painel/meta-ads', '/api/painel/meta-ads',
   // Pix, recuperação de Pix e gateways que o You Agency não usa (só NOWPayments)
   // (/api/recovery/context liberado: o link do e-mail de recuperação recarrega o pedido pelo token assinado)
   '/painel/recuperacao', '/api/painel/order-recovery', '/api/admin/recovery-links',
