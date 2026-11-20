@@ -22115,7 +22115,7 @@ async function processOrderFulfillment(record, col, req) {
                                 }
                             }
                             const st = isDuplicateProviderError(errStr) ? 'duplicate' : 'error';
-                            await col.updateOne(filter, { $set: { fama24h: { status: st, error: providerErr, requestPayload: { service: serviceId, link: linkForFama, quantity: qtd }, response: famaData, requestedAt: new Date().toISOString() } } });
+                            await col.updateOne(filter, { $set: { fama24h: { status: st, provider: mainProvider, error: providerErr, requestPayload: { service: serviceId, link: linkForFama, quantity: qtd }, response: famaData, requestedAt: new Date().toISOString() } } });
                         } else {
                             const st = orderId ? 'created' : 'unknown';
                             const errObj = orderId ? undefined : { code: 'missing_order_id' };
@@ -22126,7 +22126,7 @@ async function processOrderFulfillment(record, col, req) {
                         const errVal = err?.response?.data || err?.message || String(err);
                         const errStr = (typeof errVal === 'string') ? errVal : JSON.stringify(errVal);
                         const st = isDuplicateProviderError(errStr) ? 'duplicate' : 'error';
-                        await col.updateOne(filter, { $set: { fama24h: { status: st, error: errVal, requestPayload: { service: serviceId, link: linkForFama, quantity: qtd }, requestedAt: new Date().toISOString() } } });
+                        await col.updateOne(filter, { $set: { fama24h: { status: st, provider: mainProvider, error: errVal, requestPayload: { service: serviceId, link: linkForFama, quantity: qtd }, requestedAt: new Date().toISOString() } } });
                     }
                 }
                 }
@@ -52137,6 +52137,8 @@ const server = app.listen(port, () => {
   try { require('./precosTestes.js').startPrecosTestesLoop({ backgroundJobsEnabled, sendNtfy: null }); } catch (_) {} // Testes de serviços: preço atual de cada serviço todo dia às 23:30 BRT
   // You Agency: sem reconciliação Pix/cartão nem alerta no WhatsApp — try { require('./reconciliacao.js').startReconciliacaoLoop(); } catch (_) {} // Reconciliação gateway↔banco (pagos sem pedido) + watchdog de pedidos parados
   try { startStuckBumpSweeper(); } catch (_) {} // destrava bumps presos em "processing" (comentários/views/curtidas)
+  // Pedido pago sem envio (reinício no meio do despacho / timeout do fornecedor) e privado que abriu o perfil.
+  try { require('./despachoPendente.js')({ getCollection, processOrderFulfillment, verifyInstagramProfile, smmProviders: SMM_PROVIDERS, normalizeSmmProvider, sendEvolutionText, backgroundJobsEnabled, site: 'You Agency' }); } catch (e) { try { console.error('[despacho-pendente] falhou ao iniciar:', e && e.message); } catch (_) {} }
   try { startCostRecalibrateLoop(); } catch (_) {} // Auto-calibra cost_settings pelo custo real dos últimos N pedidos de cada tipo (a cada 6h)
   // You Agency: sem nota fiscal — try { startSpedyStatusSyncLoop(); } catch (_) {} // Notas 'na fila' → consulta a Spedy e atualiza o estado real
 
