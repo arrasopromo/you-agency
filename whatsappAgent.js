@@ -25,6 +25,13 @@ function sanitizeForWhatsapp(t) {
     return (!lab || lab === url || /^https?:\/\//i.test(lab)) ? url : (lab + ': ' + url);
   });
   s = s.replace(/\*\*([^*]+)\*\*/g, '*$1*');
+  // Tabela markdown não existe no WhatsApp (aparece cheia de "|"): separador e cabeçalho saem, linha vira "- 150: $ 145 MXN".
+  s = s.split('\n').filter((l) => !/^\s*\|?\s*:?-{2,}/.test(l)).map((l) => {
+    if (!/^\s*\|.*\|\s*$/.test(l)) return l;
+    const cel = l.split('|').map((x) => x.trim()).filter(Boolean);
+    if (cel.length >= 2 && !/\d/.test(cel.join(''))) return null;
+    return cel.length >= 2 ? ('- ' + cel[0] + ': ' + cel.slice(1).join(' ')) : cel.join(' ');
+  }).filter((l) => l !== null).join('\n');
   // Títulos markdown (###) não existem no WhatsApp: viram texto normal.
   s = s.replace(/^[ \t]*#{1,6}[ \t]*/gm, '');
   // "**Seguidores *mixtos**" e afins: asteriscos repetidos viram um só; linha com asterisco ímpar perde a formatação.
@@ -214,6 +221,7 @@ function systemPrompt(dispTipos) {
     '@ OBLIGATORIO EN TODO PEDIDO DE INSTAGRAM (también me gusta y vistas; en TikTok/Facebook sigue el FLUJO TikTok/Facebook): pide el @ de Instagram y valídalo con validar_perfil ANTES de generar el pago. NUNCA uses el correo ni el nombre del cliente como @. Copia el @ EXACTAMENTE como lo escribió el cliente, letra por letra.',
     'IMAGEN DEL CLIENTE: mensajes "[El cliente envió una IMAGEN… Contenido: …]" traen lo que hay en la foto. Úsalo: si aparece un @, úsalo; si es captura de la página de reposición con error, trátalo como ERROR EN LA REPOSICIÓN; si es comprobante, trátalo como pago enviado. No digas que no puedes ver imágenes.',
     'LINK DE REPOSICIÓN: solo manda el refilLink que regresó consultar_pedido, y SOLO cuando el cliente hable de caída o pida reposición. NUNCA armes ni inventes un link.',
+    'PAGO YA GENERADO: si ya generaste el pago de un paquete, NO propongas otro paquete ni cambies la cantidad por tu cuenta ("voy a confiar", "ok", "bueno" NO son cambio de pedido). Solo cambia si el cliente pide CLARAMENTE otra cantidad o servicio.',
     'FLUJO DE VENTA: 1) servicio + tipo; 2) muestra la tabla y pregunta la cantidad; 3) cotiza el valor exacto; 4) pide el @ y valida (confirma seguidores); 5) si es me gusta/vistas, pide el link y pregunta si reparte en más publicaciones; 6) pregunta cómo prefiere pagar: *SPEI* (transferencia desde la app de su banco, se confirma en minutos) u *OXXO* (efectivo en tienda); si no elige, usa SPEI; no ofrezcas tarjeta; 7) genera el pago. NO pidas el nombre ni el correo: el sistema usa el nombre del WhatsApp del cliente.',
     'GENERAR EL PAGO — REGLA CRÍTICA: en cuanto tengas servicio, tipo, cantidad, @ validado y método (y, en me gusta/vistas, los links con la confirmación de que terminó), llama *generar_pago* DE INMEDIATO, en el MISMO turno. NUNCA digas "voy a generar el pago", "un momento" o "espera" sin llamar la herramienta. Si falta un dato, pide solo lo que falta.',
     'DESPUÉS DE GENERAR EL PAGO: NUNCA escribas en el texto la CLABE, el banco, el beneficiario ni ningún link — el sistema los manda AUTOMÁTICAMENTE en mensajes separados. Tu mensaje lleva solo la confirmación del resumen y el cierre "Quedo al pendiente de la confirmación de tu pago para liberar tu pedido." Si generar_pago regresa error, NO digas que salió bien — pide intentar de nuevo u ofrece el otro método, o llama a soporte. Nunca pidas RFC ni CURP.',
@@ -419,7 +427,9 @@ async function handleAgentMessage(msg, sendText) {
   // Pediu de novo os dados de pagamento e tem cobrança do bot em aberto → reenvia a MESMA
   // (sem modelo, sem cobrança nova). Trocar SPEI↔OXXO continua indo pelo modelo (generar_pago).
   try {
-    const pedeDados = /(clabe|referencia|datos\s+(de(l)?\s+)?pago|los\s+datos|c[oó]mo\s+(le\s+)?pago|d[oó]nde\s+pago|m[aá]nda(me)?\s+(otra\s+vez|de\s+nuevo)|reenv[ií]a|no\s+(me\s+)?(lleg[oó]|aparece)\s+(la\s+)?(clabe|referencia))/i.test(text);
+    // "¿referencias?", "¿muestras gratis?" = pedido de PROVA, não da referência de pagamento (20/11: virou loop de reenvio).
+    const pedeProva = /(referencias|muestra|gratis|opini|testimon|rese[ñn]|prueba|estaf|confia|confío|garant)/i.test(text);
+    const pedeDados = !pedeProva && /(clabe|referencia(?!s)|datos\s+(de(l)?\s+)?pago|los\s+datos|c[oó]mo\s+(le\s+)?pago|d[oó]nde\s+pago|m[aá]nda(me)?\s+(otra\s+vez|de\s+nuevo)|reenv[ií]a|no\s+(me\s+)?(lleg[oó]|aparece)\s+(la\s+)?(clabe|referencia))/i.test(text);
     const trocaMetodo = /(oxxo|spei|transferencia|efectivo|tienda)/i.test(text);
     if (pedeDados && !trocaMetodo) {
       const ab = await sales.ultimoPagoAberto(phone);
@@ -524,6 +534,7 @@ async function handleAgentMessage(msg, sendText) {
           const c = await getCollection('whatsapp_contacts');
           await c.updateOne({ _id: String(phone) }, { $set: { flag: 'queda_reais', botPaused: true, supportReason: 'Queda em seguidores reales', supportAt: new Date().toISOString() } }, { upsert: true });
         } catch (_) {}
+        try { await sales.avisarResponsavelWhatsapp('📉 You Agency: cliente +' + String(phone).replace(/\D/g, '') + ' reclamou de queda em seguidores reales. O bot pausou a conversa. CRM: ' + PUBLIC_BASE + '/painel/ia-crm'); } catch (_) {}
         try { await sales.sendNtfy({ title: '+' + String(phone).replace(/\D/g, '') + ' - queda reales', message: 'Cliente reclamou de queda e o último pedido é reales. A IA foi pausada — veja no CRM.', priority: 'high', tags: 'chart_with_downwards_trend', click: PUBLIC_BASE + '/painel/ia-crm' }); } catch (_) {}
       } else if (cp.refilLink) {
         finalText = '¡Claro! Puedes reponer los seguidores que se cayeron aquí: ' + cp.refilLink;
@@ -570,6 +581,15 @@ async function handleAgentMessage(msg, sendText) {
     }
   } catch (_) {}
   try { finalText = corrigirTaxaQueda(finalText); } catch (_) {}
+  // Pedido com PROBLEMA (sem envio, erro, cancelado, travado): o modelo às vezes ignora precisaSuporte e diz
+  // "en proceso, puedes estar tranquilo" (20/11: envio em erro). Aqui a resposta é fixa e o responsável é avisado.
+  try {
+    const cp = ctx.lastConsulta;
+    if (cp && cp.encontrado && cp.precisaSuporte && !ctx.pagoToSend && !ctx.quedaResolved && !erroRefilTratado) {
+      finalText = 'Ya encontré tu pedido' + (cp.quantidade ? (' de *' + Number(cp.quantidade).toLocaleString('en-US') + ' ' + (cp.servico || 'seguidores') + '*') : '') + (cp.usuario ? (' para @' + cp.usuario) : '') + '. Lo estoy revisando con el equipo para que la entrega avance; en cuanto lo tengamos listo te escribo por aquí.';
+      if (!ctx.support) { ctx.support = true; try { await sales.flagSupport(phone, 'Pedido com problema (' + (cp.motivoSuporte || 'precisaSuporte') + ') @' + (cp.usuario || '?')); } catch (_) {} }
+    }
+  } catch (_) {}
   try {
     const assuntoReposicao = /(cayeron|cay[óo]|bajaron|baj[óo]|perd[íi]|desaparec|disminu|reposici|reponer|refil|refill)/i.test((ctx.recentUserTexts || [text]).slice(0, 3).join(' '));
     if (!assuntoReposicao && !ctx.quedaResolved) finalText = tirarLinkReposicao(finalText);
@@ -587,7 +607,16 @@ async function handleAgentMessage(msg, sendText) {
   finalText = sanitizeForWhatsapp(finalText);
   finalText = finalText.replace(/\b([Mm])ixtos(?:s+|os)\b/g, '$1ixtos');
   if (finalText) {
-    const bolhas = splitIntoBubbles(finalText);
+    let bolhas = splitIntoBubbles(finalText);
+    try {
+      const pal = (t) => new Set(String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9$ ]/g, ' ').split(/\s+/).filter((w) => w.length > 2));
+      const parecido = (x, y) => { const A1 = pal(x), B1 = pal(y); if (A1.size < 4 || B1.size < 4) return false; let i = 0; for (const w of A1) if (B1.has(w)) i++; return i / Math.min(A1.size, B1.size) >= 0.8; };
+      let recentes = [];
+      try { const cm = await getCollection('wa_ia_messages'); recentes = (await cm.find({ phone, direction: 'out', createdAt: { $gte: new Date(Date.now() - 10 * 60e3) } }).project({ text: 1 }).toArray()).map((d) => String(d.text || '')); } catch (_) {}
+      const ficam = [];
+      for (const b of bolhas) { if (ficam.some((x) => parecido(x, b)) || recentes.some((x) => parecido(x, b))) continue; ficam.push(b); }
+      if (ficam.length) bolhas = ficam;
+    } catch (_) {}
     for (let i = 0; i < bolhas.length; i++) {
       if (i > 0) { try { await new Promise((r) => setTimeout(r, _typingDelay(bolhas[i]))); } catch (_) {} }
       try { await sendText(phone, bolhas[i]); } catch (_) {}
@@ -595,7 +624,7 @@ async function handleAgentMessage(msg, sendText) {
   }
   // Mesmo pagamento reaproveitado e os dados já foram mandados há pouco → não repete (a não ser que peça).
   if (ctx.pagoToSend && ctx.pagoReused) {
-    const pedeCodigo = /(clabe|referencia|datos|pago|m[áa]ndame|manda(lo)?\s+otra|reenv|de\s+nuevo|no\s+(me\s+)?(lleg[óo]|veo|aparece))/i.test(text);
+    const pedeCodigo = !/(referencias|muestra|gratis|opini|testimon|rese[ñn]|prueba|estaf|confia|confío|garant)/i.test(text) && /(clabe|referencia(?!s)|datos|pago|m[áa]ndame|manda(lo)?\s+otra|reenv|de\s+nuevo|no\s+(me\s+)?(lleg[óo]|veo|aparece))/i.test(text);
     if (!pedeCodigo) {
       try {
         const cm = await getCollection('wa_ia_messages');

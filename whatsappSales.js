@@ -709,7 +709,16 @@ async function consultarPedido({ telefone, usuario } = {}) {
     for (const p of [o.fornecedor_social, o.fama24h, o.nuvra, o.topfama]) { const q = Number(p && p.requestPayload && p.requestPayload.quantity); if (q > 0) return q; }
     return 0;
   })();
-  const quantidade = Number((o.fulfillmentCalc && o.fulfillmentCalc.finalQty) || qtdDespachada || quantidadeBase) || quantidadeBase;
+  // Upgrade (order bump) pago e ainda não despachado: soma pela mesma regra do despacho (20/11: pagou 1.000 + upgrade e o bot disse 1.000).
+  const upgradeAdd = (function () {
+    const bumps = String(orderGetAny(o, 'order_bumps') || '');
+    if (!/upgrade\s*:\s*[1-9]/i.test(bumps) || !quantidadeBase) return 0;
+    if (categoria === 'visualizacoes' || categoria === 'views' || tipo === 'visualizacoes_reels') { const t = { 1000: 2500, 5000: 10000, 25000: 50000, 100000: 150000, 200000: 250000, 500000: 1000000 }[quantidadeBase] || 0; return t > quantidadeBase ? t - quantidadeBase : 0; }
+    if (categoria === 'curtidas' || categoria === 'likes' || /curtidas/.test(tipo)) { const t = { 150: 300, 300: 500, 500: 700, 700: 1000, 1000: 2000, 1200: 2000, 2000: 3000, 3000: 4000, 4000: 5000, 5000: 7500, 7500: 10000, 10000: 15000 }[quantidadeBase] || 0; return t > quantidadeBase ? t - quantidadeBase : 0; }
+    if ((tipo === 'brasileiros' || tipo === 'organicos') && quantidadeBase === 1000) return 1000;
+    return ({ 50: 50, 150: 150, 300: 200, 500: 200, 700: 300, 1000: 1000, 1200: 800, 2000: 1000, 3000: 1000, 4000: 1000, 5000: 2500, 7500: 2500, 10000: 5000 })[quantidadeBase] || 0;
+  })();
+  const quantidade = Number((o.fulfillmentCalc && o.fulfillmentCalc.finalQty) || qtdDespachada || (quantidadeBase + upgradeAdd)) || quantidadeBase;
   const usernameOrder = String(o.instagramUsername || o.instauser || orderGetAny(o, 'instagram_username') || uname || '').replace(/^@+/, '');
   const paidMs = _orderPaidMs(o);
   const horasDesdePagamento = paidMs ? Math.round((Date.now() - paidMs) / 3600000) : null;
@@ -752,14 +761,37 @@ async function consultarPedido({ telefone, usuario } = {}) {
   const statusRuim = ['cancelado', 'reembolsado', 'erro'].includes(statusFornecedor);
   const pagoSemEnvio = !temDespacho && (horasDesdePagamento == null || horasDesdePagamento >= 1);
   const travado = !entregouTudo && horasDesdePagamento != null && horasDesdePagamento > 48 && (entregues === 0 || entregues == null) && !statusRuim;
-  const precisaSuporte = statusRuim || pagoSemEnvio || travado;
+  // Pago, sem pedido no fornecedor e perfil privado: o envio espera o perfil abrir (não é problema nosso).
+  const esperandoPublico = !temDespacho && perfilPrivado === true;
+  const envioComErro = !temDespacho && statusFornecedor === 'erro';
+  const precisaSuporte = !esperandoPublico && (statusRuim || pagoSemEnvio || travado || envioComErro);
+  const motivoSuporte = statusRuim ? ('fornecedor ' + statusFornecedor) : pagoSemEnvio ? 'pago sem envio' : travado ? 'travado >48h' : envioComErro ? 'envio com erro' : '';
 
   return {
     ok: true, encontrado: true, usuario: usernameOrder,
     servico: categoria || 'seguidores', tipo: NOME_TIPO[tipo] || tipo || '(no informado)', quantidade,
     horasDesdePagamento, dentroPrazo48h: horasDesdePagamento != null ? (horasDesdePagamento <= 48) : null,
-    ehReales, ehBrasileirosReais: ehReales, perfilPrivado, status: statusCliente, precisaSuporte, refilLink,
+    ehReales, ehBrasileirosReais: ehReales, perfilPrivado, status: esperandoPublico ? 'esperando perfil publico' : (precisaSuporte ? 'en revision' : statusCliente), precisaSuporte, motivoSuporte, refilLink,
   };
+}
+
+// Aviso no WhatsApp do responsável pela Evolution (o ntfy não é lido). Número: SUPORTE_ALERT_PHONE ou PANEL_BALANCE_ALERT_PHONE.
+async function avisarResponsavelWhatsapp(texto) {
+  try {
+    const baseUrl = String(process.env.EVOLUTION_API_URL || '').replace(/\/+$/, '');
+    const apiKey = String(process.env.EVOLUTION_API_KEY || '').trim();
+    const instance = String(process.env.EVOLUTION_INSTANCE_NAME || '').trim();
+    const token = String(process.env.EVOLUTION_INSTANCE_TOKEN || '').trim();
+    const num = _digits(process.env.SUPORTE_ALERT_PHONE || process.env.PANEL_BALANCE_ALERT_PHONE || '5531975938916');
+    if (!baseUrl || !apiKey || !instance || num.length < 10) return { ok: false, error: 'nao_configurado' };
+    const headers = Object.assign({ 'Content-Type': 'application/json', apikey: apiKey }, token ? { token } : {});
+    for (const url of [baseUrl + '/message/sendText/' + encodeURIComponent(instance), baseUrl + '/api/message/sendText/' + encodeURIComponent(instance)]) {
+      const r = await axios.post(url, { number: num, text: String(texto || '') }, { headers, timeout: 20000, validateStatus: () => true });
+      if (r.status >= 200 && r.status < 300) return { ok: true };
+      if (r.status !== 404) return { ok: false, status: r.status };
+    }
+    return { ok: false, error: 'nao_encontrado' };
+  } catch (e) { return { ok: false, error: (e && e.message) || 'erro' }; }
 }
 
 // Notificação push via ntfy (mesmo tópico da equipe; título marcado com "YA").
@@ -795,13 +827,14 @@ async function flagSupport(phone, motivo) {
       const resumo = String(motivo || '').replace(/\s+/g, ' ').trim().slice(0, 140) || 'pediu atendimento humano';
       await sendNtfy({ title: '+' + _digits(phone) + ' - suporte humanizado', message: resumo, priority: 'high', tags: 'rotating_light', click: PUBLIC_BASE + '/painel/ia-crm' });
     } catch (_) {}
+    try { await avisarResponsavelWhatsapp('🙋 You Agency: cliente +' + _digits(phone) + ' precisa de atendimento humano (o bot pausou essa conversa).\nMotivo: ' + (String(motivo || '').replace(/\s+/g, ' ').trim().slice(0, 200) || 'pediu atendimento humano') + '\nCRM: ' + PUBLIC_BASE + '/painel/ia-crm'); } catch (_) {}
     return { ok: true };
   } catch (e) { return { ok: false, error: (e && e.message) || 'erro' }; }
 }
 
 module.exports = {
   CATALOG, normalizeServico, normalizeTipo, parseIgUsername, NOME_TIPO,
-  quote, priceTable, validateProfile, createPixOrder, createPaymentOrder, ultimoPagoAberto, generateValidCPF, flagSupport, consultarPedido, brl, mxn, sendNtfy,
+  quote, priceTable, validateProfile, createPixOrder, createPaymentOrder, ultimoPagoAberto, generateValidCPF, flagSupport, consultarPedido, brl, mxn, sendNtfy, avisarResponsavelWhatsapp,
   loadHiddenTypes, tiposDisponiveis,
   REDES, normalizeRede, validateRedeProfile, createRedeOrder,
 };
