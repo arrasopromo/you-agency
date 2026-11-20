@@ -662,7 +662,15 @@ async function runIaRecoverySweep() {
         const lastOut = outs[0];
         if (lastOut && RE_REC_FALHA_BOT.test(String(lastOut.text || ''))) continue;
         const lastTxt = outs.slice(0, 2).map((o) => String(o.text || '')).join('\n');
-        recCtx = { rede: _recRede(txt + '\n' + outs.map((o) => String(o.text || '')).join('\n')), etapa: _recEtapa(lastTxt) };
+        // Rede: pelo que o CLIENTE escreveu. Do bot só conta quando ele já entrou numa rede (tabela/@ pedido),
+        // não o cardápio da 1ª resposta ("también tenemos TikTok y Facebook").
+        let rede = _recRede(txt);
+        if (rede === 'instagram') {
+          const o = outs.map((x) => String(x.text || '')).join('\n').toLowerCase();
+          if (/(seguidores|vistas|me gusta|comentarios) de tik ?tok|@ de tik ?tok/.test(o)) rede = 'tiktok';
+          else if (/(seguidores|vistas|me gusta|comentarios) de facebook|link de tu perfil o p[aá]gina de facebook/.test(o)) rede = 'facebook';
+        }
+        recCtx = { rede, etapa: _recEtapa(lastTxt) };
       } catch (_) {}
       // Teto por telefone: no máximo IA_RECOVERY_MAX_24H retomadas nas últimas 24h (o ciclo
       // reinicia a cada nova mensagem, e sem teto um mesmo número chegou a receber 19).
