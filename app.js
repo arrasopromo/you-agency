@@ -45180,6 +45180,7 @@ app.get('/painel', requireAdmin, async (req, res) => {
 
     // Cost calculation
     let totalCost = 0;
+    let __feeCostTotal = 0, __provCostTotal = 0; // card "Taxas e painéis": taxa de pagamento x custo dos painéis (em pesos)
     // You Agency: custos dos fornecedores são calculados em R$; o painel mostra tudo em pesos (MXN).
     let __brlMxn = 1;
     try { __brlMxn = Number(await require('./fxMxn.js').getBrlMxnRate()) || 1; } catch (_) {}
@@ -45505,6 +45506,8 @@ app.get('/painel', requireAdmin, async (req, res) => {
       paymentFee = (o && o.paymentMethod === 'xpag' && o.xpag && Number(o.xpag.fee) > 0) ? Number(o.xpag.fee) : paymentFee * __brlMxn;
       const totalItemCost = paymentFee + (usedRealCost ? realProviderTotal : (serviceCost + bumpCost)) * __brlMxn;
       totalCost += totalItemCost;
+      __feeCostTotal += Number(paymentFee) || 0;
+      __provCostTotal += Math.max(0, totalItemCost - (Number(paymentFee) || 0));
 
       // Custo/1k e Custo Bump da tabela de vendas saem do action=status (charge real).
       // O divisor é a quantidade ENVIADA ao fornecedor (já com upgrade) — usar o `qty`
@@ -46828,7 +46831,7 @@ app.get('/painel', requireAdmin, async (req, res) => {
       custosFixos = { itens: _cf.itens, mensal: _cf.mensal, meses: _cf.meses, periodo: _cp.periodo, dias: _cp.dias, mesRef: _cp.mesRef, porMes: _cp.porMes };
     } catch (_) {}
 
-    const __painelRenderData = { view, ajustesLucro, custosFixos, orders: report, totalCost, totalRevenue, dailyProfit, dailyProfitTotals, dailyProfitAdsOk, dailyProfitTruncated, DASH_IMPOSTO_PCT, DASH_ADS_MARKUP_PCT, revenueShown, avgTicket, timelineSeries, bumpRevenueSeries, paidValidatedSeries, totalBumpRevenue, revenueWithoutBumps, ignoreBumpRevenue, bumpRevenuePctOfTotal, costOverRevenuePct, toggleIgnoreBumpRevenueUrl, period, totalTransactions: paidReport.length, costSettings, validatedProfilesToday, validatedProfilesPeriod, paidOrdersToday, paidOverValidatedTodayPct, paidOverValidatedPeriodPct, validatedProfilesConverted, validatedTodayConverted, ignoreBumps, toggleIgnoreBumpsUrl, repeatCustomerPct, repeatCustomers, totalCustomers, topUsersByOrders, topUsersBySpend, topService, servicePie, servicePieOthers, ltvAllTime, paymentPie, channelPie, platformPie, redeSocialPie, servicePageViews, onlineNow, refil2Requests, refil2Pagination, vitalicioPurchases, upsellStats, recoveryStats, fbSpend, fbSpendBr, fbSpendUsd, fbSpendOk, fbSpendDolar, fbUsdMxn, adFormatPie, bumpPie, ltvRevenue, ltvCustomers, ltvPurchases, totalOrdersGenerated, totalOrdersGeneratedValue, totalOrdersGeneratedPaid, generatedToday, paidGeneratedToday, generatedToPaidPct, generatedToPaidTodayPct, generatedNotPaid, generatedNotPaidList, validatedProfilesList };
+    const __painelRenderData = { view, ajustesLucro, custosFixos, orders: report, totalCost, feeCostTotal: __feeCostTotal, providerCostTotal: __provCostTotal, totalRevenue, dailyProfit, dailyProfitTotals, dailyProfitAdsOk, dailyProfitTruncated, DASH_IMPOSTO_PCT, DASH_ADS_MARKUP_PCT, revenueShown, avgTicket, timelineSeries, bumpRevenueSeries, paidValidatedSeries, totalBumpRevenue, revenueWithoutBumps, ignoreBumpRevenue, bumpRevenuePctOfTotal, costOverRevenuePct, toggleIgnoreBumpRevenueUrl, period, totalTransactions: paidReport.length, costSettings, validatedProfilesToday, validatedProfilesPeriod, paidOrdersToday, paidOverValidatedTodayPct, paidOverValidatedPeriodPct, validatedProfilesConverted, validatedTodayConverted, ignoreBumps, toggleIgnoreBumpsUrl, repeatCustomerPct, repeatCustomers, totalCustomers, topUsersByOrders, topUsersBySpend, topService, servicePie, servicePieOthers, ltvAllTime, paymentPie, channelPie, platformPie, redeSocialPie, servicePageViews, onlineNow, refil2Requests, refil2Pagination, vitalicioPurchases, upsellStats, recoveryStats, fbSpend, fbSpendBr, fbSpendUsd, fbSpendOk, fbSpendDolar, fbUsdMxn, adFormatPie, bumpPie, ltvRevenue, ltvCustomers, ltvPurchases, totalOrdersGenerated, totalOrdersGeneratedValue, totalOrdersGeneratedPaid, generatedToday, paidGeneratedToday, generatedToPaidPct, generatedToPaidTodayPct, generatedNotPaid, generatedNotPaidList, validatedProfilesList };
     if (__painelCacheable) {
       // Renderiza, cacheia o HTML (TTL) e envia. Próximos loads/filtros iguais vêm do cache (instantâneo).
       return res.render('painel', __painelRenderData, (err, html) => {
