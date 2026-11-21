@@ -45654,6 +45654,7 @@ app.get('/painel', requireAdmin, async (req, res) => {
         const _novo = Math.round((Number(r.paymentFee || 0) + _novoProv) * 100) / 100;
         const _delta = _novo - _old;
         totalCost = Math.round((totalCost + _delta) * 100) / 100;
+        __provCostTotal += _delta; // ajuste é só na parte do painel (a taxa não muda)
         r.cost = _novo; r.costEstimadoHistorico = true;
         try {
           const _ms = r.createdAt ? new Date(r.createdAt).getTime() : 0;
