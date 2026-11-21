@@ -387,6 +387,14 @@ async function runTool(name, args, ctx) {
         }
         a2.post_links = links;
       }
+      // "quiero OTROS 1,000", "más", "de nuevo": recompra — sem isso o mesmo pacote pago nos últimos 7 dias volta como
+      // "ya fue pagado" e a venda se perde (Oppus 19/11). Reclamo não conta.
+      if (a2.comprar_mais !== true) {
+        const ult = (ctx.recentUserTexts || []).slice(0, 3).join(' ');
+        const recompra = /(^|[^a-záéíóúñ])(m[aá]s|otr[oa]s?|de\s+nuevo|otra\s+vez|nuevamente|repetir)(?![a-záéíóúñ])/i.test(ult);
+        const reclama = /(no\s+(me\s+)?(lleg[oó]|ha\s+llegado|entr[oó]|veo|aparece)|se\s+(cayeron|bajaron)|perd[ií]|falta|reclam|reembolso|devoluci|demora)/i.test(ult);
+        if (recompra && !reclama) a2.comprar_mais = true;
+      }
       const r = await sales.createPaymentOrder(Object.assign({ phone: ctx.phone }, a2));
       if (r.ok && r.codigoPago) { ctx.pagoToSend = r.pago; ctx.pagoCodigo = r.codigoPago; ctx.pagoValor = r.valorLabel; }
       if (r.ok && r.reaproveitado) { ctx.pagoReused = true; r.resumo = r.resumo + ' — es el MISMO pago generado antes para este pedido (no es un pedido nuevo); díselo al cliente.'; }

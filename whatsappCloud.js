@@ -223,9 +223,11 @@ const IA_FLOOD_WINDOW_MS = Math.max(60000, (Number(process.env.WHATSAPP_IA_FLOOD
 const IA_FLOOD_BURST_MAX = Math.max(0, Number(process.env.WHATSAPP_IA_FLOOD_BURST_MAX || 10) || 10);     // rajada; 0 = desativado
 const IA_FLOOD_BURST_WINDOW_MS = Math.max(60000, (Number(process.env.WHATSAPP_IA_FLOOD_BURST_WINDOW_MIN || 5) || 5) * 60000); // janela curta (default 5min)
 const iaReplyTimes = new Map(); // phone -> number[] timestamps das respostas da IA
-async function tripFloodGuard(phone) {
+async function tripFloodGuard(phone, text) {
   if (!(IA_FLOOD_MAX > 0) && !(IA_FLOOD_BURST_MAX > 0)) return false; // desativado por config
   const p = String(phone || '');
+  // Cliente mandando os links dos posts um atrás do outro: mensagem com link de post não conta como loop.
+  if (/(instagram\.com\/(?:[^\s/]+\/)?(?:p|reel|reels|tv)\/|tiktok\.com\/|facebook\.com\/)/i.test(String(text || ''))) return false;
   const now = Date.now();
   const janela = Math.max(IA_FLOOD_WINDOW_MS, IA_FLOOD_BURST_WINDOW_MS);
   const arr = (iaReplyTimes.get(p) || []).filter((t) => (now - t) < janela);
@@ -253,7 +255,7 @@ async function runAgent(phone, text) {
   const p = String(phone || '');
   const andamento = turnosEmAndamento.get(p);
   if (andamento) { andamento.pendentes.push(text); try { console.log('⏳ [IA] ' + p + ' ainda respondendo — mensagem entra no próximo turno'); } catch (_) {} return null; }
-  if (await tripFloodGuard(p)) return null; // anti-loop: pausou a IA e sinalizou humano
+  if (await tripFloodGuard(p, text)) return null; // anti-loop: pausou a IA e sinalizou humano
   const estado = { pendentes: [] };
   turnosEmAndamento.set(p, estado);
   let res = null;
