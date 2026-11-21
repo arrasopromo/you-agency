@@ -44898,7 +44898,7 @@ app.get('/painel', requireAdmin, async (req, res) => {
       const projection = {
         instauser: 1, instagramUsername: 1, additionalInfo: 1, additionalInfoPaid: 1,
         additionalInfoMap: 1, additionalInfoMapPaid: 1, tipo: 1, tipoServico: 1, quantidade: 1, qtd: 1,
-        valueCents: 1, expectedValueCents: 1, createdAt: 1, criado: 1
+        valueCents: 1, expectedValueCents: 1, createdAt: 1, criado: 1, paymentMethod: 1, 'xpag.method': 1, correlationID: 1
       };
       const docs = await col.find(notPaidQuery, { projection }).sort({ createdAt: -1, _id: -1 }).limit(2000).toArray();
       const norm = (u) => String(u || '').trim().replace(/^@+/, '').toLowerCase();
@@ -44913,7 +44913,10 @@ app.get('/painel', requireAdmin, async (req, res) => {
         const qty = Number(getAdd('quantidade') || getAdd('qtd') || o.quantidade || o.qtd || 0) || 0;
         const valueCents = Number((o.valueCents != null) ? o.valueCents : ((o.expectedValueCents != null) ? o.expectedValueCents : 0)) || 0;
         const label = (categoria && tipo) ? (capFirst(categoria) + ' · ' + tipo) : (capFirst(categoria) || tipo || '-');
-        return { id: String(o._id || ''), username: ig, type: label, qty, value: valueCents / 100, createdAt: o.createdAt || o.criado || null };
+        // Método (SPEI/OXXO) e canal (bot do WhatsApp ou site) — para ver onde o pagamento trava.
+        const metodo = o.xpag && o.xpag.method ? String(o.xpag.method).toUpperCase() : (o.paymentMethod ? String(o.paymentMethod).toUpperCase() : '');
+        const canal = /^WppAgent_/.test(String(o.correlationID || '')) ? 'bot' : 'site';
+        return { id: String(o._id || ''), username: ig, type: label, qty, value: valueCents / 100, createdAt: o.createdAt || o.criado || null, metodo, canal };
       });
       // "já comprou alguma vez" = tem QUALQUER pedido pago (qualquer época).
       // Também guarda a data da ÚLTIMA compra paga de cada @.

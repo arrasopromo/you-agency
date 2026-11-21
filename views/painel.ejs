@@ -4928,9 +4928,9 @@
               });
               var boughtCount = list.filter(function(p){ return p.boughtEver; }).length;
               if (countEl) countEl.textContent = rows.length + ' de ' + list.length + ' · ' + boughtCount + ' já compraram antes';
-              var GNP_COLS = '1.05fr 1.35fr 1.0fr 0.5fr 0.75fr 0.7fr 0.9fr';
+              var GNP_COLS = '1.05fr 1.35fr 1.0fr 0.5fr 0.75fr 0.7fr 0.7fr 0.9fr';
               var head = '<div style="position:sticky; top:0; background:#f9fafb; display:grid; grid-template-columns: ' + GNP_COLS + '; gap:8px; padding:8px 12px; font-size:0.72rem; font-weight:700; color:#6b7280; border-bottom:1px solid #eef0f4;">'
-                + '<div>Data/hora</div><div>Usuário</div><div>Tipo</div><div>Qtd</div><div>Valor</div><div>Já comprou?</div><div>Ação</div></div>';
+                + '<div>Data/hora</div><div>Usuário</div><div>Tipo</div><div>Qtd</div><div>Valor</div><div>Pagamento</div><div>Já comprou?</div><div>Ação</div></div>';
               var rowsHtml = rows.map(function(p){
                 var u = String(p.username || '');
                 var badge = p.boughtEver
@@ -4949,6 +4949,7 @@
                   + '<div style="color:#374151;">' + esc(p.type || '-') + '</div>'
                   + '<div style="color:#374151;">' + fmtNum(Number(p.qty||0)) + '</div>'
                   + '<div style="color:#111827; font-weight:600;">' + brl(p.value) + '</div>'
+                  + '<div>' + (p.metodo ? ('<span style="font-weight:700; font-size:0.72rem; padding:3px 8px; border-radius:999px; white-space:nowrap; ' + (p.metodo === 'OXXO' ? 'background:#fee2e2; color:#b91c1c;' : 'background:#e0f2fe; color:#075985;') + '">' + esc(p.metodo) + '</span>') : '<span style="color:#9ca3af;">-</span>') + '<div style="margin-top:3px; font-size:0.68rem; color:#6b7280;">' + esc(p.canal === 'bot' ? 'bot WhatsApp' : 'site') + '</div></div>'
                   + '<div>' + badge + lastBuyHtml + '</div>'
                   + '<div>' + approveBtn + '</div></div>';
               }).join('');
