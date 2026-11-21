@@ -4661,6 +4661,22 @@
           <div class="summary-sub" style="margin-top:6px;">Não configurado / sem dados</div>
           <% } %>
         </div>
+        <% var _tcVend = (typeof revenueShown !== 'undefined' ? Number(revenueShown || 0) : Number(totalRevenue || 0)); var _tcFee = Number((typeof feeCostTotal !== 'undefined' ? feeCostTotal : 0) || 0); var _tcProv = Number((typeof providerCostTotal !== 'undefined' ? providerCostTotal : 0) || 0); var _tcPct = function(x){ return _tcVend > 0 ? (x / _tcVend * 100).toFixed(1).replace('.', ',') + '%' : '—'; }; %>
+        <div class="summary-card">
+          <div class="summary-label">Taxas e painéis (período)</div>
+          <div style="display:flex; gap:18px; flex-wrap:wrap; margin-top:6px;">
+            <div>
+              <div style="font-size:0.78rem; color:#6b7280;">Taxas de pagamento</div>
+              <div class="summary-value" style="font-size:1.3rem;"><%= __R(_tcFee) %></div>
+              <div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"><%= __MX(_tcFee) %> · <%= _tcPct(_tcFee) %> das vendas</div>
+            </div>
+            <div>
+              <div style="font-size:0.78rem; color:#6b7280;">Serviço dos painéis</div>
+              <div class="summary-value" style="font-size:1.3rem;"><%= __R(_tcProv) %></div>
+              <div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"><%= __MX(_tcProv) %> · <%= _tcPct(_tcProv) %> das vendas</div>
+            </div>
+          </div>
+        </div>
         <div class="summary-card" id="dashImpostoCard" data-vendas="<%= _vendasOper.toFixed(2) %>" data-lucrobruto="<%= _lucroOper.toFixed(2) %>" data-ads-base="<%= _fb.toFixed(2) %>" data-ads-tax="<%= _fbTax.toFixed(2) %>" data-ajuste="<%= _ajTotal.toFixed(2) %>" data-custofixo="<%= _cfPeriodo.toFixed(2) %>">
           <div class="summary-label">Imposto (período)</div>
           <div class="summary-value" id="dashImpostoValue" style="color:#dc2626;">R$ 0,00</div>
@@ -4757,22 +4773,6 @@
           <div class="summary-label">% custo / vendas (período)</div>
           <div class="summary-value"><%= (typeof costOverRevenuePct !== 'undefined' ? Number(costOverRevenuePct || 0) : 0).toFixed(1).replace('.', ',') %>%</div>
           <div class="summary-sub">Custo total <%= __R(totalCost) %> (painéis + taxas)</div>
-        </div>
-        <% var _tcVend = (typeof revenueShown !== 'undefined' ? Number(revenueShown || 0) : Number(totalRevenue || 0)); var _tcFee = Number((typeof feeCostTotal !== 'undefined' ? feeCostTotal : 0) || 0); var _tcProv = Number((typeof providerCostTotal !== 'undefined' ? providerCostTotal : 0) || 0); var _tcPct = function(x){ return _tcVend > 0 ? (x / _tcVend * 100).toFixed(1).replace('.', ',') + '%' : '—'; }; %>
-        <div class="summary-card">
-          <div class="summary-label">Taxas e painéis (período)</div>
-          <div style="display:flex; gap:18px; flex-wrap:wrap; margin-top:6px;">
-            <div>
-              <div style="font-size:0.78rem; color:#6b7280;">Taxas de pagamento</div>
-              <div class="summary-value" style="font-size:1.3rem;"><%= __R(_tcFee) %></div>
-              <div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"><%= __MX(_tcFee) %> · <%= _tcPct(_tcFee) %> das vendas</div>
-            </div>
-            <div>
-              <div style="font-size:0.78rem; color:#6b7280;">Serviço dos painéis</div>
-              <div class="summary-value" style="font-size:1.3rem;"><%= __R(_tcProv) %></div>
-              <div class="mx-cap" style="font-size:0.72rem; color:#9ca3af; margin-top:2px;"><%= __MX(_tcProv) %> · <%= _tcPct(_tcProv) %> das vendas</div>
-            </div>
-          </div>
         </div>
         <div class="summary-card">
           <div class="summary-label">% faturamento (orderbump) (período)</div>
