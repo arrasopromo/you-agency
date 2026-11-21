@@ -610,8 +610,8 @@ document.addEventListener('DOMContentLoaded', function() {
         id: 'section-followers-org',
         service: 'followers', 
         type: 'organicos', 
-        title: 'Seguidores reales',
-        desc: 'Seguidores de perfiles reales y activos para máxima interacción y credibilidad.',
+        title: 'Seguidores reales (latinos)',
+        desc: 'Seguidores latinos: perfiles de Latinoamérica, reales y activos, para máxima interacción y credibilidad.',
         tabela: tabelaSeguidores.organicos,
         badgeType: 'organicos'
       },
@@ -1118,7 +1118,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const labels = {
       'mistos': 'Seguidores mixtos',
       'brasileiros': 'Seguidores',
-      'organicos': 'Seguidores reales',
+      'organicos': 'Seguidores reales (latinos)',
       'visualizacoes_reels': 'Vistas de Reels'
     };
     return labels[tipo] || tipo;

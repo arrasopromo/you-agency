@@ -1903,7 +1903,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const map = {
       'mistos': 'Seguidores mixtos',
       'brasileiros': 'Seguidores latinos',
-      'organicos': 'Seguidores reales'
+      'organicos': 'Seguidores reales (latinos)'
     };
     return map[tipo] || tipo;
   }
@@ -2357,6 +2357,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ` : `
           <p>Perfiles latinos reales y activos, de mayor calidad, seleccionados para darte más credibilidad.</p>
           <ul>
+            <li>🌎 Seguidores latinos: perfiles de Latinoamérica, reales y activos.</li>
             <li>✅ 100% seguro y confidencial, sin pedir contraseña.</li>
             <li>✨ Perfiles de mayor calidad para reforzar la autoridad de tu perfil.</li>
             <li>📉 Baja tasa de caída.</li>

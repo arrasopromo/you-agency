@@ -1105,7 +1105,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
             ]
           : [
               { key: 'mistos', label: 'Seguidores mixtos' },
-              { key: 'organicos', label: 'Seguidores reales' }
+              { key: 'organicos', label: 'Seguidores reales (latinos)' }
             ]);
     if (selectedPlatform === 'tiktok') {
       try {
@@ -1312,7 +1312,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
     switch (t) {
       case 'mistos': return 'Seguidores mixtos';
       case 'brasileiros': return 'Seguidores estándar';
-      case 'organicos': return 'Seguidores reales';
+      case 'organicos': return 'Seguidores reales (latinos)';
       case 'seguidores_tiktok': return 'Seguidores';
       case 'curtidas_brasileiras': return 'Me gusta';
       case 'curtidas_organicos': return 'Me gusta reales';
@@ -5314,7 +5314,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
       const map = {
         mistos: 'Seguidores mixtos',
         brasileiros: 'Seguidores estándar',
-        organicos: 'Seguidores reales',
+        organicos: 'Seguidores reales (latinos)',
         curtidas_brasileiras: 'Me gusta',
         curtidas_organicos: 'Me gusta reales',
         curtidas_reais: 'Me gusta reales',
