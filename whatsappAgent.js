@@ -177,6 +177,10 @@ function systemPrompt(dispTipos) {
   return [
     `DISPONIBILIDAD ACTUAL (REGLA POR ENCIMA DE TODO): en SEGUIDORES solo trabajamos con ${_seg}; en ME GUSTA solo con ${_cur}. NUNCA ofrezcas, muestres tabla ni cotices un tipo que NO esté en esa lista (por ejemplo "mexicanos" o "brasileños" como tipo aparte: no existen). Si el cliente pide un tipo que no hay, dile con amabilidad que por ahora solo tenemos esos tipos y ofrécelos. ${_vistas ? 'Las VISTAS de Reels siguen normales.' : 'Las VISTAS de Reels NO están disponibles por ahora: no las ofrezcas ni cotices.'} Cualquier servicio que NO aparezca en este prompt no existe para ti: NUNCA lo menciones ni lo ofrezcas; si el cliente lo pide, di que por ahora no está disponible y ofrece lo que sí hay.`,
     'Eres un asesor de ventas de Instagram (y, si el cliente lo pide, de TikTok y Facebook) por el WhatsApp de *You Agency*, una agencia que atiende a clientes de México. Escribe SIEMPRE en español de México, natural y cercano (tutea al cliente). Cierra la venta AQUÍ, por la conversación — nunca mandes al cliente al sitio a comprar.',
+    'PRIMER MENSAJE GENÉRICO (CRÍTICO PARA VENDER) — "¿Podría obtener más información al respecto?", "info", "precios", "cuánto cuesta", "Quiero comprar" sin decir el servicio: NO preguntes qué servicio quiere ni "¿te gustaría saber más?". Asume *seguidores de Instagram* (lo que más se vende): llama tabla_precios de seguidores de cada tipo disponible y, en ESE MISMO mensaje, manda los paquetes más pedidos de cada tipo (cada lista con su título), una línea "Tenemos más cantidades, desde 150 hasta 15,000" y una línea "También tenemos me gusta, vistas de Reels y comentarios". Cierra con UNA pregunta: "¿Cuántos quieres? Mándame también tu @ de Instagram y te dejo el pedido listo." Si el cliente ya dijo el servicio o la red (ej.: "seguidores para TikTok", "Facebook"), muestra directo los precios de eso. OJO: asumir Instagram vale SOLO para ese primer mensaje genérico — si después el cliente pide TikTok o Facebook, SÍ los tenemos (líneas TIKTOK y FACEBOOK): llama tabla_precios con esa rede y manda esos precios; nunca digas que solo hay Instagram.',
+    'TABLAS CORTAS: al mostrar precios manda como máximo 5 cantidades por tipo — las más pedidas: 300, 500, 1,000, 2,000 y 5,000 (si existen en la tabla) — y avisa en una línea que hay más cantidades. Manda la tabla completa SOLO si el cliente pide otra cantidad, "todas" o una cantidad que no mostraste. Nunca vuelvas a mandar una tabla que ya mandaste en esta conversación; si pregunta otra vez, contesta solo el precio que pidió.',
+    'NO PREGUNTES DE MÁS: nunca cierres con "¿te gustaría saber más?", "¿quieres que te muestre los precios?" o "¿te gustaría elegir alguno de estos tipos?". Si ya sabes el servicio, muestra los precios de una vez. Cada mensaje tuyo tiene que avanzar al siguiente dato que falta (cantidad → @ → método de pago) y pedir SOLO ese dato. Si el cliente ya mandó su @ junto con otra cosa, valídalo en el mismo turno.',
+    'DUDAS DESPUÉS DEL PAGO GENERADO ("¿no es estafa?", "¿cómo sé que sí llega?", "¿muestras?"): responde en 1-2 frases con los hechos de CONFIANZA y recuerda que su referencia/CLABE ya está arriba en el chat. NUNCA sugieras un paquete más pequeño ni otro pedido cuando el pago ya está generado.',
     'MONEDA: todos los precios son en *pesos mexicanos (MXN)* y se escriben así: "$ 87 MXN" (punto decimal, coma para miles: "$ 1,317 MXN"). Nunca uses reales, R$, dólares ni otra moneda.',
     `Servicios que vendes: ${_igSv.length ? _igSv.join(', ') : 'ninguno por ahora'}. Los TIPOS de seguidores/me gusta son SIEMPRE los de la regla de DISPONIBILIDAD ACTUAL.`,
     ...(_coment ? ['COMENTARIOS DE INSTAGRAM (igual que en el sitio): solo PAQUETES de 5, 10, 25, 50, 100 y 250 comentarios (precios con tabla_precios/cotizar_precio, servico="comentarios"); nunca ofrezcas 1, 2 o 3 ni otra cantidad, en UNA sola publicación por pedido (servico="comentarios", sin tipo). Son comentarios positivos de perfiles de alta calidad. Flujo: cantidad → cotizar_precio → @ validado → link de la publicación (uno solo) → método → generar_pago con post_links=[ese link]. Si quiere comentarios en varias publicaciones, haz un pedido por publicación. No ofrezcas comentarios por tu cuenta; véndelos cuando el cliente los pida.'] : []),
@@ -367,6 +371,22 @@ async function runTool(name, args, ctx) {
       }
       if (normU(a2.usuario) !== normU(validado)) a2.usuario = validado;
       if (String(a2.nome || '').trim().length < 2) a2.nome = await _nomeDoContato(ctx.phone, validado);
+      // Link da publicação (me gusta/vistas/comentarios): o modelo às vezes manda em post_link (singular) ou
+      // não manda nenhum → faltou_post em loop ("manda el link sin parámetros"; 21/11 perdeu a venda).
+      // Usa o post_link e, se ainda faltar, o último link de post que o CLIENTE escreveu.
+      if (['curtidas', 'visualizacoes', 'comentarios'].includes(String(a2.servico || '').toLowerCase())) {
+        const rxUm = /instagram\.com\/(?:[^\s/]+\/)?(?:p|reel|reels|tv)\/[A-Za-z0-9_-]{5,}/i;
+        const rxTodos = /https?:\/\/(?:www\.)?instagram\.com\/(?:[^\s/]+\/)?(?:p|reel|reels|tv)\/[A-Za-z0-9_-]{5,}[^\s]*/gi;
+        const temValido = (arr) => (arr || []).some((u) => rxUm.test(String(u || '')) && !/X{5,}/.test(String(u || '')));
+        let links = Array.isArray(a2.post_links) ? a2.post_links.filter(Boolean) : (a2.post_links ? String(a2.post_links).split(',').map((x) => x.trim()) : []);
+        if (!temValido(links) && a2.post_link) links = [a2.post_link];
+        if (!temValido(links)) {
+          // mensagem atual primeiro, depois o histórico do mais novo para o mais velho
+          const ordem = [(ctx.allUserTexts || [])[0]].concat((ctx.allUserTexts || []).slice(1).reverse());
+          for (const t of ordem) { const ms = String(t || '').match(rxTodos); if (ms && ms.length) { links = [ms[ms.length - 1]]; break; } }
+        }
+        a2.post_links = links;
+      }
       const r = await sales.createPaymentOrder(Object.assign({ phone: ctx.phone }, a2));
       if (r.ok && r.codigoPago) { ctx.pagoToSend = r.pago; ctx.pagoCodigo = r.codigoPago; ctx.pagoValor = r.valorLabel; }
       if (r.ok && r.reaproveitado) { ctx.pagoReused = true; r.resumo = r.resumo + ' — es el MISMO pago generado antes para este pedido (no es un pedido nuevo); díselo al cliente.'; }
@@ -429,10 +449,26 @@ async function handleAgentMessage(msg, sendText) {
   try {
     // "¿referencias?", "¿muestras gratis?" = pedido de PROVA, não da referência de pagamento (20/11: virou loop de reenvio).
     const pedeProva = /(referencias|muestra|gratis|opini|testimon|rese[ñn]|prueba|estaf|confia|confío|garant)/i.test(text);
-    const pedeDados = !pedeProva && /(clabe|referencia(?!s)|datos\s+(de(l)?\s+)?pago|los\s+datos|c[oó]mo\s+(le\s+)?pago|d[oó]nde\s+pago|m[aá]nda(me)?\s+(otra\s+vez|de\s+nuevo)|reenv[ií]a|no\s+(me\s+)?(lleg[oó]|aparece)\s+(la\s+)?(clabe|referencia))/i.test(text);
-    const trocaMetodo = /(oxxo|spei|transferencia|efectivo|tienda)/i.test(text);
+    // 21/11: "¿y el número?", "¿este es el número que doy en el OXXO?", "el código de barras" também pedem os dados
+    // (o bot dizia "se envían en mensajes aparte" e não mandava → cliente sem a referência).
+    const pedeDados = !pedeProva && /(clabe|referencia(?!s)|n[uú]mero(?!\s+de\s+(seguidores|me\s+gusta|likes|vistas|comentarios|tel|celular|whats))|c[oó]digo|barras|datos\s+(de(l)?\s+)?pago|los\s+datos|c[oó]mo\s+(le\s+)?pago|d[oó]nde\s+pago|m[aá]nda(me)?\s+(otra\s+vez|de\s+nuevo|los\s+datos|el\s+n)|reenv[ií]a|no\s+(me\s+)?(lleg[oó]|aparece)\s+(la\s+)?(clabe|referencia|n[uú]mero))/i.test(text);
+    // Já pagou ("ya pagué", "ya lo hice", "ya page", "ya ise el pago"): NÃO gera nem reenvia cobrança — avisa que confirma sozinho.
+    const dizPagou = !pedeProva && /\b(ya\s+(lo\s+)?(pagu[ée]|page|pag[ó]|hice|ise|lo\s+hice|lo\s+ise|realic[ée]|deposit[ée]|transfer[ií])|ya\s+(hice|ise|realic[ée])\s+(el|mi)\s+(pago|dep[oó]sito)|pago\s+(hecho|realizado)|ya\s+est[aá]\s+pagado)(?![a-zá-úñ])/i.test(text);
+    const ab = (pedeDados || dizPagou) ? await sales.ultimoPagoAberto(phone) : null;
+    // Só é troca de método se citar um método DIFERENTE do pagamento aberto ("este número doy en el OXXO" com OXXO aberto = pede dados).
+    const citaOxxo = /(oxxo|efectivo|tienda)/i.test(text), citaSpei = /(spei|transferencia|banco)/i.test(text);
+    const metAberto = ab && ab.pago ? String(ab.pago.metodo || '').toUpperCase() : '';
+    const trocaMetodo = (citaOxxo && metAberto !== 'OXXO') || (citaSpei && !citaOxxo && metAberto !== 'SPEI');
+    if (dizPagou && ab && ab.codigoPago && !ab.parcial) {
+      const oxxo = metAberto === 'OXXO';
+      const msgPagou = '¡Gracias! En cuanto el pago se confirme te aviso aquí mismo y tu pedido se libera solo, no tienes que hacer nada más. ' + (oxxo ? 'Con OXXO la confirmación puede tardar hasta 1 hora (a veces un poco más).' : 'Con SPEI la confirmación suele llegar en minutos.');
+      let jaDisse = false;
+      try { const cm = await getCollection('wa_ia_messages'); jaDisse = !!(await cm.findOne({ phone, direction: 'out', text: msgPagou, createdAt: { $gte: new Date(Date.now() - 5 * 60e3) } }, { projection: { _id: 1 } })); } catch (_) {}
+      await saveHistory(phone, hist.concat([{ role: 'user', content: text }, { role: 'assistant', content: msgPagou }]));
+      if (!jaDisse) { try { await sendText(phone, msgPagou); } catch (_) {} }
+      return { awaitingConfirm: false, username: '' };
+    }
     if (pedeDados && !trocaMetodo) {
-      const ab = await sales.ultimoPagoAberto(phone);
       if (ab && ab.codigoPago) {
         const intro = ab.parcial
           ? '¡Claro! Ya recibimos una parte de tu pago' + (ab.pacote ? (' (' + ab.pacote + ')') : '') + '. Falta *' + ab.valorLabel + '*: transfiérelo a la misma CLABE y tu pedido se libera automáticamente.'
@@ -624,8 +660,10 @@ async function handleAgentMessage(msg, sendText) {
   }
   // Mesmo pagamento reaproveitado e os dados já foram mandados há pouco → não repete (a não ser que peça).
   if (ctx.pagoToSend && ctx.pagoReused) {
-    const pedeCodigo = !/(referencias|muestra|gratis|opini|testimon|rese[ñn]|prueba|estaf|confia|confío|garant)/i.test(text) && /(clabe|referencia(?!s)|datos|pago|m[áa]ndame|manda(lo)?\s+otra|reenv|de\s+nuevo|no\s+(me\s+)?(lleg[óo]|veo|aparece))/i.test(text);
-    if (!pedeCodigo) {
+    const pedeCodigo = !/(referencias|muestra|gratis|opini|testimon|rese[ñn]|prueba|estaf|confia|confío|garant)/i.test(text) && /(clabe|referencia(?!s)|n[uú]mero|c[oó]digo|barras|datos|pago|m[áa]ndame|manda(lo)?\s+otra|reenv|de\s+nuevo|no\s+(me\s+)?(lleg[óo]|veo|aparece))/i.test(text);
+    // O texto promete mandar os dados ("se enviarán en mensajes aparte", "te envío los datos") → manda mesmo.
+    const prometeDados = /(se\s+enviar[áa]n|te\s+(los\s+)?(enviar[ée]|env[ií]o|mando)|mensajes?\s+(aparte|separados?)|te\s+llegar[áa]n|aqu[ií]\s+(tienes|est[áa]n?)\s+(los\s+datos|la\s+referencia|el\s+n))/i.test(finalText);
+    if (!pedeCodigo && !prometeDados) {
       try {
         const cm = await getCollection('wa_ia_messages');
         const ja = await cm.findOne({ phone, direction: 'out', text: ctx.pagoCodigo, createdAt: { $gte: new Date(Date.now() - 2 * 3600e3) } }, { projection: { _id: 1 } });

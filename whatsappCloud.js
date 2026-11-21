@@ -139,6 +139,29 @@ async function isBotPaused(phone) {
   try { const col = await getCollection('whatsapp_contacts'); const d = await col.findOne({ _id: String(phone) }, { projection: { botPaused: 1, bloqueado: 1 } }); return !!(d && (d.botPaused || d.bloqueado)); } catch (_) { return false; }
 }
 
+// Pausa AUTOMÁTICA de suporte (o bot chamou llamar_soporte / anti-loop) que ninguém atendeu: o cliente
+// ficava falando sozinho (21/11: pediu "Quiero comprar" duas vezes e não teve resposta). Retoma o bot se
+// nenhum atendente respondeu desde a pausa e (a) o cliente clicou/escreveu "Quiero comprar" ou
+// (b) já passaram BOT_SUPORTE_RETOMA_MIN minutos (padrão 20). Pausa manual (/pause, CRM sem flag) e
+// bloqueado continuam valendo.
+async function retomaAposSuporte(phone, { btnId, bodyRaw } = {}) {
+  try {
+    const col = await getCollection('whatsapp_contacts');
+    const d = await col.findOne({ _id: String(phone) }, { projection: { botPaused: 1, bloqueado: 1, flag: 1, supportAt: 1, pausaManual: 1 } });
+    if (!d || d.bloqueado || d.pausaManual || !d.botPaused || d.flag !== 'suporte' || !d.supportAt) return false;
+    const desde = new Date(d.supportAt);
+    if (!Number.isFinite(desde.getTime())) return false;
+    const cm = await getCollection('wa_ia_messages');
+    const humano = await cm.findOne({ phone: String(phone), direction: 'out', agent: true, createdAt: { $gte: desde } }, { projection: { _id: 1 } });
+    if (humano) return false;
+    const querComprar = btnId === 'quero_comprar' || /^\s*(🔘\s*)?quiero\s+comprar\b/i.test(String(bodyRaw || ''));
+    const minutos = Math.max(1, Number(process.env.BOT_SUPORTE_RETOMA_MIN || 20));
+    if (!querComprar && Date.now() - desde.getTime() < minutos * 60e3) return false;
+    await col.updateOne({ _id: String(phone) }, { $set: { botPaused: false, supportAutoRetomadoAt: new Date().toISOString() } });
+    return true;
+  } catch (_) { return false; }
+}
+
 // ── Debounce: junta mensagens picadas do mesmo telefone antes de responder ──
 const buffers = new Map(); // phone -> { parts:[], timer }
 function scheduleFlush(phone) {
@@ -219,7 +242,7 @@ async function tripFloodGuard(phone) {
   if (!motivo) return false;
   try {
     const col = await getCollection('whatsapp_contacts');
-    await col.updateOne({ _id: p }, { $set: { botPaused: true, flag: 'suporte', supportReason: `IA pausada: anti-loop (${motivo})`, supportAt: new Date().toISOString() } }, { upsert: true });
+    await col.updateOne({ _id: p }, { $set: { botPaused: true, pausaManual: false, flag: 'suporte', supportReason: `IA pausada: anti-loop (${motivo})`, supportAt: new Date().toISOString() } }, { upsert: true });
   } catch (_) {}
   iaReplyTimes.delete(p); // já pausou; zera pra não re-disparar
   try { console.warn(`🛑 [IA] anti-loop: ${p} ${motivo} → IA pausada + flag suporte`); } catch (_) {}
@@ -387,11 +410,13 @@ async function handleInboundMessage(m, contactName) {
   if (bodyRaw && RE_REC_OPTOUT.test(bodyRaw)) { markRecoveryOptOut(from).catch(() => {}); }
 
   // Comandos de controle (texto): /pause e /start (para operar o número da IA).
-  if (/^\/(pause|pausar|pausa)$/.test(lc)) { try { const col = await getCollection('whatsapp_contacts'); await col.updateOne({ _id: from }, { $set: { botPaused: true } }, { upsert: true }); } catch (_) {} return; }
-  if (/^\/(start|iniciar|começar|comecar|resume|retomar)$/.test(lc)) { try { const col = await getCollection('whatsapp_contacts'); await col.updateOne({ _id: from }, { $set: { botPaused: false } }, { upsert: true }); } catch (_) {} try { await agent.clearHistory(from); } catch (_) {} return; }
+  if (/^\/(pause|pausar|pausa)$/.test(lc)) { try { const col = await getCollection('whatsapp_contacts'); await col.updateOne({ _id: from }, { $set: { botPaused: true, pausaManual: true } }, { upsert: true }); } catch (_) {} return; }
+  if (/^\/(start|iniciar|começar|comecar|resume|retomar)$/.test(lc)) { try { const col = await getCollection('whatsapp_contacts'); await col.updateOne({ _id: from }, { $set: { botPaused: false, pausaManual: false } }, { upsert: true }); } catch (_) {} try { await agent.clearHistory(from); } catch (_) {} return; }
 
   if (!c.autoReply) return;
-  if (await isBotPaused(from)) return; // humano assumiu
+  if (await isBotPaused(from)) { // humano assumiu
+    if (!(await retomaAposSuporte(from, { btnId, bodyRaw }))) return;
+  }
 
   // ── Clique num botão do menu ──
   if (btnId) {

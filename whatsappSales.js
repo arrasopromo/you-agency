@@ -820,7 +820,7 @@ async function flagSupport(phone, motivo) {
     const col = await getCollection('whatsapp_contacts');
     await col.updateOne(
       { _id: String(phone) },
-      { $set: { flag: 'suporte', botPaused: true, supportReason: String(motivo || '').slice(0, 300), supportAt: new Date().toISOString() } },
+      { $set: { flag: 'suporte', botPaused: true, pausaManual: false, supportReason: String(motivo || '').slice(0, 300), supportAt: new Date().toISOString() } },
       { upsert: true }
     );
     try {
