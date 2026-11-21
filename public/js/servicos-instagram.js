@@ -2325,6 +2325,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <ul>
             <li>✅ 100% seguro y confidencial, sin pedir contraseña.</li>
             <li>🌍 Seguidores de varios países para hacer crecer tu comunidad.</li>
+            <li>📉 Servicio estable, con bajísima caída.</li>
             <li>🛠 Herramienta de reposición: no pierdas seguidores.</li>
           </ul>
         `;
@@ -2360,7 +2361,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <li>🌎 Seguidores latinos: perfiles de Latinoamérica, reales y activos.</li>
             <li>✅ 100% seguro y confidencial, sin pedir contraseña.</li>
             <li>✨ Perfiles de mayor calidad para reforzar la autoridad de tu perfil.</li>
-            <li>📉 Baja tasa de caída.</li>
+            <li>📉 Servicio estable, con bajísima caída.</li>
           </ul>
         `;
         break;
