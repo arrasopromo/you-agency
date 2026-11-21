@@ -13101,12 +13101,14 @@ const mainProviderSlotOf = (o, provMap) => {
       return '';
     };
     // 'redes' = pedido de TikTok/Facebook (despacho próprio, slot carimbado com o fornecedor).
-    const ordem = (/organic/.test(tipo) && !/curtid/.test(cat)) ? ['fornecedor_social', 'fama24h', 'fama24h_multi', 'topfama', 'redes'] : ['fama24h', 'fama24h_multi', 'fornecedor_social', 'topfama', 'redes'];
+    const ordem = (/organic/.test(tipo) && !/curtid/.test(cat)) ? ['fornecedor_social', 'fornecedor_social_multi', 'fama24h', 'fama24h_multi', 'topfama', 'redes'] : ['fama24h', 'fama24h_multi', 'fornecedor_social_multi', 'fornecedor_social', 'topfama', 'redes'];
     for (const slot of ordem) {
       const v = o[slot];
       if (!v || typeof v !== 'object' || Array.isArray(v)) continue;
       const subs = Array.isArray(v.orders) ? v.orders.filter((x) => x && typeof x === 'object') : [];
       if (!v.orderId && !v.status && !v.error && !subs.length) continue;
+      // Slot vazio deixado por despacho antigo (sem orderId, status 'unknown', sem erro): não é o pedido.
+      if (!v.orderId && !subs.length && !v.error && /^unknown$/i.test(String(v.status || ''))) continue;
       const carimbo = normalizeSmmProvider(v.provider || (subs[0] && subs[0].provider) || o.provider);
       const provider = (carimbo && SMM_PROVIDERS[carimbo]) ? carimbo : (slot === 'fama24h_multi' ? (provDoTipo() || slotRealProvider(slot, v, o)) : slotRealProvider(slot, v, o));
       if (subs.length) {
