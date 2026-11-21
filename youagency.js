@@ -104,8 +104,8 @@ const BLOQUEADAS = [
 ];
 
 // Liberadas mesmo casando com um prefixo bloqueado: bot IA do WhatsApp (webhook + checagem de perfil)
-// e o CRM dele no painel (conversas e follow-up).
-const LIBERADAS = ['/api/whatsapp-ia', '/api/internal/ia-check-profile', '/api/painel/ia-crm', '/painel/ia-crm', '/api/painel/ia-followup', '/painel/ia-followup'];
+// e o CRM dele no painel (conversas e follow-up). send-text: botão "Enviar msg" do painel de privados (instância famaapp).
+const LIBERADAS = ['/api/whatsapp-ia', '/api/admin/evolution/send-text', '/api/internal/ia-check-profile', '/api/painel/ia-crm', '/painel/ia-crm', '/api/painel/ia-followup', '/painel/ia-followup'];
 function bloqueada(p) {
   const s = String(p || '').toLowerCase();
   const casa = (b) => s === b || s.startsWith(b + '/') || s.startsWith(b + '-') || s.startsWith(b + '?');
