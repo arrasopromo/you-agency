@@ -39459,8 +39459,9 @@ app.post('/api/admin/evolution/send-text', requireAdmin, async (req, res) => {
     const normalizePhone = (p) => {
       const digits = String(p || '').replace(/[^\d]/g, '');
       if (!digits) return '';
-      if (digits.startsWith('55') && digits.length >= 12) return digits;
-      if (digits.length === 10 || digits.length === 11) return '55' + digits;
+      // You Agency: clientes do México — 10 dígitos = celular mexicano (52 + número); 52/521 e 55 passam como estão.
+      if ((digits.startsWith('52') || digits.startsWith('55')) && digits.length >= 12) return digits;
+      if (digits.length === 10) return '52' + digits;
       return digits;
     };
 

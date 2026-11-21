@@ -19,6 +19,7 @@
     .archive-btn--off { background: #dc3545; }
     .archive-btn--on { background: #6c757d; }
     .email-btn { padding: 6px 10px; color: #fff; border: none; border-radius: 4px; cursor: pointer; background: #0d6efd; }
+    .whatsapp-btn { padding: 6px 10px; color: #fff; border: none; border-radius: 4px; cursor: pointer; background: #198754; }
     .hide-toolbar { display:flex; gap:10px; align-items:center; flex-wrap: wrap; margin-top: 10px; }
     .hide-btn { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; height: 36px; }
     .panel-table-scroll table { min-width: 1400px; }
@@ -356,6 +357,9 @@
                 </td>
                 <td class="actions-cell">
                     <div class="actions-buttons">
+                      <% if (!order.noContact) { %>
+                        <button type="button" class="whatsapp-btn" data-id="<%= order._id %>" data-phone="<%= customerPhone %>" data-insta="<%= instaUser %>" data-contactcount="<%= order.contactCount || 0 %>" title="Envia pelo WhatsApp (Evolution, instância famaapp)">Enviar msg</button>
+                      <% } %>
                       <% if (order.noContact) { %>
                         <button type="button" class="email-btn" data-id="<%= order._id %>">Enviar e-mail</button>
                       <% } %>
@@ -363,6 +367,7 @@
                         <%= order.archived ? 'Desarquivar' : 'Arquivar' %>
                       </button>
                     </div>
+                    <span class="status-msg" id="msg-whatsapp-<%= order._id %>">Enviado!</span>
                     <span class="status-msg" id="msg-email-<%= order._id %>">Enviado!</span>
                     <span class="status-msg" id="msg-archived-<%= order._id %>">Salvo!</span>
                     <% if (lastContactStr) { %>
@@ -738,10 +743,57 @@
         }
     }
 
+    // Mensagem de perfil privado no WhatsApp do cliente (Evolution, instância famaapp) — igual à da Oppus, em espanhol.
+    async function sendEvolutionText(id, phone, insta, contactCount) {
+        try {
+            const initialPhone = String(phone || '').trim();
+            const digits = initialPhone.replace(/[^\d]/g, '');
+            const phoneFinal = digits ? initialPhone : window.prompt('WhatsApp do cliente (com código do país, ex.: 5215512345678)', '');
+            if (!phoneFinal) return;
+            const u = String(insta || '').trim();
+            const hasUser = !!(u && u !== '-' && u !== 'N/A');
+            const prefix = hasUser ? `¡Hola! ¿Cómo estás?\n\nSoy del equipo de *You Agency* y te escribo por tu pedido para el Instagram @${u}.` : '¡Hola! ¿Cómo estás?\n\nSoy del equipo de *You Agency* y te escribo por tu pedido.';
+            const n = Number(contactCount) || 0;
+            const attempt = n <= 0 ? 1 : (n === 1 ? 2 : (n === 2 ? 3 : 4));
+            const como = 'Para cambiarlo: Configuración → Privacidad de la cuenta → desactiva "Cuenta privada".';
+            const messages = {
+                1: `${prefix}\n\nVimos que tu perfil está en *privado* y así no podemos hacer la entrega. Déjalo *público* hasta que termine el pedido y avísanos por aquí cuando lo cambies.\n\n${como}`,
+                2: `${prefix}\n\nTe escribo por 2ª vez: tu perfil sigue en *privado*. Para completar la entrega, déjalo *público* y avísanos por aquí.\n\n${como}`,
+                3: `${prefix}\n\n3er intento de contacto: el perfil sigue en *privado*. La entrega empieza en cuanto lo dejes *público* — responde aquí cuando esté listo.\n\n${como}`,
+                4: `${prefix}\n\nÚltimo intento de contacto: para no perder tu pedido, deja el perfil *público* y avísanos por aquí. Si no tenemos respuesta, vamos a dejar de insistir.\n\n${como}`
+            };
+            const text = window.prompt('Mensagem para enviar no WhatsApp:', messages[attempt] || messages[1]);
+            if (!text) return;
+            const res = await fetch('/api/admin/evolution/send-text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, phone: phoneFinal, text, kind: 'privado' })
+            });
+            let data = null;
+            try { data = await res.json(); } catch (_) { data = null; }
+            if (!res.ok || !data || !data.ok) {
+                const details = (data && data.details) ? ('\n\nDetalhes: ' + JSON.stringify(data.details)) : '';
+                alert('Erro ao enviar: ' + ((data && data.error) ? data.error : ('HTTP ' + res.status)) + details);
+                return;
+            }
+            const msg = document.getElementById('msg-whatsapp-' + id);
+            if (msg) { msg.style.display = 'inline'; setTimeout(() => msg.style.display = 'none', 2000); }
+            queuePrivadosScrollRestore(id);
+            window.location.reload();
+        } catch (e) {
+            alert('Erro ao enviar: ' + (e && e.message ? e.message : e));
+        }
+    }
+
     // Instant Phone Search Implementation
     document.addEventListener('DOMContentLoaded', function() {
         restorePrivadosScrollIfAny();
         document.addEventListener('click', function(e) {
+            const wbtn = e.target.closest('.whatsapp-btn');
+            if (wbtn) {
+                sendEvolutionText(wbtn.getAttribute('data-id'), wbtn.getAttribute('data-phone'), wbtn.getAttribute('data-insta'), wbtn.getAttribute('data-contactcount'));
+                return;
+            }
             const ebtn = e.target.closest('.email-btn');
             if (ebtn) {
                 const id = ebtn.getAttribute('data-id');
