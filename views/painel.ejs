@@ -8225,6 +8225,7 @@
                 <th class="vd-ck"><input type="checkbox" id="vdSelAll" title="Marcar todos os Parciais e Cancelados visíveis" aria-label="Marcar todos os Parciais e Cancelados visíveis"></th>
                 <th>Data (SP)</th>
                 <th>Usuário</th>
+                <th>Rede</th>
                 <th>Serviço</th>
                 <th>Qtd</th>
                 <th>Custo/1k</th>
@@ -8278,6 +8279,8 @@
                   <td><%= dateStr %></td>
                   <% const _igU = String(order.instagramUsername || '').replace(/^@+/, '').trim(); %>
                   <td><% if (/^[A-Za-z0-9._]{1,30}$/.test(_igU)) { %><a class="vd-user" href="https://www.instagram.com/<%= _igU %>/" target="_blank" rel="noopener noreferrer" title="Abrir o perfil no Instagram">@<%= _igU %></a><% } else if (order.perfilRede) { %><% const _rl = String(order.perfilRedeLink || ''); %><% if (/^https:\/\/([a-z0-9-]+\.)*(tiktok\.com|facebook\.com|fb\.com)\//i.test(_rl)) { %><a class="vd-user" href="<%= _rl %>" target="_blank" rel="noopener noreferrer" title="Abrir o perfil">@<%= order.perfilRede %></a><% } else { %>@<%= order.perfilRede %><% } %><% } else { %><%= userLabel %><% } %></td>
+                  <% const _rede = (function(){ var t = String(order.type || '').toLowerCase(); var l = String(order.perfilRedeLink || '').toLowerCase(); if (/^tiktok/.test(t) || /tiktok\.com/.test(l)) return 'TikTok'; if (/^facebook/.test(t) || /(facebook|fb)\.com/.test(l)) return 'Facebook'; return 'Instagram'; })(); %>
+                  <td class="vd-rede vd-rede-<%= _rede.toLowerCase() %>"><%= _rede %></td>
                   <td><%= order.type %></td>
                   <td><%= order.qty %></td>
                   <td>
@@ -8307,6 +8310,7 @@
             .vd-th-st{ min-width:140px; }
             a.vd-user{ color:inherit; text-decoration:none; border-bottom:1px solid #c9ced6; }
             a.vd-user:hover{ color:#2a4fc4; border-bottom-color:#2a4fc4; }
+            .vd-tab td.vd-rede{ white-space:nowrap; font-weight:600; } .vd-tab td.vd-rede-instagram{ color:#c13584; } .vd-tab td.vd-rede-tiktok{ color:#111827; } .vd-tab td.vd-rede-facebook{ color:#1877f2; }
             .vd-tab td.vd-bump{ color:#4b5260; } .vd-tab td.vd-bump span{ display:block; white-space:nowrap; line-height:1.5; }
             .vd-st{ white-space:nowrap; }
             .vd-badge{ display:inline-flex; align-items:center; gap:6px; padding:3px 10px 3px 8px; border-radius:6px; font-size:12px; line-height:18px; background:#f2f3f5; color:#4b5260; }
