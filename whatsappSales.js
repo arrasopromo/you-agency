@@ -129,8 +129,10 @@ async function validateRedeProfile(rede, usuario) {
 async function createRedeOrder({ rede, servico, tipo, quantidade, usuario, perfil_link, nome, email, phone, post_link, comprar_mais, metodo, previewOnly }) {
   const cot = _quoteRede(rede, servico, quantidade, await loadHiddenTypes(), tipo);
   if (!cot.ok) return cot;
-  const nomeOk = String(nome || '').trim();
-  if (nomeOk.length < 2) return { ok: false, error: 'falta_nombre', message: 'Falta el nombre del cliente. Pídeselo antes de generar el pago.' };
+  // Nome nunca é pedido ao cliente (TikTok/Facebook): sem nome usa o perfil (ou "Cliente").
+  let nomeOk = String(nome || '').trim();
+  if (nomeOk.length < 2) nomeOk = String(usuario || '').replace(/^@+/, '').trim().slice(0, 60) || 'Cliente';
+  if (nomeOk.length < 2) nomeOk = 'Cliente';
   if (cot.priceCents < 2000) return { ok: false, error: 'monto_minimo', message: 'El pago mínimo es de $ 20 MXN. Ofrece un paquete mayor.' };
   const met = _metodo(metodo);
   if (met === 'OXXO' && cot.priceCents > 1000000) return { ok: false, error: 'oxxo_monto', message: 'OXXO acepta pagos de $ 10 a $ 10,000 MXN. Ofrece pagar por SPEI.' };
@@ -463,8 +465,9 @@ async function createPixOrder({ servico, quantidade, tipo, usuario, nome, email,
   if (!cot.ok) return { ok: false, error: cot.error || 'cotacao_falhou', available: cot.available, message: cot.message };
   const username = parseIgUsername(usuario);
   if (!username) return { ok: false, error: 'usuario_invalido', message: 'El @ parece una respuesta ("sí", "ok", etc.), no un usuario de Instagram. NO generes el pago: pide el @ correcto del perfil.' };
-  const nomeOk = String(nome || '').trim();
-  if (nomeOk.length < 2) return { ok: false, error: 'falta_nombre', message: 'Falta el nombre del cliente. Pídeselo antes de generar el pago.' };
+  // Nome nunca é pedido ao cliente: sem nome do WhatsApp usa o @ (ou "Cliente").
+  let nomeOk = String(nome || '').trim();
+  if (nomeOk.length < 2) nomeOk = (username && username.length >= 2) ? username : 'Cliente';
   const met = _metodo(metodo);
   const valor = cot.priceCents / 100;
   if (valor < 20) return { ok: false, error: 'monto_minimo', message: 'El pago mínimo es de $ 20 MXN. Ofrece un paquete mayor.' };
