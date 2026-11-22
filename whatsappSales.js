@@ -126,7 +126,7 @@ async function validateRedeProfile(rede, usuario) {
   } catch (e) { return { ok: false, error: 'erro_validacao', message: (e && e.message) || 'erro' }; }
 }
 // Pedido de TikTok/Facebook pelo MESMO endpoint e formato da página do site (/servicios-tiktok|facebook).
-async function createRedeOrder({ rede, servico, tipo, quantidade, usuario, perfil_link, nome, email, phone, post_link, comprar_mais, metodo }) {
+async function createRedeOrder({ rede, servico, tipo, quantidade, usuario, perfil_link, nome, email, phone, post_link, comprar_mais, metodo, previewOnly }) {
   const cot = _quoteRede(rede, servico, quantidade, await loadHiddenTypes(), tipo);
   if (!cot.ok) return cot;
   const nomeOk = String(nome || '').trim();
@@ -143,6 +143,7 @@ async function createRedeOrder({ rede, servico, tipo, quantidade, usuario, perfi
     link = pl;
   }
   const userTag = String(usuario || '').replace(/^@+/, '');
+  let jaTemCobranca = false;
   // Mesmo pedido (telefone + tipo + quantidade + perfil) nos últimos 7 dias: pago → não cobra de novo; aberto → reusa.
   try {
     const fim8 = String(phone || '').replace(/\D/g, '').slice(-8);
@@ -155,6 +156,7 @@ async function createRedeOrder({ rede, servico, tipo, quantidade, usuario, perfi
       }, { projection: { status: 1, identifier: 1, correlationID: 1, xpag: 1, paidAt: 1 } }).sort({ createdAt: -1 }).limit(5).toArray();
       const pago = iguais.find((o) => String(o.status || '').toLowerCase() === 'pago' || o.paidAt);
       if (pago && comprar_mais !== true) return { ok: false, error: 'pedido_ja_pago', message: 'Este pedido de ' + cot.redeNombre + ' YA FUE PAGADO. NO generes otro pago; habla de la entrega. Solo si el cliente quiere COMPRAR OTRO igual, usa comprar_mais=true.' };
+      jaTemCobranca = iguais.some((o) => !(String(o.status || '').toLowerCase() === 'pago' || o.paidAt));
       const aberto = iguais.find((o) => !(String(o.status || '').toLowerCase() === 'pago' || o.paidAt) && o.xpag && String(o.xpag.method || 'SPEI').toUpperCase() === met && (o.xpag.clabe || o.xpag.reference) && ((o.xpag.open_value === true && !o.xpag.expiresAt) || (o.xpag.expiresAt && new Date(o.xpag.expiresAt).getTime() > Date.now() + 30 * 60e3)));
       if (aberto) {
         const dp = _dadosPagamento(aberto);
@@ -162,6 +164,13 @@ async function createRedeOrder({ rede, servico, tipo, quantidade, usuario, perfi
       }
     }
   } catch (_) {}
+  if (previewOnly && !jaTemCobranca) {
+    const linhas = ['*' + _fmtQ(cot.quantidade) + ' ' + cot.unit + (cot.tipoNombre === 'reales' ? ' reales' : '') + ' de ' + cot.redeNombre + '*', 'Perfil: *' + (userTag ? '@' + userTag : perfilLink) + '*'];
+    if (cot.needsPost) linhas.push('Publicación: ' + link);
+    linhas.push('Pago: *' + _nomeMetodo(met) + '*');
+    const mejora = _proximoPacote(tabelaRedes[cot.tipo], cot.quantidade, cot.priceCents);
+    return { ok: false, error: 'precisa_confirmar', resumoConfirmacao: linhas.join('\n'), quantidade: cot.quantidade, unit: cot.unit, tipoNombre: cot.tipoNombre === 'reales' ? 'reales' : '', redeNombre: cot.redeNombre, valorLabel: cot.priceLabel, mejora };
+  }
   const correlationID = 'WppAgent_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
   const additionalInfo = [
     { key: 'tipo_servico', value: cot.tipo }, { key: 'categoria_servico', value: rede }, { key: 'plataforma', value: rede },
@@ -431,7 +440,21 @@ const _codigoPago = (d) => (d.metodo === 'OXXO' ? d.referencia : d.clabe);
 
 // Cria o pedido + cobrança Xpag chamando o MESMO endpoint do site. O webhook da Xpag
 // confirma o pagamento e o despacho segue igual a um pedido do site.
-async function createPixOrder({ servico, quantidade, tipo, usuario, nome, email, phone, post_links, comprar_mais, metodo }) {
+// Pacote seguinte da mesma tabela (oferta "por só +$X leva N", uma vez antes de cobrar).
+function _proximoPacote(tab, qtd, priceCents) {
+  const nx = (tab || []).filter((x) => Number(x.q) > Number(qtd)).sort((a, b) => a.q - b.q)[0];
+  if (!nx) return null;
+  const pc = parsePrecoToCents(nx.p);
+  if (!(pc > priceCents)) return null;
+  return { quantidade: Number(nx.q), priceCents: pc, priceLabel: mxn(pc), diffCents: pc - priceCents, diffLabel: mxn(pc - priceCents) };
+}
+const _fmtQ = (n) => Number(n || 0).toLocaleString('en-US');
+const _nomeMetodo = (met) => (met === 'OXXO' ? 'OXXO (efectivo)' : 'SPEI (transferencia)');
+
+// previewOnly: valida tudo e, se fosse criar uma cobrança NOVA, devolve o resumo para o cliente
+// confirmar ("¿Todo bien?") e o pacote seguinte — sem cobrar. Reenvio/troca de método de uma cobrança
+// que já existe para o mesmo pedido segue direto.
+async function createPixOrder({ servico, quantidade, tipo, usuario, nome, email, phone, post_links, comprar_mais, metodo, previewOnly }) {
   const _svcDef = CATALOG[normalizeServico(servico)];
   if (_svcDef && _svcDef.tipos && !String(tipo || '').trim()) {
     return { ok: false, error: 'tipo_obrigatorio', message: 'Antes de generar el pago, confirma el tipo: mixtos o reales.' };
@@ -456,6 +479,7 @@ async function createPixOrder({ servico, quantidade, tipo, usuario, nome, email,
   // Mesmo pedido (teléfono + servicio + tipo + cantidad + @):
   //  - YA PAGADO (7 días) → no genera otro cobro (salvo comprar_mais).
   //  - ABIERTO y vigente, mismo método → devuelve el MISMO cobro y agrega los links nuevos.
+  let jaTemCobranca = false;
   try {
     const fim8 = String(phone || '').replace(/\D/g, '').slice(-8);
     if (fim8.length === 8) {
@@ -480,6 +504,7 @@ async function createPixOrder({ servico, quantidade, tipo, usuario, nome, email,
         }
         return { ok: false, error: 'pedido_ja_pago', message: 'Este pedido (' + cot.quantidade + ' ' + cot.unit + ' para @' + username + ') YA FUE PAGADO y está en proceso. NO generes otro pago: confirma el pago al cliente y habla de la entrega. Un reclamo o pregunta sobre la entrega NUNCA es motivo para un pago nuevo. Solo si el cliente dice claramente que quiere COMPRAR OTRO paquete, llama a generar_pago con comprar_mais=true.' };
       }
+      jaTemCobranca = iguais.some((o) => !(String(o.status || '').toLowerCase() === 'pago' || o.paidAt));
       const aberto = iguais.find((o) => {
         if (String(o.status || '').toLowerCase() === 'pago' || o.paidAt) return false;
         const x = o.xpag || {};
@@ -515,6 +540,17 @@ async function createPixOrder({ servico, quantidade, tipo, usuario, nome, email,
       }
     }
   } catch (_) {}
+  if (previewOnly && !jaTemCobranca) {
+    const linhas = ['*' + _fmtQ(cot.quantidade) + ' ' + cot.unit + (cot.tipoNombre ? ' ' + cot.tipoNombre : '') + '*', 'Perfil: *@' + username + '*'];
+    if (cot.needsPost && post_links && post_links.length) {
+      linhas.push(post_links.length > 1 ? ('Publicaciones (' + post_links.length + ', la cantidad se reparte igual):') : 'Publicación:');
+      for (const u of post_links) linhas.push(u);
+    }
+    linhas.push('Pago: *' + _nomeMetodo(met) + '*');
+    const svcDef = CATALOG[normalizeServico(servico)];
+    const mejora = (svcDef && !svcDef.porUnidadeCents) ? _proximoPacote(tableFor(svcDef, tipo), cot.quantidade, cot.priceCents) : null;
+    return { ok: false, error: 'precisa_confirmar', resumoConfirmacao: linhas.join('\n'), quantidade: cot.quantidade, unit: cot.unit, tipoNombre: cot.tipoNombre || '', valorLabel: cot.priceLabel, mejora };
+  }
   const correlationID = 'WppAgent_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
   const additionalInfo = [
     { key: 'tipo_servico', value: cot.tipo },
@@ -832,7 +868,68 @@ async function flagSupport(phone, motivo) {
   } catch (e) { return { ok: false, error: (e && e.message) || 'erro' }; }
 }
 
+// Marca as cobranças do bot EM ABERTO deste telefone (3 dias): campo 'clienteDisseQuePagou' (disse que pagou /
+// mandou comprovante) ou 'recusou' ("ya no quiero"). O lembrete de pagamento (app.js) respeita as duas.
+async function marcarPedidosAbertos(phone, campo, detalhe) {
+  try {
+    const fim8 = _digits(phone).slice(-8);
+    if (fim8.length !== 8 || !/^[a-zA-Z]+$/.test(String(campo || ''))) return 0;
+    const col = await getCollection('checkout_orders');
+    const desde = new Date(Date.now() - 3 * 24 * 3600e3).toISOString();
+    const set = { ['iaPayRecovery.' + campo + 'At']: new Date() };
+    if (detalhe) set['iaPayRecovery.' + campo + 'Texto'] = String(detalhe).slice(0, 300);
+    const r = await col.updateMany({ correlationID: { $regex: '^WppAgent_' }, createdAt: { $gte: desde }, 'customer.phone': { $regex: fim8 + '$' }, status: { $nin: ['pago', 'paid'] }, paidAt: { $in: [null] }, ['iaPayRecovery.' + campo + 'At']: { $exists: false } }, { $set: set });
+    return (r && r.modifiedCount) || 0;
+  } catch (_) { return 0; }
+}
+
+// ── Dobrar o pedido (oferta pós-compra) ──
+// Cobrança NOVA com o mesmo pedido (serviço, tipo, quantidade, perfil e links) pelo preço da oferta.
+// O preço é aceito pelo /api/xpag/create-charge só com o token da oferta (coleção wa_ofertas_dobro).
+async function criarPedidoDobro(token, phone) {
+  try {
+    const ofCol = await getCollection('wa_ofertas_dobro');
+    const of = await ofCol.findOne({ _id: String(token || '') });
+    if (!of) return { ok: false, error: 'oferta_nao_encontrada' };
+    if (_digits(of.phone).slice(-8) !== _digits(phone).slice(-8)) return { ok: false, error: 'oferta_de_outro_numero' };
+    if (new Date(of.expiraAt).getTime() <= Date.now()) return { ok: false, error: 'oferta_expirada' };
+    // Já gerou: devolve a mesma cobrança (cliente respondeu "sí" duas vezes).
+    if (of.correlationID) {
+      const col0 = await getCollection('checkout_orders');
+      const rec0 = await col0.findOne({ correlationID: of.correlationID }, { projection: { xpag: 1, correlationID: 1, identifier: 1, status: 1 } });
+      if (rec0) { const dp0 = _dadosPagamento(rec0); return { ok: true, reaproveitado: true, correlationID: of.correlationID, valorCents: of.precoCents, valorLabel: mxn(of.precoCents), pago: dp0, codigoPago: _codigoPago(dp0), desc: of.desc }; }
+    }
+    const claim = await ofCol.updateOne({ _id: of._id, gerandoAt: { $exists: false } }, { $set: { gerandoAt: new Date() } });
+    if (!(claim && claim.modifiedCount > 0)) return { ok: false, error: 'oferta_em_andamento' };
+    const col = await getCollection('checkout_orders');
+    const o = await col.findOne({ _id: of.orderId });
+    if (!o) { await ofCol.updateOne({ _id: of._id }, { $unset: { gerandoAt: '' } }); return { ok: false, error: 'pedido_original_sumiu' }; }
+    const fora = new Set(['pacote', 'cupom', 'coupon', 'order_bumps', 'oferta_dobro', 'oferta_origem', 'phone']);
+    const additionalInfo = (Array.isArray(o.additionalInfo) ? o.additionalInfo : []).filter((x) => x && x.key && !fora.has(String(x.key)));
+    additionalInfo.push({ key: 'pacote', value: (of.desc || 'pedido') + ' - ' + mxn(of.precoCents) + ' (oferta 40%)' });
+    additionalInfo.push({ key: 'phone', value: String(phone || '') });
+    additionalInfo.push({ key: 'oferta_dobro', value: String(of._id) });
+    additionalInfo.push({ key: 'oferta_origem', value: String(o.identifier || o.correlationID || o._id) });
+    const met = String((o.xpag && o.xpag.method) || 'SPEI').toUpperCase() === 'OXXO' && of.precoCents <= 1000000 ? 'OXXO' : 'SPEI';
+    const correlationID = 'WppAgent_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+    const nome = String((o.customer && o.customer.name) || orderGetAny(o, 'customer_name') || 'Cliente');
+    const body = { correlationID, total_cents: of.precoCents, xpag_method: met, customer: { name: nome, email: String((o.customer && o.customer.email) || ''), phone: String(phone || '') }, additionalInfo, profile_is_private: false, source: 'wpp_agent' };
+    // UMA chamada só (nunca repetir sozinho: evita cobrança duplicada).
+    const resp = await axios.post(INTERNAL_BASE + '/api/xpag/create-charge', body, { timeout: 60000, validateStatus: () => true });
+    const d = resp && resp.data;
+    if (!d || resp.status < 200 || resp.status >= 300 || !d.ok) {
+      await ofCol.updateOne({ _id: of._id }, { $unset: { gerandoAt: '' }, $set: { ultimoErro: String((d && (d.message || d.error)) || ('HTTP ' + (resp && resp.status))).slice(0, 200) } });
+      return { ok: false, error: 'charge_failed', message: String((d && (d.message || d.error)) || ('HTTP ' + (resp && resp.status))).slice(0, 200) };
+    }
+    await ofCol.updateOne({ _id: of._id }, { $set: { correlationID, geradoAt: new Date() } });
+    const rec = await col.findOne({ correlationID }, { projection: { xpag: 1, correlationID: 1, identifier: 1 } });
+    const dp = _dadosPagamento(rec || { correlationID });
+    return { ok: true, correlationID, valorCents: of.precoCents, valorLabel: mxn(of.precoCents), pago: dp, codigoPago: _codigoPago(dp), desc: of.desc };
+  } catch (e) { return { ok: false, error: 'dobro_erro', message: (e && e.message) || 'erro' }; }
+}
+
 module.exports = {
+  marcarPedidosAbertos, criarPedidoDobro,
   CATALOG, normalizeServico, normalizeTipo, parseIgUsername, NOME_TIPO,
   quote, priceTable, validateProfile, createPixOrder, createPaymentOrder, ultimoPagoAberto, generateValidCPF, flagSupport, consultarPedido, brl, mxn, sendNtfy, avisarResponsavelWhatsapp,
   loadHiddenTypes, tiposDisponiveis,

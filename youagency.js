@@ -831,6 +831,17 @@ module.exports.register = function register(app, deps) {
           }
         } catch (_) {}
       }
+      // Oferta "dobrar o pedido" do bot (40% off por 5 h): o preço vale só com o token gravado em wa_ofertas_dobro,
+      // para o mesmo tipo e quantidade, uma cobrança por token.
+      if (!verification.isValid && addInfoMap['oferta_dobro']) {
+        try {
+          const ofCol = await deps.getCollection('wa_ofertas_dobro');
+          const of = await ofCol.findOne({ _id: String(addInfoMap['oferta_dobro']) });
+          const okOferta = of && Number(of.precoCents) === Number(total_cents) && String(of.tipo || '') === String(tipoVal || '') && Number(of.quantidade) === qtdVal
+            && new Date(of.expiraAt).getTime() > Date.now() - 10 * 60e3 && !of.correlationID;
+          if (okOferta) verification = { isValid: true, matchedPrice: Number(total_cents), expectedPrice: Number(total_cents), mismatchDetails: null };
+        } catch (_) {}
+      }
       if (!verification.isValid) {
         return res.status(400).json({ error: 'invalid_amount', message: 'El monto no coincide con el esperado.', details: verification.mismatchDetails });
       }

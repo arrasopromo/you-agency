@@ -7554,6 +7554,10 @@ async function notifyWppAgentPaidWhatsapp(doc) {
       );
     } catch (_) {}
     try { console.log('✅ [IA] confirmação de pagamento enviada no WhatsApp para ' + phone); } catch (_) {}
+    // Oferta de dobrar o pedido (40% off, 5 h): sai 90 s depois pelo loop do whatsappCloud.js (fica no banco).
+    if (String(process.env.BOT_OFERTA_DOBRO || 'true').toLowerCase() !== 'false' && !getAdd('oferta_dobro')) {
+      try { await col.updateOne({ _id: doc._id, ofertaDobro: { $exists: false } }, { $set: { ofertaDobro: { agendadaPara: new Date(Date.now() + 90 * 1000), phone } } }); } catch (_) {}
+    }
   } catch (_) {}
 }
 
@@ -53371,6 +53375,23 @@ async function runIaPaymentRecoveryTick() {
       // Confere na Xpag antes de cobrar o cliente (pagou e o webhook ainda não chegou).
       try { if (typeof app.locals.yaSincronizarXpag === 'function') doc = await app.locals.yaSincronizarXpag(col, doc); } catch (_) {}
       if (String(doc.status || '').toLowerCase() === 'pago') continue;
+      // Disse "ya no quiero": nada de lembrete. Disse que pagou / mandou comprovante: não cobra; se a Xpag
+      // não confirmar em 30 min, avisa o responsável (uma vez) para conferir o pagamento.
+      const rec = doc.iaPayRecovery || {};
+      if (rec.recusouAt) continue;
+      if (rec.clienteDisseQuePagouAt) {
+        const desdeMs = new Date(rec.clienteDisseQuePagouAt).getTime();
+        if (!rec.alertaPagouSemConfirmarAt && Number.isFinite(desdeMs) && now - desdeMs >= 30 * 60 * 1000) {
+          const cl = await col.updateOne({ _id: doc._id, 'iaPayRecovery.alertaPagouSemConfirmarAt': { $exists: false } }, { $set: { 'iaPayRecovery.alertaPagouSemConfirmarAt': new Date() } });
+          if (cl && cl.modifiedCount) {
+            const sales = require('./whatsappSales.js');
+            const v = '$ ' + (Number(doc.expectedValueCents || doc.valueCents || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN';
+            try { await sales.avisarResponsavelWhatsapp('💸 You Agency: o cliente +' + phone + ' disse que pagou há 30 min e a Xpag ainda não confirmou.\nPedido ' + (doc.identifier || doc._id) + ' — ' + v + ' (' + metodo + ').\nO que ele disse: "' + String(rec.clienteDisseQuePagouTexto || '').slice(0, 160) + '"\nCRM: ' + String(process.env.PUBLIC_BASE_URL || 'https://youagency.site').replace(/\/+$/, '') + '/painel/ia-crm'); } catch (_) {}
+            try { console.log('💸 [ia-pay-recovery] cliente disse que pagou e não confirmou: ' + phone + ' ' + (doc.identifier || doc._id)); } catch (_) {}
+          }
+        }
+        continue;
+      }
       try {
         const fim8 = phone.slice(-8);
         const desdePago = new Date(createdMs - 60 * 60 * 1000).toISOString();

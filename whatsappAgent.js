@@ -136,6 +136,12 @@ function tirarLinkReposicao(texto) {
   return String(texto || '').split('\n').map((linha) => /reposicion\?token=/i.test(linha) ? _frases(linha).filter((f) => !/reposicion\?token=/i.test(f)).join(' ') : linha).join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
+const mxnLabel = (cents) => fmtMx(cents) + ' MXN';
+// Turno que terminou sem resposta DE PROPÓSITO (ex.: "ya pagué" repetido): o vigia de silêncio não refaz.
+async function _marcaSilencio(phone) {
+  try { const c = await getCollection('whatsapp_agent_chats'); await c.updateOne({ _id: String(phone) }, { $set: { silencioAt: new Date() } }, { upsert: true }); } catch (_) {}
+}
+
 // ── Histórico por telefone ──
 const memHist = new Map();
 async function loadHistory(phone) {
@@ -230,6 +236,7 @@ function systemPrompt(dispTipos) {
     'FLUJO DE VENTA: 1) servicio + tipo; 2) muestra la tabla y pregunta la cantidad; 3) cotiza el valor exacto; 4) pide el @ y valida (confirma seguidores); 5) si es me gusta/vistas, pide el link y pregunta si reparte en más publicaciones; 6) pregunta cómo prefiere pagar: *SPEI* (transferencia desde la app de su banco, se confirma en minutos) u *OXXO* (efectivo en tienda); si no elige, usa SPEI; no ofrezcas tarjeta; 7) genera el pago. NO pidas el nombre ni el correo: el sistema usa el nombre del WhatsApp del cliente.',
     'GENERAR EL PAGO — REGLA CRÍTICA: en cuanto tengas servicio, tipo, cantidad, @ validado y método (y, en me gusta/vistas, los links con la confirmación de que terminó), llama *generar_pago* DE INMEDIATO, en el MISMO turno. NUNCA digas "voy a generar el pago", "un momento" o "espera" sin llamar la herramienta. Si falta un dato, pide solo lo que falta.',
     'DESPUÉS DE GENERAR EL PAGO: NUNCA escribas en el texto la CLABE, el banco, el beneficiario ni ningún link — el sistema los manda AUTOMÁTICAMENTE en mensajes separados. Tu mensaje lleva solo la confirmación del resumen y el cierre "Quedo al pendiente de la confirmación de tu pago para liberar tu pedido." Si generar_pago regresa error, NO digas que salió bien — pide intentar de nuevo u ofrece el otro método, o llama a soporte. Nunca pidas RFC ni CURP.',
+    'CONFIRMACIÓN ANTES DEL PAGO: generar_pago puede regresar "oferta_enviada" (el sistema ya le ofreció al cliente, una sola vez, el paquete siguiente por la diferencia) o "resumen_enviado" (el sistema ya le mandó el resumen del pedido con "¿Todo bien?"). En los dos casos NO escribas nada más en ese turno. Cuando el cliente conteste la oferta: si la acepta ("sí", "va", "el de 1,000"), llama generar_pago con la cantidad nueva y el mismo tipo; si no la quiere o no responde a eso, llama generar_pago con la cantidad original, sin insistir ni volver a ofrecer. Cuando confirme el resumen, llama generar_pago con los mismos datos. Nunca digas que el pago ya está generado hasta que generar_pago regrese ok.',
     'TIPO AL CERRAR (CRÍTICO): en generar_pago usa EXACTAMENTE el tipo que cotizaste y el cliente confirmó. "reales"/"de verdad"/"orgánicos" = organicos. El monto del pago TIENE que ser el mismo que cotizaste.',
     'NOMBRE Y CORREO: NO los pidas — el sistema usa el nombre del WhatsApp del cliente. Si el cliente da su nombre o correo por su cuenta, pásalos en generar_pago. Si en el historial ya preguntaste el nombre, no lo vuelvas a preguntar.',
     'FRASES DE PAGO NO SON @: "para depositar en Oxxo", "por transferencia", "en efectivo", "ahorita pago" son el MÉTODO DE PAGO, nunca un usuario. Solo llama validar_perfil con un @ o link que el cliente escribió.',
@@ -273,6 +280,64 @@ function _clienteEscreveu(ctx, usuario) {
   const rx = new RegExp('(^|[^a-z0-9._])@?' + esc + '(?![a-z0-9._])', 'i');
   return (ctx.allUserTexts || ctx.recentUserTexts || [ctx.text]).some((t) => rx.test(String(t || '').toLowerCase()));
 }
+// ── Estado da venda por contato (whatsapp_contacts): resumo esperando "¿Todo bien?", oferta do pacote
+// seguinte (uma vez a cada 6 h) e a oferta de dobrar o pedido (pós-compra). ──
+async function _getContato(phone) {
+  try { const c = await getCollection('whatsapp_contacts'); return (await c.findOne({ _id: String(phone) }, { projection: { pedidoAConfirmar: 1, ofertaMejoraAt: 1, ofertaDobro: 1 } })) || {}; } catch (_) { return {}; }
+}
+async function _setContato(phone, set, unset) {
+  try {
+    const c = await getCollection('whatsapp_contacts');
+    const up = {}; if (set && Object.keys(set).length) up.$set = set; if (unset && Object.keys(unset).length) up.$unset = unset;
+    if (Object.keys(up).length) await c.updateOne({ _id: String(phone) }, up, { upsert: true });
+  } catch (_) {}
+}
+// "Sí" claro (confirma o resumo). Para a oferta de dobrar vale só o SÍ: "ok", "gracias" e "no" contam como recusa.
+const RE_SIM = /^\s*(s[ií]+|sip|s[ií]\s*,?\s*(por\s+favor|claro|correcto|todo\s+bien|est[aá]\s+bien|as[ií]|perfecto|adelante|dale|va|la\s+quiero|lo\s+quiero|quiero|gracias|g[eé]neralo|genera(lo)?)|claro(\s+que\s+s[ií])?|todo\s+bien|todo\s+correcto|correcto|perfecto|as[ií]\s+est[aá]\s+bien|est[aá]\s+bien|ok(ay|ey|i)?|va|vale|sale|dale|listo|adelante|de\s+acuerdo|exacto|confirmo|confirmado)\s*[.!¡]*\s*$/i;
+const RE_SIM_DOBRO = /^\s*(s[ií]+|sip|s[ií]\s*,?\s*(por\s+favor|claro|la\s+quiero|lo\s+quiero|quiero|dale|va)|claro\s+que\s+s[ií]|s[ií]\s+la\s+quiero)\s*[.!¡]*\s*$/i;
+// Recusa com cobrança aberta → para os lembretes de pagamento (evita denúncia de spam).
+const RE_RECUSA = /(ya\s+no\s+(lo\s+)?(quiero|me\s+interesa|voy\s+a\s+(comprar|pagar))|no\s+lo\s+quiero|no\s+quiero\s+(nada|comprar|pagar|ya|el\s+pedido|seguir)|^\s*no\s+quiero\s*[.!]*\s*$|mejor\s+no\b|no\s+me\s+interesa|cancel(a|ar|alo|en|ado)\s+(el\s+|mi\s+)?(pedido|pago|compra)|^\s*no,?\s+gracias\s*[.!]*\s*$|olv[ií]dalo|ya\s+no\s+(comprar[ée]|pagar[ée]))/i;
+const _fq = (n) => Number(n || 0).toLocaleString('en-US');
+function _chavePedido(rede, a) {
+  const sv = sales.normalizeServico(a && a.servico);
+  const tipo = (sv === 'seguidores' || sv === 'curtidas') ? sales.normalizeTipo(a && a.tipo) : '';
+  const links = [...new Set((Array.isArray(a && a.post_links) ? a.post_links : []).concat(a && a.post_link ? [a.post_link] : []).map((u) => String(u).replace(/[?#].*$/, '').replace(/\/+$/, '').toLowerCase()).filter(Boolean))].sort().join(',');
+  const met = /oxxo/i.test(String((a && a.metodo) || '')) ? 'OXXO' : 'SPEI';
+  return [rede, sv, tipo, Number(a && a.quantidade) || 0, String((a && a.usuario) || '').toLowerCase().replace(/^@+/, ''), links, met].join('|');
+}
+// Antes de criar uma cobrança NOVA: o resumo desse mesmo pedido já foi mostrado num turno anterior → confirmado.
+async function _antesDeCobrar(ctx, rede, a2) {
+  if (ctx.confirmado) return { confirmado: true, ct: {} };
+  const chave = _chavePedido(rede, a2);
+  const ct = await _getContato(ctx.phone);
+  const p = ct.pedidoAConfirmar;
+  const recente = p && p.at && (Date.now() - new Date(p.at).getTime()) < 3 * 3600e3;
+  const mesmo = !!(recente && p.chave === chave && !ctx.resumoNesteTurno);
+  // "no", "espera", "todavía no" ao resumo NUNCA viram confirmação (nem reenviam o mesmo resumo).
+  if (mesmo && RE_NAO.test(String(ctx.text || ''))) return { confirmado: false, ct, chave, bloqueio: { ok: false, error: 'cliente_no_confirmo', message: 'El cliente NO confirmó el resumen. Pregúntale en 1 frase qué quiere cambiar (cantidad, tipo, perfil, publicación o método de pago). No mandes el mismo resumen otra vez ni generes el pago.' } };
+  return { confirmado: mesmo, ct, chave };
+}
+const RE_NAO = /^\s*(no|nop|nel|nope|mmm+|espera|esp[eé]rame|aguanta|todav[ií]a\s+no|a[uú]n\s+no|mejor\s+no|ahorita\s+no|est[aá]\s+mal|no\s+es)\b/i;
+// A cobrança seria nova: manda (texto fixo, sem a IA) a oferta do pacote seguinte — uma vez — ou o resumo "¿Todo bien?".
+async function _ofertaOuResumo(ctx, rede, a2, r, gate) {
+  if (ctx.textoFixo) return { ok: false, error: 'ya_enviado', message: 'El sistema ya le mandó un mensaje al cliente en este turno. No escribas nada; espera su respuesta.' };
+  const ct = gate.ct || {};
+  const ofertou = ct.ofertaMejoraAt && (Date.now() - new Date(ct.ofertaMejoraAt).getTime()) < 6 * 3600e3;
+  const nomeSv = r.unit + (r.tipoNombre ? ' ' + r.tipoNombre : '') + (r.redeNombre ? ' de ' + r.redeNombre : '');
+  // Perfil validado neste mesmo turno: a confirmação do perfil vai junto (senão o cliente nem vê o que foi achado).
+  const pv = ctx.perfilNesteTurno;
+  const prefixo = (pv && pv.username) ? ('¡Encontré tu perfil! @' + String(pv.username).replace(/^@+/, '') + (Number.isFinite(Number(pv.followers)) ? (', ' + _fq(pv.followers) + ' seguidores') : '') + '.\n\n') : '';
+  if (r.mejora && !ofertou) {
+    ctx.textoFixo = prefixo + 'Antes de generar tu pago: por solo *' + r.mejora.diffLabel + ' más* te llevas *' + _fq(r.mejora.quantidade) + ' ' + nomeSv + '* en lugar de ' + _fq(r.quantidade) + ' (total ' + r.mejora.priceLabel + '). ¿Lo quieres o seguimos con ' + _fq(r.quantidade) + '?';
+    await _setContato(ctx.phone, { ofertaMejoraAt: new Date(), ofertaMejora: { de: r.quantidade, para: r.mejora.quantidade, servico: a2.servico, rede } }, { pedidoAConfirmar: '' });
+    return { ok: false, error: 'oferta_enviada', message: 'El sistema YA le mandó al cliente la oferta del paquete siguiente (' + _fq(r.mejora.quantidade) + ' por ' + r.mejora.priceLabel + ' en vez de ' + _fq(r.quantidade) + '). No escribas nada; espera su respuesta. Si la acepta, llama generar_pago con quantidade=' + r.mejora.quantidade + ' y el mismo tipo; si no la quiere, con quantidade=' + r.quantidade + ', sin insistir.' };
+  }
+  ctx.textoFixo = prefixo + 'Te confirmo tu pedido:\n\n' + r.resumoConfirmacao + '\n\n¿Todo bien?';
+  ctx.resumoNesteTurno = true;
+  await _setContato(ctx.phone, { pedidoAConfirmar: { chave: gate.chave, rede, args: a2, validatedRede: ctx.validatedRede || null, resumo: r.resumoConfirmacao, at: new Date() } });
+  return { ok: false, error: 'resumen_enviado', message: 'El sistema YA le mandó al cliente el resumen del pedido con la pregunta "¿Todo bien?". No escribas nada; espera su respuesta. Si confirma, llama generar_pago con los mismos datos; si corrige algo, llama generar_pago con los datos corregidos.' };
+}
+
 async function runTool(name, args, ctx) {
   try {
     const avisaTipo = (r, args2) => {
@@ -291,7 +356,7 @@ async function runTool(name, args, ctx) {
     if (name === 'tabla_precios') { const r0 = await sales.priceTable(args || {}); return redeArg === 'instagram' ? avisaTipo(r0, args) : r0; }
     if (name === 'validar_perfil' && redeArg !== 'instagram') {
       const vr = await sales.validateRedeProfile(redeArg, (args && args.usuario) || '');
-      if (vr && vr.ok) ctx.validatedRede = { rede: redeArg, username: vr.username, link: vr.link };
+      if (vr && vr.ok) { ctx.validatedRede = { rede: redeArg, username: vr.username, link: vr.link }; ctx.perfilNesteTurno = { username: vr.username, followers: vr.followers }; }
       return vr;
     }
     if (name === 'generar_pago' && redeArg !== 'instagram') {
@@ -301,7 +366,12 @@ async function runTool(name, args, ctx) {
       if (!val) return { ok: false, error: 'perfil_nao_validado', message: 'No generes el pago todavía: pide y valida el perfil de ' + (redeArg === 'tiktok' ? 'TikTok (@)' : 'Facebook (link del perfil o página)') + ' con validar_perfil (rede=' + redeArg + ').' };
       const postLink = a2.post_link || (Array.isArray(a2.post_links) ? a2.post_links[0] : '') || '';
       if (String(a2.nome || '').trim().length < 2) a2.nome = await _nomeDoContato(ctx.phone, val.username);
-      const r = await sales.createRedeOrder({ rede: redeArg, servico: a2.servico, tipo: a2.tipo, quantidade: a2.quantidade, usuario: val.username, perfil_link: val.link, nome: a2.nome, email: a2.email, phone: ctx.phone, post_link: postLink, comprar_mais: a2.comprar_mais, metodo: a2.metodo });
+      a2.usuario = val.username; a2.post_link = postLink; delete a2.post_links;
+      const gate = await _antesDeCobrar(ctx, redeArg, a2);
+      if (gate.bloqueio) return gate.bloqueio;
+      const r = await sales.createRedeOrder({ rede: redeArg, servico: a2.servico, tipo: a2.tipo, quantidade: a2.quantidade, usuario: val.username, perfil_link: val.link, nome: a2.nome, email: a2.email, phone: ctx.phone, post_link: postLink, comprar_mais: a2.comprar_mais, metodo: a2.metodo, previewOnly: !gate.confirmado });
+      if (!r.ok && r.error === 'precisa_confirmar') return await _ofertaOuResumo(ctx, redeArg, a2, r, gate);
+      if (r.ok) { try { await _setContato(ctx.phone, null, { pedidoAConfirmar: '' }); } catch (_) {} }
       if (r.ok && r.codigoPago) { ctx.pagoToSend = r.pago; ctx.pagoCodigo = r.codigoPago; ctx.pagoValor = r.valorLabel; }
       if (r.ok && r.reaproveitado) { ctx.pagoReused = true; r.resumo = r.resumo + ' — es el MISMO pago generado antes para este pedido (no es un pedido nuevo); díselo al cliente.'; }
       if (r.ok && !r.codigoPago) return { ok: false, error: 'sem_dados_pagamento', message: 'El pedido se creó pero no regresaron los datos de pago. Dile al cliente que lo revisas con el equipo y llama a llamar_soporte.' };
@@ -339,7 +409,7 @@ async function runTool(name, args, ctx) {
           if (vr && vr.ok) break;
         }
       }
-      if (vr && vr.ok) { ctx.validated = true; ctx.validatedUsername = vr.username || String((args && args.usuario) || '').replace(/^@+/, ''); }
+      if (vr && vr.ok) { ctx.validated = true; ctx.validatedUsername = vr.username || String((args && args.usuario) || '').replace(/^@+/, ''); ctx.perfilNesteTurno = { username: ctx.validatedUsername, followers: vr.followers }; }
       return vr;
     }
     if (name === 'consultar_pedido') {
@@ -396,7 +466,11 @@ async function runTool(name, args, ctx) {
         const reclama = /(no\s+(me\s+)?(lleg[oó]|ha\s+llegado|entr[oó]|veo|aparece)|se\s+(cayeron|bajaron)|perd[ií]|falta|reclam|reembolso|devoluci|demora)/i.test(ult);
         if (recompra && !reclama) a2.comprar_mais = true;
       }
-      const r = await sales.createPaymentOrder(Object.assign({ phone: ctx.phone }, a2));
+      const gate = await _antesDeCobrar(ctx, 'instagram', a2);
+      if (gate.bloqueio) return gate.bloqueio;
+      const r = await sales.createPaymentOrder(Object.assign({ phone: ctx.phone }, a2, { previewOnly: !gate.confirmado }));
+      if (!r.ok && r.error === 'precisa_confirmar') return await _ofertaOuResumo(ctx, 'instagram', a2, r, gate);
+      if (r.ok) { try { await _setContato(ctx.phone, null, { pedidoAConfirmar: '' }); } catch (_) {} }
       if (r.ok && r.codigoPago) { ctx.pagoToSend = r.pago; ctx.pagoCodigo = r.codigoPago; ctx.pagoValor = r.valorLabel; }
       if (r.ok && r.reaproveitado) { ctx.pagoReused = true; r.resumo = r.resumo + ' — es el MISMO pago generado antes para este pedido (no es un pedido nuevo); díselo al cliente.'; }
       if (r.ok && !r.codigoPago) {
@@ -453,16 +527,71 @@ async function handleAgentMessage(msg, sendText) {
     const achados = (hist || []).filter((h) => h && h.role === 'assistant').map((h) => String(h.content || '').match(/Encontr[ée] tu perfil!?\s*@([A-Za-z0-9_.]+)/i)).filter(Boolean);
     if (achados.length) ctx.histUsername = achados[achados.length - 1][1].replace(/[.,]+$/, '');
   } catch (_) {}
+  let finalText = '';
+  let pulaModelo = false;
+  const notasSistema = [];
+  const ultimaBot = String(((hist || []).filter((h) => h && h.role === 'assistant' && typeof h.content === 'string').slice(-1)[0] || {}).content || '');
+  const ct = await _getContato(phone);
+  // Recusa ("ya no quiero", "no gracias") com cobrança aberta: para os lembretes de pagamento.
+  try { if (RE_RECUSA.test(text)) { await sales.marcarPedidosAbertos(phone, 'recusou', text); if (ct.pedidoAConfirmar) await _setContato(phone, null, { pedidoAConfirmar: '' }); ct.pedidoAConfirmar = null; } } catch (_) {}
+  // Oferta de dobrar o pedido (enviada 90 s depois do pagamento): só um SÍ claro gera a cobrança.
+  try {
+    const od = ct.ofertaDobro;
+    if (od && od.status === 'ativa') {
+      const viva = new Date(od.expiraAt).getTime() > Date.now();
+      const ultimaFoiOferta = /descuento/i.test(ultimaBot) && /(\*S[IÍ]\*|\bS[IÍ]\b)/.test(ultimaBot);
+      const pergunta = /\?|^\s*(qu[eé]|c[oó]mo|cu[aá]nt[oa]s?|cu[aá]l|cu[aá]ndo|es\s|son\s|para\s|y\s+si|puedo|se\s+puede|sirve|tambi[eé]n)/i.test(text);
+      if (!viva) await _setContato(phone, { 'ofertaDobro.status': 'expirada' });
+      else if (ultimaFoiOferta && RE_SIM_DOBRO.test(text)) {
+        const r = await sales.criarPedidoDobro(od.token, phone);
+        if (r && r.ok && r.codigoPago) {
+          ctx.pagoToSend = r.pago; ctx.pagoCodigo = r.codigoPago; ctx.pagoValor = r.valorLabel;
+          finalText = '¡Perfecto! Ya generé tu pago de *' + r.valorLabel + '* por ' + (r.desc ? ('*' + r.desc + '*') : 'tu pedido') + ' con el 40% de descuento. Quedo al pendiente de la confirmación de tu pago para liberar tu pedido.';
+          pulaModelo = true;
+          await _setContato(phone, { 'ofertaDobro.status': 'aceita', 'ofertaDobro.aceitaAt': new Date() });
+          try { console.log('💰 [dobro] aceita ' + phone + ' ' + r.valorLabel); } catch (_) {}
+        } else {
+          notasSistema.push('El cliente aceptó la oferta de llevar otra vez su pedido con 40% de descuento, pero el sistema no pudo generar el pago (' + ((r && (r.error || r.message)) || 'error') + '). Dile que lo revisas con el equipo y llama a llamar_soporte.');
+        }
+      } else if (ultimaFoiOferta && !pergunta) {
+        await _setContato(phone, { 'ofertaDobro.status': 'recusada', 'ofertaDobro.respostaTexto': text.slice(0, 200) });
+      } else {
+        notasSistema.push('OFERTA ACTIVA (válida hasta ' + new Date(od.expiraAt).toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' }) + ', hora de México): el cliente puede llevar otra vez ' + (od.desc || 'su pedido') + ' por ' + mxnLabel(od.precoCents) + ' (40% de descuento). Si pregunta por ella, explícala en 1 frase y termina pidiendo que responda *SÍ* para generar el pago con el descuento. NO llames generar_pago para esta oferta: el sistema la genera cuando el cliente responde SÍ.');
+      }
+    }
+  } catch (_) {}
+  // Resumo "¿Todo bien?" esperando o cliente: "sí" claro gera o pagamento com os dados guardados (sem a IA).
+  try {
+    const pc = ct.pedidoAConfirmar;
+    if (!pulaModelo && pc && pc.at && (Date.now() - new Date(pc.at).getTime()) < 3 * 3600e3 && pc.args) {
+      if (/Te confirmo tu pedido:/.test(ultimaBot) && /¿Todo bien\?\s*$/.test(ultimaBot) && RE_SIM.test(text)) {
+        ctx.confirmado = true;
+        if (pc.rede === 'instagram') ctx.validatedUsername = String(pc.args.usuario || '').replace(/^@+/, ''); else if (pc.validatedRede) ctx.validatedRede = pc.validatedRede;
+        const r = await runTool('generar_pago', Object.assign({}, pc.args, { rede: pc.rede }), ctx);
+        await _setContato(phone, null, { pedidoAConfirmar: '' });
+        if (r && r.ok && ctx.pagoToSend) {
+          finalText = '¡Listo! Ya generé tu pago de *' + r.valor + '*' + (ctx.pagoReused ? ' (es el mismo pago de antes, no se genera uno nuevo)' : '') + '. Quedo al pendiente de la confirmación de tu pago para liberar tu pedido.';
+          pulaModelo = true;
+        } else {
+          notasSistema.push('El cliente confirmó el resumen del pedido, pero generar_pago regresó: ' + JSON.stringify(r || {}).slice(0, 400) + '. Explícale qué falta o qué pasó y resuélvelo.');
+        }
+      } else {
+        notasSistema.push('Hay un RESUMEN de pedido esperando la confirmación del cliente:\n' + String(pc.resumo || '') + '\nSi el cliente lo confirma, llama generar_pago con esos mismos datos; si corrige algo (cantidad, tipo, @, links, método), llama generar_pago con los datos corregidos.');
+      }
+    }
+  } catch (_) {}
   // Pediu de novo os dados de pagamento e tem cobrança do bot em aberto → reenvia a MESMA
   // (sem modelo, sem cobrança nova). Trocar SPEI↔OXXO continua indo pelo modelo (generar_pago).
-  try {
+  if (!pulaModelo) try {
     // "¿referencias?", "¿muestras gratis?" = pedido de PROVA, não da referência de pagamento (20/11: virou loop de reenvio).
     const pedeProva = /(referencias|muestra|gratis|opini|testimon|rese[ñn]|prueba|estaf|confia|confío|garant)/i.test(text);
     // 21/11: "¿y el número?", "¿este es el número que doy en el OXXO?", "el código de barras" também pedem os dados
     // (o bot dizia "se envían en mensajes aparte" e não mandava → cliente sem a referência).
     const pedeDados = !pedeProva && /(clabe|referencia(?!s)|n[uú]mero(?!\s+de\s+(seguidores|me\s+gusta|likes|vistas|comentarios|tel|celular|whats))|c[oó]digo|barras|datos\s+(de(l)?\s+)?pago|los\s+datos|c[oó]mo\s+(le\s+)?pago|d[oó]nde\s+pago|m[aá]nda(me)?\s+(otra\s+vez|de\s+nuevo|los\s+datos|el\s+n)|reenv[ií]a|no\s+(me\s+)?(lleg[oó]|aparece)\s+(la\s+)?(clabe|referencia|n[uú]mero))/i.test(text);
     // Já pagou ("ya pagué", "ya lo hice", "ya page", "ya ise el pago"): NÃO gera nem reenvia cobrança — avisa que confirma sozinho.
-    const dizPagou = !pedeProva && /\b(ya\s+(lo\s+)?(pagu[ée]|page|pag[ó]|hice|ise|lo\s+hice|lo\s+ise|realic[ée]|deposit[ée]|transfer[ií])|ya\s+(hice|ise|realic[ée])\s+(el|mi)\s+(pago|dep[oó]sito)|pago\s+(hecho|realizado)|ya\s+est[aá]\s+pagado)(?![a-zá-úñ])/i.test(text);
+    // 21/11 (@_mtzzaxell): "ya está el pago" não entrava e o lembrete foi mesmo assim.
+    const dizPagou = !pedeProva && /\b(ya\s+(lo\s+)?(pagu[ée]|page|pag[ó]|hice|ise|lo\s+hice|lo\s+ise|realic[ée]|deposit[ée]|transfer[ií])|ya\s+(hice|ise|realic[ée])\s+(el|mi)\s+(pago|dep[oó]sito|transferencia)|pago\s+(hecho|realizado|enviado)|ya\s+est[aá]\s+(el\s+|mi\s+)?(pago|pagado|depositado|transferido|hecho)|ya\s+qued[oó]\s+(el\s+)?pago|listo,?\s+ya\s+(pagu[ée]|deposit[ée]|transfer[ií])|ya\s+te\s+(pagu[ée]|deposit[ée]|transfer[ií])|ah[ií]\s+(est[aá]|va|te\s+va)\s+(el\s+)?comprobante|te\s+(mando|env[ií]o|paso)\s+(el\s+)?comprobante)(?![a-zá-úñ])/i.test(text);
+    if (dizPagou) { try { await sales.marcarPedidosAbertos(phone, 'clienteDisseQuePagou', text); } catch (_) {} }
     const ab = (pedeDados || dizPagou) ? await sales.ultimoPagoAberto(phone) : null;
     // Só é troca de método se citar um método DIFERENTE do pagamento aberto ("este número doy en el OXXO" com OXXO aberto = pede dados).
     const citaOxxo = /(oxxo|efectivo|tienda)/i.test(text), citaSpei = /(spei|transferencia|banco)/i.test(text);
@@ -475,6 +604,7 @@ async function handleAgentMessage(msg, sendText) {
       try { const cm = await getCollection('wa_ia_messages'); jaDisse = !!(await cm.findOne({ phone, direction: 'out', text: msgPagou, createdAt: { $gte: new Date(Date.now() - 5 * 60e3) } }, { projection: { _id: 1 } })); } catch (_) {}
       await saveHistory(phone, hist.concat([{ role: 'user', content: text }, { role: 'assistant', content: msgPagou }]));
       if (!jaDisse) { try { await sendText(phone, msgPagou); } catch (_) {} }
+      else await _marcaSilencio(phone);   // calado de propósito: o vigia de silêncio não refaz o turno
       return { awaitingConfirm: false, username: '' };
     }
     if (pedeDados && !trocaMetodo) {
@@ -494,10 +624,9 @@ async function handleAgentMessage(msg, sendText) {
     }
   } catch (_) {}
   let _dispTipos = null; try { _dispTipos = await sales.tiposDisponiveis(); } catch (_) {}
-  const work = [{ role: 'system', content: systemPrompt(_dispTipos) }, ...hist, { role: 'user', content: text }];
-  let finalText = '';
+  const work = [{ role: 'system', content: systemPrompt(_dispTipos) }, ...hist].concat(notasSistema.map((n) => ({ role: 'system', content: n })), [{ role: 'user', content: text }]);
 
-  try {
+  if (!pulaModelo) try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
       const m = await openaiChat(work, true);
       if (!m) break;
@@ -511,7 +640,7 @@ async function handleAgentMessage(msg, sendText) {
       }
     }
     // Rede 1: prometeu gerar o pagamento e não chamou a ferramenta → força a chamada.
-    if (finalText && !ctx.pagoToSend && !ctx.support && /(voy\s+a\s+generar|generar(?:\s+el|\s+tu)?\s+(?:pago|pedido|referencia|clabe)|generando|un\s+momento|espera(?:me)?\b|procesando|estoy\s+(?:generando|creando|preparando)|ya\s+te\s+(?:genero|mando|paso)\s+(?:el|los)\s+(?:pago|datos))/i.test(finalText)) {
+    if (finalText && !ctx.pagoToSend && !ctx.support && !ctx.textoFixo && /(voy\s+a\s+generar|generar(?:\s+el|\s+tu)?\s+(?:pago|pedido|referencia|clabe)|generando|un\s+momento|espera(?:me)?\b|procesando|estoy\s+(?:generando|creando|preparando)|ya\s+te\s+(?:genero|mando|paso)\s+(?:el|los)\s+(?:pago|datos))/i.test(finalText)) {
       try {
         work.push({ role: 'system', content: 'Prometiste generar el pago pero NO llamaste la herramienta. El cliente ya dio los datos en la conversación. Llama AHORA generar_pago con servicio, tipo, cantidad, usuario (@), nombre y método ya reunidos. NO pidas datos nuevos ni pidas esperar.' });
         for (let r2 = 0; r2 < 2; r2++) {
@@ -534,7 +663,7 @@ async function handleAgentMessage(msg, sendText) {
       } catch (_) {}
     }
     // Rede 2: só chamou ferramentas, sem texto → força uma resposta final.
-    if (!finalText) {
+    if (!finalText && !ctx.textoFixo) {
       const m2 = await openaiChat(work, false);
       finalText = String((m2 && m2.content) || '').trim();
     }
@@ -542,6 +671,8 @@ async function handleAgentMessage(msg, sendText) {
     finalText = FALLBACK_FALHA;
     try { console.error('❌ whatsappAgent erro:', e && e.message); } catch (_) {}
   }
+  // Oferta do pacote seguinte / resumo "¿Todo bien?": o texto é do sistema, não da IA.
+  if (ctx.textoFixo) finalText = ctx.textoFixo;
 
   // ERRO NA REPOSIÇÃO: já tentou pelo link e deu erro → suporte humano, sem reenviar link.
   let erroRefilTratado = false;
@@ -614,7 +745,7 @@ async function handleAgentMessage(msg, sendText) {
 
   // Preço inventado → reescreve com a tabela oficial; se insistir, manda a tabela direto.
   try {
-    let erradosP = acharPrecosErrados(finalText);
+    let erradosP = (ctx.textoFixo || pulaModelo) ? [] : acharPrecosErrados(finalText);
     if (erradosP.length && !erroRefilTratado) {
       try { console.warn('💸 [agent] precio fuera de la tabla:', JSON.stringify(erradosP)); } catch (_) {}
       const cats = [...new Set(erradosP.map((e) => e.cat))];
@@ -689,7 +820,7 @@ async function handleAgentMessage(msg, sendText) {
     }
   }
 
-  return { awaitingConfirm: !!(ctx.validated && !ctx.pagoToSend && !ctx.support && !ctx.quedaResolved), username: ctx.validatedUsername || '' };
+  return { awaitingConfirm: !!(ctx.validated && !ctx.pagoToSend && !ctx.support && !ctx.quedaResolved && !ctx.textoFixo), username: ctx.validatedUsername || '' };
 }
 
 // ── Quebra a resposta em balões ──

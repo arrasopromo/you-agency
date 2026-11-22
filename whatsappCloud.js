@@ -341,6 +341,193 @@ async function descreverImagem(mediaId, mimeIn, legenda) {
   } catch (e) { try { console.warn('🖼️ [IA] erro ao ler imagem:', e && e.message); } catch (_) {} return ''; }
 }
 
+// ── Comprovante com valor diferente do pedido ────────────────────────────────
+// Print de comprovante: as cobranças abertas param de receber lembrete e, se o valor do print não bate
+// com nenhum pedido do cliente nas últimas 48 h, o responsável recebe um alerta urgente no WhatsApp.
+const _PUBLIC = () => String(process.env.PUBLIC_BASE_URL || 'https://youagency.site').replace(/\/+$/, '');
+const _mxn = (c) => '$ ' + (Number(c || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN';
+function _valoresDoTexto(t) {
+  const out = new Set();
+  const num = (s) => { const n = parseFloat(String(s).replace(/,/g, '')); return Number.isFinite(n) ? Math.round(n * 100) : 0; };
+  const N = '(\\d{1,3}(?:,\\d{3})+(?:\\.\\d{1,2})?|\\d+(?:\\.\\d{1,2})?)';
+  for (const m of String(t).matchAll(new RegExp('\\$\\s?' + N, 'g'))) out.add(num(m[1]));
+  for (const m of String(t).matchAll(new RegExp(N + '\\s?(?:MXN|M\\.N\\.|pesos)', 'gi'))) out.add(num(m[1]));
+  for (const m of String(t).matchAll(new RegExp('(?:monto|importe|total|cantidad)\\s*(?:de|pagado|enviado|transferido)?\\s*:?\\s*\\$?\\s?' + N, 'gi'))) out.add(num(m[1]));
+  return [...out].filter((c) => c >= 1000 && c <= 10000000);
+}
+async function checarComprovante(phone, desc) {
+  const d = String(desc || '');
+  if (!/(comprobante|transferencia|spei|dep[oó]sito|recibo|ticket|operaci[oó]n|folio|rastreo|pago\s+(exitoso|realizado|enviado|aplicado)|enviad[oa]|aprobad[oa]|exitos[oa])/i.test(d)) return '';
+  const sales = require('./whatsappSales.js');
+  try { await sales.marcarPedidosAbertos(phone, 'clienteDisseQuePagou', 'comprobante: ' + d.slice(0, 200)); } catch (_) {}
+  const valores = _valoresDoTexto(d);
+  if (!valores.length) return '';
+  const tail = _phoneTail(phone);
+  if (tail.length < 10) return '';
+  const orders = await getCollection('checkout_orders');
+  const docs = await orders.find({ 'customer.phone': { $regex: tail + '$' }, createdAt: { $gte: new Date(Date.now() - 48 * 3600e3).toISOString() } }, { projection: { valueCents: 1, expectedValueCents: 1, status: 1, identifier: 1, 'xpag.recebidoCents': 1, 'xpag.method': 1 } }).sort({ createdAt: -1 }).limit(10).toArray();
+  if (!docs.length) return '';
+  const esperados = [];
+  for (const o of docs) {
+    const tot = Number(o.expectedValueCents || o.valueCents || 0); if (tot > 0) esperados.push(tot);
+    const rec = Number((o.xpag && o.xpag.recebidoCents) || 0); if (rec > 0 && rec < tot) esperados.push(tot - rec, rec);
+  }
+  if (!esperados.length || valores.some((v) => esperados.some((e) => Math.abs(v - e) <= 100))) return '';
+  const ref = docs[0];
+  const totRef = Number(ref.expectedValueCents || ref.valueCents || 0);
+  try {
+    const ev = await getCollection('wa_ia_eventos');
+    const chave = 'comprovante_divergente|' + tail + '|' + valores.sort().join(',');
+    const ja = await ev.findOne({ chave, at: { $gte: new Date(Date.now() - 6 * 3600e3) } }, { projection: { _id: 1 } });
+    if (!ja) {
+      await ev.insertOne({ tipo: 'comprovante_divergente', chave, phone: String(phone), valores, esperados, pedido: ref.identifier || String(ref._id), at: new Date() });
+      const txt = '⚠️ You Agency: COMPROVANTE COM VALOR DIFERENTE.\nCliente +' + String(phone).replace(/\D/g, '') + ' mandou um comprovante de ' + valores.map(_mxn).join(' / ') + ', e o pedido ' + (ref.identifier || '') + ' é de ' + _mxn(totRef) + ' (' + String(ref.status || 'pendente') + ', ' + String((ref.xpag && ref.xpag.method) || '').toUpperCase() + ').\nO bot avisou o cliente que o valor não bate e que a equipe vai revisar.\nCRM: ' + _PUBLIC() + '/painel/ia-crm';
+      await sales.avisarResponsavelWhatsapp(txt);
+      try { await sales.sendNtfy({ title: '+' + String(phone).replace(/\D/g, '') + ' - comprovante divergente', message: txt, priority: 'urgent', tags: 'warning', click: _PUBLIC() + '/painel/ia-crm' }); } catch (_) {}
+      try { console.warn('⚠️ [comprovante] divergente ' + phone + ': ' + valores.join(',') + ' x ' + esperados.join(',')); } catch (_) {}
+    }
+  } catch (_) {}
+  return '[AVISO DEL SISTEMA: el monto del comprobante (' + valores.map(_mxn).join(' / ') + ') NO coincide con el de su pedido (' + _mxn(totRef) + '). Dile con amabilidad que el monto del comprobante es diferente al de su pedido y que ya avisaste al equipo para revisarlo. Si pagó de menos por SPEI, la diferencia se puede transferir a la misma CLABE. NO confirmes el pago.]';
+}
+
+// ── Vigia de silêncio ────────────────────────────────────────────────────────
+// Cliente mandou mensagem e, 75 s depois, a última mensagem da conversa ainda é dele (a IA travou, o
+// envio falhou ou o bot reiniciou no meio): refaz o turno UMA vez. Se continuar calado, avisa o responsável.
+const WATCHDOG_ENABLED = String(process.env.WHATSAPP_IA_WATCHDOG || 'true').toLowerCase() !== 'false';
+const WATCHDOG_MS = Math.max(30000, Number(process.env.WHATSAPP_IA_WATCHDOG_MS || 75000) || 75000);
+function _textoParaAgente(x) {
+  const t = String((x && x.text) || '');
+  if (x.type === 'image') return x.imagemDescricao ? ('[El cliente envió una IMAGEN' + (t.replace(/^\[imagem\]\s*/, '') ? (' con el texto "' + t.replace(/^\[imagem\]\s*/, '') + '"') : '') + '. Contenido: ' + x.imagemDescricao + ']') : '';
+  if (x.type === 'audio') return t.replace(/^\[áudio\]\s*/, '');
+  if (x.type === 'button') return t.replace(/^🔘\s*/, '');
+  return (x.type === 'text') ? t : '';
+}
+let __wdRunning = false;
+async function runSilenceWatchdog() {
+  if (!WATCHDOG_ENABLED || __wdRunning || !configured() || !CFG().autoReply || !agent.isEnabled()) return;
+  __wdRunning = true;
+  try {
+    const now = Date.now();
+    const ia = await getCollection('wa_ia_messages');
+    const ult = await ia.aggregate([
+      { $match: { createdAt: { $gte: new Date(now - 20 * 60e3) } } },
+      { $sort: { createdAt: 1 } },
+      { $group: { _id: '$phone', last: { $last: '$$ROOT' } } },
+      { $limit: 1000 },
+    ]).toArray();
+    if (!ult.length) return;
+    const wdCol = await getCollection('wa_ia_watchdog');
+    const chats = await getCollection('whatsapp_agent_chats');
+    for (const u of ult) {
+      const m = u.last || {};
+      const p = String(m.phone || '');
+      if (!p || m.direction !== 'in') continue;
+      const inMs = new Date(m.createdAt).getTime();
+      if (!(now - inMs >= WATCHDOG_MS)) continue;
+      if (!_textoParaAgente(m)) continue;                       // figurinha, vídeo, documento: não é para o bot
+      if (turnosEmAndamento.has(p) || buffers.has(p)) continue; // ainda respondendo / juntando mensagens
+      if (await isBotPaused(p)) continue;
+      try { const ch = await chats.findOne({ _id: p }, { projection: { silencioAt: 1 } }); if (ch && ch.silencioAt && new Date(ch.silencioAt).getTime() >= inMs - 1000) continue; } catch (_) {}
+      const inIso = new Date(m.createdAt).toISOString();
+      const wd = await wdCol.findOne({ _id: p });
+      if (wd && wd.inAt === inIso) {
+        // Já refez esse turno e continua calado: avisa uma vez.
+        if (wd.refeitoAt && !wd.alertadoAt && now - new Date(wd.refeitoAt).getTime() >= WATCHDOG_MS) {
+          const cl = await wdCol.updateOne({ _id: p, inAt: inIso, alertadoAt: { $exists: false } }, { $set: { alertadoAt: new Date() } });
+          if (cl && cl.modifiedCount) {
+            try { console.warn('🤐 [vigia] ' + p + ' continua sem resposta depois de refazer o turno — avisando'); } catch (_) {}
+            try { await require('./whatsappSales.js').avisarResponsavelWhatsapp('🤐 You Agency: o bot não respondeu o cliente +' + p.replace(/\D/g, '') + ' (refiz o turno e continuou calado).\nÚltima mensagem: "' + String(m.text || '').slice(0, 160) + '"\nCRM: ' + _PUBLIC() + '/painel/ia-crm'); } catch (_) {}
+          }
+        }
+        continue;
+      }
+      try { await wdCol.updateOne({ _id: p }, { $set: { inAt: inIso, refeitoAt: new Date() }, $unset: { alertadoAt: '' } }, { upsert: true }); } catch (_) { continue; }
+      const lastOut = await ia.find({ phone: p, direction: 'out' }, { projection: { createdAt: 1 } }).sort({ createdAt: -1 }).limit(1).next();
+      const ins = await ia.find({ phone: p, direction: 'in', createdAt: { $gt: lastOut ? lastOut.createdAt : new Date(now - 20 * 60e3) } }).sort({ createdAt: 1 }).limit(10).toArray();
+      const texto = ins.map(_textoParaAgente).filter(Boolean).join('\n').trim();
+      if (!texto) continue;
+      try { console.warn('🐕 [vigia] ' + p + ' sem resposta há ' + Math.round((now - inMs) / 1000) + 's — refazendo o turno'); } catch (_) {}
+      runAgent(p, texto).catch(() => {});
+    }
+  } catch (e) { try { console.error('🐕 [vigia] erro:', e && e.message); } catch (_) {} }
+  finally { __wdRunning = false; }
+}
+
+// ── Dobrar o pedido (oferta pós-compra) ──────────────────────────────────────
+// 90 s depois do "Pago confirmado" (app.js agenda em ofertaDobro.agendadaPara): oferece o MESMO pedido com
+// 40% de desconto, válido por 5 h, para pedidos de $49 a $1,300. No máximo 1 oferta a cada 24 h por cliente e
+// nunca para conversa pausada. O agendamento fica no banco (reiniciar não perde). Só um SÍ claro gera a
+// cobrança (whatsappAgent.js → whatsappSales.criarPedidoDobro).
+const DOBRO_ENABLED = String(process.env.BOT_OFERTA_DOBRO || 'true').toLowerCase() !== 'false';
+const DOBRO_MIN_CENTS = Number(process.env.BOT_OFERTA_DOBRO_MIN_CENTS || 4900) || 4900;
+const DOBRO_MAX_CENTS = Number(process.env.BOT_OFERTA_DOBRO_MAX_CENTS || 130000) || 130000;
+const DOBRO_VALIDADE_MS = 5 * 3600e3;
+function _addInfo(o, key) {
+  for (const a of [o.additionalInfoPaid, o.additionalInfo]) { if (Array.isArray(a)) { const it = a.find((x) => x && x.key === key); if (it && it.value != null && it.value !== '') return String(it.value); } }
+  for (const mm of [o.additionalInfoMapPaid, o.additionalInfoMap]) { if (mm && mm[key] != null && mm[key] !== '') return String(mm[key]); }
+  return '';
+}
+function _descPedido(o) {
+  const tipo = _addInfo(o, 'tipo_servico').toLowerCase();
+  const cat = _addInfo(o, 'categoria_servico').toLowerCase();
+  const q = Number(_addInfo(o, 'quantidade') || 0);
+  const k = cat + ' ' + tipo;
+  const sv = /curtida/.test(k) ? 'me gusta' : /visualiza/.test(k) ? 'vistas' : /coment/.test(k) ? 'comentarios' : 'seguidores';
+  const t = /organic|reais|real/.test(tipo) ? ' reales' : (/misto/.test(tipo) ? ' mixtos' : '');
+  const rede = /^tiktok/.test(tipo) ? ' de TikTok' : (/^facebook/.test(tipo) ? ' de Facebook' : '');
+  const user = (_addInfo(o, 'instagram_username') || _addInfo(o, 'perfil_rede')).replace(/^@+/, '');
+  return (q ? q.toLocaleString('en-US') + ' ' : '') + sv + t + rede + (user ? ' para @' + user : '');
+}
+let __dobroRunning = false;
+let __dobroIndexado = false;
+async function runOfertaDobroTick() {
+  if (!DOBRO_ENABLED || __dobroRunning || !configured()) return;
+  __dobroRunning = true;
+  try {
+    const orders = await getCollection('checkout_orders');
+    const cc = await getCollection('whatsapp_contacts');
+    if (!__dobroIndexado) { __dobroIndexado = true; try { await orders.createIndex({ 'ofertaDobro.agendadaPara': 1 }, { sparse: true }); } catch (_) {} }
+    const docs = await orders.find({ 'ofertaDobro.agendadaPara': { $lte: new Date() }, 'ofertaDobro.processadaAt': { $exists: false } }).limit(20).toArray();
+    for (const o of docs) {
+      const cl = await orders.updateOne({ _id: o._id, 'ofertaDobro.processadaAt': { $exists: false } }, { $set: { 'ofertaDobro.processadaAt': new Date() } });
+      if (!(cl && cl.modifiedCount)) continue;
+      const pular = async (motivo) => { try { await orders.updateOne({ _id: o._id }, { $set: { 'ofertaDobro.pulada': motivo } }); console.log('⏭️ [dobro] ' + (o.identifier || o._id) + ' pulado: ' + motivo); } catch (_) {} };
+      const phone = String((o.ofertaDobro && o.ofertaDobro.phone) || '').replace(/\D/g, '');
+      if (phone.length < 12) { await pular('sem_telefone'); continue; }
+      if (Date.now() - new Date(o.ofertaDobro.agendadaPara).getTime() > 30 * 60e3) { await pular('atrasada'); continue; }
+      if (String(o.status || '').toLowerCase() !== 'pago') { await pular('nao_pago'); continue; }
+      if (_addInfo(o, 'oferta_dobro')) { await pular('ja_e_oferta'); continue; }
+      const valor = Number(o.expectedValueCents || o.valueCents || 0);
+      if (valor < DOBRO_MIN_CENTS || valor > DOBRO_MAX_CENTS) { await pular('valor_fora_da_faixa'); continue; }
+      const tipo = _addInfo(o, 'tipo_servico'); const qtd = Number(_addInfo(o, 'quantidade') || 0);
+      if (!tipo || !(qtd > 0)) { await pular('sem_tipo_qtd'); continue; }
+      if (await isBotPaused(phone)) { await pular('pausado'); continue; }
+      const ct = await cc.findOne({ _id: phone }, { projection: { ofertaDobroUltimaAt: 1 } });
+      if (ct && ct.ofertaDobroUltimaAt && Date.now() - new Date(ct.ofertaDobroUltimaAt).getTime() < 24 * 3600e3) { await pular('ja_ofertado_24h'); continue; }
+      const preco = Math.max(2000, Math.round(valor * 0.6 / 100) * 100);
+      const desc = _descPedido(o);
+      const token = require('crypto').randomBytes(9).toString('hex');
+      const expiraAt = new Date(Date.now() + DOBRO_VALIDADE_MS);
+      await (await getCollection('wa_ofertas_dobro')).insertOne({ _id: token, phone, orderId: o._id, pedido: o.identifier || '', precoCents: preco, valorOriginalCents: valor, tipo, quantidade: qtd, desc, expiraAt, createdAt: new Date() });
+      const msg = 'Una cosa más: por ser cliente, tengo una oferta solo para ti. Llévate otra vez *' + desc + '* con *40% de descuento*: de ~' + _mxn(valor) + '~ a *' + _mxn(preco) + '*. Es válida por 5 horas. Si la quieres, respóndeme *SÍ* y te mando los datos de pago.';
+      const r = await sendWhatsAppText(phone, msg);
+      if (!(r && r.ok)) { await pular('falha_envio'); continue; }
+      try { await agent.appendAssistantNote(phone, msg); } catch (_) {}
+      await cc.updateOne({ _id: phone }, { $set: { ofertaDobro: { token, orderId: o._id, precoCents: preco, expiraAt, desc, status: 'ativa', enviadaAt: new Date() }, ofertaDobroUltimaAt: new Date() } }, { upsert: true });
+      await orders.updateOne({ _id: o._id }, { $set: { 'ofertaDobro.enviadaAt': new Date(), 'ofertaDobro.token': token, 'ofertaDobro.precoCents': preco } });
+      try { console.log('💰 [dobro] oferta enviada ' + phone + ' ' + desc + ' ' + _mxn(valor) + ' → ' + _mxn(preco)); } catch (_) {}
+    }
+  } catch (e) { try { console.error('💰 [dobro] erro:', e && e.message); } catch (_) {} }
+  finally { __dobroRunning = false; }
+}
+function startVendasLoops() {
+  const bg = String(typeof process.env.BACKGROUND_JOBS_ENABLED === 'undefined' ? 'true' : process.env.BACKGROUND_JOBS_ENABLED).trim().toLowerCase();
+  if (bg === 'false' || bg === '0' || bg === 'no') { try { console.log('⏸️ [vigia/dobro] DESLIGADO (BACKGROUND_JOBS_ENABLED=false)'); } catch (_) {} return; }
+  try { const t = setInterval(() => { runSilenceWatchdog().catch(() => {}); }, 20 * 1000); t.unref && t.unref(); } catch (_) {}
+  try { const t2 = setInterval(() => { runOfertaDobroTick().catch(() => {}); }, 20 * 1000); t2.unref && t2.unref(); } catch (_) {}
+  try { console.log('🐕 [vigia] ' + (WATCHDOG_ENABLED ? 'ativo (' + Math.round(WATCHDOG_MS / 1000) + 's)' : 'DESLIGADO') + ' | 💰 [dobro] ' + (DOBRO_ENABLED ? 'ativo' : 'DESLIGADO')); } catch (_) {}
+}
+
 // dedup de wamids reentregues pela Meta
 const seenWamids = new Set();
 
@@ -392,7 +579,9 @@ async function handleInboundMessage(m, contactName) {
         await logIaMessage({ phone: from, direction: 'in', type: 'image', text: legenda ? ('[imagem] ' + legenda) : '[imagem]', imagemDescricao: descricao || '', mediaId: String(md.id || ''), mime: String(md.mime_type || ''), wamid: String(m.id || ''), name: contactName || '', replyTo: String((m.context && m.context.id) || '') });
         if (descricao) {
           try { console.log('🖼️ [IA] imagem lida de ' + from + ': ' + descricao.slice(0, 120)); } catch (_) {}
-          await runAgent(from, '[El cliente envió una IMAGEN' + (legenda ? (' con el texto "' + legenda + '"') : '') + '. Contenido: ' + descricao + ']');
+          let nota = '';
+          try { nota = await checarComprovante(from, descricao + ' ' + legenda); } catch (_) {}
+          await runAgent(from, '[El cliente envió una IMAGEN' + (legenda ? (' con el texto "' + legenda + '"') : '') + '. Contenido: ' + descricao + ']' + (nota ? ('\n' + nota) : ''));
         }
         return;
       }
@@ -491,6 +680,7 @@ function registerWhatsappIa(app) {
 
   try { console.log(`🤖 IA WhatsApp: webhook em ${path} | ${configured() ? 'configurado' : 'SEM credenciais (WHATSAPP_IA_*)'} | OpenAI ${agent.isEnabled() ? 'on' : 'off (fallback regras)'}`); } catch (_) {}
   try { startIaRecoveryLoop(); } catch (_) {}
+  try { startVendasLoops(); } catch (_) {}
 }
 
 // ── Recuperação automática no WhatsApp: cutuca leads que ESFRIARAM sem gerar Pix ──
@@ -748,4 +938,4 @@ function startIaRecoveryLoop() {
   try { console.log('🔁 [ia-recovery] ativo: 1ª aos ' + IA_RECOVERY_STAGE1_MIN + 'min, 2ª aos ' + IA_RECOVERY_STAGE2_MIN + 'min, varre a cada 5min'); } catch (_) {}
 }
 
-module.exports = { transcreverAudio, registerWhatsappIa, sendWhatsAppText, sendWhatsAppMedia, sendWhatsAppButtons, isBotPaused, handleInboundMessage, configured, isTriggerMessage, isSalesTrigger, buildConfirmNudgeText, CONFIRM_NUDGE_MS, MENU_BUTTONS, WELCOME_TEXT, logIaMessage, getIaConfig: CFG, runIaRecoverySweep, startIaRecoveryLoop };
+module.exports = { transcreverAudio, registerWhatsappIa, sendWhatsAppText, sendWhatsAppMedia, sendWhatsAppButtons, isBotPaused, handleInboundMessage, configured, isTriggerMessage, isSalesTrigger, buildConfirmNudgeText, CONFIRM_NUDGE_MS, MENU_BUTTONS, WELCOME_TEXT, logIaMessage, getIaConfig: CFG, runIaRecoverySweep, startIaRecoveryLoop, runSilenceWatchdog, runOfertaDobroTick, checarComprovante, _valoresDoTexto };
