@@ -664,7 +664,7 @@ module.exports.register = function register(app, deps) {
         if (/prueba\.interna@|@youagency\.site$/.test(email) || /^test-/.test(String(o.correlationID || ''))) continue; // pedidos de teste da casa
         const serv = nomeServico(g(o, 'tipo_servico'), g(o, 'categoria_servico'), g(o, 'quantidade'));
         if (!serv) continue;
-        const user = mascara(o.instagramUsername || g(o, 'instagram_username') || g(o, 'perfil_rede'));
+        const user = /^facebook_/.test(g(o, 'tipo_servico').toLowerCase()) ? '' : mascara(o.instagramUsername || g(o, 'instagram_username') || g(o, 'perfil_rede')); // Facebook: nome/ID da página não é um @
         items.push({ titulo: (user || 'Un cliente') + ' compró ' + serv, tiempo: haceCuanto(o.paidAt) });
         if (items.length >= 10) break;
       }
