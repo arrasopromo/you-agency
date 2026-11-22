@@ -1109,7 +1109,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
             ]
           : [
               { key: 'mistos', label: 'Seguidores mixtos' },
-              { key: 'organicos', label: 'Seguidores reales (latinos)' }
+              { key: 'organicos', label: 'Seguidores de alta calidad' }
             ]);
     if (selectedPlatform === 'tiktok') {
       try {
@@ -1229,7 +1229,11 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
         1000: 'EL MÁS VENDIDO',
         3000: 'EXCLUSIVO',
         5000: 'VIP',
-        10000: 'ELITE'
+        10000: 'ELITE',
+        100: 'PAQUETE INICIAL',
+        250: 'PAQUETE BÁSICO',
+        2000: 'CRECIMIENTO',
+        20000: 'INFLUENCER'
       };
 
       if (tipo === 'mistos') {
@@ -1316,7 +1320,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
     switch (t) {
       case 'mistos': return 'Seguidores mixtos';
       case 'brasileiros': return 'Seguidores estándar';
-      case 'organicos': return 'Seguidores reales (latinos)';
+      case 'organicos': return 'Seguidores de alta calidad';
       case 'seguidores_tiktok': return 'Seguidores';
       case 'curtidas_brasileiras': return 'Me gusta';
       case 'curtidas_organicos': return 'Me gusta reales';
@@ -1383,7 +1387,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
         `;
       case 'organicos':
         return `
-          <p>Seguidores reales: perfiles activos y seleccionados, con mayor credibilidad.</p>
+          <p>Seguidores de alta calidad: perfiles latinos reales y activos, seleccionados, con mayor credibilidad.</p>
           <ul>
             <li>✅ 100% seguro y confidencial, sin necesidad de tu contraseña.</li>
             <li>✨ Perfiles mejor calificados para reforzar la autoridad de tu perfil.</li>
@@ -5318,7 +5322,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
       const map = {
         mistos: 'Seguidores mixtos',
         brasileiros: 'Seguidores estándar',
-        organicos: 'Seguidores reales (latinos)',
+        organicos: 'Seguidores de alta calidad',
         curtidas_brasileiras: 'Me gusta',
         curtidas_organicos: 'Me gusta reales',
         curtidas_reais: 'Me gusta reales',

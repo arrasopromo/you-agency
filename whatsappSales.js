@@ -312,7 +312,7 @@ async function quote({ servico, tipo, quantidade, rede }) {
   const tipoK = svc.tipos ? normalizeTipo(tipo) : svc.tipoFixo;
   return {
     ok: true, servico: svc.key, categoria: svc.categoria,
-    tipo: tipoK, tipoNombre: NOME_TIPO[tipoK] || '',
+    tipo: tipoK, tipoNombre: (svc.key === 'seguidores' && tipoK === 'organicos') ? 'de alta calidad' : (NOME_TIPO[tipoK] || ''),
     quantidade: q, priceCents, priceLabel: mxn(priceCents),
     unit: svc.unit, needsPost: svc.needsPost,
   };
@@ -335,7 +335,7 @@ async function priceTable({ servico, tipo, rede }) {
   const table = tableFor(svc, tipo);
   const tipoK = svc.tipos ? normalizeTipo(tipo) : svc.tipoFixo;
   return {
-    ok: true, servico: svc.key, tipo: tipoK, tipoNombre: NOME_TIPO[tipoK] || '',
+    ok: true, servico: svc.key, tipo: tipoK, tipoNombre: (svc.key === 'seguidores' && tipoK === 'organicos') ? 'de alta calidad' : (NOME_TIPO[tipoK] || ''),
     unit: svc.unit, needsPost: svc.needsPost, moneda: 'MXN',
     itens: table.map((x) => ({ quantidade: x.q, preco: _label(x.p), precoCents: parsePrecoToCents(x.p) })),
   };
@@ -903,7 +903,7 @@ function _descPedido(o) {
   if (pac) return pac.replace(/\s*[-–]\s*\$.*$/, '').trim();
   const q = Number(o.quantidade || o.qtd || orderGetAny(o, 'quantidade') || 0) || 0;
   const t = String(o.tipoServico || o.tipo || orderGetAny(o, 'tipo_servico') || '').toLowerCase();
-  const nomes = { mistos: 'seguidores mixtos', organicos: 'seguidores reales', brasileiros: 'seguidores latinos' };
+  const nomes = { mistos: 'seguidores mixtos', organicos: 'seguidores de alta calidad', brasileiros: 'seguidores latinos' };
   const nome = nomes[t] || (/curtidas/.test(t) ? 'me gusta' : (/visualiza|views/.test(t) ? 'vistas' : (/coment/.test(t) ? 'comentarios' : t.replace(/_/g, ' '))));
   return (q ? q.toLocaleString('en-US') + ' ' : '') + (nome || 'pedido');
 }

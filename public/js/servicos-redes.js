@@ -57,7 +57,7 @@
   var BADGES = { 150: 'PAQUETE INICIAL', 500: 'PAQUETE BÁSICO', 1000: 'MÁS POPULAR', 3000: 'EXCLUSIVO', 5000: 'VIP', 10000: 'ÉLITE' };
   function pacotesVisiveis(s) {
     var k = kind(s), arr = s.pacotes.slice();
-    if (k === 'seguidores') return arr.filter(function (p) { return BADGES.hasOwnProperty(p.q); });
+    if (k === 'seguidores') return arr; // mesmas quantidades do Instagram (100 a 20.000)
     if (k === 'curtidas') return arr.filter(function (p) { return BADGES.hasOwnProperty(p.q); }); // demais quantidades viram upgrade
     if (k === 'comentarios') return arr;
     var views = [1000, 5000, 25000, 100000, 200000, 500000];
@@ -65,7 +65,7 @@
   }
   function selo(s, q) {
     var k = kind(s);
-    if (k === 'seguidores') { if (q === 1000) return ['MEJOR PRECIO', false]; if (q === 3000) return ['MÁS POPULAR', true]; return [BADGES[q] || '', false]; }
+    if (k === 'seguidores') { var ms = { 100: 'PAQUETE INICIAL', 250: 'PAQUETE BÁSICO', 500: 'PAQUETE BÁSICO', 1000: 'MEJOR PRECIO', 2000: 'CRECIMIENTO', 3000: 'MÁS POPULAR', 5000: 'VIP', 10000: 'ÉLITE', 20000: 'INFLUENCER' }; return [ms[q] || BADGES[q] || '', q === 3000]; }
     if (k === 'comentarios') { var mc = { 10: 'PAQUETE INICIAL', 25: 'PAQUETE BÁSICO', 50: 'MEJOR PRECIO', 100: 'MÁS POPULAR', 250: 'VIP' }; return [mc[q] || '', q === 100]; }
     if (k === 'visualizacoes') { var m = { 1000: 'PAQUETE INICIAL', 5000: 'PAQUETE BÁSICO', 25000: 'MEJOR PRECIO', 100000: 'MÁS POPULAR', 200000: 'VIP', 500000: 'ÉLITE' }; return [m[q] || '', q === 100000]; }
     return [BADGES[q] || '', q === 1000];

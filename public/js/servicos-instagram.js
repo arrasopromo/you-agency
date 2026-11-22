@@ -1900,7 +1900,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const map = {
       'mistos': 'Seguidores mixtos',
       'brasileiros': 'Seguidores latinos',
-      'organicos': 'Seguidores reales (latinos)'
+      'organicos': 'Seguidores de alta calidad'
     };
     return map[tipo] || tipo;
   }
@@ -2166,6 +2166,9 @@ document.addEventListener('DOMContentLoaded', function() {
     10000: 'ÉLITE'
   };
 
+  // Seguidores: todo pacote com selo (2.000 e 20.000 estavam sem). Curtidas seguem com o mapa acima (ele filtra quais aparecem).
+  const quantityBadgesSeg = Object.assign({}, quantityBadges, { 2000: 'CRECIMIENTO', 20000: 'INFLUENCER' });
+
   function renderPlanCards(tipo) {
     if (!planCards) return;
     planCards.innerHTML = '';
@@ -2242,8 +2245,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (badgeText === 'MÁS POPULAR') card.classList.add('gold-card');
       }
 
-      if (!isCurtidasContext && !badgeText && isFollowersTipo(tipo) && quantityBadges[qNum]) {
-        badgeText = quantityBadges[qNum];
+      if (!isCurtidasContext && !badgeText && isFollowersTipo(tipo) && quantityBadgesSeg[qNum]) {
+        badgeText = quantityBadgesSeg[qNum];
       }
 
       if (badgeText) {

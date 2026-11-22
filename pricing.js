@@ -159,15 +159,27 @@ const tabelaComentariosRedes = [
     { q: 100, p: '$ 2000' },
     { q: 250, p: '$ 5000' },
 ];
+// Seguidores TikTok/Facebook = MESMA MARGEM dos mixtos do Instagram (22/11/2026, pedido do responsável):
+// preço = preço do mixtos × (custo do serviço da rede ÷ custo do mixtos), mesmas quantidades do Instagram.
+// Custos /1000 em 22/11: mixtos JAP 2971 = US$ 2,00; TikTok Followiz 329 = US$ 1,98 (×0,99); Facebook WOS 4321 = US$ 0,34 (×0,17).
+// Facebook 100/250/500 ficaram no piso da Xpag (mín. $ 20) e sobem de leve para não repetir preço. Trocou fornecedor/preço → recalcular.
+const tabelaSeguidoresTiktok = [
+    { q: 100, p: '$ 55' }, { q: 250, p: '$ 78' }, { q: 500, p: '$ 113' }, { q: 1000, p: '$ 169' }, { q: 2000, p: '$ 272' },
+    { q: 3000, p: '$ 420' }, { q: 5000, p: '$ 716' }, { q: 10000, p: '$ 1456' }, { q: 20000, p: '$ 2651' },
+];
+const tabelaSeguidoresFacebook = [
+    { q: 100, p: '$ 20' }, { q: 250, p: '$ 22' }, { q: 500, p: '$ 25' }, { q: 1000, p: '$ 29' }, { q: 2000, p: '$ 47' },
+    { q: 3000, p: '$ 72' }, { q: 5000, p: '$ 123' }, { q: 10000, p: '$ 250' }, { q: 20000, p: '$ 455' },
+];
 const tabelaRedes = {
-    tiktok_seguidores: tabelaSeguidores.mistos,
+    tiktok_seguidores: tabelaSeguidoresTiktok,
     tiktok_curtidas: tabelaCurtidas.mistos,
     tiktok_curtidas_reais: tabelaCurtidas.organicos,
     tiktok_visualizacoes: tabelaVisualizacoes.visualizacoes_reels,
     tiktok_comentarios: tabelaComentariosRedes,
-    facebook_seguidores: tabelaSeguidores.mistos,
-    facebook_seguidores_perfil: tabelaSeguidores.mistos, // antigo (compat)
-    facebook_seguidores_pagina: tabelaSeguidores.mistos,
+    facebook_seguidores: tabelaSeguidoresFacebook,
+    facebook_seguidores_perfil: tabelaSeguidoresFacebook, // antigo (compat)
+    facebook_seguidores_pagina: tabelaSeguidoresFacebook,
     facebook_curtidas: tabelaCurtidas.mistos,
     facebook_visualizacoes: tabelaVisualizacoes.visualizacoes_reels,
     facebook_comentarios: tabelaComentariosRedes,

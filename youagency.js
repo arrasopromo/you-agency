@@ -368,6 +368,8 @@ module.exports.register = function register(app, deps) {
       const desde = (...tabs) => { const v = tabs.flat().filter(Boolean).map((x) => P.parsePrecoToCents(x.p)).filter((c) => c > 0); return v.length ? '$ ' + Math.round(Math.min(...v) / 100) : null; };
       precosInicio = {
         seg: desde(P.tabelaSeguidores.mistos),
+        segTt: desde(P.tabelaRedes && P.tabelaRedes.tiktok_seguidores),
+        segFb: desde(P.tabelaRedes && P.tabelaRedes.facebook_seguidores),
         curt: desde(P.tabelaCurtidas.mistos, P.tabelaCurtidas.organicos),
         views: desde(P.tabelaVisualizacoes.visualizacoes_reels),
         comIg: '$ 20', // comentário do Instagram: $20 cada (pricing.js)
