@@ -623,6 +623,57 @@ module.exports.register = function register(app, deps) {
   });
   app.get('/servicios-tiktok', renderRede('tiktok'));
   app.get('/servicios-facebook', renderRede('facebook'));
+  // ── Ventas recientes (prueba social con compras REALES) ──
+  // Últimas ventas PAGADAS (sitio y bot) de las últimas 72 h: @ enmascarado, paquete y hace cuánto.
+  // Nada inventado: sin ventas recientes, la lista va vacía y el sitio no muestra nada. /api/social-proof
+  // (heredado de la Oppus, que inventaba nombres) devuelve lo mismo.
+  let __vrCache = { at: 0, data: null };
+  async function ventasRecientes(req, res) {
+    res.set('Cache-Control', 'no-store');
+    try {
+      if (__vrCache.data && Date.now() - __vrCache.at < 60e3) return res.json(__vrCache.data);
+      const col = await deps.getCollection('checkout_orders');
+      const desde = new Date(Date.now() - 72 * 3600e3);
+      const docs = await col.find({ status: 'pago', $or: [{ paidAt: { $gte: desde.toISOString() } }, { paidAt: { $gte: desde } }] })
+        .project({ paidAt: 1, additionalInfo: 1, additionalInfoPaid: 1, instagramUsername: 1, 'customer.email': 1, correlationID: 1, upsell: 1 })
+        .sort({ paidAt: -1 }).limit(40).toArray();
+      const g = (o, k) => { for (const arr of [o.additionalInfoPaid, o.additionalInfo]) { if (Array.isArray(arr)) { const it = arr.find((x) => x && x.key === k); if (it && it.value != null && it.value !== '') return String(it.value); } } return ''; };
+      const mascara = (u) => { const h = String(u || '').replace(/^@+/, '').trim(); if (!h) return ''; return '@' + (h.length <= 3 ? h.slice(0, 1) : h.slice(0, 3)) + '***'; };
+      const nomeServico = (tipo, cat, qtd) => {
+        const t = String(tipo || '').toLowerCase(), c = String(cat || '').toLowerCase();
+        const q = Number(qtd) || 0; const n = q ? q.toLocaleString('en-US') + ' ' : '';
+        if (/^tiktok_seguidores/.test(t)) return n + 'seguidores de TikTok';
+        if (/^facebook_seguidores/.test(t)) return n + 'seguidores de Facebook';
+        if (/^tiktok_/.test(t)) return n + (/curtida/.test(t) ? 'me gusta' : /visualiza/.test(t) ? 'vistas' : 'comentarios') + ' en TikTok';
+        if (/^facebook_/.test(t)) return n + (/curtida/.test(t) ? 'me gusta' : /visualiza/.test(t) ? 'vistas' : 'comentarios') + ' en Facebook';
+        if (/coment/.test(c + t)) return n + 'comentarios';
+        if (/visualiza|views/.test(c + t)) return n + 'vistas';
+        if (/curtida|likes/.test(c + t)) return n + 'me gusta' + (/organic/.test(t) ? ' reales' : '');
+        if (/refil/.test(t)) return '';
+        return n + 'seguidores' + (/organic/.test(t) ? ' reales' : '');
+      };
+      const haceCuanto = (d) => {
+        const min = Math.max(1, Math.round((Date.now() - new Date(d).getTime()) / 60000));
+        if (min < 60) return 'hace ' + min + ' min';
+        const h = Math.round(min / 60);
+        return h < 24 ? 'hace ' + h + ' h' : (h < 48 ? 'ayer' : 'hace ' + Math.round(h / 24) + ' días');
+      };
+      const items = [];
+      for (const o of docs) {
+        const email = String((o.customer && o.customer.email) || '').toLowerCase();
+        if (/prueba\.interna@|@youagency\.site$/.test(email) || /^test-/.test(String(o.correlationID || ''))) continue; // pedidos de teste da casa
+        const serv = nomeServico(g(o, 'tipo_servico'), g(o, 'categoria_servico'), g(o, 'quantidade'));
+        if (!serv) continue;
+        const user = mascara(o.instagramUsername || g(o, 'instagram_username') || g(o, 'perfil_rede'));
+        items.push({ titulo: (user || 'Un cliente') + ' compró ' + serv, tiempo: haceCuanto(o.paidAt) });
+        if (items.length >= 10) break;
+      }
+      __vrCache = { at: Date.now(), data: { ok: true, items } };
+      return res.json(__vrCache.data);
+    } catch (_) { return res.json({ ok: false, items: [] }); }
+  }
+  app.get('/api/ventas-recientes', ventasRecientes);
+  app.get('/api/social-proof', ventasRecientes);
   app.get('/api/redes/catalogo', async (req, res) => {
     const rede = String(req.query.rede || '').toLowerCase();
     const { tabelaRedes, tabelaCurtidas, tabelaVisualizacoes, parsePrecoToCents } = require('./pricing');
