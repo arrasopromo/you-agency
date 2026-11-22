@@ -715,7 +715,7 @@ function baseProviderOrder(o) {
 }
 
 // Consulta o pedido do cliente por TELEFONE (o número que escreveu) ou por @.
-async function consultarPedido({ telefone, usuario } = {}) {
+async function consultarPedido({ telefone, usuario, _jaConferiuXpag } = {}) {
   const col = await getCollection('checkout_orders');
   const paidOr = [{ status: 'pago' }, { paidAt: { $exists: true, $nin: [null, ''] } }];
   const uname = parseIgUsername(usuario);
@@ -733,7 +733,34 @@ async function consultarPedido({ telefone, usuario } = {}) {
   }
   let orders = [];
   try { orders = await col.find({ $and: [{ $or: paidOr }, match] }).limit(20).toArray(); } catch (_) { orders = []; }
-  if (!orders.length) return { ok: true, encontrado: false, buscaPor: uname ? 'usuario' : 'telefone' };
+  if (!orders.length) {
+    // Sem pedido pago: procura a cobrança AINDA NÃO CONFIRMADA (pagou e o banco não confirmou, ou ainda não pagou).
+    // 21/11: cliente pagou às 11:03, a Xpag só confirmou às 14:59 e o bot respondeu 6x "no encontré tu pedido".
+    try {
+      const desdeAb = new Date(Date.now() - 7 * 24 * 3600e3).toISOString();
+      const abertos = await col.find({ $and: [match, { paymentMethod: 'xpag', createdAt: { $gte: desdeAb }, status: { $nin: ['pago', 'paid', 'cancelado', 'estornado', 'refunded'] }, paidAt: { $in: [null] } }] }).sort({ createdAt: -1 }).limit(3).toArray();
+      let ab = abertos[0] || null;
+      if (ab && typeof global.__yaSincronizarXpag === 'function' && !_jaConferiuXpag) {
+        try { ab = (await global.__yaSincronizarXpag(col, ab)) || ab; } catch (_) {}
+        if (String(ab.status || '').toLowerCase() === 'pago' || ab.paidAt) return consultarPedido({ telefone, usuario, _jaConferiuXpag: true });
+      }
+      if (ab) {
+        const x = ab.xpag || {};
+        const criadoMs = ab.createdAt ? new Date(ab.createdAt).getTime() : 0;
+        const rec = ab.iaPayRecovery || {};
+        return {
+          ok: true, encontrado: true, pagoConfirmado: false, aguardandoPagamento: true,
+          usuario: String(ab.instagramUsername || ab.instauser || orderGetAny(ab, 'instagram_username') || '').replace(/^@+/, ''),
+          pacote: _descPedido(ab), valor: mxn(Number(ab.expectedValueCents || ab.valueCents || 0)),
+          metodo: String(x.method || 'SPEI').toUpperCase(),
+          minutosDesdeCobranca: criadoMs ? Math.round((Date.now() - criadoMs) / 60000) : null,
+          clienteDisseQuePagou: !!rec.clienteDisseQuePagouAt,
+          instrucao: 'El pedido EXISTE y está esperando la confirmación del pago (el banco aún no la manda). NO digas que no lo encuentras y NO pidas @ ni teléfono. Si el cliente dice que ya pagó: la confirmación es automática; con SPEI suele tardar minutos y a veces más; en cuanto llegue se libera solo y se le avisa aquí; si en 30 min no llega, el equipo lo revisa. Si todavía no paga, recuérdale con amabilidad el valor y el método, sin reenviar los datos salvo que los pida.',
+        };
+      }
+    } catch (_) {}
+    return { ok: true, encontrado: false, buscaPor: uname ? 'usuario' : 'telefone' };
+  }
   orders.sort((a, b) => _orderPaidMs(b) - _orderPaidMs(a));
   const o = orders[0];
   try { await alertaPedidosSemEnvio(col, orders, telefone); } catch (_) {}
@@ -870,6 +897,58 @@ async function flagSupport(phone, motivo) {
 
 // Marca as cobranças do bot EM ABERTO deste telefone (3 dias): campo 'clienteDisseQuePagou' (disse que pagou /
 // mandou comprovante) ou 'recusou' ("ya no quiero"). O lembrete de pagamento (app.js) respeita as duas.
+// Descrição curta do pedido ("2,000 seguidores mixtos").
+function _descPedido(o) {
+  const pac = String(orderGetAny(o, 'pacote') || '').trim();
+  if (pac) return pac.replace(/\s*[-–]\s*\$.*$/, '').trim();
+  const q = Number(o.quantidade || o.qtd || orderGetAny(o, 'quantidade') || 0) || 0;
+  const t = String(o.tipoServico || o.tipo || orderGetAny(o, 'tipo_servico') || '').toLowerCase();
+  const nomes = { mistos: 'seguidores mixtos', organicos: 'seguidores reales', brasileiros: 'seguidores latinos' };
+  const nome = nomes[t] || (/curtidas/.test(t) ? 'me gusta' : (/visualiza|views/.test(t) ? 'vistas' : (/coment/.test(t) ? 'comentarios' : t.replace(/_/g, ' '))));
+  return (q ? q.toLocaleString('en-US') + ' ' : '') + (nome || 'pedido');
+}
+
+// ESTADO REAL do cliente pelo telefone: pedidos pagos recentes e cobrança em aberto (conferida na Xpag na hora).
+// Vai como nota de sistema em TODA resposta do bot — ele não precisa "achar" o pedido nem pedir @/telefone.
+async function estadoCliente(phone) {
+  try {
+    const fim8 = _digits(phone).slice(-8);
+    if (fim8.length !== 8) return null;
+    const col = await getCollection('checkout_orders');
+    const rx = new RegExp(fim8 + '$');
+    const desde = new Date(Date.now() - 14 * 24 * 3600e3).toISOString();
+    const docs = await col.find({ createdAt: { $gte: desde }, $or: [{ 'customer.phone': { $regex: rx } }, { 'customer.phone_number': { $regex: rx } }, { telefone: { $regex: rx } }] })
+      .project({ status: 1, paidAt: 1, createdAt: 1, xpag: 1, valueCents: 1, expectedValueCents: 1, instagramUsername: 1, instauser: 1, quantidade: 1, qtd: 1, tipo: 1, tipoServico: 1, additionalInfo: 1, additionalInfoMap: 1, additionalInfoPaid: 1, additionalInfoMapPaid: 1, iaPayRecovery: 1, correlationID: 1, paymentMethod: 1 })
+      .sort({ createdAt: -1 }).limit(8).toArray();
+    if (!docs.length) return null;
+    const pago = (d) => String(d.status || '').toLowerCase() === 'pago' || !!d.paidAt;
+    let aberto = docs.find((d) => !pago(d) && d.paymentMethod === 'xpag' && d.xpag && (d.xpag.clabe || d.xpag.reference) && (!d.xpag.expiresAt || new Date(d.xpag.expiresAt).getTime() > Date.now()));
+    if (aberto && typeof global.__yaSincronizarXpag === 'function' && (Date.now() - new Date(aberto.createdAt).getTime()) < 72 * 3600e3) {
+      try { const novo = await global.__yaSincronizarXpag(col, aberto); if (novo) aberto = novo; } catch (_) {}
+      if (pago(aberto)) { const i = docs.findIndex((d) => String(d._id) === String(aberto._id)); if (i >= 0) docs[i] = aberto; aberto = null; }
+    }
+    const fmt = (d) => { try { return new Date(d).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (_) { return ''; } };
+    const user = (d) => String(d.instagramUsername || d.instauser || orderGetAny(d, 'instagram_username') || '').replace(/^@+/, '');
+    const pagos = docs.filter(pago).slice(0, 3);
+    const linhas = [];
+    for (const d of pagos) linhas.push('- PAGADO el ' + fmt(d.paidAt || d.createdAt) + ': ' + _descPedido(d) + (user(d) ? ' para @' + user(d) : '') + ' (' + mxn(Number(d.valueCents || 0)) + '). Para saber cómo va la entrega usa consultar_pedido.');
+    if (aberto) {
+      const min = Math.round((Date.now() - new Date(aberto.createdAt).getTime()) / 60000);
+      const rec = aberto.iaPayRecovery || {};
+      const disse = rec.clienteDisseQuePagouAt ? Math.round((Date.now() - new Date(rec.clienteDisseQuePagouAt).getTime()) / 60000) : null;
+      linhas.push('- PAGO PENDIENTE (el banco todavía NO lo confirma): ' + _descPedido(aberto) + (user(aberto) ? ' para @' + user(aberto) : '') + ', ' + mxn(Number(aberto.expectedValueCents || aberto.valueCents || 0)) + ' por ' + String((aberto.xpag && aberto.xpag.method) || 'SPEI').toUpperCase() + ', generado hace ' + min + ' min. Los datos de pago YA están en el chat.' + (disse != null ? ' El cliente dijo hace ' + disse + ' min que ya pagó.' : ''));
+    }
+    if (!linhas.length) return null;
+    return {
+      aberto: !!aberto, pagos: pagos.length,
+      texto: 'ESTADO REAL DEL CLIENTE (dato del sistema, consultado ahora; es la verdad, úsalo antes de responder):\n' + linhas.join('\n') +
+        '\nReglas: NUNCA digas que no encuentras un pedido de esta lista ni pidas @ o teléfono para buscarlo. ' +
+        (aberto ? 'Con el pago pendiente: NO reenvíes los datos de pago salvo que el cliente los pida; si dice que ya pagó, explica que la confirmación es automática (SPEI suele tardar minutos, a veces más), que en cuanto llegue se libera solo y le avisas aquí, y que si en 30 min no llega el equipo lo revisa. ' : '') +
+        (pagos.length ? 'Un pedido PAGADO no se cobra de nuevo: nada de "última llamada" ni de pedir el pago otra vez.' : ''),
+    };
+  } catch (_) { return null; }
+}
+
 async function marcarPedidosAbertos(phone, campo, detalhe) {
   try {
     const fim8 = _digits(phone).slice(-8);
@@ -931,7 +1010,7 @@ async function criarPedidoDobro(token, phone) {
 module.exports = {
   marcarPedidosAbertos, criarPedidoDobro,
   CATALOG, normalizeServico, normalizeTipo, parseIgUsername, NOME_TIPO,
-  quote, priceTable, validateProfile, createPixOrder, createPaymentOrder, ultimoPagoAberto, generateValidCPF, flagSupport, consultarPedido, brl, mxn, sendNtfy, avisarResponsavelWhatsapp,
+  quote, priceTable, validateProfile, createPixOrder, createPaymentOrder, ultimoPagoAberto, estadoCliente, generateValidCPF, flagSupport, consultarPedido, brl, mxn, sendNtfy, avisarResponsavelWhatsapp,
   loadHiddenTypes, tiposDisponiveis,
   REDES, normalizeRede, validateRedeProfile, createRedeOrder,
 };

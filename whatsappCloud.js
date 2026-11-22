@@ -764,11 +764,14 @@ function _recEtapa(lastOutText) {
   if (/(dame|m[aá]ndame|p[aá]same|comparte|comp[aá]rteme|env[ií]ame|proporci[oó]name|necesito)[^\n]{0,60}(@|link de tu (perfil|p[aá]gina))/i.test(t)) return 'arroba';
   return '';
 }
+// Rede da retomada = a ÚLTIMA que o cliente citou (22/11: "De Instagram" depois de falar de TikTok recebia "@ de TikTok").
 function _recRede(txt) {
   const t = String(txt || '').toLowerCase();
-  if (/tik ?tok/.test(t)) return 'tiktok';
-  if (/facebook|\bfb\b|fanpage|p[aá]gina de face/.test(t)) return 'facebook';
-  return 'instagram';
+  const ultimo = (rx) => { let p = -1; for (const m of t.matchAll(rx)) p = m.index; return p; };
+  const pos = { tiktok: ultimo(/tik ?tok/g), facebook: ultimo(/facebook|\bfb\b|fanpage|p[aá]gina de face/g), instagram: ultimo(/instagram|\binsta\b|\big\b/g) };
+  let rede = 'instagram', max = -1;
+  for (const k of ['instagram', 'tiktok', 'facebook']) if (pos[k] > max) { max = pos[k]; rede = k; }
+  return rede;
 }
 function _recMsg(stage, tipo, ctx) {
   const c = ctx || {};
@@ -883,7 +886,7 @@ async function runIaRecoverySweep() {
         // Rede: pelo que o CLIENTE escreveu. Do bot só conta quando ele já entrou numa rede (tabela/@ pedido),
         // não o cardápio da 1ª resposta ("también tenemos TikTok y Facebook").
         let rede = _recRede(txt);
-        if (rede === 'instagram') {
+        if (rede === 'instagram' && !/instagram|\binsta\b|\big\b/.test(txt)) {
           const o = outs.map((x) => String(x.text || '')).join('\n').toLowerCase();
           if (/(seguidores|vistas|me gusta|comentarios) de tik ?tok|@ de tik ?tok/.test(o)) rede = 'tiktok';
           else if (/(seguidores|vistas|me gusta|comentarios) de facebook|link de tu perfil o p[aá]gina de facebook/.test(o)) rede = 'facebook';

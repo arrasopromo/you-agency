@@ -1314,7 +1314,7 @@ module.exports.register = function register(app, deps) {
   try { require('./metaCapi.js').iniciarReenvio(); } catch (_) {}
 
   // Usado pelo lembrete de pagamento do bot (app.js) para conferir o status antes de cobrar o cliente.
-  try { app.locals.yaSincronizarXpag = sincronizarXpag; } catch (_) {}
+  try { app.locals.yaSincronizarXpag = sincronizarXpag; global.__yaSincronizarXpag = sincronizarXpag; } catch (_) {}
 
   // Cobrança Xpag avulsa (usada pelo upsell "duplica tu pedido" no app.js). Mesmas regras do checkout:
   // mínimo MXN 20, OXXO de 10 a 10.000, nome obrigatório, UMA chamada (nunca repete sozinha).
