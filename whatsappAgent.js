@@ -283,7 +283,8 @@ function _clienteEscreveu(ctx, usuario) {
   const h = String(usuario || '').toLowerCase().replace(/^@+/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/[/?#].*$/, '').trim();
   if (!h) return false;
   const esc = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const rx = new RegExp('(^|[^a-z0-9._])@?' + esc + '(?![a-z0-9._])', 'i');
+  // ponto final da frase ("Mi @ es fulano.") não é parte do @ (simulação 22/11: 28 de 61 conversas travaram no "no pude validar")
+  const rx = new RegExp('(^|[^a-z0-9._])@?' + esc + '(?![a-z0-9_]|\\.[a-z0-9_])', 'i');
   return (ctx.allUserTexts || ctx.recentUserTexts || [ctx.text]).some((t) => rx.test(String(t || '').toLowerCase()));
 }
 // ── Estado da venda por contato (whatsapp_contacts): resumo esperando "¿Todo bien?", oferta do pacote
@@ -452,7 +453,7 @@ async function runTool(name, args, ctx) {
       if (!validado) {
         const h = normU(a2.usuario);
         const escH = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const rxH = new RegExp('(^|[^a-z0-9._@])@?' + escH + '(?![a-z0-9._]|@)', 'i');
+        const rxH = new RegExp('(^|[^a-z0-9._@])@?' + escH + '(?![a-z0-9_]|\\.[a-z0-9_]|@)', 'i');
         const escreveu = !!h && (ctx.allUserTexts || ctx.recentUserTexts || []).some((t) => rxH.test(String(t || '').replace(/\S+@\S+\.\S+/g, ' ')));
         const vr = escreveu ? await sales.validateProfile(h).catch(() => null) : null;
         if (!vr || !vr.ok) {
