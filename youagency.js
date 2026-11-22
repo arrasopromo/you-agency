@@ -664,7 +664,7 @@ module.exports.register = function register(app, deps) {
         const serv = nomeServico(g(o, 'tipo_servico'), g(o, 'categoria_servico'), g(o, 'quantidade'));
         if (!serv) continue;
         const user = /^facebook_/.test(g(o, 'tipo_servico').toLowerCase()) ? '' : mascara(o.instagramUsername || g(o, 'instagram_username') || g(o, 'perfil_rede')); // Facebook: nome/ID da página não é um @
-        items.push({ titulo: (user || 'Un cliente') + ' compró ' + serv.texto, tiempo: haceCuanto(o.paidAt), rede: serv.rede });
+        items.push({ titulo: (user || 'Un cliente') + ' compró ' + serv.texto, tiempo: haceCuanto(o.paidAt), rede: serv.rede, quem: user || 'Un cliente', oque: serv.texto, t: new Date(o.paidAt).getTime() });
         if (items.length >= 10) break;
       }
       __vrCache = { at: Date.now(), data: { ok: true, items } };

@@ -336,13 +336,13 @@
       // Prova social: compras reais recentes, uma por vez.
       (async function(){
         var box = $('yaProva'); if (!box) return;
-        var itens = []; try { var r = await fetch('/api/prova-social'); var d = await r.json(); itens = (d && d.itens) || []; } catch(_) {}
+        var itens = []; try { var r = await fetch('/api/ventas-recientes', { cache: 'no-store' }); var d = await r.json(); itens = (d && d.items) || []; } catch(_) {}
         if (!itens.length) return;
         var ha = function(t){ var m = Math.max(1, Math.round((Date.now() - t) / 60000)); if (m < 60) return 'hace ' + m + ' min'; var h = Math.round(m / 60); return h < 24 ? 'hace ' + h + ' h' : 'hace ' + Math.round(h / 24) + ' d'; };
         var i = 0, mostra = function(){
           var it = itens[i % itens.length]; i++;
-          $('yaProvaU').textContent = '@' + it.u;
-          $('yaProvaQ').textContent = fmt(it.q) + ' ' + it.sv;
+          $('yaProvaU').textContent = it.quem;
+          $('yaProvaQ').textContent = it.oque;
           $('yaProvaT').textContent = ha(it.t);
           box.hidden = false; box.classList.remove('sai');
           setTimeout(function(){ box.classList.add('sai'); }, 4500);
@@ -1750,6 +1750,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', liga); else liga();
 })();
 </script>
-<script src="/js/ventas-recientes.js?v=20261122d" defer></script>
 </body>
 </html>
