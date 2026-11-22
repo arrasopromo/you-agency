@@ -42247,7 +42247,7 @@ async function computeTrackSite({ since, until, fresh } = {}) {
     // verifyInstagramProfile*) com a checagem dentro do período. As conferências de fundo (refil,
     // reposição, gerenciamento) também atualizam o perfil e inflavam a contagem.
     db.vu.find({ checks: { $elemMatch: { source: { $regex: '^verifyInstagramProfile', $options: 'i' }, checkedAt: { $gte: iniS, $lt: fimS } } } }).project({ username: 1, lastAt: 1, utms: 1 }).toArray(),
-    db.al.find(rangeDate).project({ max_percentage: 1 }).toArray(),
+    db.al.find(rangeDate).project({ max_percentage: 1, origem: 1 }).toArray(),
   ]);
   // Validações feitas pelo BOT do WhatsApp (source botcheck_*): à parte, não entram em "Perfis validados".
   let vuBot = 0;
@@ -42457,7 +42457,8 @@ async function computeTrackSite({ since, until, fresh } = {}) {
       pixSite: canais.site.pix, pagosSite: canais.site.pagos, receitaSite: Math.round(canais.site.receita * 100) / 100,
       pixBot: canais.bot.pix, pagosBot: canais.bot.pagos, receitaBot: Math.round(canais.bot.receita * 100) / 100, botsPageviews: botsPv,
       pagosUpsell, receitaUpsell, pedidosComOferta: comBumpPagos, pedidosComVisitante: comVisitor,
-      audio: { tocaram: alRows.length, metade: alRows.filter((a) => (a.max_percentage || 0) >= 50).length, fim: alRows.filter((a) => (a.max_percentage || 0) >= 99).length },
+      // semMedida: plays recuperados do log do servidor (o player da home do YA não registrava o progresso).
+      audio: { tocaram: alRows.length, metade: alRows.filter((a) => (a.max_percentage || 0) >= 50).length, fim: alRows.filter((a) => (a.max_percentage || 0) >= 99).length, semMedida: alRows.filter((a) => a.origem === 'log_nginx').length },
     },
     serie: dias.map((d) => { const x = porDia[d]; return { dia: d, pageviews: x.pageviews, visitantes: x.visitantes.size, pix: x.pix, pagos: x.pagos, receita: Math.round(x.receita * 100) / 100 }; }),
     porHora,

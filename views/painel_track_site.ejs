@@ -180,7 +180,7 @@
       + kpi('Cobrança → pago', pct(k.convPixPago))
       + kpi('Com oferta (bump)', nf(k.pedidosComOferta), k.pagos ? pct(k.pedidosComOferta / k.pagos) + ' dos pagos' : '')
       + kpi('Upsell pago', nf(k.pagosUpsell), brl(k.receitaUpsell))
-      + kpi('Áudio inicial', nf(k.audio.tocaram) + ' plays', nf(k.audio.metade) + ' até a metade · ' + nf(k.audio.fim) + ' até o fim')
+      + kpi('Áudio inicial', nf(k.audio.tocaram) + ' plays', (k.audio.semMedida ? (nf(k.audio.semMedida) + ' sem medida de quanto ouviram (vindos do log; áudio retirado em 22/11)') : (nf(k.audio.metade) + ' até a metade · ' + nf(k.audio.fim) + ' até o fim')))
       + '</div>';
 
     h += '<div class="ts-grid">';
