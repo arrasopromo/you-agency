@@ -107,6 +107,7 @@ const TRIGGER_MENU = _normTrig('¡Hola! Estoy en el sitio y necesito ayuda.');
 const TRIGGERS_SALES = [
   _normTrig('¡Hola! Me interesa y quiero más información, por favor.'),
   _normTrig('¡Hola! ¿Me puedes dar más información sobre esto?'),
+  _normTrig('¡Hola! Quiero comprar seguidores.'), // botão do WhatsApp do site (22/11)
 ];
 // Gatilho do MENU de boas-vindas (com botões).
 function isTriggerMessage(text) { return _normTrig(text) === TRIGGER_MENU; }
