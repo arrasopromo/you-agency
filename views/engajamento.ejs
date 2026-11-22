@@ -174,8 +174,8 @@
       </div>
       <div class="yh-vis" aria-hidden="true">
         <div class="yh-disco"></div>
-        <div class="yh-chip yh-chip-a"><span class="yh-chip-ic ok"><svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg></span><span><b>Pago confirmado</b><small>SPEI en segundos</small></span></div>
-        <div class="yh-chip yh-chip-b"><span class="yh-chip-ic go"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span><span><b>Entrega iniciada</b><small>en minutos</small></span></div>
+        <div class="yh-chip yh-chip-a"><span class="yh-chip-ic ok"><svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg></span><span><b>Pago confirmado</b><small>SPEI u OXXO, en segundos</small></span><span class="yh-chip-t">ahora</span></div>
+        <div class="yh-chip yh-chip-b"><span class="yh-chip-ic go"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span><span><b>Entrega iniciada</b><small>tus seguidores ya van llegando</small></span><span class="yh-chip-t">1 min</span></div>
         <div class="yh-ig" id="yaIg">
           <span class="yh-ig-pop" id="yaIgPop">+200 seguidores</span>
           <div class="yh-ig-barra"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg><b id="yaIgUserTop">tu.usuario</b><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg></div>
@@ -275,13 +275,19 @@
       .yh-ig-grade { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; margin:0 -18px; }
       .yh-ig-grade span { aspect-ratio:1; max-width:100%; display:grid; place-items:center; font-size:1.5rem; background:var(--g); }
       .yh-ig-nota { margin:10px 0 0; text-align:right; font-size:.7rem; color:var(--yh-sub); }
-      .yh-chip { position:absolute; z-index:3; display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:16px; background:var(--yh-card); border:1px solid var(--yh-line); color:var(--yh-ink); box-shadow:0 14px 30px rgba(20,10,40,.22); }
-      .yh-chip b { display:block; font-size:.86rem; } .yh-chip small { display:block; font-size:.74rem; color:var(--yh-sub); }
-      .yh-chip-a { top:2%; left:-6%; } .yh-chip-b { bottom:13%; left:-10%; }
-      .yh-chip-ic { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; }
-      .yh-chip-ic svg { width:16px; height:16px; fill:none; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
-      .yh-chip-ic.ok { background:rgba(34,197,94,.15); } .yh-chip-ic.ok svg { stroke:#16A34A; }
-      .yh-chip-ic.go { background:rgba(245,133,41,.16); } .yh-chip-ic.go svg { stroke:#F58529; fill:#F58529; }
+      .yh-chip { position:absolute; z-index:3; display:flex; align-items:center; gap:12px; padding:10px 16px 10px 10px; border-radius:18px; color:var(--yh-ink);
+                 background:color-mix(in srgb, var(--yh-card) 88%, transparent); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+                 border:1px solid var(--yh-line); box-shadow:0 18px 40px -12px rgba(40,20,80,.30), 0 2px 6px rgba(40,20,80,.06); animation:yhFlut 5s ease-in-out infinite; }
+      .yh-chip b { display:block; font-size:.88rem; font-weight:600; line-height:1.25; } .yh-chip small { display:block; font-size:.76rem; color:var(--yh-sub); line-height:1.3; }
+      .yh-chip-a { top:2%; left:-6%; } .yh-chip-b { bottom:13%; left:-10%; animation-delay:-2.5s; }
+      .yh-chip-ic { width:36px; height:36px; border-radius:12px; display:grid; place-items:center; flex:0 0 auto; color:#fff; }
+      .yh-chip-ic svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
+      .yh-chip-ic.ok { background:linear-gradient(135deg,#34D399,#10B981); box-shadow:0 6px 14px -4px rgba(16,185,129,.55); }
+      .yh-chip-ic.go { background:var(--instagram-gradient, linear-gradient(45deg,#f09433,#dc2743,#bc1888)); box-shadow:0 6px 14px -4px rgba(220,39,67,.5); }
+      .yh-chip-ic.go svg { fill:currentColor; stroke-width:1.5; }
+      .yh-chip-t { margin-left:4px; align-self:flex-start; font-size:.68rem; color:var(--yh-sub); white-space:nowrap; }
+      @keyframes yhFlut { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-5px); } }
+      @media (prefers-reduced-motion: reduce) { .yh-chip { animation:none; } }
 
       .ya-prova { text-align:left; position:fixed; right:20px; bottom:calc(env(safe-area-inset-bottom, 0px) + 96px); z-index:60; max-width:calc(100vw - 40px); padding:10px 14px; border-radius:10px; background:#1A1A2E; color:#E8E6F2; border:1px solid rgba(255,255,255,.08); font-size:.84rem; line-height:1.4; transition:opacity .35s; }
       body.theme-light .ya-prova { background:#fff; color:#1f2333; border-color:#e5e7eb; box-shadow:0 2px 10px rgba(15,23,42,.06); }
@@ -415,10 +421,11 @@
                   <div class="ya-dest-d">Seguidores, me gusta y vistas con entrega automática</div>
                 </div>
                 <div class="ya-dest">
-                  <div class="ya-dest-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg><span class="ya-dest-chips"><i class="oxxo">OXXO</i><i class="spei">SPEI</i></span></div>
+                  <div class="ya-dest-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
                   <div class="ya-dest-n">Mejores precios</div>
                   <div class="ya-dest-t">desde <%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.seg) || '$ 56' ).replace('$ ', '$') %> MXN</div>
-                  <div class="ya-dest-d">Pago seguro por SPEI u OXXO · nunca pedimos tu contraseña</div>
+                  <div class="ya-dest-d">Pago seguro, nunca pedimos tu contraseña</div>
+                  <div class="ya-dest-chips"><i class="oxxo">OXXO</i><i class="spei">SPEI</i></div>
                 </div>
               </div>
               <style>
@@ -426,16 +433,17 @@
                   --d-bg:#1a1a2e;--d-linha:rgba(255,255,255,.08);--d-ink:#f8fafc;--d-sub:#cfcde0;--d-mudo:#9d9ab0}
                 body.theme-light .ya-destaques{--d-bg:#ffffff;--d-linha:#ece8f1;--d-ink:#14112b;--d-sub:#3f3c52;--d-mudo:#6b687c}
                 .ya-dest{background:var(--d-bg);border:1px solid var(--d-linha);border-radius:18px;padding:22px 22px 20px;box-shadow:0 12px 30px -22px rgba(20,17,43,.35);min-width:0}
-                .ya-dest-ic{position:relative;width:52px;height:52px;border-radius:15px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#ff2e63,#ff7a3d);margin-bottom:16px}
+                .ya-dest{font-family:var(--font-family)}
+                .ya-dest-ic{position:relative;width:52px;height:52px;border-radius:15px;display:grid;place-items:center;color:#fff;background:var(--instagram-gradient,linear-gradient(45deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%));margin-bottom:16px}
                 .ya-dest-ic svg{width:26px;height:26px}
-                .ya-dest-chips{position:absolute;left:30px;bottom:-8px;display:flex;gap:3px}
-                .ya-dest-chips i{font-style:normal;font-size:9px;font-weight:800;line-height:1;padding:3px 5px;border-radius:5px;letter-spacing:.02em;white-space:nowrap}
+                .ya-dest-chips{display:flex;gap:6px;margin-top:10px}
+                .ya-dest-chips i{font-style:normal;font-size:11px;font-weight:700;line-height:1;padding:5px 8px;border-radius:6px;letter-spacing:.02em;white-space:nowrap}
                 .ya-dest-chips .oxxo{background:#e10600;color:#ffd200;border:1px solid #ffd200}
                 .ya-dest-chips .spei{background:#ffffff;color:#1f3a8a;border:1px solid #c7d2fe}
-                .ya-dest-n{font-size:1.85rem;font-weight:800;line-height:1.1;letter-spacing:-.01em;color:var(--d-ink)}
-                .ya-dest-t{margin-top:4px;font-size:.95rem;font-weight:700;color:var(--d-sub)}
+                .ya-dest-n{font-size:1.6rem;font-weight:600;line-height:1.15;letter-spacing:-.01em;color:var(--d-ink)}
+                .ya-dest-t{margin-top:4px;font-size:.95rem;font-weight:500;color:var(--d-sub)}
                 .ya-dest-d{margin-top:6px;font-size:.85rem;line-height:1.45;color:var(--d-mudo)}
-                @media (max-width:820px){.ya-destaques{grid-template-columns:1fr;max-width:460px;gap:12px}.ya-dest{display:grid;grid-template-columns:52px 1fr;column-gap:14px;align-items:center;padding:16px}.ya-dest-ic{grid-row:1 / span 3;margin:0}.ya-dest-n{font-size:1.4rem}.ya-dest-t,.ya-dest-d{margin-top:2px}}
+                @media (max-width:820px){.ya-destaques{grid-template-columns:1fr;max-width:460px;gap:12px}.ya-dest{display:grid;grid-template-columns:52px 1fr;column-gap:14px;align-items:center;padding:16px}.ya-dest-ic{grid-row:1 / span 4;margin:0;align-self:start}.ya-dest-n{font-size:1.3rem}.ya-dest-chips{margin-top:8px}.ya-dest-t,.ya-dest-d{margin-top:2px}}
               </style>
             </div>
           </div>
