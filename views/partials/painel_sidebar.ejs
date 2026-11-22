@@ -5,7 +5,7 @@
         geral:       ['dashboard','vendas'],
         track:       ['track-site'],
         operacao:    ['gerenciamento-seguidores','refil2','gestao-parcial-topfama','gestao-parcial-seguidores','aguardando','unknown_orderid','registro-pedido','privados','bloqueados'],
-        marketing:   ['meta-ads','coupons','upsell','ia-crm','ia-followup'],
+        marketing:   ['meta-ads','coupons','upsell','ia-crm','ia-followup','avaliacoes'],
         ferramentas: ['consulta-perfil','service_types','testes-servicos']
     };
     function _open(list){ return (list.indexOf(_p) >= 0) ? 'open' : ''; }
@@ -58,6 +58,7 @@
             <summary>Marketing <span class="nav-caret">›</span></summary>
             <ul>
                 <li><a href="/painel/meta-ads" class="<%= _a('meta-ads') %>">Meta Ads (Criativos)</a></li>
+                <li><a href="/painel/avaliacoes" class="<%= _a('avaliacoes') %>">Avaliações</a></li>
                 <li><a href="/painel?view=coupons"class="<%= _a('coupons') %>">Cupons</a></li>
                 <li><a href="/painel/upsell" class="<%= _a('upsell') %>">Gestão de Upsell</a></li>
                 <li><a href="/painel/ia-crm" class="<%= _a('ia-crm') %>">CRM IA WhatsApp</a></li>

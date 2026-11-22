@@ -177,18 +177,25 @@
         <div class="yh-chip yh-chip-a"><span class="yh-chip-ic ok"><svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg></span><span><b>Pago confirmado</b><small>SPEI en segundos</small></span></div>
         <div class="yh-chip yh-chip-b"><span class="yh-chip-ic go"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span><span><b>Entrega iniciada</b><small>en minutos</small></span></div>
         <div class="yh-ig" id="yaIg">
+          <span class="yh-ig-pop" id="yaIgPop">+200 seguidores</span>
+          <div class="yh-ig-barra"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg><b id="yaIgUserTop">tu.usuario</b><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg></div>
           <div class="yh-ig-top">
             <div class="yh-ig-anel"><div class="yh-ig-foto" id="yaIgFoto"><span id="yaIgIni">TU</span></div></div>
-            <div class="yh-ig-id"><b id="yaIgUser">tu.usuario</b><small id="yaIgNome">Tu negocio</small></div>
+            <div class="yh-ig-nums">
+              <div><b id="yaIgPosts">86</b><small>publicaciones</small></div>
+              <div class="yh-ig-seg" id="yaIgSegBox"><b id="yaIgSeg">1,180</b><small>seguidores</small><i class="yh-ig-dot"></i></div>
+              <div><b id="yaIgSegue">305</b><small>seguidos</small></div>
+            </div>
           </div>
-          <div class="yh-ig-nums">
-            <div><b id="yaIgPosts">86</b><small>publicaciones</small></div>
-            <div class="yh-ig-seg"><b id="yaIgSeg">412</b><small>seguidores</small></div>
-            <div><b id="yaIgSegue">305</b><small>seguidos</small></div>
+          <div class="yh-ig-id"><b id="yaIgUser" hidden>tu.usuario</b><b id="yaIgNome">Tu Negocio</b><small>Tienda de ropa</small></div>
+          <p class="yh-ig-bio" id="yaIgBio">Ropa hecha en Guadalajara 🌵<br>Envíos a todo México 📦<br><span class="yh-ig-link">🔗 tunegocio.mx</span></p>
+          <div class="yh-ig-acoes"><span class="seg">Seguir</span><span>Enviar mensaje</span><span class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M19 8v6M16 11h6"/></svg></span></div>
+          <div class="yh-ig-dest">
+            <span><i>📦</i>Envíos</span><span><i>✨</i>Nuevo</span><span><i>🏷️</i>Promos</span><span><i>🛍️</i>Tienda</span>
           </div>
-          <p class="yh-ig-bio" id="yaIgBio">Hecho a mano en Guadalajara.<br>Envíos a todo México.</p>
-          <div class="yh-ig-acoes"><span class="seg">Seguir</span><span>Mensaje</span></div>
-          <p class="yh-ig-nota" id="yaIgNota">Así se ve tu perfil</p>
+          <div class="yh-ig-abas"><svg class="on" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M3 8h18M8 3l3 5M14 3l3 5M10 12v5l4-2.5z"/></svg><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="12" cy="10" r="3"/><path d="M6.5 19c1-2.6 3-4 5.5-4s4.5 1.4 5.5 4"/></svg></div>
+          <div class="yh-ig-grade"><span style="--g:linear-gradient(135deg,#FFD3A5,#FD6585)">👗</span><span style="--g:linear-gradient(135deg,#A1E3B5,#3BB273)">🌵</span><span style="--g:linear-gradient(135deg,#C2B5FF,#7F5AF0)">📸</span></div>
+          <p class="yh-ig-nota" id="yaIgNota">Vista de ejemplo</p>
         </div>
       </div>
       <div class="ya-prova" id="yaProva" hidden>
@@ -226,30 +233,51 @@
       .yh-confia li { display:inline-flex; align-items:center; gap:7px; }
       .yh-confia svg { width:17px; height:17px; fill:none; stroke:#E8336D; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 
-      .yh-vis { position:relative; min-height:470px; display:flex; align-items:center; justify-content:center; }
+      .yh-vis { position:relative; min-height:560px; display:flex; align-items:center; justify-content:center; }
       .yh-disco { position:absolute; width:min(420px, 92%); aspect-ratio:1; border-radius:50%; top:4%; left:50%; transform:translateX(-50%);
                   background:radial-gradient(circle at 30% 25%, #FFB36B 0, #F58529 30%, #E8336D 72%, #B1246A 100%); opacity:.92; }
-      .yh-ig { position:relative; z-index:2; width:min(360px, 100%); margin-top:110px; padding:20px; border-radius:24px; background:var(--yh-card); border:1px solid var(--yh-line); color:var(--yh-ink); box-shadow:0 30px 60px rgba(20,10,40,.28); }
+      .yh-ig { position:relative; z-index:2; width:min(360px, 100%); margin-top:70px; padding:14px 18px 14px; border-radius:24px; background:var(--yh-card); border:1px solid var(--yh-line); color:var(--yh-ink); box-shadow:0 30px 60px rgba(20,10,40,.28); text-align:left; }
+      .yh-ig svg { fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+      .yh-ig-barra { display:flex; align-items:center; justify-content:space-between; gap:8px; padding-bottom:10px; margin:0 -2px 12px; border-bottom:1px solid var(--yh-line); }
+      .yh-ig-barra b { font-size:.98rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .yh-ig-barra svg { width:20px; height:20px; flex:0 0 auto; }
+      .yh-ig-barra svg circle { fill:currentColor; stroke:none; }
       .yh-ig-top { display:flex; align-items:center; gap:14px; }
-      .yh-ig-anel { width:66px; height:66px; border-radius:50%; padding:3px; background:conic-gradient(#F58529, #E8336D, #8B5CF6, #F58529); flex:0 0 auto; }
-      .yh-ig-foto { width:100%; height:100%; border-radius:50%; border:3px solid var(--yh-card); background:#2a2347 center/cover no-repeat; display:grid; place-items:center; font-weight:800; color:#fff; font-size:1.05rem; }
+      .yh-ig-anel { width:78px; height:78px; border-radius:50%; padding:3px; background:conic-gradient(from 210deg, #FEDA75, #FA7E1E, #D62976, #962FBF, #4F5BD5, #FEDA75); flex:0 0 auto; }
+      .yh-ig-foto { width:100%; height:100%; border-radius:50%; border:3px solid var(--yh-card); background:#2a2347 center/cover no-repeat; display:grid; place-items:center; font-weight:800; color:#fff; font-size:1.1rem; }
       body.theme-light .yh-ig-foto { background-color:#F3D5E1; color:#B1246A; }
-      .yh-ig-id { min-width:0; display:flex; flex-direction:column; }
-      .yh-ig-id b { font-size:1.05rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-      .yh-ig-id small { color:var(--yh-sub); }
-      .yh-ig-nums { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:18px 0 12px; text-align:center; }
-      .yh-ig-nums b { display:block; font-size:1.15rem; font-variant-numeric:tabular-nums; }
-      .yh-ig-nums small { font-size:.78rem; color:var(--yh-sub); }
-      .yh-ig-seg { border-radius:12px; padding:6px 0; background:rgba(232,51,109,.12); position:relative; }
+      .yh-ig-nums { flex:1; min-width:0; display:grid; grid-template-columns:repeat(3,1fr); gap:2px; text-align:center; }
+      .yh-ig-nums b { display:block; font-size:1.08rem; line-height:1.2; font-variant-numeric:tabular-nums; }
+      .yh-ig-nums small { font-size:.72rem; color:var(--yh-sub); }
+      .yh-ig-seg { position:relative; border-radius:12px; padding:6px 0; background:rgba(232,51,109,.10); transition:background .3s; }
       .yh-ig-seg b { color:#E8336D; }
-      .yh-ig-bio { font-size:.88rem; line-height:1.45; margin:0 0 14px; }
-      .yh-ig-acoes { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-      .yh-ig-acoes span { text-align:center; padding:9px 0; border-radius:10px; font-weight:600; font-size:.9rem; background:rgba(127,127,160,.16); }
+      .yh-ig-seg.sobe { background:rgba(232,51,109,.20); }
+      .yh-ig-dot { position:absolute; top:4px; right:6px; width:7px; height:7px; border-radius:50%; background:#E8336D; opacity:0; transition:opacity .3s; }
+      .yh-ig-seg.sobe .yh-ig-dot { opacity:1; }
+      .yh-ig-pop { position:absolute; z-index:4; top:-14px; right:18px; padding:6px 12px; border-radius:999px; background:var(--yh-card); color:#E8336D; font-weight:700; font-size:.8rem; border:1.5px solid rgba(232,51,109,.45); box-shadow:0 10px 24px rgba(232,51,109,.22); opacity:0; transform:translateY(8px) scale(.92); transition:opacity .35s, transform .35s; pointer-events:none; white-space:nowrap; }
+      .yh-ig-pop.on { opacity:1; transform:none; }
+      .yh-ig-id { margin-top:10px; display:flex; flex-direction:column; line-height:1.3; }
+      .yh-ig-id b { font-size:.9rem; }
+      .yh-ig-id small { font-size:.8rem; color:var(--yh-sub); }
+      .yh-ig-bio { font-size:.86rem; line-height:1.45; margin:4px 0 12px; }
+      .yh-ig-link { color:#4F7DF5; font-weight:600; }
+      body.theme-light .yh-ig-link { color:#00376B; }
+      .yh-ig-acoes { display:grid; grid-template-columns:1fr 1fr 36px; gap:6px; }
+      .yh-ig-acoes span { display:grid; place-items:center; padding:8px 0; border-radius:9px; font-weight:600; font-size:.85rem; background:rgba(127,127,160,.16); }
       .yh-ig-acoes .seg { background:#0095F6; color:#fff; }
-      .yh-ig-nota { margin:12px 0 0; text-align:right; font-size:.72rem; color:var(--yh-sub); }
+      .yh-ig-acoes .ic svg { width:17px; height:17px; }
+      .yh-ig-dest { display:flex; gap:14px; margin:14px 0 10px; }
+      .yh-ig-dest span { display:flex; flex-direction:column; align-items:center; gap:4px; font-size:.68rem; color:var(--yh-ink); }
+      .yh-ig-dest i { font-style:normal; width:48px; height:48px; border-radius:50%; display:grid; place-items:center; font-size:1.2rem; background:rgba(127,127,160,.12); box-shadow:inset 0 0 0 2px var(--yh-card), 0 0 0 1px var(--yh-line); }
+      .yh-ig-abas { display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid var(--yh-line); margin:0 -18px; }
+      .yh-ig-abas svg { width:19px; height:19px; justify-self:center; margin:8px 0 7px; color:var(--yh-sub); }
+      .yh-ig-abas svg.on { color:var(--yh-ink); }
+      .yh-ig-grade { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; margin:0 -18px; }
+      .yh-ig-grade span { aspect-ratio:1; max-width:100%; display:grid; place-items:center; font-size:1.5rem; background:var(--g); }
+      .yh-ig-nota { margin:10px 0 0; text-align:right; font-size:.7rem; color:var(--yh-sub); }
       .yh-chip { position:absolute; z-index:3; display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:16px; background:var(--yh-card); border:1px solid var(--yh-line); color:var(--yh-ink); box-shadow:0 14px 30px rgba(20,10,40,.22); }
       .yh-chip b { display:block; font-size:.86rem; } .yh-chip small { display:block; font-size:.74rem; color:var(--yh-sub); }
-      .yh-chip-a { top:9%; left:2%; } .yh-chip-b { top:30%; right:0; }
+      .yh-chip-a { top:2%; left:-6%; } .yh-chip-b { bottom:13%; left:-10%; }
       .yh-chip-ic { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; }
       .yh-chip-ic svg { width:16px; height:16px; fill:none; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
       .yh-chip-ic.ok { background:rgba(34,197,94,.15); } .yh-chip-ic.ok svg { stroke:#16A34A; }
@@ -268,7 +296,9 @@
         .yh-confia { justify-content:center; }
         .yh-vis { min-height:0; padding-top:12px; }
         .yh-disco { width:300px; top:0; }
-        .yh-ig { margin-top:70px; text-align:left; }
+        .yh-ig { margin-top:56px; text-align:left; }
+        .yh-ig-abas, .yh-ig-grade { display:none; }
+        .yh-ig { padding-bottom:12px; }
         .yh-chip-a { top:4px; left:0; } .yh-chip-b { display:none; }
         .yh-badge-extra { display:none; }
       }
@@ -292,12 +322,24 @@
       var reduz = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       // única animação: os seguidores da prévia sobem uma vez
       var conta = function(el, de, ate, ms){ if (reduz) { el.textContent = fmt(ate); return; } var t0 = null; var passo = function(t){ if (!t0) t0 = t; var k = Math.min(1, (t - t0) / ms); var e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(Math.round(de + (ate - de) * e)); if (k < 1) requestAnimationFrame(passo); }; requestAnimationFrame(passo); };
-      setTimeout(function(){ conta($('yaIgSeg'), 412, 1412, 1400); }, 700);
+      // seguidores da prévia sobem aos poucos (+N com balão), como um pedido entrando
+      var igReal = false, igSeg = 1180, igTm = null;
+      var igPasso = function(){
+        if (igReal || document.hidden) return;
+        var inc = [100, 150, 200, 250][Math.floor(Math.random() * 4)];
+        if (igSeg + inc > 9800) { igSeg = 1180; $('yaIgSeg').textContent = fmt(igSeg); return; }
+        var pop = $('yaIgPop'), box = $('yaIgSegBox');
+        pop.textContent = '+' + inc + ' seguidores'; pop.classList.add('on'); box.classList.add('sobe');
+        conta($('yaIgSeg'), igSeg, igSeg + inc, 1100); igSeg += inc;
+        setTimeout(function(){ pop.classList.remove('on'); box.classList.remove('sobe'); }, 1900);
+      };
+      var igParar = function(){ igReal = true; if (igTm) clearInterval(igTm); var pop = $('yaIgPop'); if (pop) pop.classList.remove('on'); };
+      if (!reduz) { setTimeout(igPasso, 900); igTm = setInterval(igPasso, 3200); }
       // o @ digitado aparece na prévia
       var inp = $('yaArrobaInput');
       if (inp) inp.addEventListener('input', function(){
         var u = limpa(inp.value);
-        $('yaIgUser').textContent = u || 'tu.usuario';
+        $('yaIgUser').textContent = u || 'tu.usuario'; $('yaIgUserTop').textContent = u || 'tu.usuario';
         $('yaIgIni').textContent = (u.replace(/[^A-Za-z0-9]/g, '').slice(0, 2) || 'TU').toUpperCase();
       });
       var form = $('yaArrobaForm'), btn = $('yaArrobaBtn'), msg = $('yaArrobaMsg');
@@ -312,11 +354,13 @@
           var d = await r.json();
           if (d && d.success) {
             var pr = d.profile || {}; var nome = pr.username || u;
-            $('yaIgUser').textContent = nome;
+            igParar();
+            $('yaIgUser').textContent = nome; $('yaIgUserTop').textContent = nome;
             $('yaIgNome').textContent = pr.fullName || 'Perfil encontrado';
             if (pr.postsCount != null) $('yaIgPosts').textContent = fmt(pr.postsCount);
             if (pr.followingCount != null) $('yaIgSegue').textContent = fmt(pr.followingCount);
             var seg = Number(pr.followersCount); if (isFinite(seg)) $('yaIgSeg').textContent = fmt(seg);
+            var cat = document.querySelector('.yh-ig-id small'); if (cat) cat.textContent = '';
             $('yaIgBio').textContent = pr.isPrivate ? 'Tu perfil está privado. Ponlo público para recibir tu pedido.' : 'Encontramos tu perfil. Ahora elige tu paquete.';
             var foto = String(pr.profilePicUrl || pr.driveImageUrl || '').trim();
             if (foto) { if (/^https?:\/\//i.test(foto) && /instagram|cdninstagram|fbcdn|scontent/i.test(foto)) foto = '/image-proxy?url=' + encodeURIComponent(foto); var im = new Image(); im.onload = function(){ $('yaIgFoto').style.backgroundImage = 'url("' + foto + '")'; $('yaIgIni').textContent = ''; }; im.src = foto; }
@@ -357,29 +401,42 @@
               <a href="#plataformaCard" id="buyFollowersBtn" class="continue-button" style="display:inline-flex; justify-content:center; align-items:center; text-align:center; margin:34px auto 0;">
                 <span class="button-text">COMPRAR SEGUIDORES AHORA</span>
               </a>
-              <div class="value-props">
-                <div class="value-prop-item">
-                  <div class="value-prop-row">
-                    <img class="value-prop-icon" src="/images/ampulheta-320.png" alt="Años en el mercado" />
-                    <div class="value-prop-metric">+3</div>
-                  </div>
-                  <div class="value-prop-caption"><span class="caption-desktop">años en el mercado</span><span class="caption-mobile">años<br>en el<br>mercado</span></div>
+              <div class="ya-destaques">
+                <div class="ya-dest">
+                  <div class="ya-dest-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12M6 21h12M7 3v3a5 5 0 0 0 10 0V3M7 21v-3a5 5 0 0 1 10 0v3"/></svg></div>
+                  <div class="ya-dest-n">+3 años</div>
+                  <div class="ya-dest-t">en el mercado</div>
+                  <div class="ya-dest-d">Haciendo crecer perfiles en Instagram, TikTok y Facebook</div>
                 </div>
-                <div class="value-prop-item">
-                  <div class="value-prop-row">
-                    <img class="value-prop-icon" src="/images/foguete-320.png" alt="Seguidores entregados" />
-                    <div class="value-prop-metric">+2</div>
-                  </div>
-                  <div class="value-prop-caption"><span class="caption-desktop">millones de seguidores entregados</span><span class="caption-mobile">millones de<br>seguidores<br>entregados</span></div>
+                <div class="ya-dest">
+                  <div class="ya-dest-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></div>
+                  <div class="ya-dest-n">+2 millones</div>
+                  <div class="ya-dest-t">de seguidores entregados</div>
+                  <div class="ya-dest-d">Seguidores, me gusta y vistas con entrega automática</div>
                 </div>
-                <div class="value-prop-item">
-                  <div class="value-prop-row">
-                    <img class="value-prop-icon" src="/images/moeda-320.png" alt="Mejores precios" />
-                    <div class="value-prop-metric">$<span class="value-prop-arrow">&darr;</span></div>
-                  </div>
-                  <div class="value-prop-caption"><span class="caption-desktop">los mejores precios del mercado</span><span class="caption-mobile">mejores<br>precios<br>del mercado</span></div>
+                <div class="ya-dest">
+                  <div class="ya-dest-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg><span class="ya-dest-chips"><i class="oxxo">OXXO</i><i class="spei">SPEI</i></span></div>
+                  <div class="ya-dest-n">Mejores precios</div>
+                  <div class="ya-dest-t">desde <%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.seg) || '$ 56' ).replace('$ ', '$') %> MXN</div>
+                  <div class="ya-dest-d">Pago seguro por SPEI u OXXO · nunca pedimos tu contraseña</div>
                 </div>
               </div>
+              <style>
+                .ya-destaques{flex:1 1 100%;width:100%;max-width:1080px;margin:34px auto 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;text-align:left;box-sizing:border-box;
+                  --d-bg:#1a1a2e;--d-linha:rgba(255,255,255,.08);--d-ink:#f8fafc;--d-sub:#cfcde0;--d-mudo:#9d9ab0}
+                body.theme-light .ya-destaques{--d-bg:#ffffff;--d-linha:#ece8f1;--d-ink:#14112b;--d-sub:#3f3c52;--d-mudo:#6b687c}
+                .ya-dest{background:var(--d-bg);border:1px solid var(--d-linha);border-radius:18px;padding:22px 22px 20px;box-shadow:0 12px 30px -22px rgba(20,17,43,.35);min-width:0}
+                .ya-dest-ic{position:relative;width:52px;height:52px;border-radius:15px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#ff2e63,#ff7a3d);margin-bottom:16px}
+                .ya-dest-ic svg{width:26px;height:26px}
+                .ya-dest-chips{position:absolute;left:30px;bottom:-8px;display:flex;gap:3px}
+                .ya-dest-chips i{font-style:normal;font-size:9px;font-weight:800;line-height:1;padding:3px 5px;border-radius:5px;letter-spacing:.02em;white-space:nowrap}
+                .ya-dest-chips .oxxo{background:#e10600;color:#ffd200;border:1px solid #ffd200}
+                .ya-dest-chips .spei{background:#ffffff;color:#1f3a8a;border:1px solid #c7d2fe}
+                .ya-dest-n{font-size:1.85rem;font-weight:800;line-height:1.1;letter-spacing:-.01em;color:var(--d-ink)}
+                .ya-dest-t{margin-top:4px;font-size:.95rem;font-weight:700;color:var(--d-sub)}
+                .ya-dest-d{margin-top:6px;font-size:.85rem;line-height:1.45;color:var(--d-mudo)}
+                @media (max-width:820px){.ya-destaques{grid-template-columns:1fr;max-width:460px;gap:12px}.ya-dest{display:grid;grid-template-columns:52px 1fr;column-gap:14px;align-items:center;padding:16px}.ya-dest-ic{grid-row:1 / span 3;margin:0}.ya-dest-n{font-size:1.4rem}.ya-dest-t,.ya-dest-d{margin-top:2px}}
+              </style>
             </div>
           </div>
           <div class="testimonials-section" id="depoimentosCard" style="display: flex; flex-direction: column; align-items: center;">
@@ -397,6 +454,35 @@
               </div>
               <button type="button" class="carousel-btn next" aria-label="Siguiente">›</button>
             </div>
+            <div id="resenasReais" class="resenas-reais" hidden aria-label="Reseñas de clientes"></div>
+            <style>
+              .resenas-reais{width:100%;max-width:1100px;display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 4px 14px;box-sizing:border-box;-webkit-overflow-scrolling:touch}
+              .resenas-reais[hidden]{display:none}
+              .resena-card{flex:0 0 300px;scroll-snap-align:start;box-sizing:border-box;text-align:left;padding:18px 20px;border-radius:16px;background:var(--bg-secondary,#1A1A2E);border:1px solid rgba(139,92,246,.22);display:flex;flex-direction:column;gap:10px}
+              .resena-card .est{color:#f5b301;font-size:1.05rem;letter-spacing:2px}
+              .resena-card .txt{margin:0;color:var(--text-primary);font-size:.98rem;line-height:1.5}
+              .resena-card .quem{margin-top:auto;font-size:.82rem;color:var(--text-secondary);line-height:1.45}
+              .resena-card .quem b{color:var(--text-primary);font-weight:700}
+              body.theme-light .resena-card{background:#ffffff;border-color:#e6e8ee;box-shadow:0 10px 26px -20px rgba(15,23,42,.35)}
+              @media (max-width:560px){.resena-card{flex-basis:82%}}
+            </style>
+            <script>
+              (function(){
+                var box = document.getElementById('resenasReais'); if (!box) return;
+                var esc = function(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); };
+                fetch('/api/resenas/publicas', { headers: { Accept: 'application/json' } }).then(function(r){ return r.json(); }).then(function(d){
+                  var it = (d && d.itens) || [];
+                  if (it.length < 3) return; // com poucas aprovadas, ficam as imagens de depoimento
+                  box.innerHTML = it.map(function(x){
+                    var est = ''; for (var i = 1; i <= 5; i++) est += i <= x.estrelas ? '★' : '☆';
+                    var quem = '<b>' + esc(x.nomeExibicao || 'Cliente') + '</b>' + (x.usuarioMascarado ? ' · ' + esc(x.usuarioMascarado) : '') + ' · compró ' + esc(x.produto);
+                    return '<article class="resena-card"><div class="est" aria-label="' + x.estrelas + ' de 5 estrellas">' + est + '</div>' + (x.texto ? '<p class="txt">“' + esc(x.texto) + '”</p>' : '') + '<div class="quem">' + quem + '</div></article>';
+                  }).join('');
+                  box.hidden = false;
+                  var img = document.getElementById('testimonialsCarousel'); if (img) img.style.display = 'none';
+                }).catch(function(){});
+              })();
+            </script>
           </div>
 
           <%# Video del recorrido oculto: el video disponible está en inglés %>
@@ -981,6 +1067,84 @@
             </div>
           </div>
         </div>
+      </section>
+      <section class="ya-cta-final" aria-labelledby="yaCtaTit">
+        <div class="ya-cta-box">
+          <div class="ya-cta-txt">
+            <h2 id="yaCtaTit">¿Listo para hacer crecer tu Instagram?</h2>
+            <p>Paquetes desde <%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.seg) || '$ 56' ).replace('$ ', '$') %> MXN. Sin contraseña. Pagas con SPEI u OXXO.</p>
+            <div class="ya-cta-acoes">
+              <a href="#yaHero" class="ya-cta-btn" id="yaCtaPaquetes">Ver paquetes <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+              <a href="https://wa.me/553175664986?text=%C2%A1Hola!%20Quiero%20comprar%20seguidores." class="ya-cta-wpp" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2c0 1.3.9 2.5 1.1 2.7.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.4-.2z"/></svg>Compra por WhatsApp</a>
+              <span class="ya-cta-gar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>Reposición gratis 30 días</span>
+            </div>
+          </div>
+          <div class="ya-cta-vis" aria-hidden="true">
+            <div class="ya-cta-tel">
+              <div class="ya-cta-tel-top"><span class="ya-cta-av">Y</span><span><b>tu.usuario</b><small>seguidores</small></span></div>
+              <div class="ya-cta-num" id="yaCtaNum">1,180</div>
+              <svg class="ya-cta-graf" viewBox="0 0 120 44"><path d="M2 40 L22 34 L40 36 L58 24 L76 26 L94 12 L118 4" /></svg>
+              <span class="ya-cta-tag">+1,000 en tu pedido</span>
+            </div>
+          </div>
+        </div>
+        <style>
+          .ya-cta-final{width:100%;padding:8px 16px 56px;box-sizing:border-box}
+          .ya-cta-box{position:relative;overflow:hidden;max-width:1120px;margin:0 auto;border-radius:28px;padding:48px 48px;display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:32px;align-items:center;color:#fff;
+            background:linear-gradient(100deg,#FF2E63 0%,#FF4F4F 55%,#FF7A3D 100%)}
+          .ya-cta-box::before,.ya-cta-box::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.12);pointer-events:none}
+          .ya-cta-box::before{width:260px;height:260px;right:-40px;top:-70px}
+          .ya-cta-box::after{width:200px;height:200px;left:38%;bottom:-120px}
+          .ya-cta-txt{position:relative;z-index:1;min-width:0;text-align:left}
+          .ya-cta-txt h2{margin:0 0 8px;font-family:'Bricolage Grotesque',var(--font-family);font-weight:800;font-size:clamp(1.6rem,3.2vw,2.35rem);line-height:1.1;letter-spacing:-.02em;color:#fff;text-wrap:balance}
+          .ya-cta-txt p{margin:0 0 24px;font-size:1rem;line-height:1.5;color:rgba(255,255,255,.92)}
+          .ya-cta-acoes{display:flex;flex-wrap:wrap;align-items:center;gap:12px 14px}
+          .ya-cta-btn,.ya-cta-wpp{display:inline-flex;align-items:center;gap:8px;height:48px;white-space:nowrap;line-height:1;box-sizing:border-box;padding:0 22px;border-radius:14px;font-weight:700;font-size:.98rem;text-decoration:none;box-shadow:0 10px 22px rgba(80,0,30,.22)}
+          .ya-cta-btn{background:#fff;color:#E8336D}
+          .ya-cta-btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+          .ya-cta-wpp{background:#25D366;color:#fff}
+          .ya-cta-wpp svg{width:19px;height:19px;fill:currentColor}
+          .ya-cta-btn:focus-visible,.ya-cta-wpp:focus-visible{outline:3px solid #fff;outline-offset:3px}
+          .ya-cta-gar{display:inline-flex;align-items:center;gap:6px;font-size:.86rem;color:rgba(255,255,255,.95)}
+          .ya-cta-gar svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+          .ya-cta-vis{position:relative;z-index:1;display:flex;justify-content:center}
+          .ya-cta-tel{width:210px;padding:16px;border-radius:22px;background:#fff;color:#14112B;box-shadow:0 24px 50px rgba(80,0,30,.35);transform:rotate(-4deg)}
+          .ya-cta-tel-top{display:flex;align-items:center;gap:10px}
+          .ya-cta-tel-top b{display:block;font-size:.86rem}
+          .ya-cta-tel-top small{display:block;font-size:.72rem;color:#6b687c}
+          .ya-cta-av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;background:linear-gradient(135deg,#FF2E63,#FF7A3D)}
+          .ya-cta-num{margin:12px 0 2px;font-family:'Bricolage Grotesque',var(--font-family);font-weight:800;font-size:2.1rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+          .ya-cta-graf{width:100%;height:44px;display:block}
+          .ya-cta-graf path{fill:none;stroke:#E8336D;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+          .ya-cta-tag{display:inline-block;margin-top:8px;padding:5px 10px;border-radius:999px;background:rgba(232,51,109,.10);color:#E8336D;font-weight:700;font-size:.78rem}
+          @media (max-width:820px){
+            .ya-cta-box{grid-template-columns:1fr;padding:34px 22px 30px;text-align:center;border-radius:22px}
+            .ya-cta-txt{text-align:center}
+            .ya-cta-acoes{justify-content:center}
+            .ya-cta-btn,.ya-cta-wpp{width:100%;max-width:340px;justify-content:center}
+            .ya-cta-vis{display:none}
+          }
+        </style>
+        <script>
+          (function(){
+            var b = document.getElementById('yaCtaPaquetes');
+            if (b) b.addEventListener('click', function(e){
+              var h = document.getElementById('yaHero'); if (!h) return;
+              e.preventDefault();
+              h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              setTimeout(function(){ var i = document.getElementById('yaArrobaInput'); if (i) i.focus({ preventScroll: true }); }, 600);
+            });
+            var n = document.getElementById('yaCtaNum'); if (!n || !('IntersectionObserver' in window)) return;
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { n.textContent = '2,180'; return; }
+            var io = new IntersectionObserver(function(es){
+              if (!es[0].isIntersecting) return; io.disconnect();
+              var t0 = null, de = 1180, ate = 2180;
+              var f = function(t){ if (!t0) t0 = t; var k = Math.min(1, (t - t0) / 1600), e = 1 - Math.pow(1 - k, 3); n.textContent = Math.round(de + (ate - de) * e).toLocaleString('en-US'); if (k < 1) requestAnimationFrame(f); };
+              requestAnimationFrame(f);
+            }, { threshold: .5 });
+            io.observe(n);
+          })();
+        </script>
       </section>
 
       <!-- Modal: Garantia 60 dias (conteÃºdo simples) -->

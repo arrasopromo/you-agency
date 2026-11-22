@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avaliações</title>
+  <style>
+    /* Mesma folha do admin (painel-admin.css, carregada pelo partial da sidebar). */
+    .av{ max-width:920px; margin:0 auto; color:var(--tinta,#14171c); }
+    .av *{ box-sizing:border-box; }
+    .av-top{ margin-bottom:16px; }
+    .av-top h1{ margin:0; font-size:28px; font-weight:650; font-stretch:88%; letter-spacing:-.02em; }
+    .av-top p{ margin:4px 0 0; color:var(--grafite,#525a67); font-size:14px; max-width:68ch; line-height:1.5; }
+    .av-abas{ display:flex; gap:6px; flex-wrap:wrap; margin:14px 0 12px; }
+    .av-aba{ border:0; border-radius:999px; padding:8px 14px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; background:var(--vala,#eceef2); color:var(--grafite,#525a67); }
+    .av-aba[aria-selected="true"]{ background:var(--tinta,#14171c); color:#fff; }
+    .av-aba .n{ font-variant-numeric:tabular-nums; opacity:.8; margin-left:4px; }
+    .av-lista{ display:flex; flex-direction:column; gap:10px; }
+    .av-item{ background:var(--folha,#fff); border-radius:12px; box-shadow:0 0 0 1px var(--fio,rgba(20,23,28,.09)); padding:14px 16px; display:grid; grid-template-columns:1fr auto; gap:10px 16px; align-items:start; }
+    .av-est{ color:#f5a623; font-size:16px; letter-spacing:1px; }
+    .av-est .apagada{ color:var(--fio,#d7dae0); }
+    .av-txt{ margin:6px 0 8px; font-size:15px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+    .av-txt.vazio{ color:var(--lapis,#8a93a1); font-style:italic; }
+    .av-meta{ font-size:12.5px; color:var(--grafite,#525a67); line-height:1.55; }
+    .av-meta b{ color:var(--tinta,#14171c); font-weight:600; }
+    .av-meta a{ color:inherit; }
+    .av-prev{ margin-top:6px; font-size:12px; color:var(--lapis,#8a93a1); }
+    .av-acoes{ display:flex; flex-direction:column; gap:6px; min-width:120px; }
+    .av-btn{ border:0; border-radius:8px; padding:8px 12px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+    .av-btn.ok{ background:#15803d; color:#fff; }
+    .av-btn.nao{ background:var(--vala,#eceef2); color:#9f1239; }
+    .av-btn.volta{ background:var(--vala,#eceef2); color:var(--grafite,#525a67); }
+    .av-btn:disabled{ opacity:.55; cursor:default; }
+    .av-vazio{ padding:28px; text-align:center; color:var(--grafite,#525a67); background:var(--folha,#fff); border-radius:12px; box-shadow:0 0 0 1px var(--fio,rgba(20,23,28,.09)); }
+    @media (max-width:640px){ .av-item{ grid-template-columns:1fr; } .av-acoes{ flex-direction:row; flex-wrap:wrap; } }
+  </style>
+</head>
+<body class="painel-page">
+  <%- include('partials/painel_sidebar', { page: 'avaliacoes' }) %>
+  <div class="main-content">
+    <div class="av">
+      <div class="av-top">
+        <h1>Avaliações</h1>
+        <p>Avaliações que os clientes deixam no fim da página do pedido. Só as <b>aprovadas</b> aparecem no site, com nome abreviado, @ mascarado e o que a pessoa comprou.</p>
+      </div>
+      <div class="av-abas" role="tablist">
+        <button class="av-aba" role="tab" data-st="pendente" aria-selected="true">Pendentes<span class="n" id="nPendente"></span></button>
+        <button class="av-aba" role="tab" data-st="aprovada" aria-selected="false">Aprovadas<span class="n" id="nAprovada"></span></button>
+        <button class="av-aba" role="tab" data-st="recusada" aria-selected="false">Recusadas<span class="n" id="nRecusada"></span></button>
+      </div>
+      <div class="av-lista" id="lista"><div class="av-vazio">Carregando…</div></div>
+    </div>
+  </div>
+  <script>
+    (function(){
+      var st = 'pendente';
+      var $ = function(id){ return document.getElementById(id); };
+      var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); };
+      var data = function(d){ try { return new Date(d).toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' }); } catch(_) { return ''; } };
+      var estrelas = function(n){ var h=''; for (var i=1;i<=5;i++) h += i <= n ? '★' : '<span class="apagada">★</span>'; return h; };
+      function acoes(x){
+        if (st === 'pendente') return '<button class="av-btn ok" data-id="'+x.id+'" data-para="aprovada">Aprovar</button><button class="av-btn nao" data-id="'+x.id+'" data-para="recusada">Recusar</button>';
+        if (st === 'aprovada') return '<button class="av-btn nao" data-id="'+x.id+'" data-para="recusada">Tirar do site</button>';
+        return '<button class="av-btn ok" data-id="'+x.id+'" data-para="aprovada">Aprovar</button><button class="av-btn volta" data-id="'+x.id+'" data-para="pendente">Voltar p/ pendente</button>';
+      }
+      async function carregar(){
+        $('lista').innerHTML = '<div class="av-vazio">Carregando…</div>';
+        try {
+          var r = await fetch('/api/painel/avaliacoes?status=' + st, { credentials:'same-origin', headers:{ Accept:'application/json' } });
+          var d = await r.json();
+          if (!d || !d.ok) throw new Error();
+          $('nPendente').textContent = d.cont.pendente; $('nAprovada').textContent = d.cont.aprovada; $('nRecusada').textContent = d.cont.recusada;
+          if (!d.itens.length) { $('lista').innerHTML = '<div class="av-vazio">' + ({ pendente:'Nenhuma avaliação esperando aprovação.', aprovada:'Nenhuma avaliação aprovada ainda.', recusada:'Nenhuma avaliação recusada.' })[st] + '</div>'; return; }
+          $('lista').innerHTML = d.itens.map(function(x){
+            var quem = [x.nomeDigitado ? '<b>' + esc(x.nomeDigitado) + '</b> (nome digitado)' : '', x.usuario ? '@' + esc(x.usuario) : ''].filter(Boolean).join(' · ');
+            var prev = '“' + (x.texto ? esc(x.texto) : '★★★★★') + '” — ' + esc(x.nomeExibicao || 'Cliente') + (x.usuarioMascarado ? ' · ' + esc(x.usuarioMascarado) : '') + ' · compró ' + esc(x.produto);
+            return '<div class="av-item"><div><div class="av-est" aria-label="' + x.estrelas + ' de 5 estrelas">' + estrelas(x.estrelas) + '</div>' +
+              '<p class="av-txt' + (x.texto ? '' : ' vazio') + '">' + (x.texto ? esc(x.texto) : 'Sem comentário, só as estrelas.') + '</p>' +
+              '<div class="av-meta">' + (quem ? quem + '<br>' : '') + 'Comprou <b>' + esc(x.produto) + '</b> pelo ' + (x.canal === 'bot' ? 'WhatsApp' : 'site') +
+              ' · <a href="/pedido?identifier=' + encodeURIComponent(x.identifier || '') + '" target="_blank" rel="noopener">ver pedido</a> · ' + esc(data(x.atualizada)) + '</div>' +
+              '<div class="av-prev">No site vai aparecer: ' + prev + '</div></div>' +
+              '<div class="av-acoes">' + acoes(x) + '</div></div>';
+          }).join('');
+        } catch (_) { $('lista').innerHTML = '<div class="av-vazio">Não deu para carregar. Recarregue a página.</div>'; }
+      }
+      document.querySelector('.av-abas').addEventListener('click', function(e){
+        var b = e.target.closest('.av-aba'); if (!b) return;
+        st = b.getAttribute('data-st');
+        document.querySelectorAll('.av-aba').forEach(function(x){ x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+        carregar();
+      });
+      $('lista').addEventListener('click', async function(e){
+        var b = e.target.closest('.av-btn'); if (!b) return;
+        b.disabled = true;
+        try {
+          var r = await fetch('/api/painel/avaliacoes/status', { method:'POST', credentials:'same-origin', headers:{ 'Content-Type':'application/json', Accept:'application/json' }, body: JSON.stringify({ id: b.getAttribute('data-id'), status: b.getAttribute('data-para') }) });
+          var d = await r.json(); if (!d || !d.ok) throw new Error();
+          carregar();
+        } catch (_) { b.disabled = false; alert('Não deu para salvar. Tente de novo.'); }
+      });
+      carregar();
+    })();
+  </script>
+</body>
+</html>

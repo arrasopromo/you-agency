@@ -42682,6 +42682,113 @@ app.post('/api/painel/vendas/reenviar', requireAdmin, async (req, res) => {
   } catch (e) { return res.status(500).json({ ok: false, erro: true, motivo: String((e && e.message) || e) }); }
 });
 app.get('/painel/bloqueados', requireAdmin, (req, res) => res.render('painel_bloqueados', { page: 'bloqueados' }));
+
+// ── Avaliações (reseñas) ──────────────────────────────────────────────────────
+// O cliente avalia no fim da página do pedido (/pedido). Só pedido PAGO, uma avaliação por pedido
+// (reenviar edita e volta para "pendente"). Nada aparece no site sem aprovação no painel (/painel/avaliacoes).
+// No site só vai nome abreviado ("Victoria P."), @ mascarado e o que a pessoa comprou de verdade.
+const __resenaIpHits = new Map();
+function __resenaGet(o, k) {
+  for (const arr of [o.additionalInfoPaid, o.additionalInfo]) { if (Array.isArray(arr)) { const it = arr.find((x) => x && x.key === k); if (it && it.value != null && it.value !== '') return String(it.value); } }
+  for (const m of [o.additionalInfoMapPaid, o.additionalInfoMap]) { if (m && m[k] != null && m[k] !== '') return String(m[k]); }
+  return '';
+}
+function __resenaProduto(o) {
+  const t = __resenaGet(o, 'tipo_servico').toLowerCase(), c = __resenaGet(o, 'categoria_servico').toLowerCase();
+  const q = Number(__resenaGet(o, 'quantidade') || o.quantidade || o.qtd || 0) || 0;
+  const n = q ? q.toLocaleString('en-US') + ' ' : '';
+  const k = c + ' ' + t;
+  const rede = /^tiktok/.test(t) ? ' en TikTok' : (/^facebook/.test(t) ? ' en Facebook' : '');
+  if (/coment/.test(k)) return n + 'comentarios' + rede;
+  if (/visualiza|views/.test(k)) return n + 'vistas' + rede;
+  if (/curtida|likes/.test(k)) return n + 'me gusta' + rede;
+  return n + 'seguidores' + (/organic/.test(t) ? ' reales' : '') + (rede ? rede.replace(' en ', ' de ') : '');
+}
+const __resenaNomeCurto = (nome) => {
+  const partes = String(nome || '').replace(/[^\p{L}\s'.-]/gu, ' ').trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return '';
+  const pri = partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+  return partes.length > 1 ? pri + ' ' + partes[partes.length - 1].charAt(0).toUpperCase() + '.' : pri;
+};
+const __resenaMascara = (u) => { const h = String(u || '').replace(/^@+/, '').trim(); return h ? '@' + (h.length <= 3 ? h.slice(0, 1) : h.slice(0, 3)) + '***' : ''; };
+async function __resenaPedido(ident) {
+  const id = String(ident || '').trim();
+  if (!id || id.length > 120) return null;
+  const col = await getCollection('checkout_orders');
+  return col.findOne({ $or: [{ identifier: id }, { correlationID: id }] });
+}
+const __resenaPago = (o) => !!o && (String(o.status || '').toLowerCase() === 'pago' || !!o.paidAt);
+
+// Cliente: avaliação já enviada para este pedido (para a página mostrar o "gracias" em vez do formulário).
+app.get('/api/resenas/pedido', async (req, res) => {
+  try {
+    const o = await __resenaPedido(req.query.id);
+    if (!__resenaPago(o)) return res.json({ ok: true, podeAvaliar: false });
+    const r = await (await getCollection('avaliacoes')).findOne({ orderId: o._id }, { projection: { estrelas: 1, texto: 1, status: 1 } });
+    return res.json({ ok: true, podeAvaliar: true, enviada: !!r, estrelas: r ? r.estrelas : null });
+  } catch (_) { return res.json({ ok: false }); }
+});
+// Cliente: envia (ou edita) a avaliação do pedido.
+app.post('/api/resenas', async (req, res) => {
+  try {
+    const ip = String(req.realIP || req.ip || '').split(',')[0].trim();
+    const agora = Date.now();
+    const hits = (__resenaIpHits.get(ip) || []).filter((t) => agora - t < 3600e3);
+    if (hits.length >= 8) return res.status(429).json({ ok: false, error: 'Demasiados intentos. Intenta más tarde.' });
+    hits.push(agora); __resenaIpHits.set(ip, hits);
+    const b = req.body || {};
+    const estrelas = Math.round(Number(b.estrelas));
+    if (!(estrelas >= 1 && estrelas <= 5)) return res.status(400).json({ ok: false, error: 'Elige de 1 a 5 estrellas.' });
+    const texto = String(b.texto || '').replace(/\s+/g, ' ').trim().slice(0, 400);
+    const nomeDigitado = String(b.nome || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+    const o = await __resenaPedido(b.id);
+    if (!__resenaPago(o)) return res.status(400).json({ ok: false, error: 'Solo puedes reseñar un pedido pagado.' });
+    const usuario = String(o.instagramUsername || __resenaGet(o, 'instagram_username') || __resenaGet(o, 'perfil_rede') || '').replace(/^@+/, '');
+    const nomeBase = nomeDigitado || String((o.customer && o.customer.name) || __resenaGet(o, 'customer_name') || '');
+    const doc = {
+      orderId: o._id, identifier: String(o.identifier || ''), correlationID: String(o.correlationID || ''),
+      estrelas, texto, nomeDigitado, nomeExibicao: __resenaNomeCurto(nomeBase), usuario, usuarioMascarado: /^facebook/.test(__resenaGet(o, 'tipo_servico')) ? '' : __resenaMascara(usuario),
+      produto: __resenaProduto(o), canal: /^WppAgent_/.test(String(o.correlationID || '')) ? 'bot' : 'site',
+      status: 'pendente', ip, userAgent: String(req.get('user-agent') || '').slice(0, 200), updatedAt: new Date(),
+    };
+    const col = await getCollection('avaliacoes');
+    await col.updateOne({ orderId: o._id }, { $set: doc, $setOnInsert: { createdAt: new Date() } }, { upsert: true });
+    return res.json({ ok: true });
+  } catch (e) { return res.status(500).json({ ok: false, error: 'No se pudo enviar. Intenta de nuevo.' }); }
+});
+// Site: avaliações APROVADAS (sem dado interno).
+app.get('/api/resenas/publicas', async (req, res) => {
+  try {
+    res.set('Cache-Control', 'public, max-age=120');
+    const itens = await (await getCollection('avaliacoes')).find({ status: 'aprovada' }, { projection: { _id: 0, estrelas: 1, texto: 1, nomeExibicao: 1, usuarioMascarado: 1, produto: 1, aprovadaEm: 1 } })
+      .sort({ destaque: -1, aprovadaEm: -1 }).limit(30).toArray();
+    return res.json({ ok: true, itens });
+  } catch (_) { return res.json({ ok: true, itens: [] }); }
+});
+// Painel: tópico Avaliações.
+app.get('/painel/avaliacoes', requireAdmin, (req, res) => res.render('painel_avaliacoes', { page: 'avaliacoes' }));
+app.get('/api/painel/avaliacoes', requireAdmin, async (req, res) => {
+  try {
+    const st = ['pendente', 'aprovada', 'recusada'].includes(String(req.query.status)) ? String(req.query.status) : 'pendente';
+    const col = await getCollection('avaliacoes');
+    const itens = await col.find({ status: st }).sort({ updatedAt: -1 }).limit(300).toArray();
+    const cont = {}; for (const s2 of ['pendente', 'aprovada', 'recusada']) cont[s2] = await col.countDocuments({ status: s2 });
+    return res.json({ ok: true, status: st, cont, itens: itens.map((x) => ({ id: String(x._id), estrelas: x.estrelas, texto: x.texto, nomeDigitado: x.nomeDigitado, nomeExibicao: x.nomeExibicao, usuario: x.usuario, usuarioMascarado: x.usuarioMascarado, produto: x.produto, canal: x.canal, identifier: x.identifier || x.correlationID, criada: x.createdAt, atualizada: x.updatedAt, aprovadaEm: x.aprovadaEm || null, por: x.moderadaPor || '' })) });
+  } catch (e) { return res.status(500).json({ ok: false, error: String((e && e.message) || e) }); }
+});
+app.post('/api/painel/avaliacoes/status', requireAdmin, async (req, res) => {
+  try {
+    const { ObjectId } = require('mongodb');
+    const id = String((req.body && req.body.id) || '');
+    const st = String((req.body && req.body.status) || '');
+    if (!/^[0-9a-f]{24}$/i.test(id) || !['pendente', 'aprovada', 'recusada'].includes(st)) return res.status(400).json({ ok: false, error: 'parametros_invalidos' });
+    const por = (req.session && req.session.adminUser && req.session.adminUser.username) || 'painel';
+    const set = { status: st, moderadaPor: por, moderadaEm: new Date() };
+    if (st === 'aprovada') set.aprovadaEm = new Date();
+    const r = await (await getCollection('avaliacoes')).updateOne({ _id: new ObjectId(id) }, { $set: set });
+    return res.json({ ok: r.matchedCount > 0 });
+  } catch (e) { return res.status(500).json({ ok: false, error: String((e && e.message) || e) }); }
+});
 app.get('/painel/meta-ads', requireAdmin, (req, res) => res.render('painel_meta_ads', { page: 'meta-ads' }));
 app.get('/api/painel/meta-ads/dados', requireAdmin, async (req, res) => {
   try {
