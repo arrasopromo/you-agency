@@ -26535,6 +26535,7 @@ app.get('/pedido', async (req, res) => {
     const identifier = String(req.query.identifier || req.query.t || '').trim();
      const correlationID = String(req.query.correlationID || req.query.ref || '').trim();
      const npPaymentId = String(req.query.NP_id || req.query.np_id || '').trim();
+     const sessionId = String(req.query.session_id || req.query.sessionId || '').trim(); // usado na checagem de chave forte (vinha da Oppus sem a declaração → ReferenceError em todo /pedido)
      const orderIDRaw = String(req.query.orderID || req.query.orderid || req.query.oid || '').trim();
      const phoneRaw = String(req.query.phone || '').trim();
     const hasQuery = !!(identifier || correlationID || npPaymentId || orderIDRaw || phoneRaw);
@@ -26759,6 +26760,7 @@ app.get('/pedido', async (req, res) => {
     const _orderForView = (req.session && req.session.adminUser) ? order : sanitizeOrderForClient(order);
     return res.render('pedido', { order: _orderForView, refilDaysLeft, PIXEL_ID: process.env.PIXEL_ID || '', logoLink: '/engajamento', esc: escFn, fromCliente, upsellOfferActive });
   } catch (e) {
+    try { console.error('❌ [/pedido] erro ao carregar:', e && (e.stack || e.message) || e); } catch (_) {}
     return res.status(500).type('text/plain').send('Error al cargar el pedido');
   }
 });

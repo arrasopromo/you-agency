@@ -439,32 +439,22 @@
               </style>
             </div>
           </div>
-          <div class="testimonials-section" id="depoimentosCard" style="display: flex; flex-direction: column; align-items: center;">
+          <div class="testimonials-section" id="depoimentosCard" style="display: none; flex-direction: column; align-items: center;">
             <div class="why-us-pill">¿Qué dice la gente?</div>
             <h2 class="why-us-title">Mira las reseñas de quienes <span class="why-us-gradient-text">nos compraron</span></h2>
             <p class="why-us-subtitle" style="margin-bottom: 1.5rem;">Únete a miles de clientes satisfechos que impulsaron su presencia en redes.</p>
-            <div id="testimonialsCarousel" class="testimonials-carousel">
-              <button type="button" class="carousel-btn prev" aria-label="Anterior">‹</button>
-              <div class="carousel-viewport">
-              <div class="carousel-track">
-                  <div class="carousel-item active" data-index="0"><img src="/images/depo1-es.jpg" alt="Reseña 1" loading="lazy" decoding="async" /></div>
-                  <div class="carousel-item" data-index="1"><img src="/images/depo2-es.jpg" alt="Reseña 2" loading="lazy" decoding="async" /></div>
-                  <div class="carousel-item" data-index="2"><img src="/images/depo3-es.jpg" alt="Reseña 3" loading="lazy" decoding="async" /></div>
-              </div>
-              </div>
-              <button type="button" class="carousel-btn next" aria-label="Siguiente">›</button>
-            </div>
+            <%# prints de depoimento removidos (22/11): a seção só aparece com avaliações reais aprovadas no painel %>
             <div id="resenasReais" class="resenas-reais" hidden aria-label="Reseñas de clientes"></div>
             <style>
-              .resenas-reais{width:100%;max-width:1100px;display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 4px 14px;box-sizing:border-box;-webkit-overflow-scrolling:touch}
+              .resenas-reais{width:100%;max-width:1100px;display:flex;flex-wrap:wrap;justify-content:center;gap:16px;padding:4px 0 14px;box-sizing:border-box}
               .resenas-reais[hidden]{display:none}
-              .resena-card{flex:0 0 300px;scroll-snap-align:start;box-sizing:border-box;text-align:left;padding:18px 20px;border-radius:16px;background:var(--bg-secondary,#1A1A2E);border:1px solid rgba(139,92,246,.22);display:flex;flex-direction:column;gap:10px}
+              .resena-card{flex:1 1 300px;max-width:350px;box-sizing:border-box;text-align:left;padding:18px 20px;border-radius:16px;background:var(--bg-secondary,#1A1A2E);border:1px solid rgba(139,92,246,.22);display:flex;flex-direction:column;gap:10px}
               .resena-card .est{color:#f5b301;font-size:1.05rem;letter-spacing:2px}
               .resena-card .txt{margin:0;color:var(--text-primary);font-size:.98rem;line-height:1.5}
               .resena-card .quem{margin-top:auto;font-size:.82rem;color:var(--text-secondary);line-height:1.45}
               .resena-card .quem b{color:var(--text-primary);font-weight:700}
               body.theme-light .resena-card{background:#ffffff;border-color:#e6e8ee;box-shadow:0 10px 26px -20px rgba(15,23,42,.35)}
-              @media (max-width:560px){.resena-card{flex-basis:82%}}
+              @media (max-width:560px){.resena-card{max-width:100%}}
             </style>
             <script>
               (function(){
@@ -472,14 +462,14 @@
                 var esc = function(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); };
                 fetch('/api/resenas/publicas', { headers: { Accept: 'application/json' } }).then(function(r){ return r.json(); }).then(function(d){
                   var it = (d && d.itens) || [];
-                  if (it.length < 3) return; // com poucas aprovadas, ficam as imagens de depoimento
+                  if (!it.length) return; // sem avaliação aprovada a seção fica escondida
                   box.innerHTML = it.map(function(x){
                     var est = ''; for (var i = 1; i <= 5; i++) est += i <= x.estrelas ? '★' : '☆';
                     var quem = '<b>' + esc(x.nomeExibicao || 'Cliente') + '</b>' + (x.usuarioMascarado ? ' · ' + esc(x.usuarioMascarado) : '') + ' · compró ' + esc(x.produto);
                     return '<article class="resena-card"><div class="est" aria-label="' + x.estrelas + ' de 5 estrellas">' + est + '</div>' + (x.texto ? '<p class="txt">“' + esc(x.texto) + '”</p>' : '') + '<div class="quem">' + quem + '</div></article>';
                   }).join('');
                   box.hidden = false;
-                  var img = document.getElementById('testimonialsCarousel'); if (img) img.style.display = 'none';
+                  var sec = document.getElementById('depoimentosCard'); if (sec) sec.style.display = 'flex';
                 }).catch(function(){});
               })();
             </script>
