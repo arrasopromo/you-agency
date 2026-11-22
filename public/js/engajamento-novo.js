@@ -592,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
         service: 'followers', 
         type: 'mistos', 
         title: 'Seguidores mixtos',
-        desc: 'Seguidores de perfiles de varios países con reposición automática y alta retención. Ideales para crecer rápido.',
+        desc: 'Seguidores de perfiles de México con reposición automática y alta retención. Ideales para crecer rápido.',
         tabela: tabelaSeguidores.mistos,
         badgeType: 'mistos'
       },

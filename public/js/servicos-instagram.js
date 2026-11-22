@@ -2317,10 +2317,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <li>📈 Ideal para darle un primer empujón a tu contenido estratégico.</li>
           </ul>
         ` : `
-          <p>Perfiles mixtos de varios países con entrega rápida y estable.</p>
+          <p>Perfiles de México con entrega rápida y estable.</p>
           <ul>
             <li>✅ 100% seguro y confidencial, sin pedir contraseña.</li>
-            <li>🌍 Seguidores de varios países para hacer crecer tu comunidad.</li>
+            <li>🇲🇽 Seguidores de perfiles de México para hacer crecer tu comunidad.</li>
             <li>📉 Servicio estable, con bajísima caída.</li>
             <li>🛠 Herramienta de reposición: no pierdas seguidores.</li>
           </ul>

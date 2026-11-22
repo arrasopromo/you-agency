@@ -1365,10 +1365,10 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
     switch (tipo) {
       case 'mistos':
         return `
-          <p>Perfiles variados con entrega rápida y estable, con algunos seguidores reales de varios países.</p>
+          <p>Perfiles de México con entrega rápida y estable.</p>
           <ul>
             <li>✅ 100% seguro y confidencial, sin necesidad de tu contraseña.</li>
-            <li>🌍 Algunos seguidores reales de varios países para hacer crecer tu comunidad.</li>
+            <li>🇲🇽 Seguidores de perfiles de México para hacer crecer tu comunidad.</li>
             <li>🛠 Herramienta de reposición de seguidores: no pierdas ni un solo seguidor.</li>
           </ul>
         `;
