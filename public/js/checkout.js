@@ -791,18 +791,15 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
 
   const tabela = {
     mistos: [
-      { q: 150, p: '$ 39' },
-      { q: 300, p: '$ 61' },
-      { q: 500, p: '$ 87' },
-      { q: 700, p: '$ 116' },
-      { q: 1000, p: '$ 156' },
-      { q: 2000, p: '$ 239' },
-      { q: 3000, p: '$ 369' },
-      { q: 4000, p: '$ 499' },
-      { q: 5000, p: '$ 629' },
-      { q: 7500, p: '$ 949' },
-      { q: 10000, p: '$ 1279' },
-      { q: 15000, p: '$ 1799' },
+      { q: 100, p: '$ 56' },
+      { q: 250, p: '$ 79' },
+      { q: 500, p: '$ 114' },
+      { q: 1000, p: '$ 171' },
+      { q: 2000, p: '$ 275' },
+      { q: 3000, p: '$ 424' },
+      { q: 5000, p: '$ 723' },
+      { q: 10000, p: '$ 1471' },
+      { q: 20000, p: '$ 2678' },
     ],
     brasileiros: [
       { q: 150, p: '$ 46' },
@@ -956,7 +953,8 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
     const without50 = [150, 500, 1000, 3000, 5000, 10000];
     const base = [50, 150, 500, 1000, 3000, 5000, 10000];
     if (tipo === 'mistos') {
-      return without50;
+      // Tabela de 22/11: todos os pacotes dos mixtos aparecem.
+      return [100, 250, 500, 1000, 2000, 3000, 5000, 10000, 20000];
     }
     if (tipo === 'seguidores_tiktok') {
       return without50;
@@ -965,6 +963,12 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
       return without50;
     }
     return base;
+  }
+
+  function proximoPacoteMixtos(base) {
+    const qs = (tabela.mistos || []).map((x) => Number(x.q)).sort((a, b) => a - b);
+    const i = qs.indexOf(Number(base));
+    return (i >= 0 && i < qs.length - 1) ? qs[i + 1] : 0;
   }
 
   function isFollowersTipo(tipo) {
@@ -1037,9 +1041,9 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
       return;
     }
 
-    // Upgrade genérico para demais pacotes
+    // Upgrade genérico para demais pacotes (mixtos: próximo pacote da tabela)
     const upsellTargets = { 150: 300, 500: 700, 1000: 2000, 3000: 4000, 5000: 7500, 10000: 15000 };
-    const targetQtd = upsellTargets[Number(baseQtd)];
+    const targetQtd = tipo === 'mistos' ? proximoPacoteMixtos(baseQtd) : upsellTargets[Number(baseQtd)];
     if (!targetQtd) {
       if (checkbox) {
         checkbox.checked = false;
@@ -2985,7 +2989,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
             return 1000;
           }
           const upsellTargets = { 50: 150, 150: 300, 500: 700, 1000: 2000, 3000: 4000, 5000: 7500, 10000: 15000 };
-          const target = upsellTargets[Number(base)];
+          const target = t === 'mistos' ? proximoPacoteMixtos(base) : upsellTargets[Number(base)];
           if (!target) return 0;
           return Number(target) - Number(base);
         } catch (_) { return 0; }

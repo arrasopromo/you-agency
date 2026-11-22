@@ -513,7 +513,7 @@ const _recPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 function _precoDesde() {
   try {
     const { tabelaSeguidores, parsePrecoToCents } = require('./pricing.js');
-    const it = (tabelaSeguidores.mistos || []).filter((x) => Number(x.q) >= 150).sort((a, b) => a.q - b.q)[0];
+    const it = (tabelaSeguidores.mistos || []).filter((x) => Number(x.q) >= 100).sort((a, b) => a.q - b.q)[0];
     if (it) return '$ ' + (parsePrecoToCents(it.p) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' MXN';
   } catch (_) {}
   return '';

@@ -19,21 +19,18 @@ const parsePrecoToCents = (precoStr) => {
 };
 
 // Preços em MXN (pesos mexicanos): tabela da Oppus em R$ × BRL→MXN 3.3289 × 1,10, arredondado para ,90.
-// Gerado em 2026-11-11. Mixtos de 2.000 para cima igualados à concorrência (Explota) em 21/11/2026; 4.000, 7.500 e 15.000 proporcionais. As mesmas tabelas estão no front (servicos-instagram.js, engajamento-novo.js, checkout.js) e precisam bater.
+// Gerado em 2026-11-11. Mixtos trocados em 22/11/2026 pela tabela do concorrente: 100, 250, 500, 1.000, 2.000, 3.000, 5.000, 10.000 e 20.000 (sem brinde). As mesmas tabelas estão no front (servicos-instagram.js, engajamento-novo.js, checkout.js) e precisam bater.
 const tabelaSeguidores = {
     mistos: [
-        { q: 150, p: '$ 39' },
-        { q: 300, p: '$ 61' },
-        { q: 500, p: '$ 87' },
-        { q: 700, p: '$ 116' },
-        { q: 1000, p: '$ 156' },
-        { q: 2000, p: '$ 239' },
-        { q: 3000, p: '$ 369' },
-        { q: 4000, p: '$ 499' },
-        { q: 5000, p: '$ 629' },
-        { q: 7500, p: '$ 949' },
-        { q: 10000, p: '$ 1279' },
-        { q: 15000, p: '$ 1799' },
+        { q: 100, p: '$ 56' },
+        { q: 250, p: '$ 79' },
+        { q: 500, p: '$ 114' },
+        { q: 1000, p: '$ 171' },
+        { q: 2000, p: '$ 275' },
+        { q: 3000, p: '$ 424' },
+        { q: 5000, p: '$ 723' },
+        { q: 10000, p: '$ 1471' },
+        { q: 20000, p: '$ 2678' },
     ],
     brasileiros: [
         { q: 150, p: '$ 46' },
@@ -409,6 +406,11 @@ const calculatePrice = async (type, quantity, additionalInfo = [], opts = {}) =>
                  targetQ = map[q];
             } else if ((type === 'brasileiros' || type === 'organicos') && q === 1000) {
                 targetQ = 2000;
+            } else if (table === tabelaSeguidores.mistos) {
+                // Mixtos (tabela de 22/11: 100, 250, 500, 1.000 …): sobe para o próximo pacote da própria tabela.
+                const qs = table.map((x) => Number(x.q)).sort((a, b) => a - b);
+                const i = qs.indexOf(q);
+                targetQ = (i >= 0 && i < qs.length - 1) ? qs[i + 1] : 0;
             } else {
                 // Keep upgrade mapping in sync with checkout.js (updateOrderBump -> upsellTargets)
                 // Igual ao front (servicos-instagram.js upsellTargets) e à Oppus: cada pacote sobe para o seguinte.
@@ -528,4 +530,16 @@ const verifyPrice = async (type, quantity, additionalInfo, valuePaid, opts = {})
     return { isValid, matchedPrice: isValid ? calculatedPrice : null, expectedPrice: calculatedPrice, mismatchDetails };
 };
 
-module.exports = { comentariosIgCents, calculatePrice, validatePrice, verifyPrice, parsePrecoToCents, warranty3mCents, round90Cents, tabelaSeguidores, tabelaCurtidas, tabelaVisualizacoes, tabelaRedes };
+// Quantos seguidores o "Mejora de paquete" acrescenta no envio. Reales/latinos: mapa antigo.
+// Mixtos: próximo pacote da tabela (mantém as chaves antigas para pedidos feitos antes da troca de 22/11).
+const UPG_ADD_SEG_ANTIGO = { 50: 50, 150: 150, 300: 200, 500: 200, 700: 300, 1000: 1000, 1200: 800, 2000: 1000, 3000: 1000, 4000: 1000, 5000: 2500, 7500: 2500, 10000: 5000 };
+function upgradeAddMapSeguidores(tipo) {
+    const t = String(tipo || '').toLowerCase().trim().replace(/^seguidores_/, '');
+    if (/organ|reais|brasil|latino|curtid/.test(t)) return UPG_ADD_SEG_ANTIGO;
+    const qs = (tabelaSeguidores.mistos || []).map((x) => Number(x.q)).sort((a, b) => a - b);
+    const m = Object.assign({}, UPG_ADD_SEG_ANTIGO);
+    for (let i = 0; i < qs.length - 1; i++) m[qs[i]] = qs[i + 1] - qs[i];
+    return m;
+}
+
+module.exports = { upgradeAddMapSeguidores, comentariosIgCents, calculatePrice, validatePrice, verifyPrice, parsePrecoToCents, warranty3mCents, round90Cents, tabelaSeguidores, tabelaCurtidas, tabelaVisualizacoes, tabelaRedes };

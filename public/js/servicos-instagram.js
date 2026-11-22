@@ -183,18 +183,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const tabelaSeguidores = {
     mistos: [
-      { q: 150, p: '$ 39' },
-      { q: 300, p: '$ 61' },
-      { q: 500, p: '$ 87' },
-      { q: 700, p: '$ 116' },
-      { q: 1000, p: '$ 156' },
-      { q: 2000, p: '$ 239' },
-      { q: 3000, p: '$ 369' },
-      { q: 4000, p: '$ 499' },
-      { q: 5000, p: '$ 629' },
-      { q: 7500, p: '$ 949' },
-      { q: 10000, p: '$ 1279' },
-      { q: 15000, p: '$ 1799' },
+      { q: 100, p: '$ 56' },
+      { q: 250, p: '$ 79' },
+      { q: 500, p: '$ 114' },
+      { q: 1000, p: '$ 171' },
+      { q: 2000, p: '$ 275' },
+      { q: 3000, p: '$ 424' },
+      { q: 5000, p: '$ 723' },
+      { q: 10000, p: '$ 1471' },
+      { q: 20000, p: '$ 2678' },
     ],
     brasileiros: [
       { q: 150, p: '$ 46' },
@@ -2150,6 +2147,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function getAllowedQuantities(tipo) {
     const base = [50, 150, 300, 500, 700, 1000, 2000, 3000, 4000, 5000, 7500, 10000, 15000];
+    if (tipo === 'mistos' && !isCurtidasContext) return [100, 250, 500, 1000, 2000, 3000, 5000, 10000, 20000];
     if (tipo === 'mistos' || tipo === 'brasileiros' || tipo === 'curtidas_brasileiras' || tipo === 'organicos' || tipo === 'seguidores_tiktok') {
       if (isCurtidasContext) {
         if (tipo === 'curtidas_brasileiras') return [50, 150, 500, 1000, 3000, 5000, 10000];
@@ -2165,7 +2163,9 @@ document.addEventListener('DOMContentLoaded', function() {
     1: 'PAQUETE DE PRUEBA',
     50: 'PAQUETE DE PRUEBA',
     20: 'PAQUETE DE PRUEBA',
+    100: 'PAQUETE INICIAL',
     150: 'PAQUETE INICIAL',
+    250: 'PAQUETE BÁSICO',
     500: 'PAQUETE BÁSICO',
     1000: 'MÁS POPULAR',
     3000: 'EXCLUSIVO',
@@ -2188,6 +2188,9 @@ document.addEventListener('DOMContentLoaded', function() {
         arr = arr
           .filter(x => allowed.includes(Number(x.q)))
           .filter(x => quantityBadges.hasOwnProperty(Number(x.q)));
+      } else if (tipo === 'mistos') {
+        // Mixtos (tabela de 22/11): mostra todos os pacotes.
+        arr = arr.filter(x => allowed.includes(Number(x.q)));
       } else {
         arr = arr
           .filter(x => allowed.includes(Number(x.q)))
@@ -2594,7 +2597,11 @@ document.addEventListener('DOMContentLoaded', function() {
       1000: 2000, 1200: 2000, 2000: 3000, 3000: 4000, 4000: 5000, 
       5000: 7500, 7500: 10000, 10000: 15000 
     };
-    const targetQtd = upsellTargets[Number(baseQtd)];
+    const targetQtd = (tipo === 'mistos' && !isCurtidasContext) ? (function () {
+      const qs = (tabelaSeguidores.mistos || []).map((x) => Number(x.q)).sort((a, b) => a - b);
+      const i = qs.indexOf(Number(baseQtd));
+      return (i >= 0 && i < qs.length - 1) ? qs[i + 1] : 0;
+    })() : upsellTargets[Number(baseQtd)];
     if (!targetQtd) {
       if (labelSpan) labelSpan.textContent = 'No hay mejora disponible para este paquete.';
       if (upOld) upOld.textContent = '—';

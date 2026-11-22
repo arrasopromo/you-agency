@@ -544,256 +544,138 @@
                 <div id="engajamentoServiceCards" style="display: grid;">
                     
                     <!-- Card Seguidores -->
-                    <div data-plat="instagram" class="service-card premium-card card-seguidores" onclick="window.location.href = (function(){ try { const qs = (function(){ const p=new URLSearchParams(window.location.search); const s=new URLSearchParams(window.SERVER_UTMS_QUERY||''); s.forEach((v,k)=>{ if(!p.has(k)) p.set(k,v); }); const st=sessionStorage.getItem('ya_utms'); if(st){ try{ const o=JSON.parse(st); Object.keys(o).forEach(k=>{ if(!p.has(k)) p.set(k,o[k]); }); }catch(_){}} const str=p.toString(); return str ? ('?'+str) : ''; })(); return '/servicios-instagram'+qs; } catch(_){ return '/servicios-instagram'; } })()">
-                      <div class="card-content">
-                        <img src="/images/icone-seguidores-320.png" alt="Seguidores" class="card-icon-3d" onerror="this.style.display='none'">
-                        <div class="card-title text-gradient-seguidores">Seguidores</div>
-                        <div class="card-subtitle">
-                          <span class="badge-seguidores-br">Seguidores reales (latinos)</span>
+                    <div data-plat="instagram" class="service-card premium-card ya-v2 ya-instagram card-seguidores" onclick="window.location.href = (function(){ try { const qs = (function(){ const p=new URLSearchParams(window.location.search); const s=new URLSearchParams(window.SERVER_UTMS_QUERY||''); s.forEach((v,k)=>{ if(!p.has(k)) p.set(k,v); }); const st=sessionStorage.getItem('ya_utms'); if(st){ try{ const o=JSON.parse(st); Object.keys(o).forEach(k=>{ if(!p.has(k)) p.set(k,o[k]); }); }catch(_){}} const str=p.toString(); return str ? ('?'+str) : ''; })(); return '/servicios-instagram'+qs; } catch(_){ return '/servicios-instagram'; } })()">
+                      <div class="card-content ya-card">
+                        <div class="ya-hero ya-hero-instagram" aria-hidden="true"><span class="ya-flag"></span><span class="ya-reco">Recomendado</span><span class="ya-arte ya-arte-seguidores"><span class="ya-avs"><span class="ya-av" style="background:#ffd6e0"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="16" r="8" fill="#c68642"/><path d="M12 14a8 8 0 0 1 16 0v-2a8 8 0 0 0-16 0z" fill="#3b2314"/><path d="M6 40a14 12 0 0 1 28 0z" fill="#3b2314"/></svg></span><span class="ya-av" style="background:#fde6b6"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="16" r="8" fill="#f1c27d"/><path d="M12 14a8 8 0 0 1 16 0v-2a8 8 0 0 0-16 0z" fill="#a0522d"/><path d="M6 40a14 12 0 0 1 28 0z" fill="#a0522d"/></svg></span><span class="ya-av" style="background:#d6ecff"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="16" r="8" fill="#8d5524"/><path d="M12 14a8 8 0 0 1 16 0v-2a8 8 0 0 0-16 0z" fill="#1f1f1f"/><path d="M6 40a14 12 0 0 1 28 0z" fill="#1f1f1f"/></svg></span><span class="ya-av" style="background:#e3f7d9"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="16" r="8" fill="#ffdbac"/><path d="M12 14a8 8 0 0 1 16 0v-2a8 8 0 0 0-16 0z" fill="#d9a066"/><path d="M6 40a14 12 0 0 1 28 0z" fill="#d9a066"/></svg></span></span><span class="ya-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 19a6 6 0 0 0-12 0M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>+1,000</span></span></div>
+                        <div class="ya-body">
+                          <h3 class="ya-titulo">Seguidores</h3>
+                          <p class="ya-desc">Más autoridad y confianza en tu perfil.</p>
+                          <ul class="ya-lista"><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Mixtos o reales latinos</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Mixtos con reposición gratis 30 días</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Solo con tu @, sin contraseña</span></li></ul>
+                          <div class="ya-pe"><span class="ya-desde">desde <b><%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.seg) || '$ 39' ).replace('$ ', '$') %> MXN</b></span><span class="ya-ver">Ver paquetes <span aria-hidden="true">&rarr;</span></span></div>
                         </div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.seg) || '$ 39' %></span></div>
-                        <div class="card-security">
-                          No pedimos contraseña
-                        </div>
-                        <div class="card-hint">
-                          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle>
-                            <path d="M12 16v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                            <path d="M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                          </svg>
-                          Elige el tipo
-                        </div>
-                        <button class="card-btn btn-gradient-seguidores">Ver paquetes</button>
                       </div>
                     </div>
-                    
-                    <!-- Card Curtidas -->
-                    <div data-plat="instagram" class="service-card premium-card card-curtidas" onclick="window.location.href = (function(){ try { const qs = (function(){ const p=new URLSearchParams(window.location.search); const s=new URLSearchParams(window.SERVER_UTMS_QUERY||''); s.forEach((v,k)=>{ if(!p.has(k)) p.set(k,v); }); const st=sessionStorage.getItem('ya_utms'); if(st){ try{ const o=JSON.parse(st); Object.keys(o).forEach(k=>{ if(!p.has(k)) p.set(k,v); }); }catch(_){}} const str=p.toString(); return str ? ('?'+str) : ''; })(); return '/servicios-me-gusta'+qs; } catch(_){ return '/servicios-me-gusta'; } })()">
-                      <div class="card-content">
-                        <img src="/images/curtidas-icone-320.png" alt="Me gusta" class="card-icon-3d" onerror="this.style.display='none'">
-                        <div class="card-title text-gradient-curtidas">Me gusta</div>
-                        <div class="card-subtitle">Mixtos y reales</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.curt) || '$ 20' %></span></div>
-                        <div class="card-security">
-                          No pedimos contraseña
+                    <div data-plat="instagram" class="service-card premium-card ya-v2 ya-instagram card-curtidas" onclick="window.location.href = (function(){ try { const qs = (function(){ const p=new URLSearchParams(window.location.search); const s=new URLSearchParams(window.SERVER_UTMS_QUERY||''); s.forEach((v,k)=>{ if(!p.has(k)) p.set(k,v); }); const st=sessionStorage.getItem('ya_utms'); if(st){ try{ const o=JSON.parse(st); Object.keys(o).forEach(k=>{ if(!p.has(k)) p.set(k,v); }); }catch(_){}} const str=p.toString(); return str ? ('?'+str) : ''; })(); return '/servicios-me-gusta'+qs; } catch(_){ return '/servicios-me-gusta'; } })()">
+                      <div class="card-content ya-card">
+                        <div class="ya-hero ya-hero-instagram" aria-hidden="true"><span class="ya-flag"></span><span class="ya-arte ya-arte-curtidas"><span class="ya-mini ya-mini-a">&#9829;</span><span class="ya-mini ya-mini-b">&#9829;</span><span class="ya-bola"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.6 4.5c2.1 0 3.6 1.2 4.4 2.6.8-1.4 2.3-2.6 4.4-2.6 3.6 0 5.7 3.8 4.2 7.2C19.5 16.4 12 21 12 21z" fill="currentColor"/></svg></span><span class="ya-chip ya-chip-alto">+500 &#9829;</span></span></div>
+                        <div class="ya-body">
+                          <h3 class="ya-titulo">Me gusta</h3>
+                          <p class="ya-desc">Publicaciones con más alcance y prueba social.</p>
+                          <ul class="ya-lista"><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Para fotos y Reels</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Mixtos o reales</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Sin contraseña</span></li></ul>
+                          <div class="ya-pe"><span class="ya-desde">desde <b><%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.curt) || '$ 20' ).replace('$ ', '$') %> MXN</b></span><span class="ya-ver">Ver paquetes <span aria-hidden="true">&rarr;</span></span></div>
                         </div>
-                        <div class="card-hint">
-                          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle>
-                            <path d="M12 16v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                            <path d="M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                          </svg>
-                          Elige el tipo
-                        </div>
-                        <button class="card-btn btn-gradient-curtidas">Ver paquetes</button>
                       </div>
                     </div>
-
-                    <!-- Card Visualizações -->
-                    <div data-plat="instagram" class="service-card premium-card card-visualizacoes" onclick="window.location.href = (function(){ try { const qs = (function(){ const p=new URLSearchParams(window.location.search); const s=new URLSearchParams(window.SERVER_UTMS_QUERY||''); s.forEach((v,k)=>{ if(!p.has(k)) p.set(k,v); }); const st=sessionStorage.getItem('ya_utms'); if(st){ try{ const o=JSON.parse(st); Object.keys(o).forEach(k=>{ if(!p.has(k)) p.set(k,o[k]); }); }catch(_){}} const str=p.toString(); return str ? ('?'+str) : ''; })(); return '/servicios-visualizaciones'+qs; } catch(_){ return '/servicios-visualizaciones'; } })()">
-                      <div class="card-content">
-                        <img src="/images/visualizacao-icon-320.png" alt="Vistas" class="card-icon-3d" onerror="this.style.display='none'">
-                        <div class="card-title text-gradient-visualizacoes">Vistas</div>
-                        <div class="card-subtitle">Vistas de Reels</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.views) || '$ 20' %></span></div>
-                        <div class="card-security">
-                          No pedimos contraseña
+                    <div data-plat="instagram" class="service-card premium-card ya-v2 ya-instagram card-visualizacoes" onclick="window.location.href = (function(){ try { const qs = (function(){ const p=new URLSearchParams(window.location.search); const s=new URLSearchParams(window.SERVER_UTMS_QUERY||''); s.forEach((v,k)=>{ if(!p.has(k)) p.set(k,v); }); const st=sessionStorage.getItem('ya_utms'); if(st){ try{ const o=JSON.parse(st); Object.keys(o).forEach(k=>{ if(!p.has(k)) p.set(k,o[k]); }); }catch(_){}} const str=p.toString(); return str ? ('?'+str) : ''; })(); return '/servicios-visualizaciones'+qs; } catch(_){ return '/servicios-visualizaciones'; } })()">
+                      <div class="card-content ya-card">
+                        <div class="ya-hero ya-hero-instagram" aria-hidden="true"><span class="ya-flag"></span><span class="ya-arte ya-arte-visualizacoes"><span class="ya-tela"><span class="ya-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span><span class="ya-tela-num">&#9654; 25.4K</span></span></span></div>
+                        <div class="ya-body">
+                          <h3 class="ya-titulo">Vistas</h3>
+                          <p class="ya-desc">Reels con más vistas para que el algoritmo los empuje.</p>
+                          <ul class="ya-lista"><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Para Reels y videos</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Desde 1,000 vistas</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Sin contraseña</span></li></ul>
+                          <div class="ya-pe"><span class="ya-desde">desde <b><%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.views) || '$ 20' ).replace('$ ', '$') %> MXN</b></span><span class="ya-ver">Ver paquetes <span aria-hidden="true">&rarr;</span></span></div>
                         </div>
-                        <div class="card-hint">
-                          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle>
-                            <path d="M12 16v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                            <path d="M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                          </svg>
-                          Elige el Reel
-                        </div>
-                        <button class="card-btn btn-gradient-visualizacoes">Ver paquetes</button>
                       </div>
                     </div>
-
-                      <!-- Card Comentarios -->
-                      <div data-plat="instagram" class="service-card premium-card card-curtidas" onclick="window.location.href = (function(){ try { const qs = (function(){ const p=new URLSearchParams(window.location.search); const s=new URLSearchParams(window.SERVER_UTMS_QUERY||''); s.forEach((v,k)=>{ if(!p.has(k)) p.set(k,v); }); const st=sessionStorage.getItem('ya_utms'); if(st){ try{ const o=JSON.parse(st); Object.keys(o).forEach(k=>{ if(!p.has(k)) p.set(k,o[k]); }); }catch(_){}} const str=p.toString(); return str ? ('?'+str) : ''; })(); return '/servicios-comentarios'+qs; } catch(_){ return '/servicios-comentarios'; } })()">
-                        <div class="card-content">
-                          <svg class="card-icon-3d" width="80" height="80" viewBox="-6 -8 76 76" fill="none" aria-hidden="true" style="display:block;">
-                            <defs>
-                              <linearGradient id="cmtGrad" x1="8" y1="6" x2="56" y2="52" gradientUnits="userSpaceOnUse">
-                                <stop offset="0" stop-color="#ff7eb3"/>
-                                <stop offset="0.5" stop-color="#ff2e93"/>
-                                <stop offset="1" stop-color="#ff7a18"/>
-                              </linearGradient>
-                              <linearGradient id="cmtGloss" x1="0" y1="6" x2="0" y2="30" gradientUnits="userSpaceOnUse">
-                                <stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/>
-                                <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
-                              </linearGradient>
-                            </defs>
-                            <path d="M16 7h32a11 11 0 0 1 11 11v16a11 11 0 0 1-11 11H30l-11 9.5a1.4 1.4 0 0 1-2.3-1.2l1.1-8.4A11 11 0 0 1 5 34V18A11 11 0 0 1 16 7z" fill="url(#cmtGrad)"/>
-                            <path d="M16 7h32a11 11 0 0 1 11 11v4H5v-4A11 11 0 0 1 16 7z" fill="url(#cmtGloss)"/>
-                            <circle cx="21" cy="26" r="3.6" fill="#fff"/>
-                            <circle cx="32" cy="26" r="3.6" fill="#fff"/>
-                            <circle cx="43" cy="26" r="3.6" fill="#fff"/>
-                          </svg>
-                          <div class="card-title text-gradient-curtidas">Comentarios</div>
-                          <div class="card-subtitle">En publicaciones y Reels</div>
-                          <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.comIg) || '$ 20' %></span></div>
-                          <div class="card-security">
-                            No pedimos contraseña
+                      <div data-plat="instagram" class="service-card premium-card ya-v2 ya-instagram card-curtidas" onclick="window.location.href = (function(){ try { const qs = (function(){ const p=new URLSearchParams(window.location.search); const s=new URLSearchParams(window.SERVER_UTMS_QUERY||''); s.forEach((v,k)=>{ if(!p.has(k)) p.set(k,v); }); const st=sessionStorage.getItem('ya_utms'); if(st){ try{ const o=JSON.parse(st); Object.keys(o).forEach(k=>{ if(!p.has(k)) p.set(k,o[k]); }); }catch(_){}} const str=p.toString(); return str ? ('?'+str) : ''; })(); return '/servicios-comentarios'+qs; } catch(_){ return '/servicios-comentarios'; } })()">
+                        <div class="card-content ya-card">
+                          <div class="ya-hero ya-hero-instagram" aria-hidden="true"><span class="ya-flag"></span><span class="ya-arte ya-arte-comentarios"><span class="ya-balao"><i></i><i></i><i></i></span><span class="ya-chip ya-chip-alto">+25</span></span></div>
+                          <div class="ya-body">
+                            <h3 class="ya-titulo">Comentarios</h3>
+                            <p class="ya-desc">Más conversación en tus publicaciones.</p>
+                            <ul class="ya-lista"><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>En publicaciones y Reels</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Tú eliges la publicación</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Sin contraseña</span></li></ul>
+                            <div class="ya-pe"><span class="ya-desde">desde <b><%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.comIg) || '$ 20' ).replace('$ ', '$') %> MXN</b></span><span class="ya-ver">Ver paquetes <span aria-hidden="true">&rarr;</span></span></div>
                           </div>
-                          <div class="card-hint">
-                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle>
-                              <path d="M12 16v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                              <path d="M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                            </svg>
-                            Elige la publicación
-                          </div>
-                          <button class="card-btn btn-gradient-curtidas">Ver paquetes</button>
                         </div>
                       </div>
-                    <a data-plat="tiktok" class="service-card premium-card card-seguidores" style="display:none; text-decoration:none; color:inherit;" href="/servicios-tiktok?servicio=seguidores">
-                      <div class="card-content">
-                        <img src="/images/icone-seguidores-320.png" alt="Seguidores" class="card-icon-3d rd-tint-tiktok" onerror="this.style.display='none'">
-                        <div class="card-title text-gradient-seguidores">Seguidores</div>
-                        <div class="card-subtitle">Perfil de TikTok</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.seg) || '$ 39' %></span></div>
-                        <div class="card-security">
-                          No pedimos contraseña
+                    <a data-plat="tiktok" class="service-card premium-card ya-v2 ya-tiktok card-seguidores" style="display:none; text-decoration:none; color:inherit;" href="/servicios-tiktok?servicio=seguidores">
+                      <div class="card-content ya-card">
+                        <div class="ya-hero ya-hero-tiktok" aria-hidden="true"><span class="ya-flag"></span><span class="ya-arte ya-arte-seguidores"><span class="ya-avs"><span class="ya-av" style="background:#ffd6e0"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="16" r="8" fill="#c68642"/><path d="M12 14a8 8 0 0 1 16 0v-2a8 8 0 0 0-16 0z" fill="#3b2314"/><path d="M6 40a14 12 0 0 1 28 0z" fill="#3b2314"/></svg></span><span class="ya-av" style="background:#fde6b6"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="16" r="8" fill="#f1c27d"/><path d="M12 14a8 8 0 0 1 16 0v-2a8 8 0 0 0-16 0z" fill="#a0522d"/><path d="M6 40a14 12 0 0 1 28 0z" fill="#a0522d"/></svg></span><span class="ya-av" style="background:#d6ecff"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="16" r="8" fill="#8d5524"/><path d="M12 14a8 8 0 0 1 16 0v-2a8 8 0 0 0-16 0z" fill="#1f1f1f"/><path d="M6 40a14 12 0 0 1 28 0z" fill="#1f1f1f"/></svg></span><span class="ya-av" style="background:#e3f7d9"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="16" r="8" fill="#ffdbac"/><path d="M12 14a8 8 0 0 1 16 0v-2a8 8 0 0 0-16 0z" fill="#d9a066"/><path d="M6 40a14 12 0 0 1 28 0z" fill="#d9a066"/></svg></span></span><span class="ya-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 19a6 6 0 0 0-12 0M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>+1,000</span></span></div>
+                        <div class="ya-body">
+                          <h3 class="ya-titulo">Seguidores</h3>
+                          <p class="ya-desc">Más seguidores en tu perfil de TikTok.</p>
+                          <ul class="ya-lista"><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Pega el enlace de tu perfil</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Paquetes desde 100</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Sin contraseña</span></li></ul>
+                          <div class="ya-pe"><span class="ya-desde">desde <b><%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.seg) || '$ 39' ).replace('$ ', '$') %> MXN</b></span><span class="ya-ver">Ver paquetes <span aria-hidden="true">&rarr;</span></span></div>
                         </div>
-                        <div class="card-hint">
-                          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle><path d="M12 16v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><path d="M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
-                          Pega tu perfil
-                        </div>
-                        <span class="card-btn btn-gradient-seguidores">Ver paquetes</span>
                       </div>
                     </a>
-                    <a data-plat="tiktok" class="service-card premium-card card-curtidas" style="display:none; text-decoration:none; color:inherit;" href="/servicios-tiktok?servicio=curtidas">
-                      <div class="card-content">
-                        <img src="/images/curtidas-icone-320.png" alt="Me gusta" class="card-icon-3d rd-tint-tiktok" onerror="this.style.display='none'">
-                        <div class="card-title text-gradient-curtidas">Me gusta</div>
-                        <div class="card-subtitle">En tus videos</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.curt) || '$ 20' %></span></div>
-                        <div class="card-security">
-                          No pedimos contraseña
+                    <a data-plat="tiktok" class="service-card premium-card ya-v2 ya-tiktok card-curtidas" style="display:none; text-decoration:none; color:inherit;" href="/servicios-tiktok?servicio=curtidas">
+                      <div class="card-content ya-card">
+                        <div class="ya-hero ya-hero-tiktok" aria-hidden="true"><span class="ya-flag"></span><span class="ya-arte ya-arte-curtidas"><span class="ya-mini ya-mini-a">&#9829;</span><span class="ya-mini ya-mini-b">&#9829;</span><span class="ya-bola"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.6 4.5c2.1 0 3.6 1.2 4.4 2.6.8-1.4 2.3-2.6 4.4-2.6 3.6 0 5.7 3.8 4.2 7.2C19.5 16.4 12 21 12 21z" fill="currentColor"/></svg></span><span class="ya-chip ya-chip-alto">+500 &#9829;</span></span></div>
+                        <div class="ya-body">
+                          <h3 class="ya-titulo">Me gusta</h3>
+                          <p class="ya-desc">Más me gusta en tus videos.</p>
+                          <ul class="ya-lista"><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>En el video que elijas</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Más alcance y prueba social</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Sin contraseña</span></li></ul>
+                          <div class="ya-pe"><span class="ya-desde">desde <b><%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.curt) || '$ 20' ).replace('$ ', '$') %> MXN</b></span><span class="ya-ver">Ver paquetes <span aria-hidden="true">&rarr;</span></span></div>
                         </div>
-                        <div class="card-hint">
-                          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle><path d="M12 16v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><path d="M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
-                          Pega el video
-                        </div>
-                        <span class="card-btn btn-gradient-curtidas">Ver paquetes</span>
                       </div>
                     </a>
-                    <a data-plat="tiktok" class="service-card premium-card card-visualizacoes" style="display:none; text-decoration:none; color:inherit;" href="/servicios-tiktok?servicio=visualizacoes">
-                      <div class="card-content">
-                        <img src="/images/visualizacao-icon-320.png" alt="Vistas" class="card-icon-3d rd-tint-tiktok" onerror="this.style.display='none'">
-                        <div class="card-title text-gradient-visualizacoes">Vistas</div>
-                        <div class="card-subtitle">En tus videos</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.views) || '$ 20' %></span></div>
-                        <div class="card-security">
-                          No pedimos contraseña
+                    <a data-plat="tiktok" class="service-card premium-card ya-v2 ya-tiktok card-visualizacoes" style="display:none; text-decoration:none; color:inherit;" href="/servicios-tiktok?servicio=visualizacoes">
+                      <div class="card-content ya-card">
+                        <div class="ya-hero ya-hero-tiktok" aria-hidden="true"><span class="ya-flag"></span><span class="ya-arte ya-arte-visualizacoes"><span class="ya-tela"><span class="ya-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span><span class="ya-tela-num">&#9654; 25.4K</span></span></span></div>
+                        <div class="ya-body">
+                          <h3 class="ya-titulo">Vistas</h3>
+                          <p class="ya-desc">Más vistas en tus videos de TikTok.</p>
+                          <ul class="ya-lista"><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>En el video que elijas</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Desde 1,000 vistas</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Sin contraseña</span></li></ul>
+                          <div class="ya-pe"><span class="ya-desde">desde <b><%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.views) || '$ 20' ).replace('$ ', '$') %> MXN</b></span><span class="ya-ver">Ver paquetes <span aria-hidden="true">&rarr;</span></span></div>
                         </div>
-                        <div class="card-hint">
-                          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle><path d="M12 16v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><path d="M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
-                          Pega el video
-                        </div>
-                        <span class="card-btn btn-gradient-visualizacoes">Ver paquetes</span>
                       </div>
                     </a>
-                    <a data-plat="tiktok" class="service-card premium-card card-curtidas" style="display:none; text-decoration:none; color:inherit;" href="/servicios-tiktok?servicio=comentarios">
-                      <div class="card-content">
-                        <svg class="card-icon-3d" width="80" height="80" viewBox="-6 -8 76 76" fill="none" aria-hidden="true" style="display:block;">
-                          <defs>
-                            <linearGradient id="cmtGradTiktok" x1="8" y1="6" x2="56" y2="52" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ff7eb3"/><stop offset="0.5" stop-color="#ff2e93"/><stop offset="1" stop-color="#ff7a18"/></linearGradient>
-                            <linearGradient id="cmtGradTiktokGloss" x1="0" y1="6" x2="0" y2="30" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
-                          </defs>
-                          <path d="M16 7h32a11 11 0 0 1 11 11v16a11 11 0 0 1-11 11H30l-11 9.5a1.4 1.4 0 0 1-2.3-1.2l1.1-8.4A11 11 0 0 1 5 34V18A11 11 0 0 1 16 7z" fill="url(#cmtGradTiktok)"/>
-                          <path d="M16 7h32a11 11 0 0 1 11 11v4H5v-4A11 11 0 0 1 16 7z" fill="url(#cmtGradTiktokGloss)"/>
-                          <circle cx="21" cy="26" r="3.6" fill="#fff"/><circle cx="32" cy="26" r="3.6" fill="#fff"/><circle cx="43" cy="26" r="3.6" fill="#fff"/>
-                        </svg>
-                        <div class="card-title text-gradient-curtidas">Comentarios</div>
-                        <div class="card-subtitle">En tus videos</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.comRedes) || '$ 54' %></span></div>
-                        <div class="card-security">
-                          No pedimos contraseña
+                    <a data-plat="tiktok" class="service-card premium-card ya-v2 ya-tiktok card-curtidas" style="display:none; text-decoration:none; color:inherit;" href="/servicios-tiktok?servicio=comentarios">
+                      <div class="card-content ya-card">
+                        <div class="ya-hero ya-hero-tiktok" aria-hidden="true"><span class="ya-flag"></span><span class="ya-arte ya-arte-comentarios"><span class="ya-balao"><i></i><i></i><i></i></span><span class="ya-chip ya-chip-alto">+25</span></span></div>
+                        <div class="ya-body">
+                          <h3 class="ya-titulo">Comentarios</h3>
+                          <p class="ya-desc">Más conversación en tus videos.</p>
+                          <ul class="ya-lista"><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>En el video que elijas</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Tú eliges el video</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Sin contraseña</span></li></ul>
+                          <div class="ya-pe"><span class="ya-desde">desde <b><%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.comRedes) || '$ 54' ).replace('$ ', '$') %> MXN</b></span><span class="ya-ver">Ver paquetes <span aria-hidden="true">&rarr;</span></span></div>
                         </div>
-                        <div class="card-hint">
-                          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle><path d="M12 16v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><path d="M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
-                          Pega el video
-                        </div>
-                        <span class="card-btn btn-gradient-curtidas">Ver paquetes</span>
                       </div>
                     </a>
-                    <a data-plat="facebook" class="service-card premium-card card-seguidores" style="display:none; text-decoration:none; color:inherit;" href="/servicios-facebook?servicio=seguidores">
-                      <div class="card-content">
-                        <img src="/images/icone-seguidores-320.png" alt="Seguidores" class="card-icon-3d rd-tint-facebook" onerror="this.style.display='none'">
-                        <div class="card-title text-gradient-seguidores">Seguidores</div>
-                        <div class="card-subtitle">Perfil o página</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.seg) || '$ 39' %></span></div>
-                        <div class="card-security">
-                          No pedimos contraseña
+                    <a data-plat="facebook" class="service-card premium-card ya-v2 ya-facebook card-seguidores" style="display:none; text-decoration:none; color:inherit;" href="/servicios-facebook?servicio=seguidores">
+                      <div class="card-content ya-card">
+                        <div class="ya-hero ya-hero-facebook" aria-hidden="true"><span class="ya-flag"></span><span class="ya-arte ya-arte-seguidores"><span class="ya-avs"><span class="ya-av" style="background:#ffd6e0"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="16" r="8" fill="#c68642"/><path d="M12 14a8 8 0 0 1 16 0v-2a8 8 0 0 0-16 0z" fill="#3b2314"/><path d="M6 40a14 12 0 0 1 28 0z" fill="#3b2314"/></svg></span><span class="ya-av" style="background:#fde6b6"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="16" r="8" fill="#f1c27d"/><path d="M12 14a8 8 0 0 1 16 0v-2a8 8 0 0 0-16 0z" fill="#a0522d"/><path d="M6 40a14 12 0 0 1 28 0z" fill="#a0522d"/></svg></span><span class="ya-av" style="background:#d6ecff"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="16" r="8" fill="#8d5524"/><path d="M12 14a8 8 0 0 1 16 0v-2a8 8 0 0 0-16 0z" fill="#1f1f1f"/><path d="M6 40a14 12 0 0 1 28 0z" fill="#1f1f1f"/></svg></span><span class="ya-av" style="background:#e3f7d9"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="16" r="8" fill="#ffdbac"/><path d="M12 14a8 8 0 0 1 16 0v-2a8 8 0 0 0-16 0z" fill="#d9a066"/><path d="M6 40a14 12 0 0 1 28 0z" fill="#d9a066"/></svg></span></span><span class="ya-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 19a6 6 0 0 0-12 0M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>+1,000</span></span></div>
+                        <div class="ya-body">
+                          <h3 class="ya-titulo">Seguidores</h3>
+                          <p class="ya-desc">Más seguidores en tu perfil o página.</p>
+                          <ul class="ya-lista"><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Perfil o página</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Pega tu enlace y listo</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Sin contraseña</span></li></ul>
+                          <div class="ya-pe"><span class="ya-desde">desde <b><%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.seg) || '$ 39' ).replace('$ ', '$') %> MXN</b></span><span class="ya-ver">Ver paquetes <span aria-hidden="true">&rarr;</span></span></div>
                         </div>
-                        <div class="card-hint">
-                          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle><path d="M12 16v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><path d="M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
-                          Pega tu perfil o página
-                        </div>
-                        <span class="card-btn btn-gradient-seguidores">Ver paquetes</span>
                       </div>
                     </a>
-                    <a data-plat="facebook" class="service-card premium-card card-curtidas" style="display:none; text-decoration:none; color:inherit;" href="/servicios-facebook?servicio=curtidas">
-                      <div class="card-content">
-                        <img src="/images/curtidas-icone-320.png" alt="Me gusta" class="card-icon-3d rd-tint-facebook" onerror="this.style.display='none'">
-                        <div class="card-title text-gradient-curtidas">Me gusta</div>
-                        <div class="card-subtitle">En publicaciones</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.curt) || '$ 20' %></span></div>
-                        <div class="card-security">
-                          No pedimos contraseña
+                    <a data-plat="facebook" class="service-card premium-card ya-v2 ya-facebook card-curtidas" style="display:none; text-decoration:none; color:inherit;" href="/servicios-facebook?servicio=curtidas">
+                      <div class="card-content ya-card">
+                        <div class="ya-hero ya-hero-facebook" aria-hidden="true"><span class="ya-flag"></span><span class="ya-arte ya-arte-curtidas"><span class="ya-mini ya-mini-a">&#9829;</span><span class="ya-mini ya-mini-b">&#9829;</span><span class="ya-bola"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.6 4.5c2.1 0 3.6 1.2 4.4 2.6.8-1.4 2.3-2.6 4.4-2.6 3.6 0 5.7 3.8 4.2 7.2C19.5 16.4 12 21 12 21z" fill="currentColor"/></svg></span><span class="ya-chip ya-chip-alto">+500 &#9829;</span></span></div>
+                        <div class="ya-body">
+                          <h3 class="ya-titulo">Me gusta</h3>
+                          <p class="ya-desc">Más me gusta en tus publicaciones.</p>
+                          <ul class="ya-lista"><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>En la publicación que elijas</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Más alcance y prueba social</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Sin contraseña</span></li></ul>
+                          <div class="ya-pe"><span class="ya-desde">desde <b><%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.curt) || '$ 20' ).replace('$ ', '$') %> MXN</b></span><span class="ya-ver">Ver paquetes <span aria-hidden="true">&rarr;</span></span></div>
                         </div>
-                        <div class="card-hint">
-                          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle><path d="M12 16v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><path d="M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
-                          Pega la publicación
-                        </div>
-                        <span class="card-btn btn-gradient-curtidas">Ver paquetes</span>
                       </div>
                     </a>
-                    <a data-plat="facebook" class="service-card premium-card card-visualizacoes" style="display:none; text-decoration:none; color:inherit;" href="/servicios-facebook?servicio=visualizacoes">
-                      <div class="card-content">
-                        <img src="/images/visualizacao-icon-320.png" alt="Vistas" class="card-icon-3d rd-tint-facebook" onerror="this.style.display='none'">
-                        <div class="card-title text-gradient-visualizacoes">Vistas</div>
-                        <div class="card-subtitle">Videos y reels</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.views) || '$ 20' %></span></div>
-                        <div class="card-security">
-                          No pedimos contraseña
+                    <a data-plat="facebook" class="service-card premium-card ya-v2 ya-facebook card-visualizacoes" style="display:none; text-decoration:none; color:inherit;" href="/servicios-facebook?servicio=visualizacoes">
+                      <div class="card-content ya-card">
+                        <div class="ya-hero ya-hero-facebook" aria-hidden="true"><span class="ya-flag"></span><span class="ya-arte ya-arte-visualizacoes"><span class="ya-tela"><span class="ya-play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span><span class="ya-tela-num">&#9654; 25.4K</span></span></span></div>
+                        <div class="ya-body">
+                          <h3 class="ya-titulo">Vistas</h3>
+                          <p class="ya-desc">Más vistas en tus videos y reels.</p>
+                          <ul class="ya-lista"><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Videos y reels</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Desde 1,000 vistas</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Sin contraseña</span></li></ul>
+                          <div class="ya-pe"><span class="ya-desde">desde <b><%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.views) || '$ 20' ).replace('$ ', '$') %> MXN</b></span><span class="ya-ver">Ver paquetes <span aria-hidden="true">&rarr;</span></span></div>
                         </div>
-                        <div class="card-hint">
-                          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle><path d="M12 16v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><path d="M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
-                          Pega el video
-                        </div>
-                        <span class="card-btn btn-gradient-visualizacoes">Ver paquetes</span>
                       </div>
                     </a>
-                    <a data-plat="facebook" class="service-card premium-card card-curtidas" style="display:none; text-decoration:none; color:inherit;" href="/servicios-facebook?servicio=comentarios">
-                      <div class="card-content">
-                        <svg class="card-icon-3d rd-tint-facebook" width="80" height="80" viewBox="-6 -8 76 76" fill="none" aria-hidden="true" style="display:block;">
-                          <defs>
-                            <linearGradient id="cmtGradFacebook" x1="8" y1="6" x2="56" y2="52" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ff7eb3"/><stop offset="0.5" stop-color="#ff2e93"/><stop offset="1" stop-color="#ff7a18"/></linearGradient>
-                            <linearGradient id="cmtGradFacebookGloss" x1="0" y1="6" x2="0" y2="30" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
-                          </defs>
-                          <path d="M16 7h32a11 11 0 0 1 11 11v16a11 11 0 0 1-11 11H30l-11 9.5a1.4 1.4 0 0 1-2.3-1.2l1.1-8.4A11 11 0 0 1 5 34V18A11 11 0 0 1 16 7z" fill="url(#cmtGradFacebook)"/>
-                          <path d="M16 7h32a11 11 0 0 1 11 11v4H5v-4A11 11 0 0 1 16 7z" fill="url(#cmtGradFacebookGloss)"/>
-                          <circle cx="21" cy="26" r="3.6" fill="#fff"/><circle cx="32" cy="26" r="3.6" fill="#fff"/><circle cx="43" cy="26" r="3.6" fill="#fff"/>
-                        </svg>
-                        <div class="card-title text-gradient-curtidas">Comentarios</div>
-                        <div class="card-subtitle">En publicaciones y videos</div>
-                        <div class="card-price"><span>Paquetes desde</span> <span class="price-value"><%= (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.comRedes) || '$ 54' %></span></div>
-                        <div class="card-security">
-                          No pedimos contraseña
+                    <a data-plat="facebook" class="service-card premium-card ya-v2 ya-facebook card-curtidas" style="display:none; text-decoration:none; color:inherit;" href="/servicios-facebook?servicio=comentarios">
+                      <div class="card-content ya-card">
+                        <div class="ya-hero ya-hero-facebook" aria-hidden="true"><span class="ya-flag"></span><span class="ya-arte ya-arte-comentarios"><span class="ya-balao"><i></i><i></i><i></i></span><span class="ya-chip ya-chip-alto">+25</span></span></div>
+                        <div class="ya-body">
+                          <h3 class="ya-titulo">Comentarios</h3>
+                          <p class="ya-desc">Más conversación en tus publicaciones.</p>
+                          <ul class="ya-lista"><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Publicaciones y videos</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Tú eliges la publicación</span></li><li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.3l2.7 2.7L16.2 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Sin contraseña</span></li></ul>
+                          <div class="ya-pe"><span class="ya-desde">desde <b><%= String( (typeof precosInicio !== 'undefined' && precosInicio && precosInicio.comRedes) || '$ 54' ).replace('$ ', '$') %> MXN</b></span><span class="ya-ver">Ver paquetes <span aria-hidden="true">&rarr;</span></span></div>
                         </div>
-                        <div class="card-hint">
-                          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle><path d="M12 16v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><path d="M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
-                          Pega la publicación
-                        </div>
-                        <span class="card-btn btn-gradient-curtidas">Ver paquetes</span>
                       </div>
                     </a>
-
                 </div>
 
                 
@@ -1715,6 +1597,66 @@
     /* Mesmos ícones 3D do Instagram: TikTok na cor original (rosa), Facebook recolorido em azul. */
     #engajamentoServiceCards .card-icon-3d.rd-tint-facebook { filter: grayscale(1) brightness(0.95) sepia(1) hue-rotate(178deg) saturate(5) drop-shadow(0 12px 12px rgba(0,0,0,0.15)); }
   </style>
+
+  <style>
+    /* Cards de serviço (22/11): faixa colorida com ilustração + corpo com lista, "desde" e "Ver paquetes". */
+    #engajamentoServiceCards { --ya-card-bg: #ffffff; --ya-card-line: #ece8f1; --ya-ink: #14112b; --ya-sub: #5d5a6e; --ya-ok: #16a34a; --ya-acento: #ff2e63; }
+    body:not(.theme-light) #engajamentoServiceCards { --ya-card-bg: #1a1a2e; --ya-card-line: rgba(255,255,255,0.08); --ya-ink: #f8fafc; --ya-sub: #b9b7c9; --ya-ok: #4ade80; }
+    #engajamentoServiceCards .service-card.ya-v2 { padding: 0 !important; background: var(--ya-card-bg) !important; border: 1px solid var(--ya-card-line) !important; border-radius: 18px; overflow: hidden; align-items: stretch; text-align: left; min-height: 0; cursor: pointer; box-shadow: 0 14px 32px -18px rgba(20,17,43,0.35) !important; }
+    #engajamentoServiceCards .service-card.ya-v2:hover { transform: translateY(-4px); box-shadow: 0 22px 40px -18px rgba(20,17,43,0.45) !important; }
+    #engajamentoServiceCards .ya-v2.ya-tiktok { --ya-acento: #fe2c55; }
+    #engajamentoServiceCards .ya-v2.ya-facebook { --ya-acento: #1877f2; }
+    #engajamentoServiceCards .card-content.ya-card { display: flex; flex-direction: column; align-items: stretch !important; width: 100%; height: 100%; }
+    #engajamentoServiceCards .ya-hero { width: 100%; align-self: stretch; }
+    #engajamentoServiceCards .ya-body { width: 100%; box-sizing: border-box; }
+    #engajamentoServiceCards .ya-arte-seguidores { margin-top: 18px; }
+    .ya-hero { position: relative; height: 112px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .ya-hero-instagram { background: linear-gradient(115deg, #ff2e63 0%, #ff4f4a 50%, #ff8a1f 100%); }
+    .ya-hero-tiktok { background: linear-gradient(115deg, #101018 0%, #2a1734 60%, #4a1631 100%); }
+    .ya-hero-facebook { background: linear-gradient(115deg, #0f57c9 0%, #1877f2 55%, #4c9bff 100%); }
+    .ya-flag { position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, #006847 0 33.33%, #ffffff 33.33% 66.66%, #ce1126 66.66% 100%); }
+    .ya-reco { position: absolute; top: 14px; right: 12px; background: #fff; color: #e11d48; font-size: 0.72rem; font-weight: 700; padding: 0.22rem 0.6rem; border-radius: 999px; box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
+    .ya-arte { position: relative; display: flex; align-items: center; gap: 0.6rem; }
+    .ya-avs { display: flex; }
+    .ya-av { width: 40px; height: 40px; border-radius: 50%; border: 3px solid #fff; overflow: hidden; margin-left: -10px; box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
+    .ya-av:first-child { margin-left: 0; }
+    .ya-av svg { width: 100%; height: 100%; display: block; }
+    .ya-chip { display: inline-flex; align-items: center; gap: 0.3rem; background: #fff; color: var(--ya-acento); font-weight: 700; font-size: 0.8rem; padding: 0.28rem 0.6rem; border-radius: 999px; box-shadow: 0 4px 10px rgba(0,0,0,0.12); white-space: nowrap; }
+    .ya-chip svg { width: 15px; height: 15px; }
+    .ya-chip-alto { position: absolute; top: -18px; left: 48px; }
+    .ya-bola { width: 60px; height: 60px; border-radius: 50%; background: #fff; display: grid; place-items: center; color: var(--ya-acento); box-shadow: 0 8px 18px rgba(0,0,0,0.15); }
+    .ya-bola svg { width: 30px; height: 30px; }
+    .ya-mini { position: absolute; color: rgba(255,255,255,0.75); font-size: 0.85rem; }
+    .ya-mini-a { left: -34px; top: -10px; }
+    .ya-mini-b { left: -22px; top: 30px; font-size: 0.6rem; }
+    .ya-tela { width: 100px; height: 66px; border-radius: 12px; background: rgba(255,255,255,0.22); border: 1.5px solid rgba(255,255,255,0.55); display: grid; place-items: center; position: relative; }
+    .ya-play { width: 34px; height: 34px; border-radius: 50%; background: #fff; color: var(--ya-acento); display: grid; place-items: center; }
+    .ya-play svg { width: 18px; height: 18px; margin-left: 2px; }
+    .ya-tela-num { position: absolute; left: 7px; bottom: 4px; color: #fff; font-size: 0.66rem; font-weight: 700; }
+    .ya-balao { position: relative; width: 70px; height: 50px; background: #fff; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 8px 18px rgba(0,0,0,0.15); }
+    .ya-balao::after { content: ""; position: absolute; left: 14px; bottom: -8px; border: 9px solid transparent; border-top-color: #fff; border-bottom: 0; }
+    .ya-balao i { width: 8px; height: 8px; border-radius: 50%; background: var(--ya-acento); display: block; }
+    .ya-arte-comentarios .ya-chip-alto { left: 52px; }
+    .ya-body { padding: 1.1rem 1.2rem 1.15rem; display: flex; flex-direction: column; flex: 1; }
+    #engajamentoServiceCards .ya-titulo { font-size: 1.3rem; font-weight: 800; color: var(--ya-ink); margin: 0 0 0.25rem; letter-spacing: -0.02em; text-wrap: balance; }
+    #engajamentoServiceCards .ya-desc { font-size: 0.92rem; color: var(--ya-sub); margin: 0 0 0.85rem; line-height: 1.4; }
+    .ya-lista { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: 0.45rem; }
+    .ya-lista li { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.9rem; color: var(--ya-ink); line-height: 1.3; }
+    .ya-lista svg { width: 17px; height: 17px; flex: 0 0 17px; color: var(--ya-ok); margin-top: 1px; }
+    .ya-pe { margin-top: auto; padding-top: 0.85rem; border-top: 1px solid var(--ya-card-line); display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; flex-wrap: nowrap; }
+    .ya-desde { color: var(--ya-sub); font-size: 0.85rem; }
+    .ya-desde b { color: var(--ya-ink); font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; margin-left: 0.15rem; font-variant-numeric: tabular-nums; }
+    .ya-ver { color: var(--ya-acento); font-weight: 700; font-size: 0.86rem; white-space: nowrap; }
+    #engajamentoServiceCards .service-card.ya-v2:hover .ya-ver span { margin-left: 3px; }
+    @media (max-width: 639px) {
+      #engajamentoServiceCards .service-card.ya-v2 { padding: 0 !important; border-radius: 16px; }
+      .ya-hero { height: 96px; }
+      .ya-body { padding: 0.95rem 1rem 1rem; }
+      #engajamentoServiceCards .ya-titulo { font-size: 1.15rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { #engajamentoServiceCards .service-card.ya-v2, #engajamentoServiceCards .service-card.ya-v2:hover { transition: none; transform: none; } }
+  </style>
+
   <script>
     // TikTok/Facebook: card do serviço some quando todos os tipos dele estão ocultos (Gerenciamento de Tipo).
     (function () {

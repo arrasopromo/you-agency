@@ -1771,7 +1771,7 @@ const sendPixOrderEmailToCustomer = async ({ record }) => {
             return targetQtd > qtdBase ? (targetQtd - qtdBase) : 0;
         }
         if ((tipo === 'brasileiros' || tipo === 'organicos') && qtdBase === 1000) return 1000;
-        const map = { 50: 50, 150: 150, 300: 200, 500: 200, 700: 300, 1000: 1000, 1200: 800, 2000: 1000, 3000: 1000, 4000: 1000, 5000: 2500, 7500: 2500, 10000: 5000 };
+        const map = require('./pricing.js').upgradeAddMapSeguidores(tipo);
         return map[qtdBase] || 0;
     })();
     const qtdTotal = Math.max(0, Number(qtdBase) + Number(upgradeAdd0));
@@ -21758,7 +21758,7 @@ async function processOrderFulfillment(record, col, req) {
                 // (alvos: 150→300, 300→500, 500→700, 700→1000, 1200→2000, 2000→3000,
                 //  4000→5000, 7500→10000, …). Antes faltavam 300/700/1200/2000/4000/7500
                 //  → upgrade cobrado mas +0 enviado.
-                const map = { 50: 50, 150: 150, 300: 200, 500: 200, 700: 300, 1000: 1000, 1200: 800, 2000: 1000, 3000: 1000, 4000: 1000, 5000: 2500, 7500: 2500, 10000: 5000 };
+                const map = require('./pricing.js').upgradeAddMapSeguidores(tipo);
                 upgradeAdd = map[qtdBase] || 0;
             }
         } else if (isCurtidasMistasUpgradeEligible) {
@@ -24596,11 +24596,7 @@ app.post('/api/openpix/webhook', async (req, res) => {
               if ((/brasileiros/i.test(tipo) || /curtidas_brasileiras/i.test(tipo) || /organicos/i.test(tipo)) && qtdBase === 1000) {
                 upgradeAdd = 1000;
               } else {
-                const map = { 
-                  50: 50, 150: 150, 300: 200, 500: 200, 700: 300, 
-                  1000: 1000, 1200: 800, 2000: 1000, 3000: 1000, 4000: 1000, 
-                  5000: 2500, 7500: 2500, 10000: 5000 
-                };
+                const map = require('./pricing.js').upgradeAddMapSeguidores(tipo);
                 upgradeAdd = map[qtdBase] || 0;
               }
             } else if (isVisualizacoes) {
@@ -25581,7 +25577,7 @@ app.post('/api/services/dispatch', adminOnly, async (req, res) => {
     } else if (isFollowersUpgradeEligible) {
       if ((/brasileiros/i.test(tipo) || /organicos/i.test(tipo)) && qtdBase === 1000) upgradeAdd = 1000;
       else {
-        const map = { 50: 50, 150: 150, 300: 200, 500: 200, 700: 300, 1000: 1000, 1200: 800, 2000: 1000, 3000: 1000, 4000: 1000, 5000: 2500, 7500: 2500, 10000: 5000 };
+        const map = require('./pricing.js').upgradeAddMapSeguidores(tipo);
         upgradeAdd = map[qtdBase] || 0;
       }
     } else if (isViewsBase) {
@@ -27436,7 +27432,7 @@ app.post('/session/mark-paid', async (req, res) => {
           } else if (isFollowersUpgradeEligible) {
             if ((/brasileiros/i.test(tipo) || /organicos/i.test(tipo)) && qtdBase === 1000) upgradeAdd = 1000;
             else {
-              const map = { 50: 50, 150: 150, 300: 200, 500: 200, 700: 300, 1000: 1000, 1200: 800, 2000: 1000, 3000: 1000, 4000: 1000, 5000: 2500, 7500: 2500, 10000: 5000 };
+              const map = require('./pricing.js').upgradeAddMapSeguidores(tipo);
               upgradeAdd = map[qtdBase] || 0;
             }
           } else if (isViewsBase) {
@@ -32918,7 +32914,7 @@ app.get('/painel/gerenciamento-seguidores', requireAdmin, async (req, res) => {
         if (!b) return 0;
         if (t === 'organicos' && b === 50) return 50;
         if ((t === 'brasileiros' || t === 'organicos') && b === 1000) return 1000;
-        const map = { 50: 50, 150: 150, 300: 200, 500: 200, 700: 300, 1000: 1000, 1200: 800, 2000: 1000, 3000: 1000, 4000: 1000, 5000: 2500, 7500: 2500, 10000: 5000 };
+        const map = require('./pricing.js').upgradeAddMapSeguidores(t);
         return map[b] || 0;
       } catch (_) {
         return 0;
@@ -53639,7 +53635,7 @@ app.post('/api/payment/confirm', async (req, res) => {
           add = (t[base] || 0) > base ? (t[base] - base) : 0;
         } else {
           if ((/brasileiros/i.test(resolvedTipo) || /organicos/i.test(resolvedTipo)) && base === 1000) add = 1000;
-          else { const m = { 50: 50, 150: 150, 300: 200, 500: 200, 700: 300, 1000: 1000, 1200: 800, 2000: 1000, 3000: 1000, 4000: 1000, 5000: 2500, 7500: 2500, 10000: 5000 }; add = m[base] || 0; }
+          else { const m = require('./pricing.js').upgradeAddMapSeguidores(resolvedTipo); add = m[base] || 0; }
         }
         return base + add;
       })();
@@ -53705,7 +53701,7 @@ app.post('/api/payment/confirm', async (req, res) => {
         } else if (isFollowersUpgradeEligible) {
           if ((/brasileiros/i.test(resolvedTipo) || /organicos/i.test(resolvedTipo)) && Number(resolvedQtd) === 1000) upgradeAdd = 1000;
           else {
-            const map = { 50: 50, 150: 150, 300: 200, 500: 200, 700: 300, 1000: 1000, 1200: 800, 2000: 1000, 3000: 1000, 4000: 1000, 5000: 2500, 7500: 2500, 10000: 5000 };
+            const map = require('./pricing.js').upgradeAddMapSeguidores(resolvedTipo);
             upgradeAdd = map[Number(resolvedQtd)] || 0;
           }
         }

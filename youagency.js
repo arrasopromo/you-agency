@@ -367,7 +367,7 @@ module.exports.register = function register(app, deps) {
       const P = require('./pricing');
       const desde = (...tabs) => { const v = tabs.flat().filter(Boolean).map((x) => P.parsePrecoToCents(x.p)).filter((c) => c > 0); return v.length ? '$ ' + Math.round(Math.min(...v) / 100) : null; };
       precosInicio = {
-        seg: desde(P.tabelaSeguidores.mistos, P.tabelaSeguidores.brasileiros),
+        seg: desde(P.tabelaSeguidores.mistos),
         curt: desde(P.tabelaCurtidas.mistos, P.tabelaCurtidas.organicos),
         views: desde(P.tabelaVisualizacoes.visualizacoes_reels),
         comIg: '$ 20', // comentário do Instagram: $20 cada (pricing.js)

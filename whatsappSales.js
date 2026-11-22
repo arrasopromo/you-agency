@@ -268,8 +268,8 @@ const _COMENT_INDISP = { ok: false, error: 'servico_indisponivel', message: 'Los
 
 function tableFor(svc, tipo) {
   const t = svc.tipos ? (svc.table(normalizeTipo(tipo)) || svc.table('mistos')) : svc.table();
-  // Nunca oferta pacote abaixo do mínimo da tabela oficial (a partir de 150).
-  return (Array.isArray(t) ? t : []).filter((x) => Number(x.q) >= 150);
+  // Nunca oferta pacote abaixo do mínimo da tabela oficial (mixtos a partir de 100; demais, 150).
+  return (Array.isArray(t) ? t : []).filter((x) => Number(x.q) >= 100);
 }
 const _label = (p) => mxn(parsePrecoToCents(p));
 
@@ -716,7 +716,7 @@ async function consultarPedido({ telefone, usuario } = {}) {
     if (categoria === 'visualizacoes' || categoria === 'views' || tipo === 'visualizacoes_reels') { const t = { 1000: 2500, 5000: 10000, 25000: 50000, 100000: 150000, 200000: 250000, 500000: 1000000 }[quantidadeBase] || 0; return t > quantidadeBase ? t - quantidadeBase : 0; }
     if (categoria === 'curtidas' || categoria === 'likes' || /curtidas/.test(tipo)) { const t = { 150: 300, 300: 500, 500: 700, 700: 1000, 1000: 2000, 1200: 2000, 2000: 3000, 3000: 4000, 4000: 5000, 5000: 7500, 7500: 10000, 10000: 15000 }[quantidadeBase] || 0; return t > quantidadeBase ? t - quantidadeBase : 0; }
     if ((tipo === 'brasileiros' || tipo === 'organicos') && quantidadeBase === 1000) return 1000;
-    return ({ 50: 50, 150: 150, 300: 200, 500: 200, 700: 300, 1000: 1000, 1200: 800, 2000: 1000, 3000: 1000, 4000: 1000, 5000: 2500, 7500: 2500, 10000: 5000 })[quantidadeBase] || 0;
+    return (require('./pricing.js').upgradeAddMapSeguidores(tipo))[quantidadeBase] || 0;
   })();
   const quantidade = Number((o.fulfillmentCalc && o.fulfillmentCalc.finalQty) || qtdDespachada || (quantidadeBase + upgradeAdd)) || quantidadeBase;
   const usernameOrder = String(o.instagramUsername || o.instauser || orderGetAny(o, 'instagram_username') || uname || '').replace(/^@+/, '');
