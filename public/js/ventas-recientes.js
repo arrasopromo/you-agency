@@ -24,9 +24,15 @@
 
   var el = document.createElement('div');
   el.className = 'ya-vr'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
-  el.innerHTML = '<span class="ya-vr-ic" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg></span>' +
+  var ICONES = {
+    instagram: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>',
+    tiktok: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3c.3 1.9 1.5 3.6 3.2 4.5 1 .6 2.1.9 3.2.9v3a8.6 8.6 0 01-3.2-.6v5.4A6.2 6.2 0 1110 10v3.1a3.1 3.1 0 102.3 3V3H14z"/></svg>',
+    facebook: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7.5H16l.4-3H13.5V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.2H7.8v3h2.6V21h3.1z"/></svg>'
+  };
+  var FUNDOS = { instagram: 'linear-gradient(135deg,#f58529,#dd2a7b 55%,#8134af)', tiktok: '#111111', facebook: '#1877f2' };
+  el.innerHTML = '<span class="ya-vr-ic" aria-hidden="true"></span>' +
     '<div><div class="ya-vr-t"></div><div class="ya-vr-s"></div></div><button type="button" class="ya-vr-x" aria-label="Cerrar">×</button>';
-  var tituloEl = el.querySelector('.ya-vr-t'), subEl = el.querySelector('.ya-vr-s');
+  var tituloEl = el.querySelector('.ya-vr-t'), subEl = el.querySelector('.ya-vr-s'), icEl = el.querySelector('.ya-vr-ic');
 
   var itens = [], idx = 0, mostrados = 0, MAX = 6, timer = null, parado = false;
   el.querySelector('.ya-vr-x').addEventListener('click', function () {
@@ -37,6 +43,8 @@
   function mostrar() {
     if (parado || !itens.length || mostrados >= MAX || document.hidden) { agenda(); return; }
     var it = itens[idx % itens.length]; idx++; mostrados++;
+    var rede = ICONES[it.rede] ? it.rede : 'instagram';
+    icEl.innerHTML = ICONES[rede]; icEl.style.background = FUNDOS[rede];
     tituloEl.textContent = it.titulo;
     subEl.textContent = '';
     subEl.appendChild(document.createTextNode(it.tiempo + ' · '));

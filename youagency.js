@@ -639,18 +639,17 @@ module.exports.register = function register(app, deps) {
         .sort({ paidAt: -1 }).limit(40).toArray();
       const g = (o, k) => { for (const arr of [o.additionalInfoPaid, o.additionalInfo]) { if (Array.isArray(arr)) { const it = arr.find((x) => x && x.key === k); if (it && it.value != null && it.value !== '') return String(it.value); } } return ''; };
       const mascara = (u) => { const h = String(u || '').replace(/^@+/, '').trim(); if (!h) return ''; return '@' + (h.length <= 3 ? h.slice(0, 1) : h.slice(0, 3)) + '***'; };
+      // Texto com a rede social ("150 seguidores de Instagram", "300 me gusta en TikTok") + a rede para o ícone.
       const nomeServico = (tipo, cat, qtd) => {
         const t = String(tipo || '').toLowerCase(), c = String(cat || '').toLowerCase();
         const q = Number(qtd) || 0; const n = q ? q.toLocaleString('en-US') + ' ' : '';
-        if (/^tiktok_seguidores/.test(t)) return n + 'seguidores de TikTok';
-        if (/^facebook_seguidores/.test(t)) return n + 'seguidores de Facebook';
-        if (/^tiktok_/.test(t)) return n + (/curtida/.test(t) ? 'me gusta' : /visualiza/.test(t) ? 'vistas' : 'comentarios') + ' en TikTok';
-        if (/^facebook_/.test(t)) return n + (/curtida/.test(t) ? 'me gusta' : /visualiza/.test(t) ? 'vistas' : 'comentarios') + ' en Facebook';
-        if (/coment/.test(c + t)) return n + 'comentarios';
-        if (/visualiza|views/.test(c + t)) return n + 'vistas';
-        if (/curtida|likes/.test(c + t)) return n + 'me gusta' + (/organic/.test(t) ? ' reales' : '');
-        if (/refil/.test(t)) return '';
-        return n + 'seguidores' + (/organic/.test(t) ? ' reales' : '');
+        if (/refil/.test(t)) return null;
+        const rede = /^tiktok_/.test(t) ? 'tiktok' : (/^facebook_/.test(t) ? 'facebook' : 'instagram');
+        const nomeRede = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook' }[rede];
+        const k = c + ' ' + t;
+        if (/seguidor/.test(t) || (!/coment|visualiza|views|curtida|likes/.test(k))) return { rede, texto: n + 'seguidores' + (/organic/.test(t) ? ' reales' : '') + ' de ' + nomeRede };
+        const sv = /coment/.test(k) ? 'comentarios' : (/visualiza|views/.test(k) ? 'vistas' : 'me gusta' + (/organic|reais/.test(t) ? ' reales' : ''));
+        return { rede, texto: n + sv + ' en ' + nomeRede };
       };
       const haceCuanto = (d) => {
         const min = Math.max(1, Math.round((Date.now() - new Date(d).getTime()) / 60000));
@@ -665,7 +664,7 @@ module.exports.register = function register(app, deps) {
         const serv = nomeServico(g(o, 'tipo_servico'), g(o, 'categoria_servico'), g(o, 'quantidade'));
         if (!serv) continue;
         const user = /^facebook_/.test(g(o, 'tipo_servico').toLowerCase()) ? '' : mascara(o.instagramUsername || g(o, 'instagram_username') || g(o, 'perfil_rede')); // Facebook: nome/ID da página não é um @
-        items.push({ titulo: (user || 'Un cliente') + ' compró ' + serv, tiempo: haceCuanto(o.paidAt) });
+        items.push({ titulo: (user || 'Un cliente') + ' compró ' + serv.texto, tiempo: haceCuanto(o.paidAt), rede: serv.rede });
         if (items.length >= 10) break;
       }
       __vrCache = { at: Date.now(), data: { ok: true, items } };
