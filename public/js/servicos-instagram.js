@@ -1951,14 +1951,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const phone = contactPhoneInput ? contactPhoneInput.value.trim() : '';
       const emailErrorMsg = document.getElementById('emailErrorMsg');
 
-      if (getContactName().length < 2) {
-        const nameErrorMsg = document.getElementById('nameErrorMsg');
-        if (nameErrorMsg) nameErrorMsg.style.display = 'block';
-        else showStatusMessageCheckout('Escribe tu nombre.', 'error');
-        if (window.goToStep) window.goToStep(2);
-        setTimeout(() => { if (contactNameInput) { contactNameInput.focus(); contactNameInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }, 300);
-        return;
-      } else { const nameErrorMsg = document.getElementById('nameErrorMsg'); if (nameErrorMsg) nameErrorMsg.style.display = 'none'; }
+      // Só o correo é obrigatório (nome e telefone saíram do formulário em 22/11/2026).
 
       if (!email || !email.includes('@')) {
         if (emailErrorMsg) emailErrorMsg.style.display = 'block';
@@ -1978,7 +1971,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const phoneDigitsLen = getPhoneDigitsLen(phone);
       const phoneErrorMsg = document.getElementById('phoneErrorMsg');
-      if (phoneDigitsLen !== 10) {
+      if (phone && phoneDigitsLen !== 10) {
         if (phoneErrorMsg) phoneErrorMsg.style.display = 'block';
         else showStatusMessageCheckout('Ingresa un número de teléfono válido de 10 dígitos (ej. 55 1234 5678).', 'error');
         if (window.goToStep) window.goToStep(2);
@@ -4597,13 +4590,6 @@ document.addEventListener('DOMContentLoaded', function() {
           
           const emailErrorMsg = document.getElementById('emailErrorMsg');
           
-          if (getContactName().length < 2) {
-            const nameErrorMsg = document.getElementById('nameErrorMsg');
-            if (nameErrorMsg) nameErrorMsg.style.display = 'block';
-            else showStatusMessageCheckout('Escribe tu nombre.', 'error');
-            if (contactNameInput) contactNameInput.focus();
-            return;
-          } else { const nameErrorMsg = document.getElementById('nameErrorMsg'); if (nameErrorMsg) nameErrorMsg.style.display = 'none'; }
 
           if (!email || !email.includes('@')) {
               if (emailErrorMsg) emailErrorMsg.style.display = 'block';
@@ -4617,7 +4603,7 @@ document.addEventListener('DOMContentLoaded', function() {
           
           const digitsLen = getPhoneDigitsLen(phone);
           const phoneErrorMsg = document.getElementById('phoneErrorMsg');
-          if (digitsLen !== 10) {
+          if (phone && digitsLen !== 10) {
               if (phoneErrorMsg) phoneErrorMsg.style.display = 'block';
               else showStatusMessageCheckout('Ingresa un número de teléfono válido de 10 dígitos (ej. 55 1234 5678).', 'error');
               if (contactPhoneInput) contactPhoneInput.focus();

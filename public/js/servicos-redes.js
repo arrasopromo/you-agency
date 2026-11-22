@@ -320,10 +320,10 @@
     if (!perfilOk) { status(rede === 'tiktok' ? 'Busca tu usuario de TikTok antes de continuar.' : 'Busca tu perfil o página antes de continuar.', 'error'); return false; }
     var link = linkDoPedido();
     if (!linkOk(link)) { mostraErro('linkErrorMsg', rede === 'tiktok' ? 'Pega un enlace de TikTok válido (tiktok.com).' : 'Pega un enlace de Facebook válido (facebook.com).'); ok = false; } else escondeErro('linkErrorMsg');
-    if ($('contactNameInput').value.trim().length < 2) { mostraErro('nameErrorMsg'); ok = false; } else escondeErro('nameErrorMsg');
     var em = $('contactEmailInput').value.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { mostraErro('emailErrorMsg'); ok = false; } else escondeErro('emailErrorMsg');
-    if (phoneLen($('contactPhoneInput').value) !== 10) { mostraErro('phoneErrorMsg'); ok = false; } else escondeErro('phoneErrorMsg');
+    var fn = $('contactPhoneInput').value.trim();
+    if (fn && phoneLen(fn) !== 10) { mostraErro('phoneErrorMsg'); ok = false; } else escondeErro('phoneErrorMsg');
     return ok;
   }
 

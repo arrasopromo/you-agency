@@ -883,8 +883,8 @@ module.exports.register = function register(app, deps) {
   
       const phoneRaw = customer?.phone_number || customer?.phone || customer?.telefone || '';
       const phoneDigits = normalizePhoneInternational(phoneRaw);
-      if (!String(phoneRaw || '').trim()) return res.status(400).json({ error: 'missing_phone', message: 'El teléfono es obligatorio.' });
-      if (!phoneDigits) return res.status(400).json({ error: 'invalid_phone', message: 'Teléfono inválido.' });
+      // Teléfono opcional desde 22/11/2026 (el sitio solo pide el correo); si viene, tiene que ser válido.
+      if (String(phoneRaw || '').trim() && !phoneDigits) return res.status(400).json({ error: 'invalid_phone', message: 'Teléfono inválido.' });
   
       const emailSafe = (function () {
         const raw = String(customer?.email || '').trim();
@@ -958,9 +958,12 @@ module.exports.register = function register(app, deps) {
           return res.status(400).json({ error: 'invalid_amount', message: 'OXXO acepta pagos de $ 10 a $ 10,000 MXN.' });
         }
         const externalId = `YA-${correlationIDSafe}`.slice(0, 80);
-        const nome = String(customer?.name || customer?.nome || '').trim().slice(0, 120);
+        // Nome opcional (o site só pede o correo): sem nome, vai o @ do perfil (ou o início do correo).
+        let nome = String(customer?.name || customer?.nome || '').trim().slice(0, 120);
         if (!nome || nome.length < 2 || nome === 'Instagram Customer') {
-          return res.status(400).json({ error: 'missing_name', message: 'Escribe tu nombre.' });
+          const alvo = String(addInfoMap['instagram_username'] || addInfoMap['perfil_rede'] || addInfoMap['perfil'] || '').replace(/^@+/, '').trim();
+          const doCorreo = String(emailSafe || '').split('@')[0].replace(/[^A-Za-z0-9._-]/g, '').trim();
+          nome = (alvo ? ('@' + alvo) : (doCorreo || 'Cliente')).slice(0, 120);
         }
         // SPEI = CLABE aberta (sem amount): a mesma external_id devolve sempre a mesma CLABE, então
         // dois pedidos nunca podem dividir a mesma chave. Se já existe pedido com ela, reaproveita.
