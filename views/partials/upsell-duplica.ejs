@@ -15,14 +15,15 @@
     _dupShow = !!_dupT && !/^(tiktok|facebook)_/.test(_dupT) && _dupCat !== 'tiktok' && _dupCat !== 'facebook' && (_dupCat === 'seguidores' || _dupCat === 'curtidas' || _dupCat === 'visualizacoes' || /seguidores|curtida|visual|^mistos$|^brasileiros$|^organicos$/.test(_dupT));
   }
   // Método do upsell: SPEI ou OXXO, já marcado com o que o cliente usou no pedido principal.
-  var _dupMetodo = (String((order.xpag && order.xpag.method) || '').toUpperCase() === 'OXXO') ? 'OXXO' : 'SPEI';
+  var _dupMetodo = 'SPEI'; // 23/11: upsell só por SPEI
+  try { order.__dupShow = _dupShow; } catch (_) {}
 %>
 <% if (_dupShow) { %>
 <style>
   @keyframes dupPulse{0%,100%{opacity:1}50%{opacity:.35}}
   @keyframes dupFadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
   @keyframes dupSpin{to{transform:rotate(360deg)}}
-  #dupCard{display:none;margin:0 auto 1.5rem;max-width:560px}
+  #dupCard{display:none;margin:0 0 1.5rem}
   #dupCard.active{display:block}
   #dupBox{width:100%;background:#fff;border-radius:16px;border:1px solid #e6e8ec;box-shadow:0 8px 26px rgba(17,24,39,.08);animation:dupFadeIn .35s ease;overflow:hidden;text-align:left}
   #dupBox, #dupBox *{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;box-sizing:border-box}
@@ -94,10 +95,6 @@
           <span id="dupOld" class="dup-old"></span>
           <span id="dupPrice" class="dup-price">$ —</span>
           <span id="dupBadge" class="dup-badge"></span>
-        </div>
-        <div class="dup-met" role="group" aria-label="Método de pago">
-          <button type="button" data-dup-met="SPEI" aria-pressed="<%= _dupMetodo === 'SPEI' ? 'true' : 'false' %>">SPEI</button>
-          <button type="button" data-dup-met="OXXO" aria-pressed="<%= _dupMetodo === 'OXXO' ? 'true' : 'false' %>">OXXO</button>
         </div>
         <button id="dupAccept" type="button" class="dup-cta">
           <span id="dupAcceptLabel" style="font-size:.9rem;font-weight:800">Quiero aprovechar</span>

@@ -7563,7 +7563,7 @@ async function notifyWppAgentPaidWhatsapp(doc) {
 
     const tipo = String(getAdd('tipo_servico') || doc.tipo || '').toLowerCase();
     const ehOrganico = /organic|orgânic|reais|real|de verdade/.test(tipo);
-    const tipoLabel = ehOrganico ? 'reales' : (/misto/.test(tipo) ? 'mixtos' : '');
+    const tipoLabel = ehOrganico ? 'de alta calidad' : ''; // cliente nunca vê "mixtos"
     const catRaw = String(getAdd('categoria_servico') || '').toLowerCase();
     const catLabel = /curtida/.test(catRaw) ? 'me gusta' : (/visualiza/.test(catRaw) ? 'vistas' : (catRaw ? 'seguidores' : ''));
     const qtdNum = Number(getAdd('quantidade') || 0);
@@ -51866,10 +51866,10 @@ function getUpsellOffer(order) {
     const tipoLabel = (() => {
       // You Agency: rótulos em espanhol (aparecem no card do upsell e na descrição da cobrança).
       if (tipo === 'visualizacoes_reels' || tipo === 'reels') return 'vistas';
-      if (tipo.includes('brasileir'))  return isFollowers ? 'seguidores brasileños' : 'me gusta brasileños';
-      if (tipo.includes('organico') || tipo === 'curtidas_reais') return isFollowers ? 'seguidores reales' : 'me gusta reales';
-      if (isFollowers)    return 'seguidores mixtos';
-      if (isCurtidas)     return 'me gusta mixtos';
+      if (tipo.includes('brasileir'))  return isFollowers ? 'seguidores latinos' : 'me gusta latinos';
+      if (tipo.includes('organico') || tipo === 'curtidas_reais') return isFollowers ? 'seguidores de alta calidad' : 'me gusta de alta calidad';
+      if (isFollowers)    return 'seguidores'; // cliente nunca vê "mixtos"
+      if (isCurtidas)     return 'me gusta';
       if (isVisualizacao) return 'vistas';
       return tipo.replace(/_/g, ' ');
     })();
@@ -52054,7 +52054,8 @@ app.post('/api/upsell/charge', publicIpLimit('upsell_charge', 10, 10), async (re
     // desligado (XPAG_OXXO_ENABLED=0) o criarCobrancaXpag força SPEI de qualquer forma.
     const metodoPai = String((parent && parent.xpag && parent.xpag.method) || '').toUpperCase();
     const metodoBody = String((req.body && req.body.metodo) || '').toUpperCase();
-    const metodoReq = (metodoBody === 'OXXO' || metodoBody === 'SPEI') ? metodoBody : (metodoPai === 'OXXO' ? 'OXXO' : 'SPEI');
+    const metodoReq = 'SPEI'; // 23/11: upsell só por SPEI (metodoBody/metodoPai ignorados)
+    void metodoBody; void metodoPai;
     if (name.length < 2) { try { const ec = await getCollection('upsell_errors'); await ec.insertOne({ reason: 'missing_name', parentIdentifier, at: new Date().toISOString() }); } catch (_) {} return res.status(400).json({ ok: false, error: 'missing_name' }); }
 
     // Gerar IDs únicos para o upsell

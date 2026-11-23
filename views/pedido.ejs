@@ -190,73 +190,8 @@
                     <path d="M20 6L9 17L4 12" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
-            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.5rem 0;">¡Gracias por tu compra!</h2>
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1.5rem;">
-                
-                <% 
-                  var tServ = (function(){
-                    try {
-                      var raw = String(order.tipo || order.tipoServico || '').trim();
-                      if (!raw && order && order.additionalInfoMapPaid && order.additionalInfoMapPaid['tipo_servico']) raw = String(order.additionalInfoMapPaid['tipo_servico'] || '').trim();
-                      if (!raw && order && Array.isArray(order.additionalInfoPaid)) {
-                        var itPaid = order.additionalInfoPaid.find(function(i){ return i && i.key === 'tipo_servico'; });
-                        if (itPaid && itPaid.value) raw = String(itPaid.value || '').trim();
-                      }
-                      if (!raw && order && order.additionalInfoMap && order.additionalInfoMap['tipo_servico']) raw = String(order.additionalInfoMap['tipo_servico'] || '').trim();
-                      if (!raw && order && Array.isArray(order.additionalInfo)) {
-                        var it = order.additionalInfo.find(function(i){ return i && i.key === 'tipo_servico'; });
-                        if (it && it.value) raw = String(it.value || '').trim();
-                      }
-                      return String(raw || '').toLowerCase();
-                    } catch (_) { return ''; }
-                  })();
-                  var isFollower = tServ.includes('seguidores');
-                  var isOrganic = tServ.includes('organico');
-                  var catServTop = (function(){
-                    try {
-                      var raw = '';
-                      if (order && order.additionalInfoMapPaid && order.additionalInfoMapPaid['categoria_servico']) raw = String(order.additionalInfoMapPaid['categoria_servico'] || '').trim();
-                      if (!raw && order && Array.isArray(order.additionalInfoPaid)) {
-                        var itPaid = order.additionalInfoPaid.find(function(i){ return i && i.key === 'categoria_servico'; });
-                        if (itPaid && itPaid.value) raw = String(itPaid.value || '').trim();
-                      }
-                      if (!raw && order && order.additionalInfoMap && order.additionalInfoMap['categoria_servico']) raw = String(order.additionalInfoMap['categoria_servico'] || '').trim();
-                      if (!raw && order && Array.isArray(order.additionalInfo)) {
-                        var it = order.additionalInfo.find(function(i){ return i && i.key === 'categoria_servico'; });
-                        if (it && it.value) raw = String(it.value || '').trim();
-                      }
-                      return String(raw || '').toLowerCase();
-                    } catch (_) { return ''; }
-                  })();
-                  var isFollowersCategory = catServTop === 'seguidores';
-                  var showRefilTool = (isFollower || isFollowersCategory) && !isOrganic;
-                  
-                  // Obter telefone para link
-                  var phoneForLink = (function(){
-                      if (order && order.customer && order.customer.phone) return String(order.customer.phone).replace(/\D/g, '');
-                      var map = (order && order.additionalInfoMapPaid) || {};
-                      if (map['phone']) return String(map['phone']).replace(/\D/g, '');
-                      var arr = (order && order.additionalInfo) || [];
-                      var p = arr.find(function(x){ return x.key === 'phone'; });
-                      if (p && p.value) return String(p.value).replace(/\D/g, '');
-                      return '';
-                  })();
-                  
-                  var refilHref = '/reposicion';
-                  if (order && order.refilLinkId) {
-                      refilHref += '?token=' + order.refilLinkId;
-                      if (phoneForLink) refilHref += '&phone=' + phoneForLink;
-                  } else if (phoneForLink) {
-                      refilHref += '?phone=' + phoneForLink;
-                  }
-                %>
-                <% if (showRefilTool) { %>
-                <p style="color: var(--text-secondary); font-size: 1rem; margin: 0; text-align:center;">Accede a la herramienta de reposición de tu pedido</p>
-                <a href="<%= refilHref %>" style="display: inline-block; background: var(--instagram-gradient); color: white; padding: 0.75rem 2rem; border-radius: 999px; text-decoration: none; font-weight: 600; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(220, 39, 67, 0.4);">
-                    Abrir herramienta
-                </a>
-                <% } %>
-            </div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0 auto 0.5rem; max-width: 16ch; text-wrap: balance;">¡Gracias por tu compra!</h2>
+            <p style="color: var(--text-secondary); font-size: 0.95rem; margin: 0.25rem 0 0 0; text-align:center;">Aquí abajo puedes seguir el estado de tu pedido.</p>
         </div>
         <% } %>
         <%- include('partials/upsell-duplica') %>
@@ -272,7 +207,8 @@
           var _stConta = String(order.status || (order.xpag && order.xpag.status) || '').toLowerCase();
           var _pagoConta = (_stConta === 'pago' || _stConta === 'paid' || _stConta === 'completed' || _stConta === 'confirmed');
           var _fromClienteConta = (typeof fromCliente !== 'undefined') ? !!fromCliente : false;
-          var showCreateAccount = _pagoConta && !!_orderEmail && !_fromClienteConta;
+          // Igual à Oppus: com a oferta "duplica tu pedido" na tela, não mostra o acesso à conta (não atrapalha o upsell).
+          var showCreateAccount = _pagoConta && !!_orderEmail && !_fromClienteConta && !order.__dupShow;
         %>
         <% if (showCreateAccount) { %>
         <div id="createAccountSection" style="margin: 0 0 1.5rem 0; border-radius:14px; border:1px solid var(--border-color); background:var(--bg-secondary); padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; box-shadow:var(--shadow-sm);">
