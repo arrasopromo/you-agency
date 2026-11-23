@@ -162,73 +162,73 @@ document.addEventListener('DOMContentLoaded', function() {
   // Dados de Preços (Mesma base do servicos-instagram.js)
   const tabelaSeguidores = {
     mistos: [
-      { q: 100, p: '$ 56' }, { q: 250, p: '$ 79' }, { q: 500, p: '$ 114' },
-      { q: 1000, p: '$ 171' }, { q: 2000, p: '$ 275' }, { q: 3000, p: '$ 424' },
-      { q: 5000, p: '$ 723' }, { q: 10000, p: '$ 1471' }, { q: 20000, p: '$ 2678' }
+      { q: 100, p: '$ 52' }, { q: 250, p: '$ 73' }, { q: 500, p: '$ 105' },
+      { q: 1000, p: '$ 157' }, { q: 2000, p: '$ 253' }, { q: 3000, p: '$ 390' },
+      { q: 5000, p: '$ 665' }, { q: 10000, p: '$ 1353' }, { q: 20000, p: '$ 2464' }
     ],
     brasileiros: [
-      { q: 150, p: '$ 46' }, { q: 300, p: '$ 90' }, { q: 500, p: '$ 145' },
-      { q: 700, p: '$ 182' }, { q: 1000, p: '$ 292' }, { q: 2000, p: '$ 475' },
-      { q: 3000, p: '$ 658' }, { q: 4000, p: '$ 914' }, { q: 5000, p: '$ 1024' },
-      { q: 7500, p: '$ 1463' }, { q: 10000, p: '$ 1830' }, { q: 15000, p: '$ 2928' }
+      { q: 150, p: '$ 42' }, { q: 300, p: '$ 83' }, { q: 500, p: '$ 133' },
+      { q: 700, p: '$ 167' }, { q: 1000, p: '$ 269' }, { q: 2000, p: '$ 437' },
+      { q: 3000, p: '$ 605' }, { q: 4000, p: '$ 841' }, { q: 5000, p: '$ 942' },
+      { q: 7500, p: '$ 1346' }, { q: 10000, p: '$ 1684' }, { q: 15000, p: '$ 2694' }
     ],
     organicos: [
-      { q: 150, p: '$ 145' }, { q: 300, p: '$ 182' }, { q: 500, p: '$ 255' },
-      { q: 1000, p: '$ 475' }, { q: 2000, p: '$ 731' }, { q: 3000, p: '$ 914' },
-      { q: 4000, p: '$ 1207' }, { q: 5000, p: '$ 1830' }, { q: 7500, p: '$ 2196' },
-      { q: 10000, p: '$ 3294' }, { q: 15000, p: '$ 4759' }
+      { q: 150, p: '$ 133' }, { q: 300, p: '$ 167' }, { q: 500, p: '$ 235' },
+      { q: 1000, p: '$ 437' }, { q: 2000, p: '$ 673' }, { q: 3000, p: '$ 841' },
+      { q: 4000, p: '$ 1110' }, { q: 5000, p: '$ 1684' }, { q: 7500, p: '$ 2020' },
+      { q: 10000, p: '$ 3030' }, { q: 15000, p: '$ 4378' }
     ]
   };
 
   const tabelaCurtidas = {
     mistos: [
-      { q: 150, p: '$ 22' },
-      { q: 300, p: '$ 25' },
-      { q: 500, p: '$ 32' },
-      { q: 700, p: '$ 48' },
-      { q: 1000, p: '$ 65' },
-      { q: 2000, p: '$ 81' },
-      { q: 3000, p: '$ 98' },
-      { q: 4000, p: '$ 114' },
-      { q: 5000, p: '$ 131' },
-      { q: 7500, p: '$ 164' },
-      { q: 10000, p: '$ 230' },
-      { q: 15000, p: '$ 296' }
+      { q: 150, p: '$ 20' },
+      { q: 300, p: '$ 23' },
+      { q: 500, p: '$ 29' },
+      { q: 700, p: '$ 44' },
+      { q: 1000, p: '$ 60' },
+      { q: 2000, p: '$ 75' },
+      { q: 3000, p: '$ 90' },
+      { q: 4000, p: '$ 105' },
+      { q: 5000, p: '$ 121' },
+      { q: 7500, p: '$ 151' },
+      { q: 10000, p: '$ 212' },
+      { q: 15000, p: '$ 272' }
     ],
     curtidas_brasileiras: [
-      { q: 150, p: '$ 22' },
-      { q: 300, p: '$ 32' },
-      { q: 500, p: '$ 48' },
-      { q: 700, p: '$ 98' },
-      { q: 1000, p: '$ 131' },
-      { q: 2000, p: '$ 164' },
-      { q: 3000, p: '$ 197' },
-      { q: 4000, p: '$ 230' },
-      { q: 5000, p: '$ 263' },
-      { q: 7500, p: '$ 362' },
-      { q: 10000, p: '$ 461' },
-      { q: 15000, p: '$ 659' }
+      { q: 150, p: '$ 20' },
+      { q: 300, p: '$ 29' },
+      { q: 500, p: '$ 44' },
+      { q: 700, p: '$ 90' },
+      { q: 1000, p: '$ 121' },
+      { q: 2000, p: '$ 151' },
+      { q: 3000, p: '$ 181' },
+      { q: 4000, p: '$ 212' },
+      { q: 5000, p: '$ 242' },
+      { q: 7500, p: '$ 333' },
+      { q: 10000, p: '$ 424' },
+      { q: 15000, p: '$ 606' }
     ],
     organicos: [
-      { q: 150, p: '$ 39' },
-      { q: 300, p: '$ 65' },
-      { q: 500, p: '$ 114' },
-      { q: 700, p: '$ 134' },
-      { q: 1000, p: '$ 161' },
-      { q: 2000, p: '$ 243' },
-      { q: 3000, p: '$ 322' },
-      { q: 4000, p: '$ 405' },
-      { q: 5000, p: '$ 520' },
-      { q: 7500, p: '$ 646' },
+      { q: 150, p: '$ 36' },
+      { q: 300, p: '$ 60' },
+      { q: 500, p: '$ 105' },
+      { q: 700, p: '$ 123' },
+      { q: 1000, p: '$ 148' },
+      { q: 2000, p: '$ 224' },
+      { q: 3000, p: '$ 296' },
+      { q: 4000, p: '$ 373' },
+      { q: 5000, p: '$ 478' },
+      { q: 7500, p: '$ 594' },
     ]
   };
 
   const tabelaVisualizacoes = {
     visualizacoes_reels: [
-      { q: 1000, p: '$ 22' }, { q: 2500, p: '$ 32' }, { q: 5000, p: '$ 48' },
-      { q: 10000, p: '$ 65' }, { q: 25000, p: '$ 81' }, { q: 50000, p: '$ 114' },
-      { q: 100000, p: '$ 164' }, { q: 150000, p: '$ 197' }, { q: 200000, p: '$ 230' },
-      { q: 250000, p: '$ 296' }, { q: 500000, p: '$ 362' }, { q: 1000000, p: '$ 527' }
+      { q: 1000, p: '$ 20' }, { q: 2500, p: '$ 29' }, { q: 5000, p: '$ 44' },
+      { q: 10000, p: '$ 60' }, { q: 25000, p: '$ 75' }, { q: 50000, p: '$ 105' },
+      { q: 100000, p: '$ 151' }, { q: 150000, p: '$ 181' }, { q: 200000, p: '$ 212' },
+      { q: 250000, p: '$ 272' }, { q: 500000, p: '$ 333' }, { q: 1000000, p: '$ 485' }
     ]
   };
   
@@ -244,11 +244,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Promo Pricing (Igual servicos-instagram)
   const promoPricing = {
-    likes: { old: '$ 37', price: '$ 22', discount: 41 },
-    views: { old: '$ 31', price: '$ 22', discount: 29 },
+    likes: { old: '$ 37', price: '$ 20', discount: 41 },
+    views: { old: '$ 31', price: '$ 20', discount: 29 },
     comments: { old: '$ 34', price: '$ 20', discount: 41 },
-    warranty: { old: '$ 144', price: '$ 53', discount: 63 },
-    warranty60: { old: '$ 144', price: '$ 35', discount: 75 },
+    warranty: { old: '$ 144', price: '$ 49', discount: 63 },
+    warranty60: { old: '$ 144', price: '$ 32', discount: 75 },
   };
   try { window.promoPricing = promoPricing; } catch(_) {}
 
@@ -264,21 +264,21 @@ document.addEventListener('DOMContentLoaded', function() {
   function refreshLikesTable() {
     const byVariant = {
       mistos: [
-        { q: 150, price: '$ 22' }, { q: 300, price: '$ 25' }, { q: 500, price: '$ 32' },
-        { q: 700, price: '$ 48' }, { q: 1000, price: '$ 65' }, { q: 2000, price: '$ 81' },
-        { q: 3000, price: '$ 98' }, { q: 4000, price: '$ 114' }, { q: 5000, price: '$ 131' },
-        { q: 7500, price: '$ 164' }, { q: 10000, price: '$ 230' }, { q: 15000, price: '$ 296' }
+        { q: 150, price: '$ 20' }, { q: 300, price: '$ 23' }, { q: 500, price: '$ 29' },
+        { q: 700, price: '$ 44' }, { q: 1000, price: '$ 60' }, { q: 2000, price: '$ 75' },
+        { q: 3000, price: '$ 90' }, { q: 4000, price: '$ 105' }, { q: 5000, price: '$ 121' },
+        { q: 7500, price: '$ 151' }, { q: 10000, price: '$ 212' }, { q: 15000, price: '$ 272' }
       ],
       brasileiros: [
-        { q: 150, price: '$ 22' }, { q: 300, price: '$ 32' }, { q: 500, price: '$ 48' },
-        { q: 700, price: '$ 98' }, { q: 1000, price: '$ 131' }, { q: 2000, price: '$ 164' },
-        { q: 3000, price: '$ 197' }, { q: 4000, price: '$ 230' }, { q: 5000, price: '$ 263' },
-        { q: 7500, price: '$ 362' }, { q: 10000, price: '$ 461' }, { q: 15000, price: '$ 659' }
+        { q: 150, price: '$ 20' }, { q: 300, price: '$ 29' }, { q: 500, price: '$ 44' },
+        { q: 700, price: '$ 90' }, { q: 1000, price: '$ 121' }, { q: 2000, price: '$ 151' },
+        { q: 3000, price: '$ 181' }, { q: 4000, price: '$ 212' }, { q: 5000, price: '$ 242' },
+        { q: 7500, price: '$ 333' }, { q: 10000, price: '$ 424' }, { q: 15000, price: '$ 606' }
       ],
       organicos: [
-        { q: 150, price: '$ 39' }, { q: 300, price: '$ 65' }, { q: 500, price: '$ 114' }, { q: 700, price: '$ 134' },
-        { q: 1000, price: '$ 161' }, { q: 2000, price: '$ 243' }, { q: 3000, price: '$ 322' },
-        { q: 4000, price: '$ 405' }, { q: 5000, price: '$ 520' }, { q: 7500, price: '$ 646' },
+        { q: 150, price: '$ 36' }, { q: 300, price: '$ 60' }, { q: 500, price: '$ 105' }, { q: 700, price: '$ 123' },
+        { q: 1000, price: '$ 148' }, { q: 2000, price: '$ 224' }, { q: 3000, price: '$ 296' },
+        { q: 4000, price: '$ 373' }, { q: 5000, price: '$ 478' }, { q: 7500, price: '$ 594' },
       ]
     };
     const key = getLikesPromoVariantKey();
@@ -293,10 +293,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   const viewsTable = [
-    { q: 1000, price: '$ 22' }, { q: 2500, price: '$ 32' }, { q: 5000, price: '$ 48' },
-    { q: 10000, price: '$ 65' }, { q: 25000, price: '$ 81' }, { q: 50000, price: '$ 114' },
-    { q: 100000, price: '$ 164' }, { q: 150000, price: '$ 197' }, { q: 200000, price: '$ 230' },
-    { q: 250000, price: '$ 296' }, { q: 500000, price: '$ 362' }, { q: 1000000, price: '$ 527' }
+    { q: 1000, price: '$ 20' }, { q: 2500, price: '$ 29' }, { q: 5000, price: '$ 44' },
+    { q: 10000, price: '$ 60' }, { q: 25000, price: '$ 75' }, { q: 50000, price: '$ 105' },
+    { q: 100000, price: '$ 151' }, { q: 150000, price: '$ 181' }, { q: 200000, price: '$ 212' },
+    { q: 250000, price: '$ 272' }, { q: 500000, price: '$ 333' }, { q: 1000000, price: '$ 485' }
   ];
 
   function formatCurrencyBR(n) { return yaFmtPreco(n); }
@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const newEl = commentsPrices ? commentsPrices.querySelector('.new-price') : null;
     const oldEl = commentsPrices ? commentsPrices.querySelector('.old-price') : null;
     const format = (cents) => { const val = cents / 100; return yaFmtPreco(val); };
-    const _pc = q >= 1 ? 2000 + 600 * (q - 1) : 0; // 1 = MXN 20, + MXN 6 cada um a mais (igual ao pricing.js)
+    const _pc = q >= 1 ? 2000 + 550 * (q - 1) : 0; // 1 = MXN 20, + MXN 5,50 cada um a mais (igual ao pricing.js)
     if (newEl) newEl.textContent = format(_pc);
     if (oldEl) { const oldCents = Math.round(_pc / 100 * 1.7) * 100; oldEl.textContent = format(oldCents); }
     const hl = document.querySelector('.promo-item.comments .promo-highlight');
@@ -1706,7 +1706,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (promoComments && promoComments.checked) {
        const qty = Number(document.getElementById('commentsQty')?.textContent || 1);
        // Price is dynamic: 150 cents per comment
-       const priceCents = qty >= 1 ? 2000 + 600 * (qty - 1) : 0; // 1 = MXN 20, + MXN 6 cada um a mais (igual ao pricing.js)
+       const priceCents = qty >= 1 ? 2000 + 550 * (qty - 1) : 0; // 1 = MXN 20, + MXN 5,50 cada um a mais (igual ao pricing.js)
        promos.push({ key: 'comments', qty: qty, label: `Comentarios (${qty})`, priceCents: priceCents });
     }
     if (promoWarranty && promoWarranty.checked) {
