@@ -173,6 +173,13 @@
     #upsellExclusiveBanner .exclusive-title { font-weight: 800; letter-spacing: -0.01em; }
     #upsellExclusiveBanner .exclusive-countdown { font-weight: 700; margin-top: 0.25rem; }
   </style>
+  <style>
+    /* 23/11: cards mais estreitos no desktop (oferta, detalhes do pedido e avaliação na mesma coluna) */
+    @media (min-width: 769px) {
+      .checkout-page .section-block { max-width: 720px; margin-left: auto; margin-right: auto; }
+      .resena-wrap .resena-box { max-width: 720px; }
+    }
+  </style>
 </head>
 <body class="theme-light has-fixed-menu">
   <!-- Script de remoÃ§Ã£o de parÃ¢metros removido para permitir F5 (refresh) -->
