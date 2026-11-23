@@ -171,6 +171,7 @@
           <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Entrega en minutos</li>
           <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>Garantía de 30 días</li>
         </ul>
+        <a href="#plataformaCard" class="yh-btn-pacotes" id="yaBtnPacotes">Quiero crecer mi perfil <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
       </div>
       <div class="yh-vis" aria-hidden="true">
         <div class="yh-disco"></div>
@@ -231,6 +232,11 @@
       .yh-msg:empty { display:none; }
       .yh-confia { list-style:none; display:flex; flex-wrap:wrap; gap:8px 20px; margin:16px 0 26px; padding:0; color:var(--yh-sub); font-size:.88rem; }
       .yh-confia li { display:inline-flex; align-items:center; gap:7px; }
+      .yh-btn-pacotes { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; max-width:520px; box-sizing:border-box; height:54px; margin:-8px 0 26px; border-radius:16px; border:2px solid #E8336D; color:#E8336D; background:transparent; font-weight:700; font-size:1.02rem; text-decoration:none; transition:background .2s, color .2s; }
+      .yh-btn-pacotes svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+      .yh-btn-pacotes:hover { background:#E8336D; color:#fff; }
+      .yh-btn-pacotes:focus-visible { outline:3px solid #E8336D; outline-offset:3px; }
+      #plataformaCard { scroll-margin-top:80px; }
       .yh-confia svg { width:17px; height:17px; fill:none; stroke:#E8336D; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 
       .yh-vis { position:relative; min-height:560px; display:flex; align-items:center; justify-content:center; }
@@ -329,6 +335,8 @@
       // única animação: os seguidores da prévia sobem uma vez
       var conta = function(el, de, ate, ms){ if (reduz) { el.textContent = fmt(ate); return; } var t0 = null; var passo = function(t){ if (!t0) t0 = t; var k = Math.min(1, (t - t0) / ms); var e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(Math.round(de + (ate - de) * e)); if (k < 1) requestAnimationFrame(passo); }; requestAnimationFrame(passo); };
       // seguidores da prévia sobem aos poucos (+N com balão), como um pedido entrando
+      // botão "Quiero crecer mi perfil": desce até a escolha de plataforma / pacotes
+      (function(){ var bp = document.getElementById('yaBtnPacotes'); if (!bp) return; bp.addEventListener('click', function(e){ var alvo = document.getElementById('plataformaCard'); if (!alvo) return; e.preventDefault(); alvo.scrollIntoView({ behavior: reduz ? 'auto' : 'smooth', block: 'start' }); }); })();
       var igReal = false, igSeg = 1180, igTm = null;
       var igPasso = function(){
         if (igReal || document.hidden) return;
