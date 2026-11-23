@@ -124,7 +124,7 @@ async function posVenda(phone, texto, n, s, out) {
   let usuario = '';
   if (s.pedeUsuarioPos) { const m = String(texto).match(/instagram\.com\/([A-Za-z0-9_.]{2,30})/i) || String(texto).match(/@?([A-Za-z0-9_.]{3,30})/); usuario = (m && m[1]) || ''; }
   let cp = null;
-  try { cp = await sales.consultarPedido({ telefone: phone, usuario }); } catch (_) { cp = null; }
+  try { cp = await sales.consultarPedido({ telefone: phone, usuario, usuarios: s.usuario ? [s.usuario] : [] }); } catch (_) { cp = null; }
   if (!cp || !cp.encontrado) {
     if (!s.pedeUsuarioPos) { s.pedeUsuarioPos = true; out.push('No encuentro un pedido pagado con este número. ¿Me pasas el @ (usuario de Instagram) con el que hiciste la compra?'); return true; }
     s.pedeUsuarioPos = false;
@@ -307,6 +307,7 @@ async function turno(phone, texto, s, deps) {
     out.push('¡Listo! Ya generé tu pago de *' + fmt(s.valor) + '*' + (s.metodo === 'OXXO' ? ' en OXXO (en caja cobran una comisión aparte)' : '') + '. Quedo al pendiente de la confirmación para liberar tu pedido.');
     out.push(...r.msgs); return out;
   }
+  if (s.etapa === 'resumen' && s.perguntaSite && (n.confirma === false || n.intencion === 'no')) { s.perguntaSite = false; s.etapa = 'coleta'; s.qtd = null; out.push('¡Perfecto! Entonces seguimos solo con el pedido que ya pagaste: ya está en proceso y llega de forma gradual. Si tienes cualquier duda de la entrega, aquí estoy.'); return out; }
   if (s.etapa === 'resumen' && (n.confirma === false || n.intencion === 'no')) { out.push('Sin problema, ¿qué quieres cambiar? (cantidad, perfil o forma de pago)'); s.etapa = 'resumen_pendente'; return out; }
 
   const pedeClabe = n.intencion === 'pide_datos_pago' || /(clabe|referencia(?!s)|cuenta|d[oó]nde\s+(pago|deposito|transfiero))/i.test(texto);
@@ -352,6 +353,7 @@ async function turno(phone, texto, s, deps) {
 async function criarPagamento(phone, s) {
   const metodo = s.metodo === 'OXXO' ? 'OXXO' : 'SPEI';
   let r;
+  if (s.perguntaSite) { s.perguntaSite = false; s.comprarMais = true; } // já perguntamos e o cliente disse que sí: é compra nova
   const base = { phone, servico: 'seguidores', tipo: s.tipo || 'mistos', quantidade: s.qtd, usuario: s.usuario, metodo, nome: '', previewOnly: false, comprar_mais: !!s.comprarMais };
   try {
     if (s.rede === 'instagram') {
@@ -361,6 +363,7 @@ async function criarPagamento(phone, s) {
       r = await sales.createRedeOrder({ rede: s.rede, servico: 'seguidores', tipo: 'mistos', quantidade: s.qtd, usuario: s.usuario, perfil_link: s.perfilLink || s.usuario, nome: '', phone, metodo, previewOnly: false, comprar_mais: !!s.comprarMais });
     }
   } catch (e) { r = { ok: false, error: (e && e.message) || 'erro' }; }
+  if (r && !r.ok && r.error === 'pedido_pagado_en_sitio') { s.perguntaSite = true; return { ok: false, erroTexto: r.textoCliente }; }
   if (!r || !r.ok || !r.pago) {
     try { console.warn('⚠️ [bot-b] cobrança falhou:', phone, JSON.stringify(r || {}).slice(0, 200)); } catch (_) {}
     try { await sales.flagSupport(phone, 'Bot B: falha ao gerar cobrança (' + String((r && (r.error || r.message)) || 'erro').slice(0, 80) + ')'); } catch (_) {}
@@ -424,7 +427,7 @@ async function handle(phone, texto, sendText, ctxA) {
   try { const d = await sales.tiposDisponiveis(); s.disp = { mixtos: (d.seguidores || []).includes('mistos'), alta: (d.seguidores || []).includes('organicos'), tiktok: (d.tiktok || []).includes('seguidores'), facebook: (d.facebook || []).includes('seguidores') }; } catch (_) { s.disp = s.disp || { mixtos: true, alta: false, tiktok: false, facebook: false }; }
   // estado real no banco: pedido pago recente / cobrança aberta
   try {
-    const est = await sales.estadoCliente(phone);
+    const est = await sales.estadoCliente(phone, s.usuario ? [s.usuario] : []);
     s.temPedidoPago = !!(est && est.pagos);
     s.temPagoAberto = !!(est && est.aberto);
     if (s.pago && !s.pagoConfirmado && est && est.pagos && !est.aberto) s.pagoConfirmado = true;

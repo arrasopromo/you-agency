@@ -441,7 +441,7 @@ async function runTool(name, args, ctx) {
         const t = String(ctx.text || '').trim();
         if (/instagram\.com\//i.test(t) || /^@?[a-zA-Z0-9._]{2,30}$/.test(t)) usuario = t;
       }
-      const r = await sales.consultarPedido({ telefone: ctx.phone, usuario });
+      const r = await sales.consultarPedido({ telefone: ctx.phone, usuario, usuarios: _usuariosDaConversa(ctx) });
       ctx.lastConsulta = r;
       return r;
     }
@@ -536,6 +536,17 @@ function mensagensPagamento(p, valor) {
 }
 
 // Entrada principal. msg: { phone, text }. sendText(to, texto) envia a resposta.
+// @ que o cliente já deu nesta conversa (perfil validado + @/link escritos): acha pedido feito no SITE sem este telefone.
+function _usuariosDaConversa(ctx) {
+  const us = [ctx.validatedUsername, ctx.histUsername];
+  for (const t of (ctx.allUserTexts || []).slice(0, 12)) {
+    const s = String(t || '');
+    let m; const rx = /(?:instagram\.com\/|(?:^|\s)@)([A-Za-z0-9_.]{2,30}[A-Za-z0-9_])/gi;
+    while ((m = rx.exec(s))) { if (!/^(p|reel|reels|stories|explore)$/i.test(m[1])) us.push(m[1]); }
+  }
+  return [...new Set(us.filter(Boolean).map((u) => String(u).replace(/^@+/, '').toLowerCase()))].slice(0, 3);
+}
+
 async function handleAgentMessage(msg, sendText) {
   const phone = String(msg && (msg.phone || msg.from) || '').trim();
   const text = String(msg && msg.text || '').trim();
@@ -681,7 +692,7 @@ async function handleAgentMessage(msg, sendText) {
       }
     }
   } catch (_) {}
-  try { const est = await sales.estadoCliente(phone); if (est && est.texto) notasSistema.unshift(est.texto); } catch (_) {}
+  try { const est = await sales.estadoCliente(phone, _usuariosDaConversa(ctx)); if (est && est.texto) notasSistema.unshift(est.texto); } catch (_) {}
   // "¿Y si es real?", "¿es verdad?", "me estafaron": é dúvida se a EMPRESA é confiável, não pedido de seguidores reales
   // (23/11: o bot respondeu "Y si es real / Ya me estafaron 2 veces" com a tabela inteira de alta calidad).
   const RE_PEDE_ALTA = /(seguidores\s+(reales|de\s+verdad|activos|latinos|de\s+calidad)|alta\s+calidad|los\s+reales|quiero\s+(los\s+)?reales|perfiles\s+reales|personas\s+reales|que\s+interact)/i;

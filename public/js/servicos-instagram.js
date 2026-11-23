@@ -3713,7 +3713,7 @@ document.addEventListener('DOMContentLoaded', function() {
              // Tentar buscar em background para agilizar o modal
              try {
                 // Verificar se já não estamos buscando para este usuário
-                if (cachedPostsUser !== (profile.username || username)) {
+                if (window.__PREFETCH_POSTS === true && cachedPostsUser !== (profile.username || username)) { // 23/11: sem busca antecipada (gastava RocketAPI em toda validação)
                     const url = '/api/instagram/posts?username=' + encodeURIComponent(profile.username || username);
                     fetch(url).then(r=>r.json()).then(d=>{ 
                         if(d.posts && Array.isArray(d.posts)) {

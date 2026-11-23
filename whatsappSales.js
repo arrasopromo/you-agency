@@ -456,6 +456,27 @@ const _nomeMetodo = (met) => (met === 'OXXO' ? 'OXXO (efectivo)' : 'SPEI (transf
 // previewOnly: valida tudo e, se fosse criar uma cobrança NOVA, devolve o resumo para o cliente
 // confirmar ("¿Todo bien?") e o pacote seguinte — sem cobrar. Reenvio/troca de método de uma cobrança
 // que já existe para o mesmo pedido segue direto.
+// Pedido PAGO pelo @ (qualquer origem: site, outro chat). 23/11: clientes compraram no SITE (sem telefone ou com
+// outro número), vieram ao WhatsApp e o bot não achou o pedido e gerou outra cobrança (Danna 3541, Melissa 8038).
+function _rxUsuario(u) { return new RegExp('^@?' + String(u).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i'); }
+function _matchUsuarios(us) {
+  const rxs = us.map(_rxUsuario);
+  return { $or: [{ instagramUsername: { $in: rxs } }, { instauser: { $in: rxs } }, { 'additionalInfoMap.instagram_username': { $in: rxs } }, { 'additionalInfoMapPaid.instagram_username': { $in: rxs } }] };
+}
+function _listaUsuarios(usernames) {
+  const arr = Array.isArray(usernames) ? usernames : (usernames ? [usernames] : []);
+  return [...new Set(arr.map((u) => parseIgUsername(u)).filter(Boolean).map((u) => u.toLowerCase()))].slice(0, 3);
+}
+async function pedidosPagosDoUsuario(usernames, horas) {
+  const us = _listaUsuarios(usernames);
+  if (!us.length) return [];
+  const col = await getCollection('checkout_orders');
+  const desde = new Date(Date.now() - (horas || 72) * 3600e3).toISOString();
+  return col.find({ createdAt: { $gte: desde }, $and: [{ $or: [{ status: 'pago' }, { paidAt: { $exists: true, $nin: [null, ''] } }] }, _matchUsuarios(us)] })
+    .project({ status: 1, paidAt: 1, createdAt: 1, xpag: 1, valueCents: 1, expectedValueCents: 1, instagramUsername: 1, instauser: 1, quantidade: 1, qtd: 1, tipo: 1, tipoServico: 1, additionalInfo: 1, additionalInfoMap: 1, additionalInfoPaid: 1, additionalInfoMapPaid: 1, iaPayRecovery: 1, correlationID: 1, paymentMethod: 1, customer: 1 })
+    .sort({ createdAt: -1 }).limit(5).toArray();
+}
+
 async function createPixOrder({ servico, quantidade, tipo, usuario, nome, email, phone, post_links, comprar_mais, metodo, previewOnly }) {
   const _svcDef = CATALOG[normalizeServico(servico)];
   if (_svcDef && _svcDef.tipos && !String(tipo || '').trim()) {
@@ -543,6 +564,28 @@ async function createPixOrder({ servico, quantidade, tipo, usuario, nome, email,
       }
     }
   } catch (_) {}
+  if (comprar_mais !== true) {
+    try {
+      const fim8b = String(phone || '').replace(/\D/g, '').slice(-8);
+      const outros = (await pedidosPagosDoUsuario([username], 24)).filter((o) => {
+        const mesmoChat = /^WppAgent_/.test(String(o.correlationID || '')) && fim8b.length === 8 && String((o.customer && o.customer.phone) || '').replace(/\D/g, '').endsWith(fim8b);
+        if (mesmoChat) return false; // o mesmo chat já é tratado acima (pedido_ja_pago)
+        const cat = String(orderGetAny(o, 'categoria_servico') || '').toLowerCase();
+        return !cat || cat === String(cot.categoria || '').toLowerCase();
+      });
+      if (outros.length) {
+        const o = outros[0];
+        const ms = Date.now() - new Date(o.paidAt || o.createdAt).getTime();
+        const hace = ms < 3600e3 ? Math.max(1, Math.round(ms / 60000)) + ' min' : Math.round(ms / 3600e3) + ' h';
+        const desc = _descPedido(o);
+        return {
+          ok: false, error: 'pedido_pagado_en_sitio', usuario: username, desc, hace, valor: mxn(Number(o.valueCents || 0)),
+          textoCliente: 'Veo que ya tienes un pedido *pagado* para @' + username + ' (' + desc + ', hace ' + hace + '): ese ya está en proceso, no hace falta pagarlo otra vez. ¿Quieres comprar *otro* paquete además de ese?',
+          message: 'YA HAY un pedido PAGADO para @' + username + ' hace ' + hace + ' (' + desc + ', ' + mxn(Number(o.valueCents || 0)) + '), hecho en la página o en otro chat. NO generes otro pago. Dile al cliente que ese pedido ya está pagado y en proceso (para ver cómo va usa consultar_pedido) y pregúntale si quiere comprar OTRO paquete además de ese. Solo si dice claramente que sí, llama a generar_pago con comprar_mais=true.',
+        };
+      }
+    } catch (_) {}
+  }
   if (previewOnly && !jaTemCobranca) {
     const linhas = ['*' + _fmtQ(cot.quantidade) + ' ' + cot.unit + (cot.tipoNombre ? ' ' + cot.tipoNombre : '') + '*', 'Perfil: *@' + username + '*'];
     if (cot.needsPost && post_links && post_links.length) {
@@ -718,7 +761,7 @@ function baseProviderOrder(o) {
 }
 
 // Consulta o pedido do cliente por TELEFONE (o número que escreveu) ou por @.
-async function consultarPedido({ telefone, usuario, _jaConferiuXpag } = {}) {
+async function consultarPedido({ telefone, usuario, usuarios, _jaConferiuXpag } = {}) {
   const col = await getCollection('checkout_orders');
   const paidOr = [{ status: 'pago' }, { paidAt: { $exists: true, $nin: [null, ''] } }];
   const uname = parseIgUsername(usuario);
@@ -762,6 +805,12 @@ async function consultarPedido({ telefone, usuario, _jaConferiuXpag } = {}) {
         };
       }
     } catch (_) {}
+    if (!uname) {
+      // Pedido feito no SITE (sem este telefone): tenta pelos @ que o cliente já passou na conversa.
+      for (const u of _listaUsuarios(usuarios)) {
+        try { const r2 = await consultarPedido({ usuario: u, _jaConferiuXpag }); if (r2 && r2.encontrado) return Object.assign(r2, { achadoPeloUsuario: true }); } catch (_) {}
+      }
+    }
     return { ok: true, encontrado: false, buscaPor: uname ? 'usuario' : 'telefone' };
   }
   orders.sort((a, b) => _orderPaidMs(b) - _orderPaidMs(a));
@@ -913,7 +962,7 @@ function _descPedido(o) {
 
 // ESTADO REAL do cliente pelo telefone: pedidos pagos recentes e cobrança em aberto (conferida na Xpag na hora).
 // Vai como nota de sistema em TODA resposta do bot — ele não precisa "achar" o pedido nem pedir @/telefone.
-async function estadoCliente(phone) {
+async function estadoCliente(phone, usernames) {
   try {
     const fim8 = _digits(phone).slice(-8);
     if (fim8.length !== 8) return null;
@@ -923,6 +972,10 @@ async function estadoCliente(phone) {
     const docs = await col.find({ createdAt: { $gte: desde }, $or: [{ 'customer.phone': { $regex: rx } }, { 'customer.phone_number': { $regex: rx } }, { telefone: { $regex: rx } }] })
       .project({ status: 1, paidAt: 1, createdAt: 1, xpag: 1, valueCents: 1, expectedValueCents: 1, instagramUsername: 1, instauser: 1, quantidade: 1, qtd: 1, tipo: 1, tipoServico: 1, additionalInfo: 1, additionalInfoMap: 1, additionalInfoPaid: 1, additionalInfoMapPaid: 1, iaPayRecovery: 1, correlationID: 1, paymentMethod: 1 })
       .sort({ createdAt: -1 }).limit(8).toArray();
+    try {
+      const ids = new Set(docs.map((d) => String(d._id)));
+      for (const d of await pedidosPagosDoUsuario(usernames, 72)) if (!ids.has(String(d._id))) { d._viaUsuario = true; docs.push(d); }
+    } catch (_) {}
     if (!docs.length) return null;
     const pago = (d) => String(d.status || '').toLowerCase() === 'pago' || !!d.paidAt;
     let aberto = docs.find((d) => !pago(d) && d.paymentMethod === 'xpag' && d.xpag && (d.xpag.clabe || d.xpag.reference) && (!d.xpag.expiresAt || new Date(d.xpag.expiresAt).getTime() > Date.now()));
@@ -934,7 +987,7 @@ async function estadoCliente(phone) {
     const user = (d) => String(d.instagramUsername || d.instauser || orderGetAny(d, 'instagram_username') || '').replace(/^@+/, '');
     const pagos = docs.filter(pago).slice(0, 3);
     const linhas = [];
-    for (const d of pagos) linhas.push('- PAGADO el ' + fmt(d.paidAt || d.createdAt) + ': ' + _descPedido(d) + (user(d) ? ' para @' + user(d) : '') + ' (' + mxn(Number(d.valueCents || 0)) + '). Para saber cómo va la entrega usa consultar_pedido.');
+    for (const d of pagos) linhas.push('- PAGADO el ' + fmt(d.paidAt || d.createdAt) + ': ' + _descPedido(d) + (user(d) ? ' para @' + user(d) : '') + ' (' + mxn(Number(d.valueCents || 0)) + ')' + (d._viaUsuario ? ', hecho en la PÁGINA (u otro número) para el mismo @ que el cliente dio aquí: es SU pedido' : '') + '. Para saber cómo va la entrega usa consultar_pedido' + (d._viaUsuario && user(d) ? ' con usuario=' + user(d) : '') + '.');
     if (aberto) {
       const min = Math.round((Date.now() - new Date(aberto.createdAt).getTime()) / 60000);
       const rec = aberto.iaPayRecovery || {};
@@ -943,7 +996,7 @@ async function estadoCliente(phone) {
     }
     if (!linhas.length) return null;
     return {
-      aberto: !!aberto, pagos: pagos.length,
+      aberto: !!aberto, pagos: pagos.length, pagosSite: pagos.filter((d) => d._viaUsuario).length,
       texto: 'ESTADO REAL DEL CLIENTE (dato del sistema, consultado ahora; es la verdad, úsalo antes de responder):\n' + linhas.join('\n') +
         '\nReglas: NUNCA digas que no encuentras un pedido de esta lista ni pidas @ o teléfono para buscarlo. ' +
         (aberto ? 'Con el pago pendiente: NO reenvíes los datos de pago salvo que el cliente los pida; si dice que ya pagó, explica que la confirmación es automática (SPEI suele tardar minutos, a veces más), que en cuanto llegue se libera solo y le avisas aquí, y que si en 30 min no llega el equipo lo revisa. ' : '') +

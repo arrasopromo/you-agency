@@ -1192,7 +1192,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   } else {
                       window.latestPosts = [];
                       // Try to fetch posts silently if not available and needed for orderbumps
-                      if (window.currentService === 'followers') {
+                      if (window.currentService === 'followers' && window.__PREFETCH_POSTS === true) { // 23/11: sem busca antecipada
                           // Silent fetch
                           fetch('/api/instagram/posts?username=' + encodeURIComponent(username))
                             .then(r => r.json())

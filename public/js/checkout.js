@@ -2803,7 +2803,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
 
         try {
           const url = '/api/instagram/posts?username=' + encodeURIComponent(profile.username || username);
-          fetch(url).then(r=>r.json()).then(d=>{ cachedPosts = Array.isArray(d.posts) ? d.posts : []; cachedPostsUser = (profile.username || username) || ''; }).catch(function(){});
+          if (window.__PREFETCH_POSTS === true) fetch(url).then(r=>r.json()).then(d=>{ cachedPosts = Array.isArray(d.posts) ? d.posts : []; cachedPostsUser = (profile.username || username) || ''; }).catch(function(){}); // 23/11: sem busca antecipada
         } catch(_) {}
         
         // Retry tracking audio 10% if it was listened before validation
@@ -2886,7 +2886,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
           showTutorialStep(5);
           try {
             const url = '/api/instagram/posts?username=' + encodeURIComponent(profile.username || username);
-            fetch(url).then(r=>r.json()).then(d=>{ cachedPosts = Array.isArray(d.posts) ? d.posts : []; cachedPostsUser = (profile.username || username) || ''; }).catch(function(){});
+            if (window.__PREFETCH_POSTS === true) fetch(url).then(r=>r.json()).then(d=>{ cachedPosts = Array.isArray(d.posts) ? d.posts : []; cachedPostsUser = (profile.username || username) || ''; }).catch(function(){}); // 23/11: sem busca antecipada
           } catch(_) {}
         } else {
           showStatusMessageCheckout(msg, 'error');
