@@ -474,7 +474,7 @@ function _descPedido(o) {
   const q = Number(_addInfo(o, 'quantidade') || 0);
   const k = cat + ' ' + tipo;
   const sv = /curtida/.test(k) ? 'me gusta' : /visualiza/.test(k) ? 'vistas' : /coment/.test(k) ? 'comentarios' : 'seguidores';
-  const t = /organic|reais|real/.test(tipo) ? ' reales' : (/misto/.test(tipo) ? ' mixtos' : '');
+  const t = /organic|reais|real/.test(tipo) ? ' reales' : (/misto/.test(tipo) ? '' : '');
   const rede = /^tiktok/.test(tipo) ? ' de TikTok' : (/^facebook/.test(tipo) ? ' de Facebook' : '');
   const user = (_addInfo(o, 'instagram_username') || _addInfo(o, 'perfil_rede')).replace(/^@+/, '');
   return (q ? q.toLocaleString('en-US') + ' ' : '') + sv + t + rede + (user ? ' para @' + user : '');

@@ -1891,14 +1891,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (isCurtidasContext) {
         const map = {
-          'mistos': 'Me gusta mixtos',
+          'mistos': 'Me gusta',
           'curtidas_brasileiras': 'Me gusta',
           'organicos': 'Me gusta reales'
         };
         return map[tipo] || tipo;
     }
     const map = {
-      'mistos': 'Seguidores mixtos',
+      'mistos': 'Seguidores',
       'brasileiros': 'Seguidores latinos',
       'organicos': 'Seguidores de alta calidad'
     };
@@ -2682,7 +2682,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const variant = (function(t){
       if (t === 'organicos') return { title: 'Extra de me gusta reales', desc: 'Agrega me gusta de perfiles reales y activos a la publicación.' };
       if (t === 'brasileiros' || t === 'curtidas_brasileiras') return { title: 'Extra de me gusta', desc: 'Agrega me gusta a la publicación.' };
-      if (t === 'mistos') return { title: 'Extra de me gusta mixtos', desc: 'Agrega me gusta de perfiles mixtos a la publicación.' };
+      if (t === 'mistos') return { title: 'Extra de me gusta', desc: 'Agrega me gusta a la publicación.' };
       return { title: 'Extra de me gusta', desc: 'Agrega me gusta a la publicación.' };
     })(tipo);
     if (titleEl) titleEl.textContent = variant.title;
@@ -2706,7 +2706,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const tipo = String((tipoSelect && tipoSelect.value) || '').toLowerCase();
       if (tipo === 'organicos') hl.textContent = `+ ${q} ME GUSTA REALES`;
       else if (tipo === 'brasileiros' || tipo === 'curtidas_brasileiras') hl.textContent = `+ ${q} ME GUSTA`;
-      else if (tipo === 'mistos') hl.textContent = `+ ${q} ME GUSTA MIXTOS`;
+      else if (tipo === 'mistos') hl.textContent = `+ ${q} ME GUSTA`;
       else hl.textContent = `+ ${q} ME GUSTA`;
     }
     try { applyLikesPromoVariant(); } catch(_) {}
@@ -2820,7 +2820,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const label = (function(t){
           if (t === 'organicos') return `Me gusta reales (${qty})`;
           if (t === 'brasileiros' || t === 'curtidas_brasileiras') return `Me gusta (${qty})`;
-          if (t === 'mistos') return `Me gusta mixtos (${qty})`;
+          if (t === 'mistos') return `Me gusta (${qty})`;
           return `Me gusta (${qty})`;
         })(tipo);
         promos.push({ key: 'likes', qty, label, priceCents: parsePrecoToCents(priceStr) });

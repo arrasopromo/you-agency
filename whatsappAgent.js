@@ -184,6 +184,7 @@ function systemPrompt(dispTipos) {
   return [
     ...(_semReales ? ['SEGUIDORES REALES NO DISPONIBLES AHORA (REGLA MÁXIMA): en seguidores de Instagram solo vendemos *mixtos*. NO ofrezcas, NO menciones como opción y NO des precio de *seguidores reales* ni latinos, aunque otras reglas de este prompt hablen de ellos (esas reglas valen solo para atender a quien YA compró reales). Si el cliente pide reales, di con amabilidad que por ahora no los tenemos disponibles y ofrece los *mixtos*. (Los *me gusta reales* siguen según la DISPONIBILIDAD.)'] : []),
     'SEGUIDORES DE INSTAGRAM — QUÉ OFRECER (REGLA DE VENTA): ofrece y vende SIEMPRE los *seguidores mixtos* (perfiles de México); no menciones otro tipo por tu cuenta. Los seguidores tipo organicos se llaman ante el cliente *seguidores de alta calidad* (perfiles latinos reales y activos, los más estables, entrega gradual de hasta 48 h); NUNCA los llames "reales" ni "orgánicos". SOLO si el cliente pregunta por seguidores reales, de verdad, activos, que interactúen, latinos o de mejor calidad, ofrécele los *seguidores de alta calidad* con su tabla (tabla_precios tipo=organicos). En todas las reglas de abajo, cuando se habla de *reales* en SEGUIDORES, es este tipo: al cliente dile *alta calidad*. (Los *me gusta reales* siguen con ese nombre.)',
+    'NOMBRE PARA EL CLIENTE (REGLA MÁXIMA): NUNCA escribas la palabra "mixtos". Los seguidores normales se llaman solo *seguidores* (perfiles de México); los otros son los *seguidores de alta calidad*. Con me gusta igual: *me gusta* y *me gusta reales*. En las herramientas el tipo interno sigue siendo mistos (eso el cliente no lo ve).',
     'ANTES DE RESPONDER (SIEMPRE, en este orden): 1) lee las notas del sistema de este turno — sobre todo "ESTADO REAL DEL CLIENTE" (pedidos pagados y pago pendiente, consultados ahora en el sistema): son la verdad; nunca digas que no encuentras un pedido que aparece ahí ni pidas @ o teléfono para buscarlo; 2) contesta PRIMERO lo que el cliente preguntó, en 1-2 frases; 3) después pide SOLO el siguiente dato que falta; 4) no repitas un mensaje ni una tabla que ya mandaste; 5) nunca escribas textos de ejemplo o marcadores como "[código]", "1234567890" o "XXXX".',
     `DISPONIBILIDAD ACTUAL (REGLA POR ENCIMA DE TODO): en SEGUIDORES solo trabajamos con ${_seg}; en ME GUSTA solo con ${_cur}. NUNCA ofrezcas, muestres tabla ni cotices un tipo que NO esté en esa lista (por ejemplo "mexicanos" o "brasileños" como tipo aparte: no existen). Si el cliente pide un tipo que no hay, dile con amabilidad que por ahora solo tenemos esos tipos y ofrécelos. ${_vistas ? 'Las VISTAS de Reels siguen normales.' : 'Las VISTAS de Reels NO están disponibles por ahora: no las ofrezcas ni cotices.'} Cualquier servicio que NO aparezca en este prompt no existe para ti: NUNCA lo menciones ni lo ofrezcas; si el cliente lo pide, di que por ahora no está disponible y ofrece lo que sí hay.`,
     'Eres un asesor de ventas de Instagram (y, si el cliente lo pide, de TikTok y Facebook) por el WhatsApp de *You Agency*, una agencia que atiende a clientes de México. Escribe SIEMPRE en español de México, natural y cercano (tutea al cliente). Cierra la venta AQUÍ, por la conversación — nunca mandes al cliente al sitio a comprar.',
@@ -625,7 +626,7 @@ async function handleAgentMessage(msg, sendText) {
         const QTDS = [100, 250, 500, 1000, 2000];
         const linhas = (tabelaSeguidores.mistos || []).filter((x) => QTDS.includes(Number(x.q))).map((x) => '- ' + Number(x.q).toLocaleString('en-US') + ': ' + fmtMx(parsePrecoToCents(x.p)) + ' MXN');
         if (linhas.length >= 3) {
-          finalText = '¡Hola! Estos son los paquetes más pedidos de *seguidores mixtos* para Instagram (perfiles de México, con reposición gratis por 30 días):\n' + linhas.join('\n') +
+          finalText = '¡Hola! Estos son los paquetes más pedidos de *seguidores* para Instagram (perfiles de México, con reposición gratis por 30 días):\n' + linhas.join('\n') +
             '\n\nTenemos hasta 20,000.\n\n¿Cuántos quieres? Mándame también tu @ de Instagram y te dejo el pedido listo.';
           pulaModelo = true;
         }
@@ -899,6 +900,8 @@ async function handleAgentMessage(msg, sendText) {
   finalText = String(finalText || '').split('\n').map((l) => _frases(l).filter((f) => !/(no\s+escribas|el\s+sistema\s+ya\s+(te\s+)?(envi|mand)|instrucci[oó]n\s+interna)/i.test(f)).join(' ')).join('\n').replace(/\n{3,}/g, '\n\n').trim();
   finalText = sanitizeForWhatsapp(finalText);
   finalText = finalText.replace(/\b([Mm])ixtos(?:s+|os)\b/g, '$1ixtos');
+  // 23/11: o cliente não vê "mixtos" — é só "seguidores" / "me gusta" (o tipo interno continua mistos).
+  finalText = finalText.replace(/\b(seguidores|me gusta|likes)(\*?)\s+\*?mixt[oa]s(\*?)/gi, (m0, w, a1, a2) => w + (a1 || a2)).replace(/\b([Ll])os\s+\*?mixt[oa]s\*?/g, '$1os *seguidores*').replace(/\*mixt[oa]s\*/gi, '*seguidores*').replace(/\bMixt[oa]s\b/g, 'Seguidores').replace(/\bmixt[oa]s\b/g, 'seguidores').replace(/\bseguidores\s+seguidores\b/gi, 'seguidores');
   if (finalText) {
     let bolhas = splitIntoBubbles(finalText);
     try {

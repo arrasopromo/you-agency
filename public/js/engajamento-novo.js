@@ -591,7 +591,7 @@ document.addEventListener('DOMContentLoaded', function() {
         id: 'section-followers',
         service: 'followers', 
         type: 'mistos', 
-        title: 'Seguidores mixtos',
+        title: 'Seguidores',
         desc: 'Seguidores de perfiles de México con reposición automática y alta retención. Ideales para crecer rápido.',
         tabela: tabelaSeguidores.mistos,
         badgeType: 'mistos'
@@ -618,7 +618,7 @@ document.addEventListener('DOMContentLoaded', function() {
         id: 'section-likes',
         service: 'likes', 
         type: 'mistos', 
-        title: 'Me gusta mixtos',
+        title: 'Me gusta',
         desc: 'Me gusta rápidos para impulsar tus publicaciones.',
         tabela: tabelaCurtidas.mistos,
         badgeType: 'mistos'
@@ -1107,7 +1107,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function getLabelForTipo(tipo) {
       if (window.currentService === 'likes') {
           const labels = {
-              'mistos': 'Me gusta mixtos',
+              'mistos': 'Me gusta',
               'curtidas_brasileiras': 'Me gusta',
               'organicos': 'Me gusta reales'
           };
@@ -1115,7 +1115,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       const labels = {
-      'mistos': 'Seguidores mixtos',
+      'mistos': 'Seguidores',
       'brasileiros': 'Seguidores',
       'organicos': 'Seguidores de alta calidad',
       'visualizacoes_reels': 'Vistas de Reels'
@@ -1692,7 +1692,7 @@ document.addEventListener('DOMContentLoaded', function() {
        const label = (function(t){
          if (t === 'organicos') return `Me gusta reales (${qty})`;
          if (t === 'brasileiros' || t === 'curtidas_brasileiras') return `Me gusta (${qty})`;
-         if (t === 'mistos') return `Me gusta mixtos (${qty})`;
+         if (t === 'mistos') return `Me gusta (${qty})`;
          return `Me gusta (${qty})`;
        })(tipo);
        promos.push({ key: 'likes', qty: qty, label, priceCents: parsePrecoToCents(priceStr) });

@@ -66,7 +66,7 @@
       #resumo .resumo-row, #resumo .resumo-total { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 0.35rem 0; }
       #resumo .resumo-row span:last-child { text-align: right; min-width: 0; overflow-wrap: anywhere; }
       #resumo .resumo-total { font-weight: 700; font-size: 1.05rem; border-top: 1px solid var(--border-color); margin-top: 0.4rem; padding-top: 0.6rem; }
-      /* Celular: um tipo só (ex.: Me gusta mixtos) fica centralizado, com a largura de um card da grade de 2 */
+      /* Celular: um tipo só (ex.: Me gusta) fica centralizado, com a largura de um card da grade de 2 */
       @media (max-width: 640px) {
         #step1Container #tipoCards[data-n="1"] { grid-template-columns: minmax(0, calc(50% - 6px)) !important; justify-content: center !important; }
       }
@@ -256,8 +256,8 @@
                   <label class="promo-item likes" id="promoItemLikes">
                     <input type="checkbox" id="promoLikes" data-promo="likes" />
                     <div class="promo-content">
-                      <div class="promo-highlight" id="likesHighlight">+ 150 ME GUSTA MIXTOS</div>
-                      <div class="promo-title">Extra de me gusta mixtos</div>
+                      <div class="promo-highlight" id="likesHighlight">+ 150 ME GUSTA</div>
+                      <div class="promo-title">Extra de me gusta</div>
                       <div class="promo-desc" id="likesDesc">Agrega me gusta a tu video.</div>
                       <div class="promo-prices" data-promo="likes">
                         <span class="old-price">-</span>
@@ -415,7 +415,7 @@
   </style>
   <%- include('partials/footer') %>
   <script src="/js/main.js"></script>
-  <script src="/js/servicos-redes.js?v=20261122b"></script>
+  <script src="/js/servicos-redes.js?v=20261123a"></script>
 <script src="/js/ventas-recientes.js?v=20261122d" defer></script>
 </body>
 </html>

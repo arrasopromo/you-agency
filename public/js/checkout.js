@@ -1104,11 +1104,11 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
         ]
       : (category === 'curtidas'
           ? [
-              { key: 'mistos', label: 'Me gusta mixtos' },
+              { key: 'mistos', label: 'Me gusta' },
               { key: 'organicos', label: 'Me gusta reales' }
             ]
           : [
-              { key: 'mistos', label: 'Seguidores mixtos' },
+              { key: 'mistos', label: 'Seguidores' },
               { key: 'organicos', label: 'Seguidores de alta calidad' }
             ]);
     if (selectedPlatform === 'tiktok') {
@@ -1314,11 +1314,11 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
   function getLabelForTipo(t) {
     const category = getServiceCategory();
     if (category === 'curtidas') {
-      if (t === 'mistos') return 'Me gusta mixtos';
+      if (t === 'mistos') return 'Me gusta';
       if (t === 'organicos') return 'Me gusta reales';
     }
     switch (t) {
-      case 'mistos': return 'Seguidores mixtos';
+      case 'mistos': return 'Seguidores';
       case 'brasileiros': return 'Seguidores estándar';
       case 'organicos': return 'Seguidores de alta calidad';
       case 'seguidores_tiktok': return 'Seguidores';
@@ -2633,7 +2633,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
           if (cat === 'visualizacoes') return `Me gusta reales (${qty})`;
           if (t === 'organicos') return `Me gusta reales (${qty})`;
           if (t === 'brasileiros' || t === 'curtidas_brasileiras') return `Me gusta (${qty})`;
-          if (t === 'mistos') return `Me gusta mixtos (${qty})`;
+          if (t === 'mistos') return `Me gusta (${qty})`;
           return `Me gusta (${qty})`;
         })(tipo);
         promos.push({ key: 'likes', qty, label, priceCents: parsePrecoToCents(priceStr) });
@@ -5316,17 +5316,17 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
       let cat = '';
       try { cat = String(((o && o.additionalInfoMapPaid) || {}).categoria_servico || '').toLowerCase(); } catch(_) {}
       if (cat === 'curtidas') {
-        if (t === 'mistos') return 'Me gusta mixtos';
+        if (t === 'mistos') return 'Me gusta';
         if (t === 'organicos') return 'Me gusta reales';
       }
       const map = {
-        mistos: 'Seguidores mixtos',
+        mistos: 'Seguidores',
         brasileiros: 'Seguidores estándar',
         organicos: 'Seguidores de alta calidad',
         curtidas_brasileiras: 'Me gusta',
         curtidas_organicos: 'Me gusta reales',
         curtidas_reais: 'Me gusta reales',
-        curtidas_mistos: 'Me gusta mixtos',
+        curtidas_mistos: 'Me gusta',
         visualizacoes_reels: 'Vistas de Reels'
       };
       return map[t] || t;
@@ -5708,7 +5708,7 @@ function yaFmtPreco(n) { var v = Number(n || 0); var d = Math.abs(v - Math.round
           const label = (function(t){
             if (t === 'organicos') return `Me gusta reales (${qty})`;
             if (t === 'brasileiros' || t === 'curtidas_brasileiras') return `Me gusta (${qty})`;
-            if (t === 'mistos') return `Me gusta mixtos (${qty})`;
+            if (t === 'mistos') return `Me gusta (${qty})`;
             return `Me gusta (${qty})`;
           })(tipo);
           promos.push({ key: 'likes', qty, label, priceCents: window.parsePrecoToCents(priceStr) });

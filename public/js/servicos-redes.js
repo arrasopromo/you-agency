@@ -90,9 +90,9 @@
   var preSv = String(new URLSearchParams(location.search).get('servicio') || '').toLowerCase();
   var FOCO = /coment|comment/.test(preSv) ? 'comentarios' : (/curtid|gusta|like/.test(preSv) ? 'curtidas' : (/visualiz|view/.test(preSv) ? 'visualizacoes' : 'seguidores'));
   var LABEL_TIPO = {
-    tiktok_seguidores: 'Seguidores mixtos', tiktok_curtidas: 'Me gusta mixtos', tiktok_curtidas_reais: 'Me gusta reales', tiktok_visualizacoes: 'Vistas', tiktok_comentarios: 'Comentarios', facebook_comentarios: 'Comentarios',
+    tiktok_seguidores: 'Seguidores', tiktok_curtidas: 'Me gusta', tiktok_curtidas_reais: 'Me gusta reales', tiktok_visualizacoes: 'Vistas', tiktok_comentarios: 'Comentarios', facebook_comentarios: 'Comentarios',
     facebook_seguidores: 'Seguidores', facebook_seguidores_perfil: 'Seguidores de perfil', facebook_seguidores_pagina: 'Seguidores de página',
-    facebook_curtidas: 'Me gusta mixtos', facebook_visualizacoes: 'Vistas'
+    facebook_curtidas: 'Me gusta', facebook_visualizacoes: 'Vistas'
   };
   function renderTipoCards() {
     tipoCards.innerHTML = '';
@@ -349,7 +349,7 @@
   var ofQ = { likes: 150, views: 1000, comments: 1 };
   var OF_IDS = { likes: 'promoLikes', views: 'promoViews', comments: 'promoComments' };
   var OF_ITEM = { likes: 'promoItemLikes', views: 'promoItemViews', comments: 'promoItemComments' };
-  var OF_NOME = { likes: 'ME GUSTA MIXTOS', views: 'VISTAS', comments: 'COMENTARIOS' };
+  var OF_NOME = { likes: 'ME GUSTA', views: 'VISTAS', comments: 'COMENTARIOS' };
   var OF_RES = { likes: 'me gusta', views: 'vistas', comments: 'comentarios' };
   var ofertaDisponivel = function (k) {
     if (!servico) return false;
@@ -418,7 +418,7 @@
   }
   function renderOfertas() {
     var alvo = rede === 'tiktok' ? 'tu video de TikTok' : 'tu publicación o video de Facebook';
-    $('likesDesc').textContent = 'Agrega me gusta de perfiles mixtos a ' + alvo + '.';
+    $('likesDesc').textContent = 'Agrega me gusta a ' + alvo + '.';
     $('viewsDesc').textContent = 'Agrega vistas a ' + alvo + '.';
     renderUpgrade();
     ['likes', 'views', 'comments'].forEach(renderOferta);

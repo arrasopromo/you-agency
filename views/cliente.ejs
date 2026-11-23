@@ -162,10 +162,10 @@
       if (!s0) return '-';
       const s = s0.toLowerCase().replace(/-/g, '_').replace(/\s+/g, '_');
       const dict = {
-        'seguidores_mistos': 'Seguidores mixtos',
+        'seguidores_mistos': 'Seguidores',
         'seguidores_organicos': 'Seguidores reales',
         'seguidores_brasileiros': 'Seguidores estándar',
-        'mistos': 'Mixtos',
+        'mistos': 'Seguidores',
         'organicos': 'Reales',
         'brasileiros': 'Estándar',
         'brasileiras': 'Estándar',
@@ -173,7 +173,7 @@
         'visualizacoes': 'Vistas',
         'comentarios': 'Comentarios',
         'curtidas_organicos': 'Me gusta reales',
-        'curtidas_mistos': 'Me gusta mixtos',
+        'curtidas_mistos': 'Me gusta',
         'curtidas_brasileiros': 'Me gusta estándar'
       };
       if (dict[s]) return dict[s];

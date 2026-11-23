@@ -906,7 +906,7 @@ function _descPedido(o) {
   if (pac) return pac.replace(/\s*[-–]\s*\$.*$/, '').trim();
   const q = Number(o.quantidade || o.qtd || orderGetAny(o, 'quantidade') || 0) || 0;
   const t = String(o.tipoServico || o.tipo || orderGetAny(o, 'tipo_servico') || '').toLowerCase();
-  const nomes = { mistos: 'seguidores mixtos', organicos: 'seguidores de alta calidad', brasileiros: 'seguidores latinos' };
+  const nomes = { mistos: 'seguidores', organicos: 'seguidores de alta calidad', brasileiros: 'seguidores latinos' };
   const nome = nomes[t] || (/curtidas/.test(t) ? 'me gusta' : (/visualiza|views/.test(t) ? 'vistas' : (/coment/.test(t) ? 'comentarios' : t.replace(/_/g, ' '))));
   return (q ? q.toLocaleString('en-US') + ' ' : '') + (nome || 'pedido');
 }
