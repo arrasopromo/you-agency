@@ -637,7 +637,7 @@ module.exports.register = function register(app, deps) {
       const col = await deps.getCollection('checkout_orders');
       const desde = new Date(Date.now() - 72 * 3600e3);
       const docs = await col.find({ status: 'pago', $or: [{ paidAt: { $gte: desde.toISOString() } }, { paidAt: { $gte: desde } }] })
-        .project({ paidAt: 1, additionalInfo: 1, additionalInfoPaid: 1, instagramUsername: 1, 'customer.email': 1, correlationID: 1, upsell: 1 })
+        .project({ paidAt: 1, additionalInfo: 1, additionalInfoPaid: 1, instagramUsername: 1, 'customer.email': 1, 'customer.name': 1, correlationID: 1, upsell: 1 })
         .sort({ paidAt: -1 }).limit(40).toArray();
       const g = (o, k) => { for (const arr of [o.additionalInfoPaid, o.additionalInfo]) { if (Array.isArray(arr)) { const it = arr.find((x) => x && x.key === k); if (it && it.value != null && it.value !== '') return String(it.value); } } return ''; };
       const mascara = (u) => { const h = String(u || '').replace(/^@+/, '').trim(); if (!h) return ''; return '@' + (h.length <= 3 ? h.slice(0, 1) : h.slice(0, 3)) + '***'; };
@@ -665,7 +665,16 @@ module.exports.register = function register(app, deps) {
         if (/prueba\.interna@|@youagency\.site$/.test(email) || /^test-/.test(String(o.correlationID || ''))) continue; // pedidos de teste da casa
         const serv = nomeServico(g(o, 'tipo_servico'), g(o, 'categoria_servico'), g(o, 'quantidade'));
         if (!serv) continue;
-        const user = /^facebook_/.test(g(o, 'tipo_servico').toLowerCase()) ? '' : mascara(o.instagramUsername || g(o, 'instagram_username') || g(o, 'perfil_rede')); // Facebook: nome/ID da página não é um @
+        // Facebook: o "nome" vem do link do perfil/página (facebook.com/<nome>), mascarado e sem @; link só com ID numérico vira "Un cliente".
+        const fbNome = (function () {
+          const lk = String(g(o, 'link_alvo') || g(o, 'perfil_rede') || g(o, 'perfil_link') || '').trim();
+          let slug = '';
+          try { const m = lk.match(/(?:facebook|fb)\.com\/(?!profile\.php|people\/|share\/|groups\/|watch|reel|videos)([A-Za-z0-9._-]{3,60})/i); if (m) slug = m[1]; } catch (_) {}
+          if (!slug || /^\d+$/.test(slug)) return '';
+          const h = slug.replace(/[._-]+/g, '');
+          return h.length >= 3 ? h.slice(0, 3) + '***' : '';
+        })();
+        const user = /^facebook_/.test(g(o, 'tipo_servico').toLowerCase()) ? fbNome : mascara(o.instagramUsername || g(o, 'instagram_username') || g(o, 'perfil_rede'));
         items.push({ titulo: (user || 'Un cliente') + ' compró ' + serv.texto, tiempo: haceCuanto(o.paidAt), rede: serv.rede, quem: user || 'Un cliente', oque: serv.texto, t: new Date(o.paidAt).getTime() });
         if (items.length >= 10) break;
       }

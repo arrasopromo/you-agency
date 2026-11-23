@@ -232,9 +232,9 @@
       .yh-msg:empty { display:none; }
       .yh-confia { list-style:none; display:flex; flex-wrap:wrap; gap:8px 20px; margin:16px 0 26px; padding:0; color:var(--yh-sub); font-size:.88rem; }
       .yh-confia li { display:inline-flex; align-items:center; gap:7px; }
-      .yh-btn-pacotes { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; max-width:520px; box-sizing:border-box; height:54px; margin:-8px 0 26px; border-radius:16px; border:2px solid #E8336D; color:#E8336D; background:transparent; font-weight:700; font-size:1.02rem; text-decoration:none; transition:background .2s, color .2s; }
+      .yh-btn-pacotes { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; max-width:520px; box-sizing:border-box; height:56px; margin:-8px 0 26px; border-radius:16px; border:0; color:#fff; background:linear-gradient(120deg,#F58529,#E8336D 70%); box-shadow:0 10px 24px rgba(232,51,109,.30); font-weight:700; font-size:1.05rem; text-decoration:none; transition:transform .15s, box-shadow .2s; }
       .yh-btn-pacotes svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
-      .yh-btn-pacotes:hover { background:#E8336D; color:#fff; }
+      .yh-btn-pacotes:hover { transform:translateY(-1px); box-shadow:0 14px 28px rgba(232,51,109,.38); }
       .yh-btn-pacotes:focus-visible { outline:3px solid #E8336D; outline-offset:3px; }
       #plataformaCard { scroll-margin-top:80px; }
       .yh-confia svg { width:17px; height:17px; fill:none; stroke:#E8336D; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
@@ -336,7 +336,7 @@
       var conta = function(el, de, ate, ms){ if (reduz) { el.textContent = fmt(ate); return; } var t0 = null; var passo = function(t){ if (!t0) t0 = t; var k = Math.min(1, (t - t0) / ms); var e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(Math.round(de + (ate - de) * e)); if (k < 1) requestAnimationFrame(passo); }; requestAnimationFrame(passo); };
       // seguidores da prévia sobem aos poucos (+N com balão), como um pedido entrando
       // botão "Quiero crecer mi perfil": desce até a escolha de plataforma / pacotes
-      (function(){ var bp = document.getElementById('yaBtnPacotes'); if (!bp) return; bp.addEventListener('click', function(e){ var alvo = document.getElementById('plataformaCard'); if (!alvo) return; e.preventDefault(); alvo.scrollIntoView({ behavior: reduz ? 'auto' : 'smooth', block: 'start' }); }); })();
+      (function(){ var bp = document.getElementById('yaBtnPacotes'); if (!bp) return; bp.addEventListener('click', function(e){ var alvo = document.getElementById('plataformaCard'); if (!alvo) return; e.preventDefault(); alvo.scrollIntoView({ behavior: reduz ? 'auto' : 'smooth', block: 'start' }); try { navigator.sendBeacon('/api/funil/evento', new Blob([JSON.stringify({ evento: 'hero_pacotes' })], { type: 'application/json' })); } catch(_) {} }); })();
       var igReal = false, igSeg = 1180, igTm = null;
       var igPasso = function(){
         if (igReal || document.hidden) return;
@@ -362,12 +362,15 @@
         var u = limpa(inp.value);
         if (!/^[A-Za-z0-9._]{2,30}$/.test(u)) { msg.textContent = 'Escribe tu usuario de Instagram, por ejemplo tu.usuario'; inp.focus(); return; }
         btn.disabled = true; btn.textContent = 'Buscando...';
+        var funil = function(ev, extra){ try { fetch('/api/funil/evento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true, body: JSON.stringify(Object.assign({ evento: ev, servico: 'hero' }, extra || {})) }).catch(function(){}); } catch(_) {} };
+        funil('hero_tentou');
         try {
           var utms = {}; qsUtm().forEach(function(v, k){ utms[k.replace(/^utm_/, '')] = v; });
           var r = await fetch('/api/check-instagram-profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, utms: utms }) });
           var d = await r.json();
           if (d && d.success) {
             var pr = d.profile || {}; var nome = pr.username || u;
+            funil('hero_validado', { tipo: pr.isPrivate ? 'privado' : 'publico' });
             igParar();
             $('yaIgUser').textContent = nome; $('yaIgUserTop').textContent = nome;
             $('yaIgNome').textContent = pr.fullName || 'Perfil encontrado';
@@ -387,8 +390,9 @@
             else { btn.disabled = false; btn.onclick = function(ev){ ev.preventDefault(); window.location.href = link; }; }
             return;
           }
+          funil('hero_erro', { erro: String((d && (d.error || d.message)) || 'nao_encontrado').slice(0, 120) });
           msg.textContent = (d && (d.error || d.message)) ? String(d.error || d.message) : 'No encontramos ese usuario. Revisa cómo está escrito.';
-        } catch (_) { msg.textContent = 'No pudimos revisar tu perfil ahora. Inténtalo de nuevo.'; }
+        } catch (_) { funil('hero_erro', { erro: 'falha_rede' }); msg.textContent = 'No pudimos revisar tu perfil ahora. Inténtalo de nuevo.'; }
         btn.disabled = false; btn.textContent = 'Empezar';
       });
       // Prova social: compras reais recentes, uma por vez.

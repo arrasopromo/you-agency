@@ -240,6 +240,22 @@
     });
     h += '</div></section>';
 
+    // Campo do @ no topo da página inicial
+    if (d.hero) {
+      var hr = d.hero, hv = hr.visitantes || 0;
+      var linhaH = function(nome, n, base){ var w = hv ? Math.min(100, n / hv * 100) : 0; return '<div class="ts-et"><div class="nome">' + esc(nome) + '</div><div class="trilho"><span style="width:' + w + '%"></span></div><div class="val num">' + nf(n) + '<small>' + (hv ? pct(n / hv) + ' dos visitantes' : '') + (base && n <= base && base ? ' · ' + pct(n / base, 0) + ' de quem tentou' : '') + '</small></div></div>'; };
+      h += '<section class="ts-bloco"><h2>Campo do @ no topo da página inicial</h2><p class="sub">Pessoas (não cliques) que entraram em /interaccion e usaram o campo do @ ou o botão "Quiero crecer mi perfil". ' + (hr.desde ? 'Contando desde ' + esc(dtBR(hr.desde)) + '.' : 'Ainda sem eventos no período (o rastreio entrou no ar em 23/11).') + '</p><div class="ts-funil">'
+        + linhaH('Visitaram a página inicial', hv)
+        + linhaH('Digitaram o @ e clicaram em Empezar', hr.tentaram || 0)
+        + linhaH('Perfil encontrado (validado)', hr.validaram || 0, hr.tentaram || 0)
+        + linhaH('… desses, perfil privado', hr.privados || 0, hr.validaram || 0)
+        + linhaH('Não encontrou / erro', hr.erraram || 0, hr.tentaram || 0)
+        + linhaH('Clicaram em "Quiero crecer mi perfil"', hr.botaoPacotes || 0)
+        + '</div>';
+      if (hr.erros && hr.erros.length) h += '<p class="sub" style="margin-top:10px">Erros mais comuns: ' + hr.erros.map(function(x){ return esc(x.msg) + ' (' + nf(x.n) + ')'; }).join(' · ') + '</p>';
+      h += '</section>';
+    }
+
     // Páginas
     var maxPv = Math.max.apply(null, d.paginas.map(function(p){ return p.pageviews; }).concat([1]));
     h += '<section class="ts-bloco ts-8"><h2>Pageview por página / produto</h2><p class="sub">Só estas páginas registram visita; a soma dos pageviews é o total do topo. Um visitante pode ver várias páginas, então os visitantes não somam. Cobranças e pagos = pedidos do site daquele serviço, sem upsell. Visitante → pago = pessoas que visitaram a página e pagaram aquele serviço.</p><div class="ts-scroll"><table><thead><tr><th>Página</th><th class="n">Pageviews</th><th></th><th class="n">Visitantes</th><th class="n">Cobranças</th><th class="n">Pagos</th><th class="n">Visitante → pago</th><th class="n">Faturamento</th></tr></thead><tbody>';

@@ -25827,7 +25827,7 @@ app.get('/api/instagram/validet', adminOnly, async (req, res) => {
   }
 });
 // Eventos do funil vindos do navegador (servicos-instagram.js / servicos-redes.js). Só os tipos abaixo; campos curtos e limpos.
-const __FUNIL_EVENTOS = new Set(['pacote_escolhido', 'perfil_validado', 'clicou_pagar', 'erro_pagamento']);
+const __FUNIL_EVENTOS = new Set(['pacote_escolhido', 'perfil_validado', 'clicou_pagar', 'erro_pagamento', 'hero_tentou', 'hero_validado', 'hero_erro', 'hero_pacotes']);
 app.post('/api/funil/evento', publicIpLimit('funil_evento', 120, 10), (req, res) => {
   try {
     const b = (req.body && typeof req.body === 'object') ? req.body : {};
@@ -25838,7 +25838,7 @@ app.post('/api/funil/evento', publicIpLimit('funil_evento', 120, 10), (req, res)
       const q = Number(b.qtd); if (Number.isFinite(q) && q > 0 && q < 10000000) extra.qtd = Math.round(q);
       if (b.preco) extra.preco = curto(b.preco, 20);
       if (b.metodo) extra.metodo = curto(b.metodo, 10).toUpperCase();
-      if (ev === 'erro_pagamento' && b.erro) extra.erro = curto(b.erro, 160);
+      if ((ev === 'erro_pagamento' || ev === 'hero_erro') && b.erro) extra.erro = curto(b.erro, 160);
       registrarEventoFunil(req, ev, extra, ev === 'pacote_escolhido' ? extra.servico + '|' + extra.tipo + '|' + (extra.qtd || '') : (ev === 'erro_pagamento' ? extra.erro : extra.servico));
     }
   } catch (_) {}
@@ -42447,8 +42447,17 @@ async function computeTrackSite({ since, until, fresh } = {}) {
   const top = (obj, campo, n) => Object.values(obj).sort((a, b) => (b[campo] || 0) - (a[campo] || 0)).slice(0, n);
   // A tela mostra em REAIS (valores aqui estão em pesos) com o valor em pesos na legenda.
   let fxBrlMxn = null; try { fxBrlMxn = Number(await require('./fxMxn.js').getBrlMxnRate()) || null; } catch (_) {}
+  // Campo do @ no topo da página inicial (/interaccion): quantas pessoas tentaram, validaram, erraram e clicaram em "Quiero crecer mi perfil".
+  const heroVis = new Set(); for (const r of pvRows) { if (String(r.path || '').split(':')[0] === '/interaccion' && r.clientId && !__tsEhBot(r.ua, r.city, r.ip, r.referer, r.dc, r.country)) heroVis.add(String(r.clientId)); }
+  const heroPriv = new Set(), heroErros = {};
+  for (const e of feRows) {
+    if (e.evento === 'hero_validado' && e.tipo === 'privado') heroPriv.add(String(e.visitorId || ''));
+    if (e.evento === 'hero_erro') { const m = String(e.erro || 'sem mensagem').slice(0, 80); heroErros[m] = (heroErros[m] || 0) + 1; }
+  }
+  const hero = { visitantes: heroVis.size, tentaram: nEv('hero_tentou'), validaram: nEv('hero_validado'), privados: heroPriv.size, erraram: nEv('hero_erro'), botaoPacotes: nEv('hero_pacotes'),
+    erros: Object.entries(heroErros).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([msg, n]) => ({ msg, n })), desde: (feRows.find((e) => /^hero_/.test(String(e.evento || ''))) || {}).createdAt || null };
   const out = {
-    ok: true, since: s, until: u, geradoEm: new Date().toISOString(), fxBrlMxn,
+    ok: true, since: s, until: u, geradoEm: new Date().toISOString(), fxBrlMxn, hero,
     funilAtivoDesde: feRows.length ? null : 'sem_eventos',
     funilDesde: funilDesdeMs != null ? new Date(funilDesdeMs).toISOString() : null,
     origemDesde: origemDesdeMs != null ? new Date(origemDesdeMs).toISOString() : null,
