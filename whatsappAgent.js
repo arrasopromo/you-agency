@@ -556,6 +556,11 @@ async function handleAgentMessage(msg, sendText) {
   const notasSistema = [];
   const ultimaBot = String(((hist || []).filter((h) => h && h.role === 'assistant' && typeof h.content === 'string').slice(-1)[0] || {}).content || '');
   const ct = await _getContato(phone);
+  // Bot B (código conduz venda de seguidores e pós-venda) para BOT_B_PCT% dos telefones; devolve null quando é com o A.
+  try {
+    const rb = await require('./whatsappFluxo.js').handle(phone, text, sendText, { contato: ct });
+    if (rb) return rb;
+  } catch (e) { try { console.warn('⚠️ [bot-b] erro, A responde:', e && e.message); } catch (_) {} }
   // Recusa ("ya no quiero", "no gracias") com cobrança aberta: para os lembretes de pagamento.
   try { if (RE_RECUSA.test(text)) { await sales.marcarPedidosAbertos(phone, 'recusou', text); if (ct.pedidoAConfirmar) await _setContato(phone, null, { pedidoAConfirmar: '' }); ct.pedidoAConfirmar = null; } } catch (_) {}
   // Oferta de dobrar o pedido (enviada 90 s depois do pagamento): só um SÍ claro gera a cobrança.
@@ -1012,10 +1017,15 @@ async function handleSalesMessage(msg, sendText) {
   try { await sendText(phone, reply); } catch (_) {}
 }
 
+// Turno respondido pelo bot B: grava no histórico do A (se o A assumir a conversa, tem o contexto).
+async function registrarTurnoExterno(phone, userText, botText) {
+  const hist = await loadHistory(phone);
+  await saveHistory(phone, (hist || []).concat([{ role: 'user', content: String(userText || '') }, { role: 'assistant', content: String(botText || '') }]));
+}
 async function appendAssistantNote(phone, text) {
   const t = String(text || '').trim();
   if (!t) return;
   try { const h = await loadHistory(phone); h.push({ role: 'assistant', content: t }); await saveHistory(phone, h); } catch (_) {}
 }
 
-module.exports = { isEnabled, handleAgentMessage, handleSalesMessage, clearHistory, systemPrompt, appendAssistantNote, FALLBACK_FALHA, acharPrecosErrados, splitIntoBubbles, mensagensPagamento };
+module.exports = { isEnabled, handleAgentMessage, handleSalesMessage, clearHistory, systemPrompt, appendAssistantNote, registrarTurnoExterno, FALLBACK_FALHA, acharPrecosErrados, splitIntoBubbles, mensagensPagamento };
