@@ -676,6 +676,14 @@ async function handleAgentMessage(msg, sendText) {
     }
   } catch (_) {}
   try { const est = await sales.estadoCliente(phone); if (est && est.texto) notasSistema.unshift(est.texto); } catch (_) {}
+  // "¿Y si es real?", "¿es verdad?", "me estafaron": é dúvida se a EMPRESA é confiável, não pedido de seguidores reales
+  // (23/11: o bot respondeu "Y si es real / Ya me estafaron 2 veces" com a tabela inteira de alta calidad).
+  const RE_PEDE_ALTA = /(seguidores\s+(reales|de\s+verdad|activos|latinos|de\s+calidad)|alta\s+calidad|los\s+reales|quiero\s+(los\s+)?reales|perfiles\s+reales|personas\s+reales|que\s+interact)/i;
+  const RE_CONFIANZA = /(es\s+real\b|si\s+es\s+real|son\s+reales\s*\?|es\s+verdad|estaf|fraude|enga[ñn]|confiable|confiar|seguro\s*\?|es\s+seguro|me\s+robaron)/i;
+  ctx.pedeAltaExplicito = RE_PEDE_ALTA.test((ctx.recentUserTexts || [text]).slice(0, 3).join(' '));
+  if (RE_CONFIANZA.test(text) && !RE_PEDE_ALTA.test(text)) {
+    notasSistema.push('PREGUNTA DE CONFIANZA: el cliente está preguntando si el SERVICIO/la empresa es real y confiable (no está pidiendo seguidores reales ni de alta calidad). Responde con empatía y hechos de CONFIANZA (nunca pedimos contraseña, pago por SPEI a una CLABE exclusiva del pedido, la confirmación y el link para seguir la entrega llegan aquí por WhatsApp), sugiere empezar con el paquete más pequeño de *mixtos* para probar y sigue con los *seguidores mixtos*. NO ofrezcas ni muestres la tabla de alta calidad.');
+  }
   let _dispTipos = null; try { _dispTipos = await sales.tiposDisponiveis(); } catch (_) {}
   const work = [{ role: 'system', content: systemPrompt(_dispTipos) }, ...hist].concat(notasSistema.map((n) => ({ role: 'system', content: n })), [{ role: 'user', content: text }]);
 
@@ -852,6 +860,10 @@ async function handleAgentMessage(msg, sendText) {
       if (/mixtos(?:(?!si\s+(quieres|buscas|prefieres)|;|\bpero\b)[^.\n]){0,120}(reales\s+y\s+activos|personas\s+reales|perfiles\s+reales|no\s+son\s+(falsos|bots|robots)|son\s+reales)/i.test(finalText)) probs.push('dijiste que los mixtos son reales/no son bots — eso no es verdad; usa la respuesta de "¿SON BOTS?"');
       if (/(llegan|entran|recibes|recibir[aá]s|empiezan|comienzan|tendr[aá]s|ver[aá]s)[^.\n]{0,50}(en\s+(unos\s+|pocos\s+|\d+\s+)?minutos|a\s+los\s+pocos\s+minutos)/i.test(finalText) && !/(confirma|confirmaci[oó]n|pago)[^.\n]{0,30}minutos/i.test(finalText)) probs.push('prometiste que la entrega llega en minutos — di que empiezan a entrar poco después de confirmado el pago, de forma gradual, sin prometer minutos');
       try { const dsp = _dispTipos || {}; const semAlta = Array.isArray(dsp.seguidores) && !dsp.seguidores.includes('organicos'); if (/seguidores\s+\*?reales\*?/i.test(finalText) && !/me\s+gusta\s+reales/i.test(finalText)) probs.push(semAlta ? 'hablaste de seguidores *reales*, pero hoy NO están disponibles — deja solo los *mixtos*' : 'llamaste "seguidores reales" a los seguidores de alta calidad — el nombre para el cliente es *seguidores de alta calidad*'); else if (semAlta && /alta\s+calidad[\s\S]{0,300}?\$\s*\d/i.test(finalText)) probs.push('ofreciste seguidores de alta calidad con precio, pero hoy NO están disponibles — deja solo los *mixtos*'); } catch (_) {}
+      try {
+        const mostraAlta = /alta\s+calidad/i.test(finalText) && ((finalText.match(/\$\s*[\d,]+/g) || []).length >= 3);
+        if (mostraAlta && !ctx.pedeAltaExplicito) probs.push('mostraste la tabla de *seguidores de alta calidad* pero el cliente NO la pidió (si preguntó si es real/confiable, es una duda de CONFIANZA). Responde la duda y ofrece los *seguidores mixtos* (perfiles de México), que son la opción por defecto; alta calidad solo si el cliente pide seguidores reales');
+      } catch (_) {}
       if (probs.length) {
         try { console.warn('🧯 [agent] trava de texto:', probs.join(' | ')); } catch (_) {}
         work.push({ role: 'assistant', content: finalText });
