@@ -249,6 +249,8 @@
         + linhaH('Digitaram o @ e clicaram em Empezar', hr.tentaram || 0)
         + linhaH('Perfil encontrado (validado)', hr.validaram || 0, hr.tentaram || 0)
         + linhaH('… desses, perfil privado', hr.privados || 0, hr.validaram || 0)
+        + linhaH('Clicaram em "Sí, continuar" (é a conta dele)', hr.confirmaram || 0, hr.tentaram || 0)
+        + linhaH('Clicaram em "No, cambiar"', hr.trocaram || 0, hr.tentaram || 0)
         + linhaH('Não encontrou / erro', hr.erraram || 0, hr.tentaram || 0)
         + linhaH('Clicaram em "Quiero crecer mi perfil"', hr.botaoPacotes || 0)
         + '</div>';

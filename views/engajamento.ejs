@@ -166,6 +166,22 @@
           <button type="submit" class="yh-btn" id="yaArrobaBtn">Empezar</button>
         </form>
         <p class="yh-msg" id="yaArrobaMsg" role="status" aria-live="polite"></p>
+        <div class="yh-conf" id="yaConf" hidden>
+          <p class="yh-conf-tit">¿Es tu cuenta?</p>
+          <div class="yh-conf-perfil">
+            <span class="yh-conf-foto" id="yaConfFoto"><span id="yaConfIni">TU</span></span>
+            <div class="yh-conf-dados">
+              <b id="yaConfUser">@tu.usuario</b>
+              <small id="yaConfNome"></small>
+              <span id="yaConfSeg"></span>
+            </div>
+          </div>
+          <p class="yh-conf-aviso" id="yaConfAviso" hidden>Tu perfil está privado: ponlo público para recibir tu pedido.</p>
+          <div class="yh-conf-acoes">
+            <a href="#" class="yh-conf-sim" id="yaConfSim">Sí, continuar <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+            <button type="button" class="yh-conf-nao" id="yaConfNao">No, cambiar</button>
+          </div>
+        </div>
         <ul class="yh-confia">
           <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Sin contraseña</li>
           <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Entrega en minutos</li>
@@ -229,6 +245,23 @@
       .yh-btn:focus-visible { outline:3px solid #E8336D; outline-offset:3px; }
       .yh-btn[disabled] { opacity:.7; cursor:wait; }
       .yh-msg { margin:10px 0 0; font-size:.9rem; color:#F87171; }
+      .yh-conf { width:100%; max-width:520px; box-sizing:border-box; margin:6px 0 4px; padding:18px; border-radius:20px; background:var(--yh-card); border:1px solid var(--yh-line); box-shadow:0 18px 40px -16px rgba(40,20,80,.35); text-align:left; }
+      .yh-conf[hidden] { display:none; }
+      .yh-conf-tit { margin:0 0 12px; text-align:center; font-size:.8rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--yh-sub); }
+      .yh-conf-perfil { display:flex; align-items:center; gap:14px; }
+      .yh-conf-foto { width:64px; height:64px; flex:0 0 auto; border-radius:50%; display:grid; place-items:center; font-weight:800; color:#fff; background:#2a2347 center/cover no-repeat; box-shadow:0 0 0 3px var(--yh-card), 0 0 0 5px #E8336D; }
+      body.theme-light .yh-conf-foto { background-color:#F3D5E1; color:#B1246A; }
+      .yh-conf-dados { min-width:0; display:flex; flex-direction:column; line-height:1.3; }
+      .yh-conf-dados b { font-size:1.12rem; color:var(--yh-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .yh-conf-dados small { font-size:.88rem; color:var(--yh-sub); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .yh-conf-dados span { font-size:.95rem; font-weight:700; color:var(--yh-ink); font-variant-numeric:tabular-nums; }
+      .yh-conf-aviso { margin:12px 0 0; padding:8px 12px; border-radius:10px; font-size:.86rem; color:#B45309; background:rgba(245,158,11,.14); }
+      .yh-conf-acoes { display:grid; grid-template-columns:1.4fr 1fr; gap:10px; margin-top:16px; }
+      .yh-conf-sim, .yh-conf-nao { display:flex; align-items:center; justify-content:center; gap:8px; height:52px; border-radius:14px; font:inherit; font-weight:700; font-size:1rem; cursor:pointer; text-decoration:none; box-sizing:border-box; }
+      .yh-conf-sim { border:0; color:#fff; background:linear-gradient(120deg,#F58529,#E8336D 70%); box-shadow:0 10px 24px rgba(232,51,109,.30); }
+      .yh-conf-sim svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+      .yh-conf-nao { background:transparent; color:var(--yh-ink); border:1.5px solid var(--yh-line); }
+      .yh-conf-sim:focus-visible, .yh-conf-nao:focus-visible { outline:3px solid #E8336D; outline-offset:3px; }
       .yh-msg:empty { display:none; }
       .yh-confia { list-style:none; display:flex; flex-wrap:wrap; gap:8px 20px; margin:16px 0 26px; padding:0; color:var(--yh-sub); font-size:.88rem; }
       .yh-confia li { display:inline-flex; align-items:center; gap:7px; }
@@ -333,7 +366,7 @@
       var fmt = function(n){ return Number(n).toLocaleString('en-US'); };
       var reduz = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       // única animação: os seguidores da prévia sobem uma vez
-      var conta = function(el, de, ate, ms){ if (reduz) { el.textContent = fmt(ate); return; } var t0 = null; var passo = function(t){ if (!t0) t0 = t; var k = Math.min(1, (t - t0) / ms); var e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(Math.round(de + (ate - de) * e)); if (k < 1) requestAnimationFrame(passo); }; requestAnimationFrame(passo); };
+      var conta = function(el, de, ate, ms){ var cid = (el.__cid = (el.__cid || 0) + 1); if (reduz) { el.textContent = fmt(ate); return; } var t0 = null; var passo = function(t){ if (el.__cid !== cid) return; if (!t0) t0 = t; var k = Math.min(1, (t - t0) / ms); var e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(Math.round(de + (ate - de) * e)); if (k < 1) requestAnimationFrame(passo); }; requestAnimationFrame(passo); };
       // seguidores da prévia sobem aos poucos (+N com balão), como um pedido entrando
       // botão "Quiero crecer mi perfil": desce até a escolha de plataforma / pacotes
       (function(){ var bp = document.getElementById('yaBtnPacotes'); if (!bp) return; bp.addEventListener('click', function(e){ var alvo = document.getElementById('plataformaCard'); if (!alvo) return; e.preventDefault(); alvo.scrollIntoView({ behavior: reduz ? 'auto' : 'smooth', block: 'start' }); try { navigator.sendBeacon('/api/funil/evento', new Blob([JSON.stringify({ evento: 'hero_pacotes' })], { type: 'application/json' })); } catch(_) {} }); })();
@@ -357,6 +390,12 @@
         $('yaIgIni').textContent = (u.replace(/[^A-Za-z0-9]/g, '').slice(0, 2) || 'TU').toUpperCase();
       });
       var form = $('yaArrobaForm'), btn = $('yaArrobaBtn'), msg = $('yaArrobaMsg');
+      (function(){
+        var sim = $('yaConfSim'), nao = $('yaConfNao'), conf = $('yaConf');
+        var ev = function(nomeEv){ try { navigator.sendBeacon('/api/funil/evento', new Blob([JSON.stringify({ evento: nomeEv, servico: 'hero' })], { type: 'application/json' })); } catch(_) {} };
+        if (sim) sim.addEventListener('click', function(){ ev('hero_confirmou'); });
+        if (nao) nao.addEventListener('click', function(){ ev('hero_trocou'); conf.hidden = true; form.hidden = false; inp.value = ''; msg.textContent = ''; try { sessionStorage.removeItem('ya_ig_validado'); } catch(_) {} inp.focus(); });
+      })();
       if (form) form.addEventListener('submit', async function(e){
         e.preventDefault(); msg.textContent = '';
         var u = limpa(inp.value);
@@ -376,7 +415,7 @@
             $('yaIgNome').textContent = pr.fullName || 'Perfil encontrado';
             if (pr.postsCount != null) $('yaIgPosts').textContent = fmt(pr.postsCount);
             if (pr.followingCount != null) $('yaIgSegue').textContent = fmt(pr.followingCount);
-            var seg = Number(pr.followersCount); if (isFinite(seg)) $('yaIgSeg').textContent = fmt(seg);
+            var seg = Number(pr.followersCount); $('yaIgSeg').__cid = ($('yaIgSeg').__cid || 0) + 1; if (isFinite(seg)) $('yaIgSeg').textContent = fmt(seg);
             var cat = document.querySelector('.yh-ig-id small'); if (cat) cat.textContent = '';
             $('yaIgBio').textContent = pr.isPrivate ? 'Tu perfil está privado. Ponlo público para recibir tu pedido.' : 'Encontramos tu perfil. Ahora elige tu paquete.';
             var foto = String(pr.profilePicUrl || pr.driveImageUrl || '').trim();
@@ -385,9 +424,18 @@
             try { sessionStorage.setItem('ya_ig_validado', nome); } catch(_) {}
             var q = qsUtm(); q.set('ig', nome);
             var link = '/servicios-instagram?' + q.toString();
-            btn.textContent = 'Ver paquetes';
-            if (!pr.isPrivate) setTimeout(function(){ window.location.href = link; }, 1500);
-            else { btn.disabled = false; btn.onclick = function(ev){ ev.preventDefault(); window.location.href = link; }; }
+            // "¿Es tu cuenta?": o cliente confirma o perfil antes de ir aos pacotes (como no Explota)
+            $('yaConfUser').textContent = '@' + nome;
+            $('yaConfNome').textContent = pr.fullName || '';
+            $('yaConfSeg').textContent = isFinite(seg) ? fmt(seg) + ' seguidores' : '';
+            $('yaConfIni').textContent = String(nome).slice(0, 2).toUpperCase();
+            $('yaConfFoto').style.backgroundImage = '';
+            if (foto) { var im2 = new Image(); im2.onload = function(){ $('yaConfFoto').style.backgroundImage = 'url("' + foto + '")'; $('yaConfIni').textContent = ''; }; im2.src = foto; }
+            $('yaConfAviso').hidden = !pr.isPrivate;
+            $('yaConfSim').href = link;
+            form.hidden = true; $('yaConf').hidden = false;
+            btn.disabled = false; btn.textContent = 'Empezar';
+            try { $('yaConfSim').focus({ preventScroll: true }); } catch(_) {}
             return;
           }
           funil('hero_erro', { erro: String((d && (d.error || d.message)) || 'nao_encontrado').slice(0, 120) });

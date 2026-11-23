@@ -25827,7 +25827,7 @@ app.get('/api/instagram/validet', adminOnly, async (req, res) => {
   }
 });
 // Eventos do funil vindos do navegador (servicos-instagram.js / servicos-redes.js). Só os tipos abaixo; campos curtos e limpos.
-const __FUNIL_EVENTOS = new Set(['pacote_escolhido', 'perfil_validado', 'clicou_pagar', 'erro_pagamento', 'hero_tentou', 'hero_validado', 'hero_erro', 'hero_pacotes']);
+const __FUNIL_EVENTOS = new Set(['pacote_escolhido', 'perfil_validado', 'clicou_pagar', 'erro_pagamento', 'hero_tentou', 'hero_validado', 'hero_erro', 'hero_pacotes', 'hero_confirmou', 'hero_trocou']);
 app.post('/api/funil/evento', publicIpLimit('funil_evento', 120, 10), (req, res) => {
   try {
     const b = (req.body && typeof req.body === 'object') ? req.body : {};
@@ -42454,7 +42454,7 @@ async function computeTrackSite({ since, until, fresh } = {}) {
     if (e.evento === 'hero_validado' && e.tipo === 'privado') heroPriv.add(String(e.visitorId || ''));
     if (e.evento === 'hero_erro') { const m = String(e.erro || 'sem mensagem').slice(0, 80); heroErros[m] = (heroErros[m] || 0) + 1; }
   }
-  const hero = { visitantes: heroVis.size, tentaram: nEv('hero_tentou'), validaram: nEv('hero_validado'), privados: heroPriv.size, erraram: nEv('hero_erro'), botaoPacotes: nEv('hero_pacotes'),
+  const hero = { visitantes: heroVis.size, tentaram: nEv('hero_tentou'), validaram: nEv('hero_validado'), privados: heroPriv.size, erraram: nEv('hero_erro'), botaoPacotes: nEv('hero_pacotes'), confirmaram: nEv('hero_confirmou'), trocaram: nEv('hero_trocou'),
     erros: Object.entries(heroErros).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([msg, n]) => ({ msg, n })), desde: (feRows.find((e) => /^hero_/.test(String(e.evento || ''))) || {}).createdAt || null };
   const out = {
     ok: true, since: s, until: u, geradoEm: new Date().toISOString(), fxBrlMxn, hero,
