@@ -679,7 +679,7 @@ async function handleAgentMessage(msg, sendText) {
   // "¿Y si es real?", "¿es verdad?", "me estafaron": é dúvida se a EMPRESA é confiável, não pedido de seguidores reales
   // (23/11: o bot respondeu "Y si es real / Ya me estafaron 2 veces" com a tabela inteira de alta calidad).
   const RE_PEDE_ALTA = /(seguidores\s+(reales|de\s+verdad|activos|latinos|de\s+calidad)|alta\s+calidad|los\s+reales|quiero\s+(los\s+)?reales|perfiles\s+reales|personas\s+reales|que\s+interact)/i;
-  const RE_CONFIANZA = /(es\s+real\b|si\s+es\s+real|son\s+reales\s*\?|es\s+verdad|estaf|fraude|enga[ñn]|confiable|confiar|seguro\s*\?|es\s+seguro|me\s+robaron)/i;
+  const RE_CONFIANZA = /(es\s+real\b|si\s+es\s+real|es\s+verdad|estaf|fraude|enga[ñn]|confiable|confiar|seguro\s*\?|es\s+seguro|me\s+robaron)/i;
   ctx.pedeAltaExplicito = RE_PEDE_ALTA.test((ctx.recentUserTexts || [text]).slice(0, 3).join(' '));
   if (RE_CONFIANZA.test(text) && !RE_PEDE_ALTA.test(text)) {
     notasSistema.push('PREGUNTA DE CONFIANZA: el cliente está preguntando si el SERVICIO/la empresa es real y confiable (no está pidiendo seguidores reales ni de alta calidad). Responde con empatía y hechos de CONFIANZA (nunca pedimos contraseña, pago por SPEI a una CLABE exclusiva del pedido, la confirmación y el link para seguir la entrega llegan aquí por WhatsApp), sugiere empezar con el paquete más pequeño de *mixtos* para probar y sigue con los *seguidores mixtos*. NO ofrezcas ni muestres la tabla de alta calidad.');
