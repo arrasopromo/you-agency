@@ -410,6 +410,14 @@ async function handle(phone, texto, sendText, ctxA) {
   if (ct.pedidoAConfirmar) return null;
   let s = await lerFicha(phone);
   if (s && s.delegado) return null;
+  // só conversas NOVAS: quem já estava falando com o A nas últimas 24 h continua com o A
+  if (!s) {
+    try {
+      const ch = await getCollection('whatsapp_agent_chats');
+      const h = await ch.findOne({ _id: String(phone) }, { projection: { updatedAt: 1, messages: { $slice: -1 } } });
+      if (h && h.updatedAt && (Date.now() - new Date(h.updatedAt).getTime()) < FICHA_TTL_MS && Array.isArray(h.messages) && h.messages.length) return null;
+    } catch (_) {}
+  }
   const nova = !s;
   if (!s) s = { etapa: 'inicio', rede: 'instagram', tipo: 'mistos', metodo: 'SPEI' };
   s.textoAtual = t;
