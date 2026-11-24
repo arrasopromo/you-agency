@@ -41879,26 +41879,32 @@ const __FB_FORMAT_LABELS = {
   'audience_network/rewarded_video': 'Audience Network', 'audience_network/an_classic': 'Audience Network',
   'messenger/messenger_home': 'Messenger', 'messenger/story': 'Messenger Stories',
 };
-async function fetchFacebookInsightsByFormat({ since, until, datePreset } = {}) {
+// 24/11: lê as duas contas (BR e a ca4 em USD). Na ca4 gasto e faturamento vêm em dólar e são
+// convertidos para peso pela mesma cotação do gasto do painel (usdRate); sem cotação, a ca4 fica de fora.
+async function fetchFacebookInsightsByFormat({ since, until, datePreset, usdRate } = {}) {
   const token = String(process.env.FB_ADS_TOKEN || '').trim();
-  let act = String(process.env.FB_AD_ACCOUNT_ID || '').trim();
-  if (!token || !act) return { ok: false, error: 'not_configured' };
-  if (!/^act_/.test(act)) act = 'act_' + act.replace(/^act_/, '');
+  const rate = Number(usdRate) > 0 ? Number(usdRate) : 0;
+  const contas = [{ act: __fbBrAccount(), mult: 1 }, { act: __fbUsdAccount(), mult: rate }].filter((c) => c.act && c.mult > 0);
+  if (!token || !contas.length) return { ok: false, error: 'not_configured' };
   const base = { fields: 'spend,actions,action_values', breakdowns: 'publisher_platform,platform_position', level: 'account', access_token: token };
   let params, cacheKey;
-  if (datePreset) { params = { ...base, date_preset: datePreset }; cacheKey = 'fmt:preset:' + datePreset; }
+  if (datePreset) { params = { ...base, date_preset: datePreset }; cacheKey = 'fmt:preset:' + datePreset + '|' + rate; }
   else {
     const s = String(since || '').trim(), u = String(until || '').trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(s) || !/^\d{4}-\d{2}-\d{2}$/.test(u)) return { ok: false, error: 'bad_range' };
-    params = { ...base, time_range: JSON.stringify({ since: s, until: u }) }; cacheKey = 'fmt:' + s + '|' + u;
+    params = { ...base, time_range: JSON.stringify({ since: s, until: u }) }; cacheKey = 'fmt:' + s + '|' + u + '|' + rate;
   }
   const now = Date.now();
   const hit = __fbFormatCache.get(cacheKey);
   if (hit && hit.exp > now) return { ok: true, formats: hit.value, cached: true };
   try {
-    const resp = await axios.get(`https://graph.facebook.com/v21.0/${act}/insights`, { params, timeout: 25000, validateStatus: () => true });
-    if (resp.status !== 200) return { ok: false, error: (resp.data && resp.data.error && resp.data.error.message) || ('http_' + resp.status) };
-    const rows = (resp.data && Array.isArray(resp.data.data)) ? resp.data.data : [];
+    const rows = []; let erro = null;
+    for (const c of contas) {
+      const resp = await axios.get(`https://graph.facebook.com/v21.0/${c.act}/insights`, { params, timeout: 25000, validateStatus: () => true });
+      if (resp.status !== 200) { erro = (resp.data && resp.data.error && resp.data.error.message) || ('http_' + resp.status); continue; }
+      for (const x of ((resp.data && Array.isArray(resp.data.data)) ? resp.data.data : [])) rows.push({ ...x, __mult: c.mult });
+    }
+    if (!rows.length && erro) return { ok: false, error: erro };
     const purchOf = (acts) => { if (!Array.isArray(acts)) return 0; const p = acts.find((a) => /purchase/.test(a.action_type) && !/value/.test(a.action_type)); return p ? Number(p.value) || 0 : 0; };
     const revOf = (vals) => { if (!Array.isArray(vals)) return 0; const p = vals.find((a) => /purchase/.test(a.action_type)); return p ? Number(p.value) || 0 : 0; };
     // Agrupa por label amigável (ex.: reels + reels_overlay = "Instagram Reels").
@@ -41908,7 +41914,7 @@ async function fetchFacebookInsightsByFormat({ since, until, datePreset } = {}) 
       const key = pp + '/' + pos;
       const label = __FB_FORMAT_LABELS[key] || (pp.charAt(0).toUpperCase() + pp.slice(1) + ' ' + pos.replace(/^(facebook|instagram|messenger)_/, '').replace(/_/g, ' '));
       const cur = byLabel.get(label) || { label, spend: 0, purchases: 0, revenue: 0 };
-      cur.spend += Number(x.spend) || 0; cur.purchases += purchOf(x.actions); cur.revenue += revOf(x.action_values);
+      cur.spend += (Number(x.spend) || 0) * x.__mult; cur.purchases += purchOf(x.actions); cur.revenue += revOf(x.action_values) * x.__mult;
       byLabel.set(label, cur);
     }
     const formats = Array.from(byLabel.values())
@@ -47022,7 +47028,7 @@ app.get('/painel', requireAdmin, async (req, res) => {
         } catch (eDP) { try { console.warn('⚠️ [dashboard] lucro diário falhou:', eDP && eDP.message); } catch (_) {} }
         // Insights por FORMATO (pizza de vendas) + pizza de ORDER BUMPS — só no dashboard.
         if (view === 'dashboard') {
-          try { const rf = await fetchFacebookInsightsByFormat(fbArgs); if (rf && rf.ok) adFormatPie = { ok: true, formats: rf.formats }; } catch (_) {}
+          try { const rf = await fetchFacebookInsightsByFormat({ ...fbArgs, usdRate: fbUsdMxn }); if (rf && rf.ok) adFormatPie = { ok: true, formats: rf.formats }; } catch (_) {}
           try {
             const _bs = (fbArgs.since && fbArgs.until) ? new Date(fbArgs.since + 'T00:00:00-03:00').getTime() : null;
             const _bu = (fbArgs.since && fbArgs.until) ? new Date(fbArgs.until + 'T23:59:59-03:00').getTime() : null;
