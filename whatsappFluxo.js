@@ -10,6 +10,11 @@ const agentMod = () => require('./whatsappAgent.js'); // lazy: o A também reque
 
 const MODEL = String(process.env.BOT_B_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini').trim();
 const FICHA_TTL_MS = 24 * 3600e3;
+// 24/11: "Gracias ahorita realizo el pago" (vai pagar) virava ya_pague, marcava clienteDisseQuePagou e
+// 30 min depois chegava o alerta falso "disse que pagou e a Xpag não confirmou". Futuro sem marca de passado = vai_pagar.
+const VAI_PAGAR = /(\b(ahorita|horita|orita|ahora|al\s+rato|m[aá]s\s+tarde|en\s+un\s+(rato|ratito|momento)|ma[ñn]ana|luego|en\s+la\s+(tarde|noche))\b[^.?!]{0,30}\b(realizo|hago|pago|deposito|transfiero|voy|lo\s+(hago|pago|realizo))\b|\b(voy|vamos|ir[eé])\s+a\s+(pagar|depositar|transferir|hacer\s+el\s+pago|realizar\s+el\s+pago|ir\s+al\s+oxxo)\b|\b(realizo|hago)\s+el\s+pago\s+(ahorita|horita|en\s+un|al\s+rato|m[aá]s\s+tarde|ma[ñn]ana|luego)\b)/i;
+const JA_PAGOU = /(\bya\s+(lo\s+)?(pagu|page|pag[oó]|hice|ise|realic|deposit|transfer|est[aá]|qued|te\s+(pagu|deposit|transfer|envi|mand))|comprobante|\bpagad[oa]\b|pago\s+(hecho|realizado|enviado))/i;
+const soVaiPagar = (t) => VAI_PAGAR.test(String(t || '')) && !JA_PAGOU.test(String(t || ''));
 
 async function chat(messages, { json = false, temperature = 0.3, max_tokens = 300 } = {}) {
   const key = String(process.env.OPENAI_API_KEY || '').trim();
@@ -91,7 +96,7 @@ const NLU = `Eres un extractor de datos para el WhatsApp de ventas de You Agency
  "acepta_oferta": true/false/null (solo si el bot ofreció un paquete mayor: true si lo acepta),
  "temas": lista de dudas que hace, de: ["bots","precio","extras","prazo","seguranca","garantia","pagamento_como","privado","interacao","muestra","contrasena","tarjeta","otro"] ("bots" = pregunta si los seguidores son reales/bots/falsos; "seguranca" = pregunta si la EMPRESA es real/confiable o dice que lo estafaron; "precio" = pregunta cuánto cuesta o por qué tan caro),
  "pregunta_texto": "la duda del cliente si tema=otro, si no null"}
-"si" = confirma lo que el bot preguntó (incluye "correcto", "ok", "va", "dale", "ese es"). "ya_pague" = dice que ya pagó/transfirió/manda comprobante.
+"si" = confirma lo que el bot preguntó (incluye "correcto", "ok", "va", "dale", "ese es"). "ya_pague" = dice que YA pagó/transfirió/manda comprobante (en pasado). "ahorita realizo el pago", "voy a pagar", "al rato deposito" NO son ya_pague (todavía no paga): usa "si" u "otro".
 "estado_pedido" = pregunta por un pedido YA PAGADO ("no me llega", "cuándo llegan", "cuánto falta", "ya pagué y nada").
 "caida" = dice que se le cayeron/bajaron los seguidores o pide reposición.
 "reclamo" = quiere cancelar, reembolso/devolución, hablar con una persona, o reclama enojado.`;
@@ -136,7 +141,7 @@ async function posVenda(phone, texto, n, s, out) {
   s.pedeUsuarioPos = false;
   const desc = (cp.quantidade ? fq(cp.quantidade) + ' ' : '') + (cp.ehReales ? 'seguidores de alta calidad' : (cp.servico === 'seguidores' || !cp.servico ? 'seguidores' : cp.servico)) + (cp.usuario ? ' para @' + cp.usuario : '');
   if (cp.aguardandoPagamento) {
-    if (intent === 'ya_pague' || /pagu|transfer|deposit/i.test(texto)) { try { await sales.marcarPedidosAbertos(phone, 'clienteDisseQuePagou', texto); } catch (_) {} }
+    if (intent === 'ya_pague' || (/pagu|transfer|deposit/i.test(texto) && !soVaiPagar(texto))) { try { await sales.marcarPedidosAbertos(phone, 'clienteDisseQuePagou', texto); } catch (_) {} }
     out.push('Ya encontré tu pedido: *' + (cp.pacote || desc) + '*' + (cp.usuario ? ' para @' + cp.usuario : '') + ' (' + cp.valor + ' por ' + cp.metodo + '). Todavía no nos llega la confirmación del banco; ' + (cp.metodo === 'OXXO' ? 'con OXXO puede tardar hasta 1 hora' : 'con SPEI normalmente tarda unos minutos') + '. En cuanto se confirme, tu pedido se libera solo y te aviso aquí. Si en 30 minutos no se confirma, el equipo lo revisa.');
     return true;
   }
@@ -179,6 +184,7 @@ async function turno(phone, texto, s, deps) {
     return null; // sem IA (ex.: sem crédito): o A responde com o fallback dele
   }
   n = n || {};
+  if (n.intencion === 'ya_pague' && soVaiPagar(texto)) n.intencion = 'vai_pagar';
   if (n.servicio && n.servicio !== 'seguidores' && !s.qtd) { s.delegado = true; return null; }
   // quantidade e @ só valem se estiverem ESCRITOS na mensagem do cliente (o extrator copia do texto do bot)
   if (n.cantidad) {
@@ -236,6 +242,7 @@ async function turno(phone, texto, s, deps) {
 
   // cobrança gerada nesta conversa e ainda não paga
   if (s.pago && !s.pagoConfirmado) {
+    if (n.intencion === 'vai_pagar') { out.push('¡Perfecto! Cuando hagas el pago se confirma solo y te aviso aquí mismo. ' + (s.metodo === 'OXXO' ? 'Con OXXO puede tardar hasta 1 hora.' : 'Con SPEI suele tardar unos minutos.')); return out; }
     if (n.intencion === 'ya_pague') { s.disseQuePagou = (s.disseQuePagou || 0) + 1; try { await sales.marcarPedidosAbertos(phone, 'clienteDisseQuePagou', texto); } catch (_) {} out.push(s.disseQuePagou === 1 ? '¡Gracias! En cuanto el banco confirme tu pago te aviso aquí mismo y tu pedido se libera solo. ' + (s.metodo === 'OXXO' ? 'Con OXXO puede tardar hasta 1 hora.' : 'Con SPEI suele tardar unos minutos.') : 'Ya encontré tu pedido: *' + fq(s.qtd) + ' ' + nomeTipo(s) + '* para @' + s.usuario + ' (' + fmt(s.valor) + ' por ' + s.metodo + '). Todavía no nos llega la confirmación del banco; en cuanto llegue se libera solo y te aviso. Si en 30 minutos no se confirma, el equipo lo revisa.'); return out; }
     if (n.intencion === 'quiere_spei' && s.metodo !== 'SPEI' && !s.disseQuePagou) { s.metodo = 'SPEI'; const r = await deps.criarPagamento(phone, s); if (!r.ok) { out.push(r.erroTexto); return out; } out.push('¡Listo! Te cambié el pago a *SPEI* (transferencia, se confirma en minutos). Estos son los datos:'); out.push(...r.msgs); return out; }
     if (n.intencion === 'quiere_oxxo' && s.metodo !== 'OXXO' && !s.disseQuePagou) { s.metodo = 'OXXO'; const r = await deps.criarPagamento(phone, s); if (!r.ok) { out.push(r.erroTexto); return out; } out.push('¡Listo! Te cambié el pago a *OXXO* (efectivo). Lleva unos pesos extra: en caja cobran una comisión aparte. La confirmación puede tardar hasta 1 hora.'); out.push(...r.msgs); return out; }
