@@ -26530,6 +26530,30 @@ app.get('/api/checkout/payment-state', async (req, res) => {
     return res.status(500).json({ ok: false, error: e?.message || String(e) });
   }
 });
+// 24/11: página de pedido de EXEMPLO (dados fictícios, status Completado) para mostrar ao cliente
+// como é a tela pós-pagamento e a reseña liberada. Não lê nem grava nada no banco; o envio da reseña é simulado.
+app.get('/pedido/ejemplo', (req, res) => {
+  const agora = Date.now();
+  const pago = new Date(agora - 3 * 3600e3).toISOString();
+  const info = [
+    { key: 'tipo_servico', value: 'mistos' }, { key: 'categoria_servico', value: 'seguidores' },
+    { key: 'quantidade', value: '1000' }, { key: 'instagram_username', value: 'ejemplo.youagency' },
+    { key: 'customer_name', value: 'Cliente Ejemplo' }, { key: 'payment_method', value: 'spei' },
+  ];
+  const order = {
+    identifier: 'YA-EJEMPLO', correlationID: 'YA-EJEMPLO', status: 'pago', tipo: 'mistos', tipoServico: 'mistos',
+    qtd: 1000, quantidade: 1000, valueCents: 22900, instagramUsername: 'ejemplo.youagency', instauser: 'ejemplo.youagency',
+    paymentMethod: 'xpag', xpag: { method: 'SPEI', status: 'confirmed', paidAt: pago },
+    createdAt: new Date(agora - 3 * 3600e3 - 120e3).toISOString(), paidAt: pago,
+    additionalInfoPaid: info, additionalInfo: info, additionalInfoMapPaid: Object.fromEntries(info.map((x) => [x.key, x.value])),
+    profilePrivacy: { username: 'ejemplo.youagency', isPrivate: false, checkedAt: pago, source: 'ejemplo' },
+    fama24h: { orderId: 'EJEMPLO', status: 'completed', requestedAt: pago, statusPayload: { status: 'Completed', remains: '0', start_count: '257' } },
+    __ejemplo: true,
+  };
+  const escFn = (t) => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  res.set('X-Robots-Tag', 'noindex');
+  return res.render('pedido', { order, refilDaysLeft: null, PIXEL_ID: '', logoLink: '/interaccion', esc: escFn, fromCliente: true, upsellOfferActive: false });
+});
 app.get('/pedido', async (req, res) => {
   try {
     const identifier = String(req.query.identifier || req.query.t || '').trim();
