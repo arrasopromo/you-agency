@@ -14,6 +14,7 @@
 %>
 <style>
   .rd-rede-sw { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; width: 100%; margin: 0.1rem auto 1.4rem; text-align: center; scroll-margin-top: 84px; }
+  .rd-rede-sw[hidden] { display: none; }
   .rd-rede-sw-label { color: var(--text-secondary); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
   .rd-rede-sw .platform-toggle { margin: 0; flex-wrap: nowrap; gap: 0.5rem; width: 100%; max-width: 420px; }
   .rd-rede-sw .platform-btn { flex: 1 1 0; min-width: 0; justify-content: center; gap: 0.4rem; padding: 0.7rem 0.5rem; font-size: 0.92rem; border-radius: 12px; text-decoration: none; }
@@ -52,5 +53,16 @@
         a.href = u.pathname + (u.searchParams.toString() ? '?' + u.searchParams.toString() : '') + '#red';
       } catch (_) {}
     }, true);
+  })();
+  // Só na etapa 1 (Servicio): na 2 (Detalles) e na 3 (Pago) o seletor de rede some.
+  (function () {
+    var box = document.getElementById('red'); if (!box) return;
+    var s1 = document.getElementById('step1'), s2 = document.getElementById('step2'), s3 = document.getElementById('step3');
+    if (!s2 && !s3) return;
+    var tem = function (el, c) { return !!(el && el.classList.contains(c)); };
+    var aplica = function () { box.hidden = tem(s2, 'active') || tem(s3, 'active') || tem(s1, 'completed'); };
+    var mo = new MutationObserver(aplica);
+    [s1, s2, s3].forEach(function (el) { if (el) mo.observe(el, { attributes: true, attributeFilter: ['class'] }); });
+    aplica();
   })();
 </script>
