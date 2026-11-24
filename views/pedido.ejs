@@ -576,8 +576,6 @@
             </div>
             <label class="resena-lbl" for="resenaTexto">Tu comentario <span>(opcional)</span></label>
             <textarea id="resenaTexto" class="resena-campo" rows="3" maxlength="400" placeholder="Ej.: Llegaron rápido y sin pedir contraseña."></textarea>
-            <label class="resena-lbl" for="resenaNome">Tu nombre <span>(opcional, mostramos solo el nombre y la inicial)</span></label>
-            <input id="resenaNome" class="resena-campo" type="text" maxlength="40" autocomplete="given-name" placeholder="Ej.: Victoria Pérez" />
             <button type="button" id="resenaEnviar" class="resena-btn" disabled>Enviar reseña</button>
             <p id="resenaMsg" class="resena-msg" role="status" aria-live="polite"></p>
           </div>
@@ -635,7 +633,7 @@
               if (!nota) { msg.textContent = 'Elige de 1 a 5 estrellas.'; return; }
               btn.disabled = true; msg.className = 'resena-msg'; msg.textContent = 'Enviando…';
               try {
-                var r = await fetch('/api/resenas', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ id: id, estrelas: nota, texto: document.getElementById('resenaTexto').value, nome: document.getElementById('resenaNome').value }) });
+                var r = await fetch('/api/resenas', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ id: id, estrelas: nota, texto: document.getElementById('resenaTexto').value, nome: '' }) });
                 var d = await r.json();
                 if (!r.ok || !d || !d.ok) throw new Error((d && d.error) || 'No se pudo enviar.');
                 msg.textContent = ''; obrigado(true);
