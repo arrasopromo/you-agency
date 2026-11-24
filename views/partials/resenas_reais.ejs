@@ -21,6 +21,7 @@
   body.theme-light .rs-card{background:#ffffff;border-color:#e6e8ee;box-shadow:0 10px 26px -20px rgba(15,23,42,.35)}
   @media (max-width:560px){.rs-card{max-width:100%}}
 </style>
+<script src="/js/resenas-carrusel.js?v=3"></script>
 <script>
   (function(){
     var sec = document.getElementById('resenasServico'); if (!sec) return;
@@ -35,6 +36,7 @@
         return '<article class="rs-card"><div class="est" aria-label="' + x.estrelas + ' de 5 estrellas">' + est + '</div>' + (x.texto ? '<p class="txt">“' + esc(x.texto) + '”</p>' : '') + '<div class="quem">' + quem + '</div></article>';
       }).join('');
       sec.hidden = false;
+      if (window.yaResenasCarrusel) window.yaResenasCarrusel(box); // carrossel para os lados (24/11)
     }).catch(function(){});
   })();
 </script>
