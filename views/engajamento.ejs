@@ -327,6 +327,16 @@
       .yh-chip-t { margin-left:4px; align-self:flex-start; font-size:.68rem; color:var(--yh-sub); white-space:nowrap; }
       @keyframes yhFlut { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-5px); } }
       @media (prefers-reduced-motion: reduce) { .yh-chip { animation:none; } }
+      /* desktop: mais respiro entre o texto e o celular; o chip "Entrega iniciada" vai pro lado de fora (não cobre o botão) */
+      @media (min-width: 901px) {
+        .yh { max-width:1200px; gap:88px; padding-top:44px; padding-bottom:24px; grid-template-columns:minmax(0,1fr) minmax(0,.9fr); }
+        .yh-badge { margin-bottom:22px; }
+        .yh-h1 { margin-bottom:20px; }
+        .yh-sub { margin-bottom:30px; }
+        .yh-confia { margin:20px 0 30px; }
+        .yh-btn-pacotes { max-width:470px; margin-top:0; }
+        .yh-chip-b { left:auto; right:-12%; bottom:15%; }
+      }
 
       .ya-prova { text-align:left; position:fixed; right:20px; bottom:calc(env(safe-area-inset-bottom, 0px) + 96px); z-index:60; max-width:calc(100vw - 40px); padding:10px 14px; border-radius:10px; background:#1A1A2E; color:#E8E6F2; border:1px solid rgba(255,255,255,.08); font-size:.84rem; line-height:1.4; transition:opacity .35s; }
       body.theme-light .ya-prova { background:#fff; color:#1f2333; border-color:#e5e7eb; box-shadow:0 2px 10px rgba(15,23,42,.06); }
