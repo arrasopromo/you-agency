@@ -566,7 +566,11 @@
         <div class="resena-box" id="resenaBox" data-id="<%= String(order.identifier || order.correlationID || '') %>">
           <h2 id="resenaTitulo" class="resena-titulo">Deja tu reseña</h2>
           <p class="resena-sub">¿Cómo te fue con tu pedido? Tu opinión ayuda a otras personas a decidirse.</p>
-          <div id="resenaForm">
+          <div id="resenaTrava" class="resena-trava" hidden>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 10.5V7.8a3.5 3.5 0 017 0v2.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <p>Podrás dejar tu reseña cuando el estado de tu pedido sea <b>Completado</b>. Esta página se actualiza sola.</p>
+          </div>
+          <div id="resenaForm" hidden>
             <div class="resena-estrellas" role="radiogroup" aria-label="Calificación de 1 a 5 estrellas">
               <button type="button" class="resena-est" role="radio" aria-checked="false" data-v="1" aria-label="1 estrella">★</button>
               <button type="button" class="resena-est" role="radio" aria-checked="false" data-v="2" aria-label="2 estrellas">★</button>
@@ -603,6 +607,11 @@
           .resena-btn:disabled{opacity:.45;cursor:default}
           .resena-msg{min-height:1.2rem;margin:.6rem 0 0;font-size:.88rem;color:var(--text-secondary)}
           .resena-msg.erro{color:#f87171}
+          .resena-trava{display:flex;align-items:center;justify-content:center;gap:10px;padding:.9rem 1rem;border-radius:12px;border:1px dashed rgba(148,163,184,.4);color:var(--text-secondary);font-size:.92rem;line-height:1.45;text-align:left}
+          .resena-trava[hidden]{display:none}
+          .resena-trava svg{flex:none;width:22px;height:22px}
+          .resena-trava p{margin:0}
+          .resena-trava b{color:var(--text-primary)}
           .resena-gracias-est{color:#f5b301;font-size:1.6rem;letter-spacing:2px}
           .resena-gracias p{color:var(--text-primary);margin:.5rem 0}
           .resena-link{border:0;background:transparent;color:var(--text-secondary);text-decoration:underline;cursor:pointer;font:inherit;font-size:.85rem}
@@ -625,10 +634,17 @@
             });
             function obrigado(on){ document.getElementById('resenaForm').hidden = on; document.getElementById('resenaGracias').hidden = !on; }
             document.getElementById('resenaEditar').addEventListener('click', function(){ obrigado(false); });
-            fetch('/api/resenas/pedido?id=' + encodeURIComponent(id), { headers: { Accept: 'application/json' } }).then(function(r){ return r.json(); }).then(function(d){
-              if (d && d.ok && d.podeAvaliar === false) { box.parentNode.hidden = true; return; }
-              if (d && d.enviada) { nota = d.estrelas || 0; pinta(nota); btn.disabled = !nota; obrigado(true); }
-            }).catch(function(){});
+            // 24/11: o formulário só aparece com o serviço Completado; antes disso fica a trava e a página reconsulta a cada 60 s.
+            var trava = document.getElementById('resenaTrava'), form = document.getElementById('resenaForm'), tTrava = null;
+            function consulta(){
+              fetch('/api/resenas/pedido?id=' + encodeURIComponent(id), { headers: { Accept: 'application/json' } }).then(function(r){ return r.json(); }).then(function(d){
+                if (d && d.ok && d.podeAvaliar === false) { box.parentNode.hidden = true; return; }
+                if (d && d.ok && d.concluido === false && !d.enviada) { trava.hidden = false; form.hidden = true; clearTimeout(tTrava); tTrava = setTimeout(consulta, 60000); return; }
+                trava.hidden = true; form.hidden = false;
+                if (d && d.enviada) { nota = d.estrelas || 0; pinta(nota); btn.disabled = !nota; obrigado(true); }
+              }).catch(function(){ trava.hidden = true; form.hidden = false; });
+            }
+            consulta();
             btn.addEventListener('click', async function(){
               if (!nota) { msg.className = 'resena-msg erro'; msg.textContent = 'Toca las estrellas para darnos tu calificación (de 1 a 5).'; try { ests[0].focus(); } catch(_) {} return; }
               btn.disabled = true; msg.className = 'resena-msg'; msg.textContent = 'Enviando…';

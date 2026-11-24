@@ -539,6 +539,7 @@
               @media (max-width:560px){.resena-card{max-width:100%}}
             </style>
             <script src="/js/resenas-carrusel.js?v=3"></script>
+            <script src="/js/resenas-verificadas.js?v=1"></script>
             <script>
               (function(){
                 var box = document.getElementById('resenasReais'); if (!box) return;
@@ -549,11 +550,12 @@
                   box.innerHTML = it.map(function(x){
                     var est = ''; for (var i = 1; i <= 5; i++) est += i <= x.estrelas ? '★' : '☆';
                     var quem = '<b>' + esc(x.nomeExibicao || 'Cliente') + '</b>' + (x.usuarioMascarado ? ' · ' + esc(x.usuarioMascarado) : '') + ' · compró ' + esc(x.produto);
-                    return '<article class="resena-card"><div class="est" aria-label="' + x.estrelas + ' de 5 estrellas">' + est + '</div>' + (x.texto ? '<p class="txt">“' + esc(x.texto) + '”</p>' : '') + '<div class="quem">' + quem + '</div></article>';
+                    return '<article class="resena-card"><div class="rv-cardtop"><div class="est" aria-label="' + x.estrelas + ' de 5 estrellas">' + est + '</div>' + (window.yaResenaVfChip || '') + '</div>' + (x.texto ? '<p class="txt">“' + esc(x.texto) + '”</p>' : '') + '<div class="quem">' + quem + '</div></article>';
                   }).join('');
                   box.hidden = false;
                   var sec = document.getElementById('depoimentosCard'); if (sec) sec.style.display = 'flex';
                   if (window.yaResenasCarrusel) window.yaResenasCarrusel(box); // carrossel para os lados (24/11)
+                  if (window.yaResenasVerificadas) window.yaResenasVerificadas(box); // selo + demo da reseña pós-pedido (24/11)
                 }).catch(function(){});
               })();
             </script>

@@ -42729,14 +42729,39 @@ async function __resenaPedido(ident) {
   return col.findOne({ $or: [{ identifier: id }, { correlationID: id }] });
 }
 const __resenaPago = (o) => !!o && (String(o.status || '').toLowerCase() === 'pago' || !!o.paidAt);
+// 24/11: reseña só depois do serviço Completado (mesma leitura da página /pedido: divididos > slot principal).
+const __resenaConcluido = (o) => {
+  if (!o) return false;
+  let sts = [];
+  for (const k of ['fama24h_multi', 'fornecedor_social_multi']) { const arr = o[k] && Array.isArray(o[k].orders) ? o[k].orders : []; arr.forEach((x) => sts.push(x && x.status)); }
+  if (!sts.length) { const p = (o.fama24h && (o.fama24h.status || o.fama24h.orderId)) ? o.fama24h : ((o.fornecedor_social && (o.fornecedor_social.status || o.fornecedor_social.orderId)) ? o.fornecedor_social : o.redes); if (p && p.status) sts.push(p.status); }
+  return sts.length > 0 && sts.every((x) => /complete|success|finished|done|conclu/i.test(String(x || '')));
+};
+// Facebook/TikTok (slot redes) não têm varredura de status: consulta o fornecedor na hora e grava.
+async function __resenaAtualizaRedes(o) {
+  try {
+    const r = o && o.redes;
+    if (!r || !r.orderId || !r.provider || o.fama24h || o.fornecedor_social) return o;
+    if (/complete|cancel|partial|refund/i.test(String(r.status || ''))) return o;
+    if (r.lastStatusAt && Date.now() - new Date(r.lastStatusAt).getTime() < 5 * 60e3) return o;
+    const d = await _fetchProviderStatusLive(r.provider, r.orderId, o, 'redes');
+    const st = d ? String(d.status || d.Status || '').trim().toLowerCase() : '';
+    const set = { 'redes.lastStatusAt': new Date().toISOString() };
+    if (st) { set['redes.status'] = st; set['redes.statusPayload'] = d; r.status = st; }
+    r.lastStatusAt = set['redes.lastStatusAt'];
+    await (await getCollection('checkout_orders')).updateOne({ _id: o._id }, { $set: set });
+  } catch (_) {}
+  return o;
+}
 
 // Cliente: avaliação já enviada para este pedido (para a página mostrar o "gracias" em vez do formulário).
 app.get('/api/resenas/pedido', async (req, res) => {
   try {
     const o = await __resenaPedido(req.query.id);
     if (!__resenaPago(o)) return res.json({ ok: true, podeAvaliar: false });
+    await __resenaAtualizaRedes(o);
     const r = await (await getCollection('avaliacoes')).findOne({ orderId: o._id }, { projection: { estrelas: 1, texto: 1, status: 1 } });
-    return res.json({ ok: true, podeAvaliar: true, enviada: !!r, estrelas: r ? r.estrelas : null });
+    return res.json({ ok: true, podeAvaliar: true, concluido: __resenaConcluido(o), enviada: !!r, estrelas: r ? r.estrelas : null });
   } catch (_) { return res.json({ ok: false }); }
 });
 // Cliente: envia (ou edita) a avaliação do pedido.
@@ -42754,6 +42779,8 @@ app.post('/api/resenas', async (req, res) => {
     const nomeDigitado = String(b.nome || '').replace(/\s+/g, ' ').trim().slice(0, 40);
     const o = await __resenaPedido(b.id);
     if (!__resenaPago(o)) return res.status(400).json({ ok: false, error: 'Solo puedes reseñar un pedido pagado.' });
+    await __resenaAtualizaRedes(o);
+    if (!__resenaConcluido(o)) return res.status(400).json({ ok: false, travada: true, error: 'Podrás dejar tu reseña cuando tu pedido esté Completado.' });
     const usuario = String(o.instagramUsername || __resenaGet(o, 'instagram_username') || __resenaGet(o, 'perfil_rede') || '').replace(/^@+/, '');
     const nomeBase = nomeDigitado || String((o.customer && o.customer.name) || __resenaGet(o, 'customer_name') || '');
     const doc = {
