@@ -8580,26 +8580,26 @@
                 <%# 24/11: rosquinhas trocadas por "régua" (barra 100% segmentada) + linhas com pedidos, % e valor. Os scripts antigos dos gráficos seguem no arquivo, mas não acham mais os canvas. %>
                 <style>
                   #dashboardPaymentWrap{ --dg-ink:#111827; --dg-sub:#4b5563; --dg-mute:#9ca3af; --dg-line:#eef0f4; --dg-track:#f3f4f6; }
-                  .dg-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:12px; margin-top:12px; }
-                  .dg-card{ border:1px solid var(--dg-line); border-radius:12px; padding:16px; min-width:0; display:flex; flex-direction:column; gap:12px; background:#fff; }
+                  .dg-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:8px; margin-top:8px; }
+                  .dg-card{ border:1px solid var(--dg-line); border-radius:10px; padding:10px 12px; min-width:0; display:flex; flex-direction:column; gap:7px; background:#fff; }
                   .dg-top{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
-                  .dg-tit{ font-size:13px; font-weight:600; color:var(--dg-ink); }
-                  .dg-tot{ font-size:12px; color:var(--dg-mute); font-variant-numeric:tabular-nums; white-space:nowrap; }
+                  .dg-tit{ font-size:12px; font-weight:600; color:var(--dg-ink); }
+                  .dg-tot{ font-size:11px; color:var(--dg-mute); font-variant-numeric:tabular-nums; white-space:nowrap; }
                   .dg-hero{ display:flex; align-items:baseline; gap:8px; min-width:0; }
-                  .dg-hero b{ font-size:28px; line-height:1; font-weight:700; letter-spacing:-.02em; color:var(--dg-ink); font-variant-numeric:tabular-nums; }
-                  .dg-hero span{ font-size:13px; font-weight:500; color:var(--dg-sub); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-                  .dg-hero em{ font-style:normal; font-size:12px; color:var(--dg-mute); margin-left:auto; white-space:nowrap; font-variant-numeric:tabular-nums; }
-                  .dg-regua{ display:flex; gap:2px; height:10px; border-radius:5px; overflow:hidden; background:var(--dg-track); }
+                  .dg-hero b{ font-size:19px; line-height:1; font-weight:700; letter-spacing:-.02em; color:var(--dg-ink); font-variant-numeric:tabular-nums; }
+                  .dg-hero span{ font-size:12px; font-weight:500; color:var(--dg-sub); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+                  .dg-hero em{ font-style:normal; font-size:11px; color:var(--dg-mute); margin-left:auto; white-space:nowrap; font-variant-numeric:tabular-nums; }
+                  .dg-regua{ display:flex; gap:2px; height:5px; border-radius:3px; overflow:hidden; background:var(--dg-track); }
                   .dg-regua i{ display:block; height:100%; min-width:3px; }
                   .dg-rows{ display:flex; flex-direction:column; }
-                  .dg-row{ display:grid; grid-template-columns:minmax(0,1fr) 36px 52px auto; align-items:center; gap:10px; padding:7px 0; border-top:1px solid var(--dg-line); font-size:13px; font-variant-numeric:tabular-nums; }
+                  .dg-row{ display:grid; grid-template-columns:minmax(0,1fr) 22px 38px auto; align-items:center; gap:6px; padding:3px 0; border-top:1px solid var(--dg-line); font-size:11.5px; font-variant-numeric:tabular-nums; }
                   .dg-row:first-child{ border-top:0; }
-                  .dg-row .l{ display:flex; align-items:center; gap:8px; min-width:0; color:#374151; }
-                  .dg-row .l i{ width:8px; height:8px; border-radius:2px; flex:none; }
+                  .dg-row .l{ display:flex; align-items:center; gap:6px; min-width:0; color:#374151; }
+                  .dg-row .l i{ width:7px; height:7px; border-radius:2px; flex:none; }
                   .dg-row .l span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
                   .dg-row .n{ text-align:right; color:var(--dg-mute); }
                   .dg-row .p{ text-align:right; font-weight:600; color:var(--dg-ink); }
-                  .dg-row .v{ text-align:right; color:var(--dg-sub); min-width:84px; }
+                  .dg-row .v{ text-align:right; color:var(--dg-sub); min-width:64px; }
                   .dg-row.zero{ opacity:.45; }
                   .dg-vazio{ font-size:13px; color:var(--dg-mute); padding:8px 0; }
                 </style>
@@ -8664,8 +8664,8 @@
                       var hero = '<div class="dg-hero"><b>' + pct(lid.n / tot * 100) + '%</b><span>' + esc(lid.l) + '</span>' + (lid.v != null ? '<em>' + moeda(lid.v) + '</em>' : '') + '</div>';
                       var cheios = ord.filter(function(x){ return x.n > 0; });
                       var regua = '<div class="dg-regua" role="img" aria-label="' + esc(cheios.map(function(x){ return x.l + ' ' + pct(x.n / tot * 100) + '%'; }).join(', ')) + '">' + cheios.map(function(x){ return '<i style="flex:' + x.n + ' 1 0;background:' + esc(x.c) + '" title="' + esc(x.l) + ': ' + x.n + '"></i>'; }).join('') + '</div>';
-                      var rows = '<div class="dg-rows">' + ord.map(function(x){
-                        return '<div class="dg-row' + (x.n ? '' : ' zero') + '"' + (temV ? '' : ' style="grid-template-columns:minmax(0,1fr) 36px 52px"') + '><span class="l"><i style="background:' + esc(x.c) + '"></i><span title="' + esc(x.l) + '">' + esc(x.l) + '</span></span><span class="n">' + x.n + '</span><span class="p">' + pct(x.n / tot * 100) + '%</span>' + (temV ? '<span class="v">' + (x.v != null ? moeda(x.v) : '—') + '</span>' : '') + '</div>';
+                      var rows = '<div class="dg-rows">' + cheios.map(function(x){
+                        return '<div class="dg-row' + (x.n ? '' : ' zero') + '"' + (temV ? '' : ' style="grid-template-columns:minmax(0,1fr) 22px 38px"') + '><span class="l"><i style="background:' + esc(x.c) + '"></i><span title="' + esc(x.l) + '">' + esc(x.l) + '</span></span><span class="n">' + x.n + '</span><span class="p">' + pct(x.n / tot * 100) + '%</span>' + (temV ? '<span class="v">' + (x.v != null ? moeda(x.v) : '—') + '</span>' : '') + '</div>';
                       }).join('') + '</div>';
                       return '<section class="dg-card">' + head + hero + regua + rows + '</section>';
                     }).join('');
