@@ -45017,6 +45017,8 @@ app.get('/painel', requireAdmin, async (req, res) => {
     // Total de pedidos GERADOS no período (criados — pagos ou não): VALOR + quantidade.
     let totalOrdersGenerated = 0, totalOrdersGeneratedValue = 0, totalOrdersGeneratedPaid = 0;
     let generatedToday = 0, paidGeneratedToday = 0;
+    // 24/11: conversão separada por canal (legenda do card). WhatsApp = bot (WppAgent_/source wpp_agent) ou pedido marcado whatsapp; o resto é site.
+    const convCanal = { site: { ger: 0, pago: 0, gerHoje: 0, pagoHoje: 0 }, whats: { ger: 0, pago: 0, gerHoje: 0, pagoHoje: 0 } };
     // Helper: condição "criado no range [s,e)" (createdAt/criado, string ou date).
     const createdInRangeCond = (s, e) => {
       const sIso = s ? s.toISOString() : null, eIso = e ? e.toISOString() : null;
@@ -45040,6 +45042,14 @@ app.get('/painel', requireAdmin, async (req, res) => {
       const todayMatch = createdInRangeCond(startOfTodayUtc, startOfTomorrowUtc);
       generatedToday = await col.countDocuments(todayMatch);
       paidGeneratedToday = await col.countDocuments({ $and: [todayMatch, paidQuery] });
+      try {
+        const wppCond = { $or: [{ correlationID: { $regex: '^WppAgent_' } }, { source: { $regex: 'wpp_agent|whatsapp', $options: 'i' } }, { paymentMethod: { $regex: 'whatsapp', $options: 'i' } }] };
+        const conta = (extra) => col.countDocuments({ $and: extra.filter(Boolean) });
+        const per = (start || endExclusive) ? match : null;
+        const [wg, wp, wgh, wph] = await Promise.all([conta([per, wppCond]), conta([per, wppCond, paidQuery]), conta([todayMatch, wppCond]), conta([todayMatch, wppCond, paidQuery])]);
+        convCanal.whats = { ger: wg, pago: wp, gerHoje: wgh, pagoHoje: wph };
+        convCanal.site = { ger: Math.max(0, totalOrdersGenerated - wg), pago: Math.max(0, totalOrdersGeneratedPaid - wp), gerHoje: Math.max(0, generatedToday - wgh), pagoHoje: Math.max(0, paidGeneratedToday - wph) };
+      } catch (_) {}
     } catch (_) { totalOrdersGenerated = 0; totalOrdersGeneratedValue = 0; totalOrdersGeneratedPaid = 0; }
     // Conversão gerado→pago (limpa e retroativa — nenhum processo de fundo interfere).
     const generatedToPaidPct = totalOrdersGenerated > 0 ? (totalOrdersGeneratedPaid / totalOrdersGenerated) * 100 : 0;
@@ -46996,7 +47006,7 @@ app.get('/painel', requireAdmin, async (req, res) => {
       custosFixos = { itens: _cf.itens, mensal: _cf.mensal, meses: _cf.meses, periodo: _cp.periodo, dias: _cp.dias, mesRef: _cp.mesRef, porMes: _cp.porMes };
     } catch (_) {}
 
-    const __painelRenderData = { view, ajustesLucro, custosFixos, orders: report, totalCost, feeCostTotal: __feeCostTotal, providerCostTotal: __provCostTotal, totalRevenue, dailyProfit, dailyProfitTotals, dailyProfitAdsOk, dailyProfitTruncated, DASH_IMPOSTO_PCT, DASH_ADS_MARKUP_PCT, revenueShown, avgTicket, timelineSeries, bumpRevenueSeries, paidValidatedSeries, totalBumpRevenue, revenueWithoutBumps, ignoreBumpRevenue, bumpRevenuePctOfTotal, costOverRevenuePct, toggleIgnoreBumpRevenueUrl, period, totalTransactions: paidReport.length, costSettings, validatedProfilesToday, validatedProfilesPeriod, paidOrdersToday, paidOverValidatedTodayPct, paidOverValidatedPeriodPct, validatedProfilesConverted, validatedTodayConverted, ignoreBumps, toggleIgnoreBumpsUrl, repeatCustomerPct, repeatCustomers, totalCustomers, topUsersByOrders, topUsersBySpend, topService, servicePie, servicePieOthers, ltvAllTime, paymentPie, channelPie, platformPie, redeSocialPie, servicePageViews, onlineNow, refil2Requests, refil2Pagination, vitalicioPurchases, upsellStats, recoveryStats, fbSpend, fbSpendBr, fbSpendUsd, fbSpendOk, fbSpendDolar, fbUsdMxn, adFormatPie, bumpPie, ltvRevenue, ltvCustomers, ltvPurchases, totalOrdersGenerated, totalOrdersGeneratedValue, totalOrdersGeneratedPaid, generatedToday, paidGeneratedToday, generatedToPaidPct, generatedToPaidTodayPct, generatedNotPaid, generatedNotPaidList, validatedProfilesList };
+    const __painelRenderData = { view, ajustesLucro, custosFixos, orders: report, totalCost, feeCostTotal: __feeCostTotal, providerCostTotal: __provCostTotal, totalRevenue, dailyProfit, dailyProfitTotals, dailyProfitAdsOk, dailyProfitTruncated, DASH_IMPOSTO_PCT, DASH_ADS_MARKUP_PCT, revenueShown, avgTicket, timelineSeries, bumpRevenueSeries, paidValidatedSeries, totalBumpRevenue, revenueWithoutBumps, ignoreBumpRevenue, bumpRevenuePctOfTotal, costOverRevenuePct, toggleIgnoreBumpRevenueUrl, period, totalTransactions: paidReport.length, costSettings, validatedProfilesToday, validatedProfilesPeriod, paidOrdersToday, paidOverValidatedTodayPct, paidOverValidatedPeriodPct, validatedProfilesConverted, validatedTodayConverted, ignoreBumps, toggleIgnoreBumpsUrl, repeatCustomerPct, repeatCustomers, totalCustomers, topUsersByOrders, topUsersBySpend, topService, servicePie, servicePieOthers, ltvAllTime, paymentPie, channelPie, platformPie, redeSocialPie, servicePageViews, onlineNow, refil2Requests, refil2Pagination, vitalicioPurchases, upsellStats, recoveryStats, fbSpend, fbSpendBr, fbSpendUsd, fbSpendOk, fbSpendDolar, fbUsdMxn, adFormatPie, bumpPie, ltvRevenue, ltvCustomers, ltvPurchases, totalOrdersGenerated, totalOrdersGeneratedValue, totalOrdersGeneratedPaid, generatedToday, paidGeneratedToday, convCanal, generatedToPaidPct, generatedToPaidTodayPct, generatedNotPaid, generatedNotPaidList, validatedProfilesList };
     if (__painelCacheable) {
       // Renderiza, cacheia o HTML (TTL) e envia. Próximos loads/filtros iguais vêm do cache (instantâneo).
       return res.render('painel', __painelRenderData, (err, html) => {

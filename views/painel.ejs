@@ -4872,15 +4872,29 @@
           } catch(_) {}
         })();
         </script>
+        <%
+          // Legenda do card: conversão do site e do WhatsApp (24/11)
+          var convLegenda = function (q) {
+            var cc = (typeof convCanal !== 'undefined' && convCanal) ? convCanal : null; if (!cc) return '';
+            var lin = function (nome, cor, o) {
+              var g = q === 'hoje' ? o.gerHoje : o.ger, p = q === 'hoje' ? o.pagoHoje : o.pago;
+              var pct = g > 0 ? (p / g * 100).toFixed(1).replace('.', ',') + '%' : '—';
+              return '<div style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:#4b5563;line-height:1.5"><span style="width:8px;height:8px;border-radius:50%;background:' + cor + ';flex:none"></span><span>' + nome + ': <b style="color:#111827">' + pct + '</b> <span style="color:#9ca3af">(' + p + ' de ' + g + ')</span></span></div>';
+            };
+            return '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #eef0f4">' + lin('Site', '#6B46C1', cc.site) + lin('WhatsApp', '#16a34a', cc.whats) + '</div>';
+          };
+        %>
         <div class="summary-card">
           <div class="summary-label">Conversão gerado→pago (hoje)</div>
           <div class="summary-value"><%= (typeof generatedToPaidTodayPct !== 'undefined' ? Number(generatedToPaidTodayPct || 0) : 0).toFixed(1).replace('.', ',') %>%</div>
           <div class="summary-sub" style="margin-top:6px;"><%= (typeof paidGeneratedToday !== 'undefined' ? Number(paidGeneratedToday || 0) : 0) %> de <%= (typeof generatedToday !== 'undefined' ? Number(generatedToday || 0) : 0) %> pedidos gerados pagaram</div>
+          <%- (typeof convLegenda === 'function') ? convLegenda('hoje') : '' %>
         </div>
         <div class="summary-card">
           <div class="summary-label">Conversão gerado→pago (período)</div>
           <div class="summary-value"><%= (typeof generatedToPaidPct !== 'undefined' ? Number(generatedToPaidPct || 0) : 0).toFixed(1).replace('.', ',') %>%</div>
           <div class="summary-sub" style="margin-top:6px;"><%= (typeof totalOrdersGeneratedPaid !== 'undefined' ? Number(totalOrdersGeneratedPaid || 0) : 0) %> de <%= (typeof totalOrdersGenerated !== 'undefined' ? Number(totalOrdersGenerated || 0) : 0) %> pedidos gerados pagaram</div>
+          <%- (typeof convLegenda === 'function') ? convLegenda('periodo') : '' %>
         </div>
         <div class="summary-card" id="generatedNotPaidCard" style="cursor:pointer;" title="Clique para ver os pedidos gerados que não pagaram">
           <div class="summary-label">Gerou e não pagou (período)</div>
