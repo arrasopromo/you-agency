@@ -350,6 +350,10 @@
       @media (max-width: 600px) {
         .ya-prova { right:12px; bottom:calc(env(safe-area-inset-bottom, 0px) + 84px); width:auto; max-width:calc(100vw - 24px); }
       }
+      @media (max-width: 480px) {
+        /* celular: o aviso de venda fica colado em cima do botão do WhatsApp (botão: 54px, a 14px da borda) */
+        .ya-prova { right:calc(14px + env(safe-area-inset-right, 0px)); bottom:calc(env(safe-area-inset-bottom, 0px) + 74px); max-width:calc(100vw - 28px); }
+      }
       @media (max-width: 420px) {
         .yh-form { flex-direction:column; }
         .yh-campo { flex:none; width:100%; height:56px; }
