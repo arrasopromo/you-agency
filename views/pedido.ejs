@@ -576,7 +576,7 @@
             </div>
             <label class="resena-lbl" for="resenaTexto">Tu comentario <span>(opcional)</span></label>
             <textarea id="resenaTexto" class="resena-campo" rows="3" maxlength="400" placeholder="Ej.: Llegaron rápido y sin pedir contraseña."></textarea>
-            <button type="button" id="resenaEnviar" class="resena-btn" disabled>Enviar reseña</button>
+            <button type="button" id="resenaEnviar" class="resena-btn">Enviar reseña</button>
             <p id="resenaMsg" class="resena-msg" role="status" aria-live="polite"></p>
           </div>
           <div id="resenaGracias" class="resena-gracias" hidden>
@@ -630,7 +630,7 @@
               if (d && d.enviada) { nota = d.estrelas || 0; pinta(nota); btn.disabled = !nota; obrigado(true); }
             }).catch(function(){});
             btn.addEventListener('click', async function(){
-              if (!nota) { msg.textContent = 'Elige de 1 a 5 estrellas.'; return; }
+              if (!nota) { msg.className = 'resena-msg erro'; msg.textContent = 'Toca las estrellas para darnos tu calificación (de 1 a 5).'; try { ests[0].focus(); } catch(_) {} return; }
               btn.disabled = true; msg.className = 'resena-msg'; msg.textContent = 'Enviando…';
               try {
                 var r = await fetch('/api/resenas', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ id: id, estrelas: nota, texto: document.getElementById('resenaTexto').value, nome: '' }) });
