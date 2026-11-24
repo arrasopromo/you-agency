@@ -9,14 +9,14 @@
     '.rv-selo b{color:var(--text-primary,#fff);font-weight:700}' +
     '.rv-ok{flex:none;width:20px;height:20px;border-radius:50%;background:#16a34a;display:inline-flex;align-items:center;justify-content:center}' +
     '.rv-ok svg{width:12px;height:12px}' +
-    '.rv-demo{width:100%;max-width:880px;margin:1.6rem auto 0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,430px);gap:32px;align-items:center;text-align:left;box-sizing:border-box}' +
+    '.rv-demo{width:100%;max-width:880px;margin:1.6rem auto 0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,330px);gap:40px;align-items:center;text-align:left;box-sizing:border-box}' +
     '.rv-txt h3{margin:0 0 .5rem;font-size:1.3rem;line-height:1.25;font-weight:700;color:var(--text-primary,#fff);text-wrap:balance}' +
     '.rv-txt p{margin:0 0 1rem;color:var(--text-secondary,#cbd5e1);font-size:.95rem;line-height:1.55}' +
     '.rv-passos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}' +
     '.rv-passos li{display:flex;gap:10px;align-items:flex-start;font-size:.92rem;line-height:1.45;color:var(--text-primary,#fff)}' +
     '.rv-passos li span{flex:none;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;color:#8b5cf6;background:rgba(139,92,246,.14)}' +
     '.rv-passos li small{display:block;color:var(--text-secondary,#cbd5e1);font-size:.82rem}' +
-    '.rv-print{position:relative;margin:0;min-width:0}' +
+    '.rv-print{position:relative;margin:0 auto;min-width:0;width:100%;max-width:330px}' +
     '.rv-print img{display:block;width:100%;height:auto;border-radius:16px;border:1px solid rgba(139,92,246,.25);box-shadow:0 24px 48px -30px rgba(0,0,0,.6)}' +
     '.rv-ex{position:absolute;top:-10px;right:14px;padding:2px 9px;border-radius:999px;font-size:.7rem;font-weight:600;color:var(--text-secondary,#cbd5e1);background:var(--bg-secondary,#1A1A2E);border:1px solid rgba(139,92,246,.3)}' +
     '.rv-print figcaption{margin-top:10px;font-size:.82rem;line-height:1.4;color:var(--text-secondary,#cbd5e1);text-align:center}' +
@@ -51,7 +51,7 @@
       '</div>' +
       '<figure class="rv-print">' +
         '<span class="rv-ex">Ejemplo</span>' +
-        '<picture><source srcset="/images/resena-pedido-real.webp" type="image/webp"><img src="/images/resena-pedido-real.png" width="739" height="532" loading="lazy" alt="Página del pedido con el estado del servicio en Completado y el formulario para dejar la reseña con 5 estrellas"></picture>' +
+        '<picture><source srcset="/images/resena-pedido-real.webp?v=2" type="image/webp"><img src="/images/resena-pedido-real.png?v=2" width="600" height="842" loading="lazy" alt="Página del pedido: detalles, estado del servicio en Completado y el formulario para dejar la reseña"></picture>' +
         '<figcaption>Así se ve en la página de tu pedido. <a href="/pedido/ejemplo" target="_blank" rel="noopener">Ver un pedido de ejemplo</a></figcaption>' +
       '</figure>';
     return d;
