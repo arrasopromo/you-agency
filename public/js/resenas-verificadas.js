@@ -59,7 +59,7 @@
     'body.theme-light .rv-txt h3,body.theme-light .rv-passos li,body.theme-light .rv-campo,body.theme-light .rv-fim{color:#0f172a}' +
     'body.theme-light .rv-badge.proc{color:#a16207;background:#fef9c3}' +
     'body.theme-light .rv-badge.ok{color:#15803d;background:#dcfce7}' +
-    '@media (max-width:760px){.rv-demo{grid-template-columns:1fr;gap:20px;max-width:420px}.rv-txt{text-align:center}.rv-passos li{text-align:left}}' +
+    '@media (max-width:760px){.rv-demo{grid-template-columns:1fr;gap:20px;max-width:420px;padding:0 6px}.rv-selo{max-width:calc(100% - 12px)}.rv-txt{text-align:center}.rv-passos li{text-align:left}}' +
     '@media (prefers-reduced-motion:reduce){.rv-campo:after{animation:none}.rv-fade{animation:none}}';
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 

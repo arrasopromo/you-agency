@@ -27,7 +27,8 @@
     var wrap = document.createElement('div'); wrap.className = 'rc-wrap';
     lista.parentNode.insertBefore(wrap, lista); wrap.appendChild(lista);
     // a seção pai (item de grid/flex) não pode crescer com a largura da fila de cards
-    try { lista.parentNode.parentNode.style.minWidth = '0'; lista.parentNode.parentNode.style.maxWidth = '100%'; } catch (_) {}
+    // (sem max-width: no celular a seção usa margem negativa para sangrar até a borda; max-width a deixava torta)
+    try { lista.parentNode.parentNode.style.minWidth = '0'; } catch (_) {}
     lista.classList.add('rc-lista');
     var ant = document.createElement('button'); ant.type = 'button'; ant.className = 'rc-seta rc-ant'; ant.setAttribute('aria-label', 'Reseña anterior'); ant.textContent = '‹';
     var prox = document.createElement('button'); prox.type = 'button'; prox.className = 'rc-seta rc-prox'; prox.setAttribute('aria-label', 'Siguiente reseña'); prox.textContent = '›';
