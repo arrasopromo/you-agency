@@ -8577,49 +8577,33 @@
                   <strong style="font-size: 1rem; color:#111827;">Distribuição</strong>
                   <div style="font-size:0.85rem; color:#6b7280;">Base: pedidos pagos (período)</div>
                 </div>
+                <%# 24/11: rosquinhas trocadas por "régua" (barra 100% segmentada) + linhas com pedidos, % e valor. Os scripts antigos dos gráficos seguem no arquivo, mas não acham mais os canvas. %>
                 <style>
-                  #dashboardPaymentWrap .dash-chart-box{ height:170px; }
-                  @media (max-width: 680px){
-                    #dashboardPaymentWrap .dash-distrib-grid{ grid-template-columns:1fr !important; gap:22px !important; }
-                    #dashboardPaymentWrap .dash-chart-box{ height:230px; }
-                  }
+                  #dashboardPaymentWrap{ --dg-ink:#111827; --dg-sub:#4b5563; --dg-mute:#9ca3af; --dg-line:#eef0f4; --dg-track:#f3f4f6; }
+                  .dg-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:12px; margin-top:12px; }
+                  .dg-card{ border:1px solid var(--dg-line); border-radius:12px; padding:16px; min-width:0; display:flex; flex-direction:column; gap:12px; background:#fff; }
+                  .dg-top{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+                  .dg-tit{ font-size:13px; font-weight:600; color:var(--dg-ink); }
+                  .dg-tot{ font-size:12px; color:var(--dg-mute); font-variant-numeric:tabular-nums; white-space:nowrap; }
+                  .dg-hero{ display:flex; align-items:baseline; gap:8px; min-width:0; }
+                  .dg-hero b{ font-size:28px; line-height:1; font-weight:700; letter-spacing:-.02em; color:var(--dg-ink); font-variant-numeric:tabular-nums; }
+                  .dg-hero span{ font-size:13px; font-weight:500; color:var(--dg-sub); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+                  .dg-hero em{ font-style:normal; font-size:12px; color:var(--dg-mute); margin-left:auto; white-space:nowrap; font-variant-numeric:tabular-nums; }
+                  .dg-regua{ display:flex; gap:2px; height:10px; border-radius:5px; overflow:hidden; background:var(--dg-track); }
+                  .dg-regua i{ display:block; height:100%; min-width:3px; }
+                  .dg-rows{ display:flex; flex-direction:column; }
+                  .dg-row{ display:grid; grid-template-columns:minmax(0,1fr) 36px 52px auto; align-items:center; gap:10px; padding:7px 0; border-top:1px solid var(--dg-line); font-size:13px; font-variant-numeric:tabular-nums; }
+                  .dg-row:first-child{ border-top:0; }
+                  .dg-row .l{ display:flex; align-items:center; gap:8px; min-width:0; color:#374151; }
+                  .dg-row .l i{ width:8px; height:8px; border-radius:2px; flex:none; }
+                  .dg-row .l span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+                  .dg-row .n{ text-align:right; color:var(--dg-mute); }
+                  .dg-row .p{ text-align:right; font-weight:600; color:var(--dg-ink); }
+                  .dg-row .v{ text-align:right; color:var(--dg-sub); min-width:84px; }
+                  .dg-row.zero{ opacity:.45; }
+                  .dg-vazio{ font-size:13px; color:var(--dg-mute); padding:8px 0; }
                 </style>
-                <div class="dash-distrib-grid" style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px 24px; margin-top:12px; align-items:start;">
-                  <div style="display:flex; flex-direction:column; min-width:0;">
-                    <div style="font-weight:700; margin-bottom:8px; color:#111827;">Canal de vendas</div>
-                    <div class="dash-chart-box" style="position:relative;">
-                      <canvas id="dashboardChannelPieChart" style="display:block; width:100%; height:100%;"></canvas>
-                    </div>
-                    <div style="font-size:0.78rem; color:#6b7280; margin-top:6px;">Valor de venda por canal:</div>
-                    <div id="dashboardChannelBreakdown" style="margin-top:4px; font-size:0.84rem; color:#374151;"></div>
-                  </div>
-                  <div style="display:flex; flex-direction:column; min-width:0;">
-                    <div style="font-weight:700; margin-bottom:8px; color:#111827;">Vendas por método</div>
-                    <div class="dash-chart-box" style="position:relative;">
-                      <canvas id="dashboardPaymentMethodChart" style="display:block; width:100%; height:100%;"></canvas>
-                    </div>
-                  </div>
-                  <div style="display:flex; flex-direction:column; min-width:0;">
-                    <div style="font-weight:700; margin-bottom:8px; color:#111827;">Pedidos por tipo (pizza)</div>
-                    <div class="dash-chart-box" style="position:relative;">
-                      <canvas id="dashboardServiceTypePieChart" style="display:block; width:100%; height:100%;"></canvas>
-                    </div>
-                  </div>
-                  <div style="display:flex; flex-direction:column; min-width:0;">
-                    <div style="font-weight:700; margin-bottom:8px; color:#111827;">Compras por plataforma</div>
-                    <div class="dash-chart-box" style="position:relative;">
-                      <canvas id="dashboardPlatformPieChart" style="display:block; width:100%; height:100%;"></canvas>
-                    </div>
-                  </div>
-                  <div style="display:flex; flex-direction:column; min-width:0;">
-                    <div style="font-weight:700; margin-bottom:8px; color:#111827;">Vendas por rede social</div>
-                    <div class="dash-chart-box" style="position:relative;">
-                      <canvas id="dashboardRedeSocialPieChart" style="display:block; width:100%; height:100%;"></canvas>
-                    </div>
-                    <div style="font-size:0.78rem; color:#6b7280; margin-top:6px;">Valor de venda por rede:</div>
-                    <div id="dashboardRedeSocialBreakdown" style="margin-top:4px; font-size:0.84rem; color:#374151;"></div>
-                  </div>
-                </div>
+                <div class="dg-grid" id="distribGrid"></div>
 
                 <!-- Tabela: faturamento, gasto e margem por tipo de produto (fora da legenda) -->
                 <div style="margin-top:18px; overflow-x:auto; -webkit-overflow-scrolling:touch;">
@@ -8654,6 +8638,39 @@
                 <script type="application/json" id="dashboardChannelPieData"><%- JSON.stringify(Array.isArray(channelPie) ? channelPie : []) %></script>
                 <script type="application/json" id="dashboardRedeSocialPieData"><%- JSON.stringify((typeof redeSocialPie !== 'undefined' && Array.isArray(redeSocialPie)) ? redeSocialPie : []) %></script>
                 <script type="application/json" id="dashboardPlatformPieData"><%- JSON.stringify(Array.isArray(platformPie) ? platformPie : []) %></script>
+                <script>
+                  (function(){
+                    var grid = document.getElementById('distribGrid'); if (!grid) return;
+                    var ler = function(id){ try { var el = document.getElementById(id); return JSON.parse((el && el.textContent) || '[]') || []; } catch(_) { return []; } };
+                    var num = function(v){ var n = Number(v); return isFinite(n) ? n : 0; };
+                    var esc = function(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); };
+                    var moeda = function(v){ try { return window.__SEM_FX ? ('$ ' + num(v).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) : ('R$ ' + (num(v) / (window.__FX_BRL_MXN || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); } catch(_) { return num(v).toFixed(2); } };
+                    var pct = function(v){ return (Math.round(v * 10) / 10).toFixed(v >= 10 || v === 0 ? 0 : 1).replace('.', ','); };
+                    var dims = [
+                      { t: 'Canal de vendas', id: 'dashboardChannelPieData' },
+                      { t: 'Rede social', id: 'dashboardRedeSocialPieData' },
+                      { t: 'Método de pagamento', id: 'dashboardPaymentMethodData' },
+                      { t: 'Tipo de produto', id: 'dashboardServiceTypePieData' },
+                      { t: 'Aparelho', id: 'dashboardPlatformPieData' }
+                    ];
+                    grid.innerHTML = dims.map(function(d){
+                      var it = ler(d.id).map(function(x){ return { l: String(x && x.label || '-'), n: num(x && x.count), v: (x && x.revenue != null) ? num(x.revenue) : null, c: String(x && x.color || '#cbd5e1') }; });
+                      var tot = it.reduce(function(a, x){ return a + x.n; }, 0);
+                      var temV = it.some(function(x){ return x.v != null; });
+                      var head = '<div class="dg-top"><span class="dg-tit">' + esc(d.t) + '</span><span class="dg-tot">' + tot + (tot === 1 ? ' pedido' : ' pedidos') + '</span></div>';
+                      if (!tot) return '<section class="dg-card">' + head + '<div class="dg-vazio">Nenhum pedido pago no período.</div></section>';
+                      var ord = it.slice().sort(function(a, b){ return b.n - a.n; });
+                      var lid = ord[0];
+                      var hero = '<div class="dg-hero"><b>' + pct(lid.n / tot * 100) + '%</b><span>' + esc(lid.l) + '</span>' + (lid.v != null ? '<em>' + moeda(lid.v) + '</em>' : '') + '</div>';
+                      var cheios = ord.filter(function(x){ return x.n > 0; });
+                      var regua = '<div class="dg-regua" role="img" aria-label="' + esc(cheios.map(function(x){ return x.l + ' ' + pct(x.n / tot * 100) + '%'; }).join(', ')) + '">' + cheios.map(function(x){ return '<i style="flex:' + x.n + ' 1 0;background:' + esc(x.c) + '" title="' + esc(x.l) + ': ' + x.n + '"></i>'; }).join('') + '</div>';
+                      var rows = '<div class="dg-rows">' + ord.map(function(x){
+                        return '<div class="dg-row' + (x.n ? '' : ' zero') + '"' + (temV ? '' : ' style="grid-template-columns:minmax(0,1fr) 36px 52px"') + '><span class="l"><i style="background:' + esc(x.c) + '"></i><span title="' + esc(x.l) + '">' + esc(x.l) + '</span></span><span class="n">' + x.n + '</span><span class="p">' + pct(x.n / tot * 100) + '%</span>' + (temV ? '<span class="v">' + (x.v != null ? moeda(x.v) : '—') + '</span>' : '') + '</div>';
+                      }).join('') + '</div>';
+                      return '<section class="dg-card">' + head + hero + regua + rows + '</section>';
+                    }).join('');
+                  })();
+                </script>
                 <script>
                   (function(){
                     try {

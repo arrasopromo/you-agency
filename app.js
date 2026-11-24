@@ -46125,7 +46125,16 @@ app.get('/painel', requireAdmin, async (req, res) => {
     {
       let pixCount = 0;
       let cardCount = 0;
+      // 24/11: a YA recebe por Xpag (SPEI/OXXO); antes tudo caía em "Cartão (Stripe)". Valor = totalPaid do relatório.
+      const paidByIdPay = new Map();
+      for (const r of paidReport) { const id = String((r && r._id) ? r._id : '').trim(); if (id) paidByIdPay.set(id, Number(r.totalPaid || 0)); }
+      let speiCount = 0, oxxoCount = 0, speiRev = 0, oxxoRev = 0, pixRev = 0, cardRev = 0;
       for (const o of filteredOrders) {
+        const revO = Number(paidByIdPay.get(String((o && o._id) ? o._id : '')) || 0);
+        const xm = String((o && o.xpag && o.xpag.method) || '').toUpperCase();
+        if (xm === 'SPEI') { speiCount++; speiRev += revO; continue; }
+        if (xm === 'OXXO') { oxxoCount++; oxxoRev += revO; continue; }
+        const pix0 = pixCount;
         const pm = String((o && (o.paymentMethod || o.payment_method || o.method)) ? (o.paymentMethod || o.payment_method || o.method) : '').toLowerCase();
         const hasWoovi = !!(o && o.woovi);
         const wooviPaid = hasWoovi && (String(o.woovi.status || '').toLowerCase() === 'pago');
@@ -46178,12 +46187,16 @@ app.get('/painel', requireAdmin, async (req, res) => {
           if (pmIsPix) pixCount += 1;
           else cardCount += 1;
         }
+        if (pixCount > pix0) pixRev += revO; else cardRev += revO;
       }
-      const totalCount = pixCount + cardCount;
+      const totalCount = pixCount + cardCount + speiCount + oxxoCount;
+      const pctPay = (n) => totalCount > 0 ? (n / totalCount) * 100 : 0;
       paymentPie = [
-        { label: 'PIX (Woovi/PagHiper)', count: pixCount, color: '#16a34a', pct: totalCount > 0 ? (pixCount / totalCount) * 100 : 0 },
-        { label: 'Cartão (Stripe)', count: cardCount, color: '#2563eb', pct: totalCount > 0 ? (cardCount / totalCount) * 100 : 0 },
+        { label: 'SPEI', count: speiCount, revenue: speiRev, color: '#2563eb', pct: pctPay(speiCount) },
+        { label: 'OXXO', count: oxxoCount, revenue: oxxoRev, color: '#e11d48', pct: pctPay(oxxoCount) },
       ];
+      if (cardCount > 0) paymentPie.push({ label: 'Cartão', count: cardCount, revenue: cardRev, color: '#7c3aed', pct: pctPay(cardCount) });
+      if (pixCount > 0) paymentPie.push({ label: 'Pix', count: pixCount, revenue: pixRev, color: '#16a34a', pct: pctPay(pixCount) });
     }
 
     // ── Gráfico: Canal de vendas (Site vs WhatsApp) — contagem e VALOR de venda ──
@@ -46246,22 +46259,26 @@ app.get('/painel', requireAdmin, async (req, res) => {
         return false;
       };
       let appleC = 0, androidC = 0, desktopC = 0, outroC = 0;
+      const paidByIdPlat = new Map();
+      for (const r of paidReport) { const id = String((r && r._id) ? r._id : '').trim(); if (id) paidByIdPlat.set(id, Number(r.totalPaid || 0)); }
+      const platRev = { apple: 0, android: 0, desktop: 0, outro: 0 };
       for (const o of filteredOrders) {
         if (!isPaidPlat(o)) continue;
+        const revP = Number(paidByIdPlat.get(String(o && o._id ? o._id : '')) || 0);
         const ua = String(o?.userAgent || '').toLowerCase();
-        if (!ua) { outroC++; continue; }
-        if (/android/.test(ua)) androidC++;
-        else if (/iphone|ipad|ipod/.test(ua)) appleC++;
-        else if (/windows|macintosh|mac os x|x11|linux|cros/.test(ua)) desktopC++;
-        else outroC++;
+        if (!ua) { outroC++; platRev.outro += revP; continue; }
+        if (/android/.test(ua)) { androidC++; platRev.android += revP; }
+        else if (/iphone|ipad|ipod/.test(ua)) { appleC++; platRev.apple += revP; }
+        else if (/windows|macintosh|mac os x|x11|linux|cros/.test(ua)) { desktopC++; platRev.desktop += revP; }
+        else { outroC++; platRev.outro += revP; }
       }
       const platTotal = appleC + androidC + desktopC + outroC;
       platformPie = [
-        { label: 'iPhone (Apple)', count: appleC, color: '#111827', pct: platTotal > 0 ? (appleC / platTotal) * 100 : 0 },
-        { label: 'Android', count: androidC, color: '#16a34a', pct: platTotal > 0 ? (androidC / platTotal) * 100 : 0 },
-        { label: 'Desktop', count: desktopC, color: '#2563eb', pct: platTotal > 0 ? (desktopC / platTotal) * 100 : 0 },
+        { label: 'iPhone (Apple)', count: appleC, revenue: platRev.apple, color: '#111827', pct: platTotal > 0 ? (appleC / platTotal) * 100 : 0 },
+        { label: 'Android', count: androidC, revenue: platRev.android, color: '#16a34a', pct: platTotal > 0 ? (androidC / platTotal) * 100 : 0 },
+        { label: 'Desktop', count: desktopC, revenue: platRev.desktop, color: '#2563eb', pct: platTotal > 0 ? (desktopC / platTotal) * 100 : 0 },
       ];
-      if (outroC > 0) platformPie.push({ label: 'Outro', count: outroC, color: '#9ca3af', pct: platTotal > 0 ? (outroC / platTotal) * 100 : 0 });
+      if (outroC > 0) platformPie.push({ label: 'Sem identificação', count: outroC, revenue: platRev.outro, color: '#9ca3af', pct: platTotal > 0 ? (outroC / platTotal) * 100 : 0 });
     }
 
     let servicePageViews = undefined;
