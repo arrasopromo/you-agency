@@ -864,7 +864,7 @@ async function handleAgentMessage(msg, sendText) {
     if (cp && cp.aguardandoPagamento && !ctx.pagoToSend && !ctx.support && (naoAchou || !finalText)) {
       const disse = cp.clienteDisseQuePagou || /(pagu[ée]|deposit[ée]|transfer[ií]|comprobante|ya\s+est[aá]|enviad[oa])/i.test(text);
       finalText = 'Ya encontré tu pedido: *' + cp.pacote + '*' + (cp.usuario ? ' para @' + cp.usuario : '') + ' (' + cp.valor + ' por ' + cp.metodo + '). ' +
-        (disse ? 'Todavía no nos llega la confirmación del banco; ' + (cp.metodo === 'OXXO' ? 'con OXXO puede tardar hasta 1 hora' : 'con SPEI normalmente tarda unos minutos, a veces un poco más') + '. En cuanto se confirme tu pedido se libera solo y te aviso aquí mismo. Si en 30 minutos no se confirma, el equipo lo revisa.'
+        (disse ? 'Todavía no nos llega la confirmación del banco; ' + (cp.metodo === 'OXXO' ? 'con OXXO puede tardar hasta 1 hora' : 'con SPEI normalmente tarda unos minutos, a veces un poco más') + '. En cuanto se confirme tu pedido se libera solo y te aviso aquí mismo. ' + (cp.metodo === 'OXXO' ? 'Si pasa más de 1 hora y no se confirma, mándame aquí la foto del ticket de OXXO y el equipo lo revisa.' : 'Si en 30 minutos no se confirma, mándame aquí el comprobante de la transferencia y el equipo lo revisa.')
                : 'Está listo y esperando tu pago; en cuanto se confirme empieza la entrega y te aviso aquí mismo.');
       if (disse) { try { await sales.marcarPedidosAbertos(phone, 'clienteDisseQuePagou', text); } catch (_) {} }
     }

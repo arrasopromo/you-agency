@@ -112,6 +112,9 @@ async function _fbDonoDoLink(u) {
 async function validateRedeProfile(rede, usuario) {
   let q = String(usuario || '').trim();
   let postDetectado = '';
+  // Link de compartilhar PERFIL (facebook.com/share/<código>): resolve para o perfil real (profile.php?id=),
+  // senão o pedido saía com o link /share/ e o @ virava o código (25/11).
+  if (rede === 'facebook' && /facebook\.com\/share\/(?![rvp]\/)[A-Za-z0-9_-]+/i.test(q)) { const real = await _fbDonoDoLink(q); if (real) q = real; }
   if (rede === 'facebook' && /(facebook\.com\/(share\/[rvp]\/|reel\/|story\.php|watch|permalink|[^/]+\/(videos|posts)\/)|fb\.watch\/)/i.test(q)) {
     const dono = await _fbDonoDoLink(q);
     if (!dono) return { ok: false, error: 'link_de_publicacion', message: 'Ese link es de un video o publicación y no se pudo ubicar la página dueña. Explica al cliente cómo copiar el link de su perfil o página: abrir el perfil/página → los tres puntos (...) → Copiar enlace. Guarda este link por si después compra me gusta o vistas.' };
@@ -801,7 +804,7 @@ async function consultarPedido({ telefone, usuario, usuarios, _jaConferiuXpag } 
           metodo: String(x.method || 'SPEI').toUpperCase(),
           minutosDesdeCobranca: criadoMs ? Math.round((Date.now() - criadoMs) / 60000) : null,
           clienteDisseQuePagou: !!rec.clienteDisseQuePagouAt,
-          instrucao: 'El pedido EXISTE y está esperando la confirmación del pago (el banco aún no la manda). NO digas que no lo encuentras y NO pidas @ ni teléfono. Si el cliente dice que ya pagó: la confirmación es automática; con SPEI suele tardar minutos y a veces más; en cuanto llegue se libera solo y se le avisa aquí; si en 30 min no llega, el equipo lo revisa. Si todavía no paga, recuérdale con amabilidad el valor y el método, sin reenviar los datos salvo que los pida.',
+          instrucao: 'El pedido EXISTE y está esperando la confirmación del pago (el banco aún no la manda). NO digas que no lo encuentras y NO pidas @ ni teléfono. Si el cliente dice que ya pagó: la confirmación es automática; con SPEI suele tardar minutos y a veces más, con OXXO hasta 1 hora; en cuanto llegue se libera solo y se le avisa aquí; si pasa ese tiempo, pídele la foto del ticket de OXXO o el comprobante SPEI para que el equipo lo revise. NUNCA prometas que el equipo lo revisa en un número de minutos menor a ese. Si pide que le mandes o actives los seguidores antes de confirmar el pago, explica que el pedido arranca solo al confirmarse el pago (así funciona para todos). Si todavía no paga, recuérdale con amabilidad el valor y el método, sin reenviar los datos salvo que los pida.',
         };
       }
     } catch (_) {}
@@ -999,7 +1002,7 @@ async function estadoCliente(phone, usernames) {
       aberto: !!aberto, pagos: pagos.length, pagosSite: pagos.filter((d) => d._viaUsuario).length,
       texto: 'ESTADO REAL DEL CLIENTE (dato del sistema, consultado ahora; es la verdad, úsalo antes de responder):\n' + linhas.join('\n') +
         '\nReglas: NUNCA digas que no encuentras un pedido de esta lista ni pidas @ o teléfono para buscarlo. ' +
-        (aberto ? 'Con el pago pendiente: NO reenvíes los datos de pago salvo que el cliente los pida; si dice que ya pagó, explica que la confirmación es automática (SPEI suele tardar minutos, a veces más), que en cuanto llegue se libera solo y le avisas aquí, y que si en 30 min no llega el equipo lo revisa. ' : '') +
+        (aberto ? 'Con el pago pendiente: NO reenvíes los datos de pago salvo que el cliente los pida; si dice que ya pagó, explica que la confirmación es automática (SPEI suele tardar minutos, a veces más; OXXO hasta 1 hora), que en cuanto llegue se libera solo y le avisas aquí, y que si pasa ese tiempo te mande la foto del ticket de OXXO o el comprobante SPEI para que el equipo lo revise (nunca prometas revisión en 30 min para OXXO). Si pide los seguidores antes de que se confirme el pago, explica que el pedido arranca solo al confirmarse. ' : '') +
         (pagos.length ? 'Un pedido PAGADO no se cobra de nuevo: nada de "última llamada" ni de pedir el pago otra vez.' : ''),
     };
   } catch (_) { return null; }

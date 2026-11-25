@@ -40,6 +40,10 @@ function tabela(rede, tipo) {
 const preco = (rede, tipo, q) => { const it = tabela(rede, tipo).find((x) => Number(x.q) === Number(q)); return it ? P.parsePrecoToCents(it.p) : 0; };
 // O cliente nunca vê "mixtos": é só "seguidores" (perfiles de México); o outro tipo é "de alta calidad".
 const nomeTipo = (s) => (s.rede !== 'instagram' ? 'seguidores de ' + REDES[s.rede] : (s.tipo === 'organicos' ? 'seguidores de alta calidad' : 'seguidores'));
+// Facebook: o @ é um id/código, então mostra o nome do perfil.
+const perfilTxt = (s) => (s.rede === 'facebook' ? (s.perfilNome || 'tu perfil de Facebook') : '@' + String(s.usuario || '').replace(/^@/, ''));
+// Prazo de verdade por método (OXXO leva até 1 h) + prova do pagamento; antes prometia revisão em 30 min também no OXXO (25/11).
+const avisoDemora = (metodo) => (String(metodo || '').toUpperCase() === 'OXXO' ? 'Si pasa más de 1 hora y no se confirma, mándame aquí la foto del ticket de OXXO y el equipo lo revisa.' : 'Si en 30 minutos no se confirma, mándame aquí el comprobante de la transferencia y el equipo lo revisa.');
 function listaCurta(s) {
   const qs = s.tipo === 'organicos' ? [150, 500, 1000, 3000, 5000] : [100, 250, 500, 1000, 2000];
   return tabela(s.rede, s.tipo).filter((x) => qs.includes(Number(x.q))).map((x) => '- ' + fq(x.q) + ': ' + fmt(P.parsePrecoToCents(x.p))).join('\n');
@@ -73,7 +77,10 @@ function faq(tema, s) {
   const T = {
     bots: 'Nuestros *seguidores* son perfiles de México, estables y con reposición gratis por 30 días; sirven para dar número y autoridad a tu perfil y no garantizan interacción.' + (s.disp && s.disp.alta ? ' Si buscas perfiles reales y activos, tenemos *seguidores de alta calidad* (latinos), desde ' + fmt(P.parsePrecoToCents(P.tabelaSeguidores.organicos[0].p)) + ' por 150.' : ''),
     prazo: 'Empiezan a entrar poco después de que se confirma el pago y llegan de forma gradual' + (s.tipo === 'organicos' ? '; los de alta calidad se completan en hasta 48 h.' : '.') + ' Con SPEI la confirmación del pago tarda minutos.',
-    seguranca: 'Es 100% seguro: nunca pedimos tu contraseña, solo tu @ público. Pagas por SPEI a una CLABE exclusiva de tu pedido y la confirmación te llega aquí mismo, con el link para seguir tu entrega. Si quieres probar primero, puedes empezar con el paquete más pequeño: ' + fq(menor.q) + ' por ' + fmt(P.parsePrecoToCents(menor.p)) + '.',
+    seguranca: 'Es 100% seguro: nunca pedimos tu contraseña, solo tu ' + (s.rede === 'facebook' ? 'link' : '@') + ' público. ' + (s.metodo === 'OXXO' ? 'Pagas en OXXO con una referencia exclusiva de tu pedido' : 'Pagas por SPEI a una CLABE exclusiva de tu pedido') + ' y la confirmación te llega aquí mismo, con el link para seguir tu entrega.' + (s.pago && !s.pagoConfirmado ? ' Tu pedido arranca solo en cuanto se confirme el pago.' : ' Si quieres probar primero, puedes empezar con el paquete más pequeño: ' + fq(menor.q) + ' por ' + fmt(P.parsePrecoToCents(menor.p)) + '.'),
+    pagar_despues: s.pago && !s.pagoConfirmado
+      ? 'Tu pedido arranca solo en cuanto ' + (s.metodo === 'OXXO' ? 'OXXO' : 'el banco') + ' confirme el pago, y por ahora todavía no nos llega. No tienes que hacer nada más: te aviso aquí mismo en cuanto empiece.'
+      : 'El pago va primero: así funciona para todos los pedidos. En cuanto se confirma, tu pedido arranca solo y lo sigues en vivo en el link de tu pedido. Si quieres probar primero, puedes empezar con el paquete más pequeño: ' + fq(menor.q) + ' por ' + fmt(P.parsePrecoToCents(menor.p)) + '.',
     garantia: 'Son estables, con bajísima caída, y si algo baja tienes *reposición gratis por 30 días* con tu link de reposición.',
     pagamento_como: 'Pagas por *SPEI* desde la app de cualquier banco (BBVA, Banorte, Santander, Banamex, Nu, Mercado Pago, Spin, etc.): abre la app → Transferir → a otro banco → pega la CLABE de 18 dígitos → escribe el monto exacto → confirma. Si no tienes banco ni app, también puedes pagar en *OXXO* en efectivo (en caja cobran una comisión aparte).',
     privado: 'Para la entrega tu perfil tiene que estar *público* hasta que terminemos; después puedes volver a ponerlo privado.',
@@ -94,7 +101,7 @@ const NLU = `Eres un extractor de datos para el WhatsApp de ventas de You Agency
  "confirma": true si el mensaje dice que SÍ a lo último que preguntó el bot (perfil correcto, resumen "¿Todo bien?", seguir), aunque además pregunte otra cosa; false si dice que NO o corrige; null si no responde a eso,
  "quiere_comprar_alta_calidad": true SOLO si pide COMPRAR seguidores reales/de alta calidad/latinos ("quiero reales", "dame los de alta calidad"); si solo PREGUNTA si son reales, es false y va en temas "bots",
  "acepta_oferta": true/false/null (solo si el bot ofreció un paquete mayor: true si lo acepta),
- "temas": lista de dudas que hace, de: ["bots","precio","extras","prazo","seguranca","garantia","pagamento_como","privado","interacao","muestra","contrasena","tarjeta","otro"] ("bots" = pregunta si los seguidores son reales/bots/falsos; "seguranca" = pregunta si la EMPRESA es real/confiable o dice que lo estafaron; "precio" = pregunta cuánto cuesta o por qué tan caro),
+ "temas": lista de dudas que hace, de: ["bots","precio","extras","prazo","seguranca","garantia","pagamento_como","privado","interacao","muestra","contrasena","tarjeta","pagar_despues","otro"] ("bots" = pregunta si los seguidores son reales/bots/falsos; "seguranca" = pregunta si la EMPRESA es real/confiable o dice que lo estafaron; "precio" = pregunta cuánto cuesta o por qué tan caro; "pagar_despues" = quiere recibir primero y pagar después, o pide que le manden/activen los seguidores YA sin que el pago esté confirmado ("primero recibo y después pago", "ponlo ya", "mándame los seguidores")),
  "pregunta_texto": "la duda del cliente si tema=otro, si no null"}
 "si" = confirma lo que el bot preguntó (incluye "correcto", "ok", "va", "dale", "ese es"). "ya_pague" = dice que YA pagó/transfirió/manda comprobante (en pasado). "ahorita realizo el pago", "voy a pagar", "al rato deposito" NO son ya_pague (todavía no paga): usa "si" u "otro".
 "estado_pedido" = pregunta por un pedido YA PAGADO ("no me llega", "cuándo llegan", "cuánto falta", "ya pagué y nada").
@@ -111,8 +118,11 @@ function FATOS(s) {
 async function responderLivre(s, pergunta) {
   const jaDito = (s.historicoBot || []).slice(-6).join('\n').slice(-1500);
   try {
-    return await chat([{ role: 'system', content: 'Eres asesor de ventas de You Agency por WhatsApp. Responde la duda del cliente en español de México, en 1-2 frases, cálido y directo, sin emojis. ' + FATOS(s) + ' No hables de precios ni cantidades (el sistema los manda aparte; nunca digas que no puedes compartirlos), NUNCA prometas tiempos exactos, NUNCA digas que los seguidores normales son reales o no son bots, NUNCA escribas la palabra "mixtos". Si no sabes, di que lo revisas con el equipo.' },
+    const resp = await chat([{ role: 'system', content: 'Eres asesor de ventas de You Agency por WhatsApp. Responde la duda del cliente en español de México, en 1-2 frases, cálido y directo, sin emojis. ' + FATOS(s) + ' No hables de precios ni cantidades (el sistema los manda aparte; nunca digas que no puedes compartirlos), NUNCA prometas tiempos exactos, NUNCA digas que los seguidores normales son reales o no son bots, NUNCA escribas la palabra "mixtos". Si no sabes, di que lo revisas con el equipo.' + (s.pago && !s.pagoConfirmado ? ' ESTADO: el cliente YA tiene un pago generado por ' + (s.metodo === 'OXXO' ? 'OXXO (referencia; la confirmación puede tardar hasta 1 hora)' : 'SPEI (CLABE; suele confirmar en minutos)') + ' que todavía NO se confirma. Nada se envía antes de confirmar el pago: el pedido arranca solo al confirmarse. "Ponlo ya", "mándalo" o "mándame los seguidores" = pide que arranque el pedido (NO pide los datos de pago): responde que arranca solo al confirmarse el pago. Si pide los datos de pago, di que están arriba en el chat (nunca digas que no puedes reenviarlos). Si dice que ya pagó, pide la foto del ticket de OXXO o el comprobante. NUNCA prometas que el equipo revisa en un número de minutos.' : '') },
       { role: 'user', content: 'Lo que el bot YA dijo (NO lo repitas; si la duda ya se respondió, contesta en 1 frase corta con otras palabras o con un dato nuevo):\n' + (jaDito || '-') + '\n\nCliente: ' + pergunta }], { temperature: 0.3, max_tokens: 160 });
+    // 'Ponlo ya' virava 'no puedo enviar la información de pago nuevamente' (25/11)
+    if (s.pago && !s.pagoConfirmado && /no\s+(puedo|podemos)\s+(re)?enviar|\breenviar\b/i.test(resp || '')) return 'Tu pedido arranca solo en cuanto se confirme el pago' + (s.metodo === 'OXXO' ? ' en OXXO (puede tardar hasta 1 hora)' : '') + '. Tus datos de pago están arriba en el chat.';
+    return resp;
   } catch (_) { return 'Déjame revisarlo con el equipo y te confirmo por aquí.'; }
 }
 
@@ -142,7 +152,7 @@ async function posVenda(phone, texto, n, s, out) {
   const desc = (cp.quantidade ? fq(cp.quantidade) + ' ' : '') + (cp.ehReales ? 'seguidores de alta calidad' : (cp.servico === 'seguidores' || !cp.servico ? 'seguidores' : cp.servico)) + (cp.usuario ? ' para @' + cp.usuario : '');
   if (cp.aguardandoPagamento) {
     if (intent === 'ya_pague' || (/pagu|transfer|deposit/i.test(texto) && !soVaiPagar(texto))) { try { await sales.marcarPedidosAbertos(phone, 'clienteDisseQuePagou', texto); } catch (_) {} }
-    out.push('Ya encontré tu pedido: *' + (cp.pacote || desc) + '*' + (cp.usuario ? ' para @' + cp.usuario : '') + ' (' + cp.valor + ' por ' + cp.metodo + '). Todavía no nos llega la confirmación del banco; ' + (cp.metodo === 'OXXO' ? 'con OXXO puede tardar hasta 1 hora' : 'con SPEI normalmente tarda unos minutos') + '. En cuanto se confirme, tu pedido se libera solo y te aviso aquí. Si en 30 minutos no se confirma, el equipo lo revisa.');
+    out.push('Ya encontré tu pedido: *' + (cp.pacote || desc) + '*' + (cp.usuario ? ' para @' + cp.usuario : '') + ' (' + cp.valor + ' por ' + cp.metodo + '). Todavía no nos llega la confirmación del banco; ' + (cp.metodo === 'OXXO' ? 'con OXXO puede tardar hasta 1 hora' : 'con SPEI normalmente tarda unos minutos') + '. En cuanto se confirme, tu pedido se libera solo y te aviso aquí. ' + avisoDemora(cp.metodo));
     return true;
   }
   if (cp.precisaSuporte) {
@@ -185,6 +195,10 @@ async function turno(phone, texto, s, deps) {
   }
   n = n || {};
   if (n.intencion === 'ya_pague' && soVaiPagar(texto)) n.intencion = 'vai_pagar';
+  // 'pagar_despues' só vale com pagamento ainda não confirmado; quem já pagou e diz 'mándame los seguidores' pergunta da entrega (25/11)
+  { const pendente = !!(s.temPagoAberto || (s.pago && !s.pagoConfirmado)); const jaPagou = !!(s.temPedidoPago || s.pagoConfirmado);
+    if (jaPagou && !pendente) { n.temas = (n.temas || []).filter((t) => t !== 'pagar_despues'); if (n.intencion === 'pagar_despues') n.intencion = 'estado_pedido'; }
+    else if (n.intencion === 'pagar_despues') { n.intencion = 'pregunta'; if (!(n.temas || []).includes('pagar_despues')) n.temas = (n.temas || []).concat('pagar_despues'); } }
   if (n.servicio && n.servicio !== 'seguidores' && !s.qtd) { s.delegado = true; return null; }
   // quantidade e @ só valem se estiverem ESCRITOS na mensagem do cliente (o extrator copia do texto do bot)
   if (n.cantidad) {
@@ -243,7 +257,7 @@ async function turno(phone, texto, s, deps) {
   // cobrança gerada nesta conversa e ainda não paga
   if (s.pago && !s.pagoConfirmado) {
     if (n.intencion === 'vai_pagar') { out.push('¡Perfecto! Cuando hagas el pago se confirma solo y te aviso aquí mismo. ' + (s.metodo === 'OXXO' ? 'Con OXXO puede tardar hasta 1 hora.' : 'Con SPEI suele tardar unos minutos.')); return out; }
-    if (n.intencion === 'ya_pague') { s.disseQuePagou = (s.disseQuePagou || 0) + 1; try { await sales.marcarPedidosAbertos(phone, 'clienteDisseQuePagou', texto); } catch (_) {} out.push(s.disseQuePagou === 1 ? '¡Gracias! En cuanto el banco confirme tu pago te aviso aquí mismo y tu pedido se libera solo. ' + (s.metodo === 'OXXO' ? 'Con OXXO puede tardar hasta 1 hora.' : 'Con SPEI suele tardar unos minutos.') : 'Ya encontré tu pedido: *' + fq(s.qtd) + ' ' + nomeTipo(s) + '* para @' + s.usuario + ' (' + fmt(s.valor) + ' por ' + s.metodo + '). Todavía no nos llega la confirmación del banco; en cuanto llegue se libera solo y te aviso. Si en 30 minutos no se confirma, el equipo lo revisa.'); return out; }
+    if (n.intencion === 'ya_pague') { s.disseQuePagou = (s.disseQuePagou || 0) + 1; try { await sales.marcarPedidosAbertos(phone, 'clienteDisseQuePagou', texto); } catch (_) {} out.push(s.disseQuePagou === 1 ? '¡Gracias! En cuanto el banco confirme tu pago te aviso aquí mismo y tu pedido se libera solo. ' + (s.metodo === 'OXXO' ? 'Con OXXO puede tardar hasta 1 hora.' : 'Con SPEI suele tardar unos minutos.') : 'Ya encontré tu pedido: *' + fq(s.qtd) + ' ' + nomeTipo(s) + '* para ' + perfilTxt(s) + ' (' + fmt(s.valor) + ' por ' + s.metodo + '). Todavía no nos llega la confirmación ' + (s.metodo === 'OXXO' ? 'de OXXO (puede tardar hasta 1 hora)' : 'del banco') + '; en cuanto llegue se libera solo y te aviso. ' + avisoDemora(s.metodo)); return out; }
     if (n.intencion === 'quiere_spei' && s.metodo !== 'SPEI' && !s.disseQuePagou) { s.metodo = 'SPEI'; const r = await deps.criarPagamento(phone, s); if (!r.ok) { out.push(r.erroTexto); return out; } out.push('¡Listo! Te cambié el pago a *SPEI* (transferencia, se confirma en minutos). Estos son los datos:'); out.push(...r.msgs); return out; }
     if (n.intencion === 'quiere_oxxo' && s.metodo !== 'OXXO' && !s.disseQuePagou) { s.metodo = 'OXXO'; const r = await deps.criarPagamento(phone, s); if (!r.ok) { out.push(r.erroTexto); return out; } out.push('¡Listo! Te cambié el pago a *OXXO* (efectivo). Lleva unos pesos extra: en caja cobran una comisión aparte. La confirmación puede tardar hasta 1 hora.'); out.push(...r.msgs); return out; }
     if (n.intencion === 'pide_datos_pago') { out.push('¡Claro! Te mando otra vez los datos de tu pago (es el mismo, no se genera otro):'); out.push(...(s.msgsPago || [])); return out; }
@@ -259,7 +273,7 @@ async function turno(phone, texto, s, deps) {
     if (n.intencion === 'comprar' || n.cantidad) { Object.assign(s, { pago: null, pagoConfirmado: false, msgsPago: null, qtd: null, perfilOk: false, perfilPerguntado: false, ofertaFeita: false, etapa: 'coleta', resumoChave: null, disseQuePagou: 0, comprarMais: true }); }
     else {
       for (const t of (n.temas || [])) { const f = faq(t, s); if (f) out.push(f); }
-      if (!out.length) out.push((n.temas || []).includes('otro') && n.pregunta_texto ? await responderLivre(s, n.pregunta_texto) : '¡Gracias! Tu pedido de *' + fq(s.qtd) + ' ' + nomeTipo(s) + '* para @' + s.usuario + ' ya está en proceso; empieza a entrar poco después de la confirmación y llega de forma gradual.');
+      if (!out.length) out.push((n.temas || []).includes('otro') && n.pregunta_texto ? await responderLivre(s, n.pregunta_texto) : '¡Gracias! Tu pedido de *' + fq(s.qtd) + ' ' + nomeTipo(s) + '* para ' + perfilTxt(s) + ' ya está en proceso; empieza a entrar poco después de la confirmación y llega de forma gradual.');
       return out;
     }
   }
@@ -267,6 +281,7 @@ async function turno(phone, texto, s, deps) {
   if (n.intencion === 'no_quiere') { out.push('Entiendo, sin problema. Si cambias de opinión, aquí estoy.'); return out; }
   const jaAvisouIndisp = out.some((x) => /no tenemos .* disponibles/i.test(x));
   for (const t of (n.temas || [])) { if (t === 'bots' && n.quiere_comprar_alta_calidad) continue; if (t === 'otro' && jaAvisouIndisp) continue; const f = faq(t, s); if (f) out.push(f); else if (t === 'otro' && n.pregunta_texto) out.push(await responderLivre(s, n.pregunta_texto)); }
+  if ((n.temas || []).includes('pagar_despues') && (s.etapa === 'resumen' || s.etapa === 'resumen_pendente')) { if (n.confirma === false) n.confirma = null; if (n.intencion === 'no') n.intencion = 'pregunta'; }
   if (n.intencion === 'quiere_oxxo') { s.metodo = 'OXXO'; }
   if (n.intencion === 'quiere_spei') { s.metodo = 'SPEI'; }
   // quantidade só vale se estiver ESCRITA na mensagem
@@ -330,8 +345,8 @@ async function turno(phone, texto, s, deps) {
     else {
       const v = await deps.validar(s.rede, s.usuario);
       if (!v || !v.ok) { s.usuario = null; out.push('No encontré ese perfil. ¿Me pasas tu @ exacto, tal como aparece en tu perfil?'); }
-      else if (v.isPrivate) { s.usuario = v.username; s.perfilLink = v.link || ''; out.push('Encontré tu perfil @' + v.username + ', pero está *privado*: para la entrega tiene que estar público. Cuando lo abras, avísame y seguimos.'); }
-      else { s.usuario = v.username; s.perfilLink = v.link || ''; s.perfilPerguntado = true; out.push('¡Encontré tu perfil! @' + v.username + ', ' + fq(v.followers || 0) + ' seguidores. ¿Es correcto?'); }
+      else if (v.isPrivate) { s.usuario = v.username; s.perfilLink = v.link || ''; s.perfilNome = v.nombre || ''; out.push('Encontré tu perfil ' + perfilTxt(s) + ', pero está *privado*: para la entrega tiene que estar público. Cuando lo abras, avísame y seguimos.'); }
+      else { s.usuario = v.username; s.perfilLink = v.link || ''; s.perfilNome = v.nombre || ''; s.perfilPerguntado = true; out.push('¡Encontré tu perfil' + (s.rede === 'facebook' ? ' de Facebook' : '') + '! ' + (s.rede === 'facebook' ? '*' + perfilTxt(s) + '*' : perfilTxt(s)) + ', ' + fq(v.followers || 0) + ' seguidores. ¿Es correcto?'); }
     }
   }
   if (s.qtd && s.usuario && s.perfilOk && !out.some((x) => /Es correcto\?|privado/.test(x))) {
@@ -344,13 +359,13 @@ async function turno(phone, texto, s, deps) {
       if (s.resumoChave === chaveR) { s.etapa = 'resumen'; out.push('¿Te confirmo así tu pedido de *' + fq(s.qtd) + ' ' + nomeTipo(s) + '* (' + fmt(preco(s.rede, s.tipo, s.qtd)) + ') para mandarte la ' + (s.metodo === 'OXXO' ? 'referencia de OXXO' : 'CLABE') + '?'); }
       else {
         s.etapa = 'resumen'; s.resumoChave = chaveR;
-        out.push('Te confirmo tu pedido:\n\n*' + fq(s.qtd) + ' ' + nomeTipo(s) + '*\nPerfil: *@' + s.usuario + '*\nTotal: *' + fmt(preco(s.rede, s.tipo, s.qtd)) + '*\nPago: *' + (s.metodo === 'OXXO' ? 'OXXO (efectivo)' : 'SPEI (transferencia)') + '*\n\n¿Todo bien?');
+        out.push('Te confirmo tu pedido:\n\n*' + fq(s.qtd) + ' ' + nomeTipo(s) + '*\nPerfil: *' + perfilTxt(s) + '*\nTotal: *' + fmt(preco(s.rede, s.tipo, s.qtd)) + '*\nPago: *' + (s.metodo === 'OXXO' ? 'OXXO (efectivo)' : 'SPEI (transferencia)') + '*\n\n¿Todo bien?');
       }
     }
   }
   if (out.length && s.ultimaBot && out[out.length - 1] === (s.ultimaBot.split('\n').slice(-1)[0] || '')) {
     const ult = out.pop();
-    const v = /Es correcto\?/.test(ult) && s.usuario ? '¿Me confirmas que @' + String(s.usuario).replace(/^@/, '') + ' es tu perfil?' : /@/.test(ult) && s.qtd && !s.usuario ? 'Solo me falta tu @ de ' + REDES[s.rede] + ' para dejar listo tu pedido.' : /@/.test(ult) && s.qtd ? null : (/Cuántos/.test(ult) ? '¿Qué cantidad te late? Puede ser 100, 250, 500, 1,000 o 2,000 (hay hasta 20,000).' : ult);
+    const v = /Es correcto\?/.test(ult) && s.usuario ? '¿Me confirmas que ' + perfilTxt(s) + ' es tu perfil?' : /@/.test(ult) && s.qtd && !s.usuario ? 'Solo me falta tu @ de ' + REDES[s.rede] + ' para dejar listo tu pedido.' : /@/.test(ult) && s.qtd ? null : (/Cuántos/.test(ult) ? '¿Qué cantidad te late? Puede ser 100, 250, 500, 1,000 o 2,000 (hay hasta 20,000).' : ult);
     if (v) out.push(v);
   }
   return out;
